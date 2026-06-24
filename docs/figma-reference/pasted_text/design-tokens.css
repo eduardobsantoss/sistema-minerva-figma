@@ -1,0 +1,245 @@
+/* =====================================================================
+   MINERVA — DESIGN TOKENS  (versao 1 — consolidada)
+   Fundação de design system. Agnóstico de framework (CSS custom properties).
+   Serve tanto para o Claude Design (React/HTML) quanto para o Vue 3 de produção.
+
+   Camadas:
+     1. PRIMITIVAS  — valores crus (cor, px). Não usar direto nos componentes.
+     2. SEMÂNTICAS  — papéis de uso (ação primária, ação crítica, etc.).
+        Componentes consomem SEMPRE a camada semântica.
+
+   Legenda:
+     Todos os tokens abaixo estao aprovados (v1).
+     [Confirmado] = valor definido por voce.   [v1] = complemento aprovado.
+   ===================================================================== */
+
+:root {
+
+  /* =================================================================
+     1. PRIMITIVAS
+     ================================================================= */
+
+  /* ---- Marca: GCI Blue [Confirmado] ---- */
+  --gci-base:        #083C4A;   /* cor institucional principal */
+  --gci-hover:       #062D38;   /* [Confirmado] estado hover */
+  --gci-active:      #04222B;   /* [v1] estado pressionado */
+  --gci-light:       #F0F4F5;   /* [Confirmado] fundo suave / seleção leve */
+  --gci-subtle:      #DCE6E9;   /* [v1] borda/realce sutil da marca */
+
+  /* ---- Acento: Agro Orange [Confirmado] ---- */
+  /* Uso: destaque, indicador, realce. NÃO usar como fundo de botão com texto
+     (contraste de texto branco sobre laranja não atinge AA). */
+  --agro-base:       #F27D26;
+  --agro-hover:      #D96E1A;   /* [v1] */
+  --agro-active:     #BD5E14;   /* [v1] */
+  --agro-light:      #FDF1E7;   /* [v1] fundo de realce */
+
+  /* ---- Neutros (cinza-azulado, alinhado ao #F8FAFB dos protótipos) ---- */
+  --neutral-0:       #FFFFFF;
+  --neutral-50:      #F8FAFB;   /* [Confirmado] fundo de página */
+  --neutral-100:     #F1F5F7;
+  --neutral-200:     #E3E9ED;   /* bordas finas */
+  --neutral-300:     #CBD5DB;
+  --neutral-400:     #94A3AC;
+  --neutral-500:     #64748B;
+  --neutral-600:     #475569;
+  --neutral-700:     #334155;
+  --neutral-800:     #1E293B;
+  --neutral-900:     #0F172A;
+
+  /* ---- Estados [Proposta, baseada nos tons dos seus protótipos] ---- */
+  /* Sucesso — verde esmeralda */
+  --success-base:    #059669;
+  --success-light:   #ECFDF5;
+  --success-dark:    #047857;
+  /* Atenção — âmbar */
+  --warning-base:    #D97706;
+  --warning-light:   #FFFBEB;
+  --warning-dark:    #B45309;
+  /* Erro / destrutivo — vermelho (necessário para "Rejeitar") */
+  --danger-base:     #DC2626;
+  --danger-light:    #FEF2F2;
+  --danger-dark:     #B91C1C;
+  /* Informação — reaproveita a marca */
+  --info-base:       var(--gci-base);
+  --info-light:      var(--gci-light);
+
+
+  /* =================================================================
+     2. SEMÂNTICAS (papéis) — consumir estas nos componentes
+     ================================================================= */
+
+  /* ---- Superfícies ---- */
+  --surface-page:        var(--neutral-50);   /* fundo da aplicação */
+  --surface-card:        var(--neutral-0);    /* cartões, painéis */
+  --surface-raised:      var(--neutral-0);    /* dropdowns, popovers */
+  --surface-sunken:      var(--neutral-100);  /* áreas recuadas, cabeçalho de tabela */
+  --surface-selected:    var(--gci-light);    /* linha/aba selecionada */
+
+  /* ---- Texto ---- */
+  --text-strong:         var(--neutral-900);  /* títulos */
+  --text-default:        var(--neutral-700);  /* corpo */
+  --text-muted:          var(--neutral-500);  /* secundário, labels */
+  --text-disabled:       var(--neutral-400);
+  --text-on-brand:       var(--neutral-0);    /* texto sobre GCI Blue */
+  --text-on-danger:      var(--neutral-0);    /* texto sobre vermelho */
+  --text-link:           var(--gci-base);
+
+  /* ---- Bordas ---- */
+  --border-default:      var(--neutral-200);  /* "bordas finas com bom contraste" */
+  --border-strong:       var(--neutral-300);
+  --border-focus:        var(--gci-base);
+
+  /* ---- Ação primária (1 por etapa — ver Padrão Estrutural 5.1) ---- */
+  --action-primary-bg:        var(--gci-base);
+  --action-primary-bg-hover:  var(--gci-hover);
+  --action-primary-bg-active: var(--gci-active);
+  --action-primary-text:      var(--text-on-brand);
+
+  /* ---- Ação secundária (até 2 — 5.2; menor peso visual) ---- */
+  --action-secondary-bg:        var(--neutral-0);
+  --action-secondary-bg-hover:  var(--neutral-100);
+  --action-secondary-text:      var(--text-default);
+  --action-secondary-border:    var(--border-strong);
+
+  /* ---- Ação crítica / destrutiva (5.3 — isolada, vermelha, confirmação) ---- */
+  --action-danger-bg:        var(--danger-base);
+  --action-danger-bg-hover:  var(--danger-dark);
+  --action-danger-text:      var(--text-on-danger);
+  --action-danger-text-only: var(--danger-base);  /* item de texto vermelho no "Mais ações" */
+
+  /* ---- Acento (Agro Orange como realce/indicador, não ação) ---- */
+  --accent:              var(--agro-base);
+  --accent-bg:           var(--agro-light);
+
+  /* ---- Chip de status (3 — é informação, NÃO botão) ---- */
+  /* Cor de fundo/texto definida pelo estado do processo. Exemplos de mapeamento: */
+  --status-neutral-bg:   var(--neutral-100);
+  --status-neutral-text: var(--neutral-600);
+  --status-active-bg:    var(--gci-light);
+  --status-active-text:  var(--gci-base);
+  --status-success-bg:   var(--success-light);
+  --status-success-text: var(--success-dark);
+  --status-warning-bg:   var(--warning-light);
+  --status-warning-text: var(--warning-dark);
+  --status-danger-bg:    var(--danger-light);
+  --status-danger-text:  var(--danger-dark);
+
+  /* ---- Stepper (4 — indicador informativo, não navegação) ---- */
+  --stepper-done:        var(--success-base);  /* etapa concluída (check) */
+  --stepper-current:     var(--gci-base);      /* etapa atual */
+  --stepper-future:      var(--neutral-300);   /* etapa futura, neutra */
+  --stepper-track:       var(--neutral-200);   /* linha de ligação */
+
+
+  /* =================================================================
+     TIPOGRAFIA
+     ================================================================= */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+               'Helvetica Neue', Arial, sans-serif;            /* [Confirmado] principal */
+  /* Numeros/tabelas: mesma Inter, com algarismos tabulares (largura fixa) via
+     font-variant-numeric: tabular-nums. Sem fonte monoespacada. */
+  --font-numeric: var(--font-sans);                            /* [Confirmado] Inter + tabular-nums */
+
+  /* Escala (root assumido em 16px). Base 14px = densidade tipica de ERP. */
+  --text-micro: 0.6875rem;  /* 11px — badges minusculos */
+  --text-xs:    0.75rem;    /* 12px — captions, labels */
+  --text-sm:    0.8125rem;  /* 13px — texto secundario, celula de tabela */
+  --text-base:  0.875rem;   /* 14px — corpo padrao */
+  --text-md:    1rem;       /* 16px — corpo de leitura */
+  --text-lg:    1.125rem;   /* 18px */
+  --text-xl:    1.25rem;    /* 20px — titulo de bloco */
+  --text-2xl:   1.5rem;     /* 24px — titulo de tela */
+  --text-3xl:   1.875rem;   /* 30px */
+  --text-4xl:   2.25rem;    /* 36px — display */
+
+  --leading-tight:   1.2;
+  --leading-snug:    1.35;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.6;
+
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+
+  /* =================================================================
+     ESPACAMENTO — multiplos de 4 [Confirmado]
+     Indice = px / 4 (o numero comunica o multiplo).
+     ================================================================= */
+  --space-0:   0;
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-9:   36px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-15:  60px;
+  --space-18:  72px;
+  --space-20:  80px;
+  --space-30:  120px;
+  --space-40:  160px;
+  --space-50:  200px;
+
+
+  /* =================================================================
+     RAIO DE BORDA [Proposta — discreto, alinhado a "maturidade sistemica"]
+     ================================================================= */
+  --radius-none:  0;
+  --radius-sm:    4px;    /* tags, inputs pequenos */
+  --radius-md:    6px;    /* inputs, botoes (padrao) */
+  --radius-lg:    8px;    /* cartoes, paineis */
+  --radius-xl:    12px;   /* modais */
+  --radius-full:  9999px; /* chips de status, pilulas */
+
+
+  /* =================================================================
+     ELEVACAO [Proposta — contida, "evitar ruido visual"]
+     ================================================================= */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.10);   /* dropdown "Mais acoes" */
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.16);  /* modal de confirmacao */
+
+  /* Anel de foco — essencial para navegacao por teclado e clareza operacional */
+  --focus-ring: 0 0 0 3px rgba(8, 60, 74, 0.25);
+
+
+  /* =================================================================
+     MOVIMENTO [Proposta — micro-animacoes sem sobrecarga]
+     ================================================================= */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out:      cubic-bezier(0, 0, 0.2, 1);
+
+
+  /* =================================================================
+     CAMADAS (z-index) [v1]
+     ================================================================= */
+  --z-base:     0;
+  --z-sticky:   100;   /* cabecalho/barra de acoes fixa */
+  --z-dropdown: 200;   /* "Mais acoes" */
+  --z-overlay:  300;   /* fundo escurecido */
+  --z-modal:    400;   /* confirmacao de acao critica */
+  --z-toast:    500;   /* notificacoes */
+}
+
+/* =====================================================================
+   DARK MODE — estrutura pronta para o futuro (nao preencher agora).
+   Quando for ativar, sobrescrever APENAS a camada semantica aqui.
+   ===================================================================== */
+/*
+:root[data-theme="dark"] {
+  --surface-page: var(--neutral-900);
+  --surface-card: var(--neutral-800);
+  --text-strong:  var(--neutral-50);
+  ... (definir quando necessario)
+}
+*/

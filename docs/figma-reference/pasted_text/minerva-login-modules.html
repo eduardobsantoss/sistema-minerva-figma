@@ -1,0 +1,161 @@
+Você está construindo o Minerva, uma plataforma operacional corporativa
+de securitização e gestão financeira para agronegócio — sistema ERP-like
+de alta densidade de uso. A experiência deve transmitir confiabilidade,
+segurança operacional e maturidade. Este não é um app de marketing.
+
+## Design Tokens
+O arquivo `minerva-design-tokens.css` é a ÚNICA fonte da verdade para
+cores, tipografia, espaçamento, raio de borda e sombras. Consuma SEMPRE
+a camada semântica (ex: `var(--action-primary-bg)`, não `#083C4A`).
+Jamais invente cores fora dos tokens.
+
+## Entrega
+Crie dois frames desktop 1920×1080, light mode, num único arquivo HTML
+empilhado em canvas de revisão (fundo #EAEEF1, frames com sombra e
+border-radius 12px, label acima de cada frame).
+
+---
+
+### Frame 01 — Acesso Interno (Login)
+
+**Layout:** grid 2 colunas. Coluna esquerda ~560px, coluna direita
+preenche o restante.
+
+**Coluna esquerda (fundo --surface-card, padding 56px 64px 48px):**
+- Topo: logo institucional GCI (`logo-azul-sem-bg.png`, height 96px)
+  alinhado ao topo; empurra o formulário para o centro vertical com
+  `margin-bottom: auto` no logo e `margin-top: auto` no form.
+- Bloco de formulário (max-width 384px):
+  - Título: "Acesso Interno" — font-size 30px, --weight-bold,
+    --text-strong, letter-spacing -0.02em
+  - Subtítulo: "Bem-vindo à plataforma interna do Grupo Ceres. Acesse
+    para gerenciar as operações do agronegócio." — --text-sm, --text-muted
+  - Campo "E-MAIL CORPORATIVO": label uppercase 11px --neutral-400,
+    input com ícone `mail` à esquerda, placeholder
+    "exemplo@empresa.com.br", fundo --surface-sunken, borda
+    --border-default, border-radius --radius-xl (12px), altura 50px
+  - Campo "SENHA" com link "Esqueceu a senha?" alinhado à direita
+    (--gci-base, bold): input com ícone `lock` à esquerda + ícone `eye`
+    à direita, exibir estado focused (borda --gci-base + ring 4px
+    rgba(8,60,74,0.06))
+  - Botão "Entrar no Sistema" + ícone `chevron-right`: largura 100%,
+    altura 48px, --radius-xl, --action-primary-bg, --weight-bold,
+    sombra `0 10px 24px -8px rgba(8,60,74,0.18)`
+  - Bloco de ajuda separado por border-top --neutral-100: texto 12px
+    --neutral-400 "Problemas com o acesso? Por favor, entre em contato
+    com a Equipe de TI." (Equipe de TI em --gci-base bold)
+- Rodapé: "© 2025 Grupo Ceres Investimentos." — 10px, uppercase,
+  --neutral-400, letter-spacing 0.18em, `margin-top: auto`
+
+**Coluna direita (hero placeholder):**
+- Fundo: --gci-base sólido + gradiente de foto simulada (gradiente
+  teal→âmbar evocando pôr do sol/agronegócio com radial highlights)
+- Overlay: `linear-gradient(135deg, rgba(8,60,74,0.80) 0%,
+  rgba(8,60,74,0.40) 45%, transparent 100%)`, z-index 1
+- Dois blobs decorativos blurrados (filter blur): um branco/5% no
+  canto superior direito, um agro-orange/10% no canto inferior direito
+- Tag de placeholder no canto sup-dir: fonte monospace, 10px,
+  rgba(255,255,255,0.65), fundo rgba(0,0,0,0.28), borda
+  rgba(255,255,255,0.18), border-radius 4px. Texto:
+  `[placeholder: foto agronegócio · 1440×1080]`
+- Conteúdo (abs, left 64px, right 64px, bottom 64px, z-index 2):
+  - Régua laranja: width 48px, height 4px, --agro-base, border-radius 2px,
+    margin-bottom 24px
+  - H2: "Gestão interna e estratégica do agronegócio." — 52px, weight 900,
+    letter-spacing -0.025em, color #fff, text-shadow
+  - P: "Ferramentas integradas para eficiência operacional e análise de
+    dados estratégica do Grupo Ceres." — 18px, rgba(255,255,255,0.78),
+    weight 500
+
+---
+
+### Frame 02 — Módulos do Sistema
+
+**Layout:** grid 2 colunas — sidebar 280px + main 1fr.
+
+**Sidebar (--gci-base, padding 24px 16px 16px, box-shadow
+6px 0 24px rgba(15,23,42,0.12)):**
+- Brand: ícone `database` em quadrado 40px (--radius-lg,
+  rgba(255,255,255,0.10), cor --agro-base) + texto "Minerva" 22px
+  bold (pode usar fonte serif elegante)
+- Botão colapsar: círculo 24px --agro-base, posição absolute right -12px
+  top 76px, ícone `chevron-left`
+- Nav items (padding 12px, --radius-xl, gap 16px, --text-sm,
+  font-weight medium, cor rgba(255,255,255,0.60)):
+  - Hover: rgba(255,255,255,0.05) + cor #fff
+  - Estado ativo: rgba(255,255,255,0.10) + cor --agro-base +
+    barra esquerda 4px --agro-base, border-radius 0 4px 4px 0
+  - Itens: Dashboard (ativo, ícone `layout-dashboard`), FIDC's
+    (`landmark` + chev-down), Passivo (`database`), Colaboradores
+    (`users`), Relatórios (`file-text`), Configurações (`settings`)
+- User card (margin-top auto, padding 12px, --radius-xl,
+  rgba(255,255,255,0.05), borda rgba(255,255,255,0.10)):
+  avatar círculo 32px --agro-base com ícone `user`, nome "Eduardo
+  Santos" 12px bold branco, role "Administrador" 10px
+  rgba(255,255,255,0.60), ícone `log-out` à direita
+
+**Topbar (altura 80px, --surface-card, border-bottom --border-default):**
+- H2: "Bem-vindo(a) ao Minerva Gestão" — --text-xl, --weight-bold,
+  --text-strong
+- Flex spacer
+- Search bar (width 256px): fundo --surface-sunken, sem borda,
+  --radius-lg, ícone `search`, placeholder "Buscar no sistema...",
+  focus ring rgba(8,60,74,0.20)
+- Ações: botão `bell` com pip --agro-base, divisor vertical 1px
+  --border-default, user chip (nome + role à esquerda, avatar
+  quadrado 40px --radius-xl --gci-base "ES" à direita)
+
+**Content (padding 56px, max-width 1456px centralizado):**
+- Eyebrow: "Visão Geral" — 11px, --weight-bold, --accent, uppercase,
+  letter-spacing 0.18em
+- H1: "Módulos do Sistema" — 28px, --weight-bold, --text-strong
+- Subtítulo: "Selecione um módulo para começar seu fluxo de trabalho."
+  — --text-base, --text-muted
+- Grid 4 colunas, gap 24px, 9 cartões (--radius-xl, borda
+  --border-default, padding 24px, min-height 200px):
+  - Hover: border-color rgba(242,125,38,0.30) + sombra
+    `0 20px 40px -16px rgba(8,60,74,0.10)` + translateY(-4px)
+  - Decorativo: pseudo ::before círculo 128px no canto sup-dir
+    (--neutral-100, blur), muda para rgba(242,125,38,0.05) no hover
+  - Ícone 56px quadrado --radius-xl (cor/fundo varia por tone)
+  - Nome: --text-lg, --weight-bold, --text-strong
+  - Desc: --text-sm, --text-muted, leading-relaxed
+  - CTA "Acessar módulo →": 11px, uppercase, letter-spacing 0.14em,
+    --accent, invisível por padrão, aparece no hover com transition
+    (opacity 0→1 + translateY 4px→0)
+
+  **9 módulos e seus tones (mapeados dos tokens semânticos):**
+  | # | Módulo | Ícone | Tone | Fundo ico | Cor ico |
+  |---|--------|-------|------|-----------|---------|
+  | 1 | Admin | settings | info | --gci-light | --gci-base |
+  | 2 | Gerencial | bar-chart-3 | success | --success-light | --success-base |
+  | 3 | Ativos | package | warning | --warning-light | --warning-base |
+  | 4 | CRA's | briefcase | info | --gci-light | --gci-base |
+  | 5 | FIDC's | landmark | info | --gci-light | --gci-base |
+  | 6 | Passivo | database | danger | --danger-light | --danger-base |
+  | 7 | Garantias | shield-check | success | --success-light | --success-base |
+  | 8 | Confina | trees | success | --success-light | --success-base |
+  | 9 | Risco | alert-circle | accent | --agro-light | --agro-base |
+
+---
+
+## Ícones
+Use Lucide via CDN UMD (`https://unpkg.com/lucide@0.475.0/dist/umd/lucide.min.js`).
+O bundle UMD expõe `window.lucide.icons` como objetos de tuplas
+`[["tag", {attrs}], …]`. Renderize via JS: converta o nome kebab-case
+para PascalCase, construa o SVG manualmente a partir das tuplas com
+atributos `width`, `height`, `viewBox`, `fill:none`, `stroke:currentColor`,
+`stroke-width:1.75`, `stroke-linecap/linejoin:round`. Use `data-icon` e
+`data-size` como attrs nos elementos, e um script inicializador com
+retry (setInterval de 50ms, até 40 tentativas) para garantir que o
+bundle carregou antes de renderizar.
+
+## Restrições
+- Não invente cores fora dos tokens
+- Não use emoji
+- Não use Inter ou Roboto como destaque — Minerva usa Inter como base,
+  pode usar fonte serif elegante (ex: Fraunces) só no logotipo da sidebar
+- Não adicione seções/dados não especificados acima
+- Preserve o `data-screen-label` em cada frame
+  (`01 · Login`, `02 · Módulos`)
+- Carregue Inter via Google Fonts (weights 400–800)
