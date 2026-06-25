@@ -31,10 +31,10 @@ function DonutRing({ pct, color, trackColor = 'var(--border-default)' }: {
 export function CraCard({ cra, onOpen }: Props) {
   const [hover, setHover] = useState(false);
 
-  // Derive CRA type from operações
-  const craType = cra.operacoes.length > 0 && cra.operacoes.every((o) => o.tipo === 'MONO CRA')
-    ? 'MONO CRA'
-    : 'MULTI CRA';
+  // Derive CRA type from operações, falling back to the explicit tipo set at casca creation
+  const craType = cra.operacoes.length > 0
+    ? (cra.operacoes.every((o) => o.tipo === 'MONO CRA') ? 'MONO CRA' : 'MULTI CRA')
+    : (cra.tipo ?? 'MULTI CRA');
   const craTypeColor = craType === 'MONO CRA'
     ? { bg: 'var(--agro-light)', fg: 'var(--agro-base)' }
     : { bg: 'var(--gci-light)', fg: 'var(--gci-base)' };

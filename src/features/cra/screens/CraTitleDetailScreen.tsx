@@ -5,7 +5,7 @@ import {
   TrendingUp, BadgeCheck, ArrowLeftRight,
   Copy, Check as CheckIcon,
 } from 'lucide-react';
-import { brl, type Cra, type CraOperacao, type CraTitulo, type TituloStatus } from '../data/craData';
+import { brl, type Cra, type CraOperacao, type CraTitulo, type TituloStatus, type CessaoStatus } from '../data/craData';
 
 interface Props {
   cra: Cra;
@@ -157,9 +157,17 @@ function Participant({ role, name, cnpj, icon: Icon }: { role: string; name: str
 
 /* ─── Tab content ────────────────────────────────────────────────── */
 
+const cessaoTone: Record<CessaoStatus, { bg: string; fg: string }> = {
+  LIQUIDADO: { bg: 'var(--success-light)', fg: 'var(--success-dark)' },
+  PENDENTE:  { bg: 'var(--warning-light)', fg: 'var(--warning-base)' },
+  PARCIAL:   { bg: '#FFF3CD',             fg: '#856404' },
+};
+
 function DetailsTab({ titulo, operacao }: { titulo: CraTitulo; operacao: CraOperacao }) {
   return (
     <div className="flex flex-col" style={{ gap: 32 }}>
+
+      {/* ── Informações do Título ─────────────────────────────── */}
       <Section title="Informações do Título">
         <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
           <Field label="Operação de Origem" value={operacao.nome} />
@@ -168,26 +176,89 @@ function DetailsTab({ titulo, operacao }: { titulo: CraTitulo; operacao: CraOper
           <Field label="Status" value={titulo.status} />
         </div>
       </Section>
-      <Section title="Datas e Prazos">
+
+      {/* ── Valores ───────────────────────────────────────────── */}
+      <Section title="Valores">
         <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
-          <Field label="Data de Emissão" value={titulo.emissao} />
-          <Field label="Data de Vencimento" value={titulo.vencimento} />
-          <Field label="Prorrogação" value="Não aplicável" />
-          <Field label="Protesto" value="—" />
+          <Field label="Valor Nominal"      value={brl(titulo.vrNominal)} />
+          <Field label="Valor de Aquisição" value={titulo.vrAquisicao != null ? brl(titulo.vrAquisicao) : '—'} />
+          <Field label="Valor Presente"     value={titulo.vrPresente    != null ? brl(titulo.vrPresente)    : '—'} />
+          <Field label="Valor em Aberto"    value={titulo.vrAberto      != null ? brl(titulo.vrAberto)      : '—'} />
         </div>
       </Section>
+
+      {/* ── Datas e Prazos ────────────────────────────────────── */}
+      <Section title="Datas e Prazos">
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+          <Field label="Data de Emissão"    value={titulo.emissao} />
+          <Field label="Data de Vencimento" value={titulo.vencimento} />
+          <Field label="Prorrogação"        value="Não aplicável" />
+          <Field label="Protesto"           value="—" />
+        </div>
+      </Section>
+
+      {/* ── Dados Fiscais ─────────────────────────────────────── */}
+      {titulo.chaveNfe && (
+        <Section title="Dados Fiscais">
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+            <div style={{ gridColumn: 'span 2' }}>
+              <div style={{ fontSize: 10, fontWeight: 'var(--weight-bold)', letterSpacing: '0.14em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>
+                Chave NF-e
+              </div>
+              <div className="flex items-center" style={{ gap: 6, fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-strong)', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.02em', wordBreak: 'break-all' }}>
+                {titulo.chaveNfe}
+                <CopyButton value={titulo.chaveNfe} />
+              </div>
+            </div>
+            <Field label="CFOP"   value={titulo.cfop   ?? '—'} />
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <Field label="Série"  value={titulo.serie  ?? '—'} />
+              <Field label="Modelo" value={titulo.modelo ?? '—'} />
+            </div>
+          </div>
+        </Section>
+      )}
+
+      {/* ── Participantes ─────────────────────────────────────── */}
       <Section title="Participantes">
         <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Participant role="Cedente" name={titulo.cedente} cnpj={titulo.cedenteCnpj} icon={Building2} />
           <Participant role="Sacado"  name={titulo.sacado}  cnpj={titulo.sacadoCnpj}  icon={User} />
         </div>
       </Section>
+
+      {/* ── Dados de Cessão ───────────────────────────────────── */}
+      {titulo.cessao && (
+        <Section title="Dados de Cessão">
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+            <Field label="Cessionário" value={titulo.cessao.cessionario} />
+            <Field label="Data da Cessão" value={titulo.cessao.data} />
+            <Field label="Valor Cedido" value={brl(titulo.cessao.valor)} />
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 'var(--weight-bold)', letterSpacing: '0.14em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>
+                Status
+              </div>
+              <span style={{
+                fontSize: 10, fontWeight: 'var(--weight-bold)', letterSpacing: '0.10em',
+                padding: '5px 10px', borderRadius: '9999px',
+                background: cessaoTone[titulo.cessao.status].bg,
+                color: cessaoTone[titulo.cessao.status].fg,
+              }}>
+                {titulo.cessao.status}
+              </span>
+            </div>
+          </div>
+        </Section>
+      )}
+
+      {/* ── Contato Regulatório ───────────────────────────────── */}
       <Section title="Contato Regulatório">
         <div className="grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
-          <Field label="Email" value={<span className="flex items-center" style={{ gap: 6 }}><Mail size={14} color="var(--text-muted)" /> cobranca@cedente.com.br<CopyButton value="cobranca@cedente.com.br" /></span>} />
+          <Field label="Email"    value={<span className="flex items-center" style={{ gap: 6 }}><Mail  size={14} color="var(--text-muted)" /> cobranca@cedente.com.br<CopyButton value="cobranca@cedente.com.br" /></span>} />
           <Field label="Telefone" value={<span className="flex items-center" style={{ gap: 6 }}><Phone size={14} color="var(--text-muted)" /> +55 (11) 4002-8922<CopyButton value="+55 (11) 4002-8922" /></span>} />
         </div>
       </Section>
+
     </div>
   );
 }

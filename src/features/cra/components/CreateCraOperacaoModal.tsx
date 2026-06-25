@@ -8,8 +8,19 @@ import {
 } from 'lucide-react';
 import { gruposEmpresariais } from '../data/craData';
 
+const BENEFICIARIO_OPTS = [
+  'CERES SECURIZADORA S/A',
+  'BTG SECURIZADORA S/A',
+  'ISEC SECURIZADORA S/A',
+  'RB CAPITAL',
+  'Oliveira Trust',
+  'Vórtx',
+  'BRL Trust',
+];
+
 export interface NewCraOperacaoData {
-  tipoOperacao: string;
+  tipoCliente: string;
+  beneficiarioFinal: string;
   nome: string;
   numeroEmissao: string;
   cessionaria: string;
@@ -20,19 +31,32 @@ export interface NewCraOperacaoData {
   diasMinVencimento: string;
   diasMaxVencimento: string;
   tipoOperacaoCra: string;
+  tipoCalculoElegibilidade: string;
+  grupoLimites: string;
   dataEmissao: string;
   dataInicio: string;
   dataVencimento: string;
   valorEmissao: string;
   valorGarantiaMinimo: string;
   taxaDescontoPadrao: string;
-  pctPartesRelacionadas: string;
-  pctNovosSacados: string;
-  pctSacadosIndividual: string;
-  pctSacadosElegiveis: string;
   metodoNotificacao: string;
-  taxaJurosMoratorio: string;
-  taxaMulta: string;
+  // Carteira de cobrança
+  carteiraNome: string;
+  banco: string;
+  carteira: string;
+  tipoCnab: string;
+  conta: string;
+  agencia: string;
+  codigoEmpresa: string;
+  taxaJurosPadrao: string;
+  taxaMultaPadrao: string;
+  permiteFimDeSemana: boolean;
+  titularConta: string;
+  // Carteira de registro
+  registradora: string;
+  idCarteira: string;
+  apiToken: string;
+  apiSecret: string;
 }
 
 interface Props {
@@ -48,15 +72,15 @@ interface Step {
 }
 
 const steps: Step[] = [
-  { key: 'info',      label: 'Operação',     icon: Info,              hint: 'Campos da operação CRA' },
-  { key: 'config-op', label: 'Configuração', icon: SlidersHorizontal, hint: 'Configuração da operação' },
-  { key: 'grupos',    label: 'Grupos',       icon: Network,           hint: 'Seleção de grupos empresariais' },
-  { key: 'veiculo',   label: 'Veículo',      icon: Settings,          hint: 'Configuração do veículo' },
-  { key: 'limites',   label: 'Limites',      icon: Percent,           hint: 'Modelo de cálculo sobre limites' },
-  { key: 'kobana',    label: 'Kobana',       icon: Wallet,            hint: 'Carteira Kobana' },
-  { key: 'ativos',    label: 'Ativos',       icon: FileText,          hint: 'Tipo de ativos aceitos' },
-  { key: 'pdd',       label: 'PDD',          icon: AlertTriangle,     hint: 'Parametrização de PDD' },
-  { key: 'elegib',    label: 'Elegibilidade',icon: CheckSquare,       hint: 'Parametrização de Elegibilidade' },
+  { key: 'info',     label: 'Cadastrais',  icon: Info,              hint: 'Informações cadastrais da operação' },
+  { key: 'veiculo',  label: 'Veículo',     icon: Settings,          hint: 'Configurações do veículo' },
+  { key: 'config',   label: 'Adicionais',  icon: SlidersHorizontal, hint: 'Configurações adicionais' },
+  { key: 'limites',  label: 'Limites',     icon: Percent,           hint: 'Configuração de limites' },
+  { key: 'cobranca', label: 'Cobrança',    icon: Wallet,            hint: 'Carteira de cobrança' },
+  { key: 'registro', label: 'Registro',    icon: Network,           hint: 'Carteira de registro' },
+  { key: 'pdd',      label: 'PDD',         icon: AlertTriangle,     hint: 'Parametrização de PDD' },
+  { key: 'grupos',   label: 'Grupos',      icon: Layers,            hint: 'Seleção de grupos empresariais' },
+  { key: 'ativos',   label: 'Ativos',      icon: FileText,          hint: 'Tipo de ativos aceitos' },
 ];
 
 const TOGGLE_KEYS = [
@@ -94,16 +118,69 @@ const lastroOpts = [
 export function CreateCraOperacaoModal({ onClose, onCreate }: Props) {
   const [stepIdx, setStepIdx] = useState(0);
   const [form, setForm] = useState<NewCraOperacaoData>({
-    tipoOperacao: 'Mono CRA', nome: '', numeroEmissao: '',
+    tipoCliente: '', beneficiarioFinal: '',
+    nome: '', numeroEmissao: '',
     cessionaria: '', prestadorServico: '', custodiante: '',
     toggles: initToggles(), gruposSelecionados: [],
     diasMinVencimento: '', diasMaxVencimento: '', tipoOperacaoCra: '',
+    tipoCalculoElegibilidade: '', grupoLimites: '',
     dataEmissao: '', dataInicio: '', dataVencimento: '',
     valorEmissao: '', valorGarantiaMinimo: '', taxaDescontoPadrao: '',
-    pctPartesRelacionadas: '', pctNovosSacados: '', pctSacadosIndividual: '',
-    pctSacadosElegiveis: '', metodoNotificacao: '', taxaJurosMoratorio: '', taxaMulta: '',
+    metodoNotificacao: '',
+    carteiraNome: '', banco: '', carteira: '', tipoCnab: '', conta: '',
+    agencia: '', codigoEmpresa: '', taxaJurosPadrao: '', taxaMultaPadrao: '',
+    permiteFimDeSemana: false, titularConta: '',
+    registradora: '', idCarteira: '', apiToken: '', apiSecret: '',
   });
   const [grupoQ, setGrupoQ] = useState('');
+
+  // Step Limites — 4 sub-tabs
+  type LimitTab = 'concentracao' | 'totalizadores' | 'topCedente' | 'topSacado';
+  const [limitTab, setLimitTab] = useState<LimitTab>('concentracao');
+  const CONCENTRACAO_LABELS = [
+    'Partes relacionadas (total)',
+    'Novos sacados (totais)',
+    'Novos sacados (individuais)',
+    'Sacados elegíveis (individual)',
+  ];
+  const [concentracao, setConcentracao] = useState<Record<string, { base: string; pct: string }>>(
+    Object.fromEntries(CONCENTRACAO_LABELS.map((l) => [l, { base: 'Garantia', pct: '' }])),
+  );
+  const setConcentracaoField = (label: string, field: 'base' | 'pct', value: string) =>
+    setConcentracao((prev) => ({ ...prev, [label]: { ...prev[label], [field]: value } }));
+
+  const [totalizadores, setTotalizadores] = useState<{ tipo: string; pct: string }[]>([
+    { tipo: 'CPR-F', pct: '40,0' },
+    { tipo: 'CDCA', pct: '35,0' },
+  ]);
+  const [totalForm, setTotalForm] = useState({ tipo: 'CPR', pct: '' });
+  const addTotalizador = () => {
+    if (!totalForm.pct) return;
+    setTotalizadores((prev) => [...prev, totalForm]);
+    setTotalForm({ tipo: 'CPR', pct: '' });
+  };
+
+  const [topCedente, setTopCedente] = useState<{ top: string; pct: string }[]>([
+    { top: 'TOP 1', pct: '15,0' },
+    { top: 'TOP 5', pct: '45,0' },
+  ]);
+  const [topCedForm, setTopCedForm] = useState({ top: 'TOP 1', pct: '' });
+  const addTopCedente = () => {
+    if (!topCedForm.pct) return;
+    setTopCedente((prev) => [...prev, topCedForm]);
+    setTopCedForm({ top: 'TOP 1', pct: '' });
+  };
+
+  const [topSacado, setTopSacado] = useState<{ top: string; pct: string }[]>([
+    { top: 'TOP 1', pct: '20,0' },
+    { top: 'TOP 10', pct: '60,0' },
+  ]);
+  const [topSacForm, setTopSacForm] = useState({ top: 'TOP 1', pct: '' });
+  const addTopSacado = () => {
+    if (!topSacForm.pct) return;
+    setTopSacado((prev) => [...prev, topSacForm]);
+    setTopSacForm({ top: 'TOP 1', pct: '' });
+  };
 
   // Step 7 — Ativos aceitos
   const [ativos, setAtivos] = useState<string[]>(['CPR', 'CPR-F', 'CDCA']);
@@ -132,16 +209,16 @@ export function CreateCraOperacaoModal({ onClose, onCreate }: Props) {
     setForm((prev) => ({ ...prev, [f]: v }));
   const toggleSwitch = (key: string) =>
     setForm((prev) => ({ ...prev, toggles: { ...prev.toggles, [key]: !prev.toggles[key] } }));
-  const toggleGrupo = (g: string) =>
+  const toggleGrupo = (nome: string) =>
     setForm((prev) => ({
       ...prev,
-      gruposSelecionados: prev.gruposSelecionados.includes(g)
-        ? prev.gruposSelecionados.filter((x) => x !== g)
-        : [...prev.gruposSelecionados, g],
+      gruposSelecionados: prev.gruposSelecionados.includes(nome)
+        ? prev.gruposSelecionados.filter((x) => x !== nome)
+        : [...prev.gruposSelecionados, nome],
     }));
 
   const filteredGrupos = gruposEmpresariais.filter(
-    (g) => !grupoQ || g.toLowerCase().includes(grupoQ.toLowerCase()),
+    (g) => !grupoQ || g.nome.toLowerCase().includes(grupoQ.toLowerCase()),
   );
 
   const step = steps[stepIdx];
@@ -149,7 +226,7 @@ export function CreateCraOperacaoModal({ onClose, onCreate }: Props) {
   const isLast  = stepIdx === steps.length - 1;
 
   return (
-    <div onClick={onClose} style={{
+    <div style={{
       position: 'fixed', inset: 0,
       background: 'rgba(8,60,74,0.55)', backdropFilter: 'blur(8px)',
       zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -214,20 +291,22 @@ export function CreateCraOperacaoModal({ onClose, onCreate }: Props) {
         {/* ── Body ── */}
         <div style={{ flex: 1, overflowY: 'auto', padding: 40 }}>
 
-          {/* Step 1 — Campos da operação */}
+          {/* Step 1 — Informações cadastrais */}
           {step.key === 'info' && (
             <StepGrid>
-              <SelectField label="Tipo de Operação" options={['Mono CRA', 'Multi CRA']} span={4} value={form.tipoOperacao} onChange={setVal('tipoOperacao')} />
-              <FormField label="Nome da Operação" placeholder="Ex: 4ª Emissão CRA Semeagro" span={8} value={form.nome} onChange={set('nome')} />
+              <SelectField label="Tipo da Operação" options={['CRA Carteira', 'CRA Controle', 'CRA Terceiro']} placeholder="Selecione" span={6} value={form.tipoOperacaoCra} onChange={setVal('tipoOperacaoCra')} />
+              <SelectField label="Tipo de Cliente" options={['Monocedente', 'Multicedente']} placeholder="Selecione" span={6} value={form.tipoCliente} onChange={setVal('tipoCliente')} />
               <FormField label="Número de Emissão" placeholder="Ex: 4ª" span={3} value={form.numeroEmissao} onChange={set('numeroEmissao')} />
+              <FormField label="Nome da Operação" placeholder="Ex: 4ª Emissão CRA Semeagro" span={9} value={form.nome} onChange={set('nome')} />
               <SelectField label="Cessionária" options={['CERES SECURIZADORA S/A', 'BTG SECURIZADORA S/A', 'ISEC SECURIZADORA S/A', 'RB CAPITAL']} placeholder="Selecione" span={3} value={form.cessionaria} onChange={setVal('cessionaria')} />
               <SelectField label="Prestador de Serviço" options={['Oliveira Trust', 'Vórtx', 'Singulare', 'Daycoval', 'BRL Trust']} placeholder="Selecione" span={3} value={form.prestadorServico} onChange={setVal('prestadorServico')} />
               <SelectField label="Custodiante" options={['B3', 'Cetip', 'Daycoval', 'Singulare', 'Oliveira Trust']} placeholder="Selecione" span={3} value={form.custodiante} onChange={setVal('custodiante')} />
+              <SelectField label="Beneficiário Final" options={BENEFICIARIO_OPTS} placeholder="Selecione" span={3} value={form.beneficiarioFinal} onChange={setVal('beneficiarioFinal')} />
             </StepGrid>
           )}
 
-          {/* Step 2 — Configuração da operação (toggles) */}
-          {step.key === 'config-op' && (
+          {/* Step 2 — Configurações do veículo (toggles) */}
+          {step.key === 'veiculo' && (
             <div className="flex flex-col" style={{ gap: 10 }}>
               <SectionHelp>
                 Defina as regras de validação e cálculo que o veículo deve aplicar a esta operação.
@@ -238,7 +317,7 @@ export function CreateCraOperacaoModal({ onClose, onCreate }: Props) {
             </div>
           )}
 
-          {/* Step 3 — Grupos Empresariais */}
+          {/* Step 8 — Grupos Empresariais */}
           {step.key === 'grupos' && (
             <div className="flex flex-col" style={{ gap: 16 }}>
               <SectionHelp>
@@ -251,9 +330,9 @@ export function CreateCraOperacaoModal({ onClose, onCreate }: Props) {
               </div>
               <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                 {filteredGrupos.map((g) => {
-                  const selected = form.gruposSelecionados.includes(g);
+                  const selected = form.gruposSelecionados.includes(g.nome);
                   return (
-                    <button key={g} onClick={() => toggleGrupo(g)} className="flex items-center" style={{
+                    <button key={g.nome} onClick={() => toggleGrupo(g.nome)} className="flex items-center" style={{
                       gap: 10, padding: '12px 14px',
                       borderWidth: 1, borderStyle: 'solid',
                       borderColor: selected ? 'var(--gci-base)' : 'var(--border-default)',
@@ -268,11 +347,15 @@ export function CreateCraOperacaoModal({ onClose, onCreate }: Props) {
                       }}>
                         {selected && <Check size={11} />}
                       </span>
-                      <span style={{
-                        fontSize: 'var(--text-sm)',
-                        fontWeight: selected ? 'var(--weight-semibold)' : 'var(--weight-medium)',
-                        color: selected ? 'var(--gci-base)' : 'var(--text-default)',
-                      }}>{g}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: 'var(--text-sm)',
+                          fontWeight: selected ? 'var(--weight-semibold)' : 'var(--weight-medium)',
+                          color: selected ? 'var(--gci-base)' : 'var(--text-default)',
+                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        }}>{g.nome}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{g.cnpj}</div>
+                      </div>
                     </button>
                   );
                 })}
@@ -280,37 +363,185 @@ export function CreateCraOperacaoModal({ onClose, onCreate }: Props) {
             </div>
           )}
 
-          {/* Step 4 — Configuração do veículo */}
-          {step.key === 'veiculo' && (
+          {/* Step 3 — Configurações adicionais */}
+          {step.key === 'config' && (
             <StepGrid>
-              <FormField label="Dias Mínimo para Vencimento" placeholder="Ex: 30" type="number" span={4} value={form.diasMinVencimento} onChange={set('diasMinVencimento')} />
-              <FormField label="Dias Máximo para Vencimento" placeholder="Ex: 720" type="number" span={4} value={form.diasMaxVencimento} onChange={set('diasMaxVencimento')} />
-              <SelectField label="Tipo de Operação CRA" options={['CRA CARTEIRA', 'CRA TERCEIRO', 'CRA CONTROLE']} placeholder="Selecione" span={4} value={form.tipoOperacaoCra} onChange={setVal('tipoOperacaoCra')} />
+              <FormField label="Dias Mínimo para Vencimento" placeholder="Ex: 30" type="number" span={3} value={form.diasMinVencimento} onChange={set('diasMinVencimento')} />
+              <FormField label="Dias Máximo para Vencimento" placeholder="Ex: 720" type="number" span={3} value={form.diasMaxVencimento} onChange={set('diasMaxVencimento')} />
+              <SelectField label="Tipo de Cálculo de Elegibilidade" options={['Valor de garantia', 'Valor da emissão']} placeholder="Selecione" span={3} value={form.tipoCalculoElegibilidade} onChange={setVal('tipoCalculoElegibilidade')} />
+              <SelectField label="Grupo de Limites" options={['Confina', 'Op Multicedentes', 'Op Monocedentes', 'Trading', 'CeresSec']} placeholder="Selecione" span={3} value={form.grupoLimites} onChange={setVal('grupoLimites')} />
               <FormField label="Data de Emissão" type="date" span={3} value={form.dataEmissao} onChange={set('dataEmissao')} />
               <FormField label="Data de Início da Operação" type="date" span={3} value={form.dataInicio} onChange={set('dataInicio')} />
               <FormField label="Data de Vencimento" type="date" span={3} value={form.dataVencimento} onChange={set('dataVencimento')} />
-              <FormField label="Valor de Emissão" placeholder="R$ 0,00" span={3} value={form.valorEmissao} onChange={set('valorEmissao')} />
-              <FormField label="Valor de Garantia Mínimo Exigido" placeholder="R$ 0,00" span={6} value={form.valorGarantiaMinimo} onChange={set('valorGarantiaMinimo')} />
-              <FormField label="Taxa Desconto Padrão" placeholder="0,0000%" span={6} value={form.taxaDescontoPadrao} onChange={set('taxaDescontoPadrao')} />
+              <SelectField label="Método de Notificação Padrão" options={['E-mail', 'Telefone', 'Mensagem de Texto', 'WhatsApp']} placeholder="Selecione" span={3} value={form.metodoNotificacao} onChange={setVal('metodoNotificacao')} />
+              <FormField label="Valor de Emissão da Operação" placeholder="R$ 0,00" span={6} value={form.valorEmissao} onChange={set('valorEmissao')} />
+              <FormField label="Valor Mínimo de Garantia da Emissão" placeholder="R$ 0,00" span={6} value={form.valorGarantiaMinimo} onChange={set('valorGarantiaMinimo')} />
             </StepGrid>
           )}
 
-          {/* Step 5 — Limites */}
+          {/* Step 4 — Configuração de limites (4 abas) */}
           {step.key === 'limites' && (
-            <StepGrid>
-              <FormField label="Pct. Partes Relacionadas (Total)" placeholder="0,00%" span={4} value={form.pctPartesRelacionadas} onChange={set('pctPartesRelacionadas')} />
-              <FormField label="Pct. de Novos Sacados (Total)" placeholder="0,00%" span={4} value={form.pctNovosSacados} onChange={set('pctNovosSacados')} />
-              <FormField label="Pct. de Sacados Individual" placeholder="0,00%" span={4} value={form.pctSacadosIndividual} onChange={set('pctSacadosIndividual')} />
-              <FormField label="Pct. de Sacados Elegíveis" placeholder="0,00%" span={4} value={form.pctSacadosElegiveis} onChange={set('pctSacadosElegiveis')} />
-              <SelectField label="Método de Notificação" options={['E-mail', 'Portal', 'API', 'WhatsApp', 'Carta']} placeholder="Selecione" span={4} value={form.metodoNotificacao} onChange={setVal('metodoNotificacao')} />
-              <div style={{ gridColumn: 'span 4' }} />
-              <FormField label="Taxa de Juros Moratório do Boleto" placeholder="0,0000% a.m." span={6} value={form.taxaJurosMoratorio} onChange={set('taxaJurosMoratorio')} />
-              <FormField label="Taxa de Multa do Boleto" placeholder="0,00%" span={6} value={form.taxaMulta} onChange={set('taxaMulta')} />
-            </StepGrid>
+            <div className="flex flex-col" style={{ gap: 20 }}>
+              <SectionHelp>
+                Configure os limites de concentração da carteira e os totalizadores por tipo de ativo e TOP.
+              </SectionHelp>
+              <div className="flex" style={{ gap: 4, padding: 4, background: 'var(--surface-sunken)', borderRadius: 'var(--radius-lg)', alignSelf: 'flex-start', flexWrap: 'wrap' }}>
+                {([
+                  ['concentracao',  'Concentração'],
+                  ['totalizadores', 'Totalizadores de ativos'],
+                  ['topCedente',    'TOP Cedente'],
+                  ['topSacado',     'TOP Sacado'],
+                ] as [LimitTab, string][]).map(([k, label]) => (
+                  <button key={k} onClick={() => setLimitTab(k)} style={{
+                    padding: '8px 16px', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)', letterSpacing: '0.08em',
+                    border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-md)',
+                    background: limitTab === k ? 'var(--surface-card)' : 'transparent',
+                    color: limitTab === k ? 'var(--text-strong)' : 'var(--text-muted)',
+                    boxShadow: limitTab === k ? 'var(--shadow-xs)' : 'none',
+                    transition: 'all var(--duration-base)',
+                  }}>{label}</button>
+                ))}
+              </div>
+
+              {limitTab === 'concentracao' && (
+                <div className="flex flex-col" style={{ gap: 12 }}>
+                  {CONCENTRACAO_LABELS.map((label) => (
+                    <LimiteRow
+                      key={label}
+                      label={label}
+                      base={concentracao[label].base}
+                      pct={concentracao[label].pct}
+                      onBase={(v) => setConcentracaoField(label, 'base', v)}
+                      onPct={(v) => setConcentracaoField(label, 'pct', v)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {limitTab === 'totalizadores' && (
+                <SectionGroup icon={FileText} title="Totalizadores de ativos">
+                  <div className="grid items-end" style={{ gridTemplateColumns: '2fr 1fr auto', gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <FieldLabel>Tipo de Ativo</FieldLabel>
+                      <SelectField options={lastroOpts.map((o) => o.key)} value={totalForm.tipo} onChange={(v) => setTotalForm((p) => ({ ...p, tipo: v }))} />
+                    </div>
+                    <div>
+                      <FieldLabel>% de Limite</FieldLabel>
+                      <Input placeholder="0,00" value={totalForm.pct} onChange={(e) => setTotalForm((p) => ({ ...p, pct: e.target.value }))} />
+                    </div>
+                    <AddButton onClick={addTotalizador} />
+                  </div>
+                  <DataTable
+                    cols={[
+                      { key: 'tipo', label: 'Tipo de Ativo', width: '2fr' },
+                      { key: 'pct',  label: '% de Limite',   width: '1fr', format: (v) => `${v}%` },
+                    ]}
+                    rows={totalizadores}
+                    empty="Nenhum totalizador cadastrado."
+                    onRemove={(i) => setTotalizadores((prev) => prev.filter((_, idx) => idx !== i))}
+                  />
+                </SectionGroup>
+              )}
+
+              {limitTab === 'topCedente' && (
+                <SectionGroup icon={Percent} title="TOP Cedente">
+                  <div className="grid items-end" style={{ gridTemplateColumns: '2fr 1fr auto', gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <FieldLabel>Tipo de TOP</FieldLabel>
+                      <SelectField options={['TOP 1', 'TOP 5', 'TOP 10', 'TOP 20']} value={topCedForm.top} onChange={(v) => setTopCedForm((p) => ({ ...p, top: v }))} />
+                    </div>
+                    <div>
+                      <FieldLabel>% de Limite</FieldLabel>
+                      <Input placeholder="0,00" value={topCedForm.pct} onChange={(e) => setTopCedForm((p) => ({ ...p, pct: e.target.value }))} />
+                    </div>
+                    <AddButton onClick={addTopCedente} />
+                  </div>
+                  <DataTable
+                    cols={[
+                      { key: 'top', label: 'Tipo de TOP', width: '2fr' },
+                      { key: 'pct', label: '% de Limite', width: '1fr', format: (v) => `${v}%` },
+                    ]}
+                    rows={topCedente}
+                    empty="Nenhum TOP cedente cadastrado."
+                    onRemove={(i) => setTopCedente((prev) => prev.filter((_, idx) => idx !== i))}
+                  />
+                </SectionGroup>
+              )}
+
+              {limitTab === 'topSacado' && (
+                <SectionGroup icon={Percent} title="TOP Sacado">
+                  <div className="grid items-end" style={{ gridTemplateColumns: '2fr 1fr auto', gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <FieldLabel>Tipo de TOP</FieldLabel>
+                      <SelectField options={['TOP 1', 'TOP 5', 'TOP 10', 'TOP 20']} value={topSacForm.top} onChange={(v) => setTopSacForm((p) => ({ ...p, top: v }))} />
+                    </div>
+                    <div>
+                      <FieldLabel>% de Limite</FieldLabel>
+                      <Input placeholder="0,00" value={topSacForm.pct} onChange={(e) => setTopSacForm((p) => ({ ...p, pct: e.target.value }))} />
+                    </div>
+                    <AddButton onClick={addTopSacado} />
+                  </div>
+                  <DataTable
+                    cols={[
+                      { key: 'top', label: 'Tipo de TOP', width: '2fr' },
+                      { key: 'pct', label: '% de Limite', width: '1fr', format: (v) => `${v}%` },
+                    ]}
+                    rows={topSacado}
+                    empty="Nenhum TOP sacado cadastrado."
+                    onRemove={(i) => setTopSacado((prev) => prev.filter((_, idx) => idx !== i))}
+                  />
+                </SectionGroup>
+              )}
+            </div>
           )}
 
-          {/* Step 6 — Kobana (placeholder) */}
-          {step.key === 'kobana' && <PlaceholderStep label={step.hint} />}
+          {/* Step 5 — Carteira de cobrança */}
+          {step.key === 'cobranca' && (
+            <div className="flex flex-col" style={{ gap: 16 }}>
+              <SectionHelp>Parâmetros bancários para emissão de boletos e cobrança dos títulos.</SectionHelp>
+              <StepGrid>
+                <FormField label="Nome da Carteira" placeholder="Ex: Carteira Principal" span={6} value={form.carteiraNome} onChange={set('carteiraNome')} />
+                <SelectField label="Banco" options={['001 - Banco do Brasil', '237 - Bradesco', '341 - Itaú', '033 - Santander', '748 - Sicredi', '756 - Sicoob']} placeholder="Selecione" span={3} value={form.banco} onChange={setVal('banco')} />
+                <SelectField label="Tipo de CNAB" options={['CNAB 240', 'CNAB 400']} placeholder="Selecione" span={3} value={form.tipoCnab} onChange={setVal('tipoCnab')} />
+                <FormField label="Carteira" placeholder="Ex: 17" span={3} value={form.carteira} onChange={set('carteira')} />
+                <FormField label="Agência" placeholder="0000" span={3} value={form.agencia} onChange={set('agencia')} />
+                <FormField label="Conta" placeholder="00000-0" span={3} value={form.conta} onChange={set('conta')} />
+                <FormField label="Código da Empresa" placeholder="Código no banco" span={3} value={form.codigoEmpresa} onChange={set('codigoEmpresa')} />
+                <FormField label="Taxa de Juros Padrão" placeholder="0,0000% a.m." span={4} value={form.taxaJurosPadrao} onChange={set('taxaJurosPadrao')} />
+                <FormField label="Taxa de Multa Padrão" placeholder="0,00%" span={4} value={form.taxaMultaPadrao} onChange={set('taxaMultaPadrao')} />
+                <FormField label="Taxa de Desconto Padrão" placeholder="0,0000%" span={4} value={form.taxaDescontoPadrao} onChange={set('taxaDescontoPadrao')} />
+                <div style={{ gridColumn: 'span 12' }}>
+                  <FieldLabel>Titular da Conta</FieldLabel>
+                  <Input
+                    disabled
+                    value={form.beneficiarioFinal || '—'}
+                    style={{ color: 'var(--text-muted)' }}
+                  />
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
+                    Preenchido automaticamente conforme o Beneficiário Final da Etapa 1.
+                  </div>
+                </div>
+              </StepGrid>
+              <ToggleRow
+                label="Permite vencimento em finais de semana e feriado"
+                on={form.permiteFimDeSemana}
+                onToggle={() => setForm((p) => ({ ...p, permiteFimDeSemana: !p.permiteFimDeSemana }))}
+              />
+            </div>
+          )}
+
+          {/* Step 6 — Carteira de registro */}
+          {step.key === 'registro' && (
+            <div className="flex flex-col" style={{ gap: 16 }}>
+              <SectionHelp>Credenciais de integração com a registradora do veículo.</SectionHelp>
+              <StepGrid>
+                <SelectField label="Registradora" options={['B3', 'CERC', 'Núclea', 'CRDC']} placeholder="Selecione" span={6} value={form.registradora} onChange={setVal('registradora')} />
+                <FormField label="ID da Carteira" placeholder="Identificador na registradora" span={6} value={form.idCarteira} onChange={set('idCarteira')} />
+                <FormField label="API Token" placeholder="Token de integração" span={6} value={form.apiToken} onChange={set('apiToken')} />
+                <FormField label="API Secret" type="password" placeholder="••••••••" span={6} value={form.apiSecret} onChange={set('apiSecret')} />
+              </StepGrid>
+            </div>
+          )}
 
           {/* Step 7 — Tipo de Ativos Aceitos */}
           {step.key === 'ativos' && (
@@ -402,8 +633,6 @@ export function CreateCraOperacaoModal({ onClose, onCreate }: Props) {
             </div>
           )}
 
-          {/* Step 9 — Elegibilidade (placeholder) */}
-          {step.key === 'elegib' && <PlaceholderStep label={step.hint} />}
         </div>
 
         {/* ── Footer ── */}
@@ -601,20 +830,27 @@ function DataTable<T extends Record<string, string>>({
   );
 }
 
-function PlaceholderStep({ label }: { label: string }) {
+function LimiteRow({
+  label, base, pct, onBase, onPct,
+}: {
+  label: string; base: string; pct: string;
+  onBase: (v: string) => void; onPct: (v: string) => void;
+}) {
   return (
-    <div className="flex flex-col items-center justify-center" style={{
-      padding: '60px 40px', borderRadius: 'var(--radius-xl)', borderWidth: 1, borderStyle: 'dashed',
-      borderColor: 'var(--border-default)', background: 'var(--surface-sunken)', textAlign: 'center', gap: 12,
+    <div className="grid items-end" style={{
+      gridTemplateColumns: '2fr 1.2fr 1fr', gap: 12,
+      padding: 16, background: 'var(--surface-sunken)', borderRadius: 'var(--radius-lg)',
     }}>
-      <div style={{ fontSize: 10, fontWeight: 'var(--weight-bold)', letterSpacing: '0.18em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-        Configuração futura
-      </div>
-      <div style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', color: 'var(--text-strong)' }}>
+      <div style={{ alignSelf: 'center', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-strong)' }}>
         {label}
       </div>
-      <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', maxWidth: 400, lineHeight: 'var(--leading-relaxed)' }}>
-        Esta etapa está reservada e será configurada em uma versão futura do sistema. Avance para concluir o cadastro.
+      <div>
+        <FieldLabel>Base de Cálculo</FieldLabel>
+        <SelectField options={['Garantia', 'Emissão']} value={base} onChange={onBase} />
+      </div>
+      <div>
+        <FieldLabel>% Atribuído</FieldLabel>
+        <Input placeholder="0,00" value={pct} onChange={(e) => onPct(e.target.value)} />
       </div>
     </div>
   );

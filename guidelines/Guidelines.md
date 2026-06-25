@@ -296,3 +296,105 @@ Cole o conteúdo do arquivo `minerva-design-tokens.css` aqui, ou anexe o arquivo
   --z-toast: 500;
 }
 ```
+
+---
+
+## 10. Padrão de tela de detalhes de entidade
+
+O padrão abaixo foi estabelecido na `CraTitleDetailScreen` e deve ser replicado em qualquer tela de detalhe de título, operação ou entidade financeira.
+
+### Estrutura geral
+
+```
+[Botão Voltar]  [Breadcrumb da entidade pai]  [Badge de status]
+[Hero card — valor principal]
+[Barra de tabs]
+[Conteúdo da tab ativa]
+```
+
+### Hero card
+- Fundo sólido `var(--gci-base)` (azul-marinho), texto branco.
+- Valor principal em `font-size: 36px`, `font-weight: 700`, `letter-spacing: -0.02em`.
+- Linha de metadados compacta abaixo do valor em `color: rgba(255,255,255,0.65)`, `font-size: var(--text-xs)`.
+- Detalhe decorativo: círculo `rgba(255,255,255,0.04)` posicionado fora dos limites no canto direito.
+
+### Tabs de navegação interna
+- Container `background: var(--surface-card)`, `border: 1px solid var(--border-default)`, `border-radius: var(--radius-xl)`, `padding: 4px`, alinhado à esquerda (`align-self: flex-start`).
+- Tab ativa: `background: var(--gci-base)`, texto branco, ícone + label.
+- Tab inativa: background transparente, `color: var(--text-muted)`.
+
+### Seções dentro de tab
+
+```tsx
+function Section({ title, children }) {
+  return (
+    <div>
+      {/* Título da seção */}
+      <div style={{
+        fontSize: 10, fontWeight: 800, letterSpacing: "0.18em",
+        color: "var(--accent)",           // laranja/accent
+        textTransform: "uppercase",
+        marginBottom: 16,
+      }}>
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+```
+
+### Campo de detalhe
+
+```tsx
+function Field({ label, value }) {
+  return (
+    <div>
+      <div style={{
+        fontSize: 10, fontWeight: 800, letterSpacing: "0.14em",
+        color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6,
+      }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: "var(--text-sm)", fontWeight: "var(--weight-semibold)",
+        color: "var(--text-strong)",
+      }}>
+        {value}
+      </div>
+    </div>
+  );
+}
+```
+
+### Layout de campos em grid
+- Grid de **4 colunas** (`repeat(4, 1fr)`) com `gap: 24px` para seções informacionais.
+- Grid de **2 colunas** (`1fr 1fr`) com `gap: 16px` para blocos de participantes.
+
+### Bloco de participante (Cedente / Sacado)
+
+```tsx
+function Participant({ role, name, cnpj, icon: Icon }) {
+  return (
+    <div style={{ display: "flex", gap: 14, padding: 16,
+      background: "var(--surface-sunken)", borderRadius: "var(--radius-lg)" }}>
+      <div style={{ width: 44, height: 44, borderRadius: "var(--radius-lg)",
+        background: "var(--surface-card)", color: "var(--gci-base)" }}>
+        <Icon size={20} />
+      </div>
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.14em",
+          color: "var(--text-muted)", textTransform: "uppercase" }}>{role}</div>
+        <div style={{ fontWeight: 700, color: "var(--text-strong)" }}>{name}</div>
+        <div style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>{cnpj}</div>
+      </div>
+    </div>
+  );
+}
+```
+
+### Regras gerais
+- Botão "Voltar": `width: 48px`, `height: 48px`, borda `1px solid var(--border-default)`, ícone `ArrowLeft size={20}`.
+- Status badge: pill (`border-radius: 9999px`), `padding: 8px 14px`, ícone + texto uppercase.
+- Conteúdo das tabs dentro de `background: var(--surface-card)`, `border: 1px solid var(--border-default)`, `border-radius: var(--radius-xl)`, `padding: 24px`.
+- Botão de copiar: `<CopyButton>` inline junto ao valor copiável (número, CNPJ, e-mail).

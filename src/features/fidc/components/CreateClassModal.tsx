@@ -26,6 +26,7 @@ import {
   Crown,
   type LucideIcon,
 } from 'lucide-react';
+import { gruposEmpresariais } from '@/features/cra/data/craData';
 
 interface Props {
   onClose: () => void;
@@ -123,6 +124,19 @@ export function CreateClassModal({ onClose }: Props) {
     setTopSac((prev) => [...prev, topSacForm]);
     setTopSacForm({ qtd: '', limite: '' });
   };
+  type ConfigTab = 'concentracao' | 'totalizadores' | 'topCedente' | 'topSacado';
+  const [configTab, setConfigTab] = useState<ConfigTab>('concentracao');
+
+  const [gruposSelecionados, setGruposSelecionados] = useState<string[]>([]);
+  const [grupoQ, setGrupoQ] = useState('');
+  const toggleGrupo = (nome: string) =>
+    setGruposSelecionados((prev) =>
+      prev.includes(nome) ? prev.filter((x) => x !== nome) : [...prev, nome],
+    );
+  const filteredGrupos = gruposEmpresariais.filter(
+    (g) => !grupoQ || g.nome.toLowerCase().includes(grupoQ.toLowerCase()),
+  );
+
   const [pddFaixas, setPddFaixas] = useState([
     { de: '0', ate: '30', rating: 'A', pct: '0,5' },
     { de: '31', ate: '60', rating: 'B', pct: '1,0' },
@@ -165,7 +179,6 @@ export function CreateClassModal({ onClose }: Props) {
 
   return (
     <div
-      onClick={onClose}
       style={{
         position: 'fixed',
         inset: 0,
@@ -414,105 +427,127 @@ export function CreateClassModal({ onClose }: Props) {
 
           {step.key === 'configs' && (
             <div className="flex flex-col" style={{ gap: 20 }}>
-              <SectionGroup icon={Users2} title="Diversificação do Pool">
-              <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                <div>
-                  <FieldLabel>Tipo de Cedente</FieldLabel>
-                  <div className="flex" style={{ gap: 8, marginTop: 8 }}>
-                    <RadioPill active={cedTipo === 'mono'} onClick={() => setCedTipo('mono')}>
-                      Monocedente
-                    </RadioPill>
-                    <RadioPill active={cedTipo === 'multi'} onClick={() => setCedTipo('multi')}>
-                      Multicedente
-                    </RadioPill>
-                  </div>
-                </div>
-                <div>
-                  <FieldLabel>Tipo de Sacado</FieldLabel>
-                  <div className="flex" style={{ gap: 8, marginTop: 8 }}>
-                    <RadioPill active={sacTipo === 'mono'} onClick={() => setSacTipo('mono')}>
-                      Monosacado
-                    </RadioPill>
-                    <RadioPill active={sacTipo === 'multi'} onClick={() => setSacTipo('multi')}>
-                      Multissacado
-                    </RadioPill>
-                  </div>
-                </div>
+              {/* Tab bar */}
+              <div className="flex" style={{ gap: 4, padding: 4, background: 'var(--surface-sunken)', borderRadius: 'var(--radius-lg)', alignSelf: 'flex-start', flexWrap: 'wrap' }}>
+                {([
+                  ['concentracao',  'Concentração'],
+                  ['totalizadores', 'Totalizadores de ativos'],
+                  ['topCedente',    'TOP Cedente'],
+                  ['topSacado',     'TOP Sacado'],
+                ] as [ConfigTab, string][]).map(([k, label]) => (
+                  <button key={k} onClick={() => setConfigTab(k)} style={{
+                    padding: '8px 16px', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)', letterSpacing: '0.08em',
+                    border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-md)',
+                    background: configTab === k ? 'var(--surface-card)' : 'transparent',
+                    color: configTab === k ? 'var(--text-strong)' : 'var(--text-muted)',
+                    boxShadow: configTab === k ? 'var(--shadow-xs)' : 'none',
+                    transition: 'all var(--duration-base)',
+                  }}>{label}</button>
+                ))}
               </div>
 
-              <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginTop: 16 }}>
-                <div>
-                  <FieldLabel>Conc. Sacados Novos (%)</FieldLabel>
-                  <Input placeholder="5,00" />
-                </div>
-                <div>
-                  <FieldLabel>Conc. Sacados Elegíveis (%)</FieldLabel>
-                  <Input placeholder="20,00" />
-                </div>
-                <div>
-                  <FieldLabel>Conc. Total Novos (%)</FieldLabel>
-                  <Input placeholder="3,00" />
-                </div>
-                <div>
-                  <FieldLabel>Conc. Total Elegíveis (%)</FieldLabel>
-                  <Input placeholder="100,00" />
-                </div>
-              </div>
-              </SectionGroup>
+              {/* Tab 1 — Concentração (diversificação do pool) */}
+              {configTab === 'concentracao' && (
+                <SectionGroup icon={Users2} title="Diversificação do Pool">
+                  <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <div>
+                      <FieldLabel>Tipo de Cedente</FieldLabel>
+                      <div className="flex" style={{ gap: 8, marginTop: 8 }}>
+                        <RadioPill active={cedTipo === 'mono'} onClick={() => setCedTipo('mono')}>Monocedente</RadioPill>
+                        <RadioPill active={cedTipo === 'multi'} onClick={() => setCedTipo('multi')}>Multicedente</RadioPill>
+                      </div>
+                    </div>
+                    <div>
+                      <FieldLabel>Tipo de Sacado</FieldLabel>
+                      <div className="flex" style={{ gap: 8, marginTop: 8 }}>
+                        <RadioPill active={sacTipo === 'mono'} onClick={() => setSacTipo('mono')}>Monosacado</RadioPill>
+                        <RadioPill active={sacTipo === 'multi'} onClick={() => setSacTipo('multi')}>Multissacado</RadioPill>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginTop: 16 }}>
+                    <div>
+                      <FieldLabel>Conc. Sacados Novos (%)</FieldLabel>
+                      <Input placeholder="5,00" />
+                    </div>
+                    <div>
+                      <FieldLabel>Conc. Sacados Elegíveis (%)</FieldLabel>
+                      <Input placeholder="20,00" />
+                    </div>
+                    <div>
+                      <FieldLabel>Conc. Total Novos (%)</FieldLabel>
+                      <Input placeholder="3,00" />
+                    </div>
+                    <div>
+                      <FieldLabel>Conc. Total Elegíveis (%)</FieldLabel>
+                      <Input placeholder="100,00" />
+                    </div>
+                  </div>
+                </SectionGroup>
+              )}
 
-              <DynamicConcentration
-                icon={Percent}
-                title="% Concentração por Tipo de Ativo"
-                qtdLabel="Tipo de Ativo"
-                qtdPlaceholder="Selecione"
-                qtdOptions={ativos.length ? ativos : lastroOpts.map((o) => o.key)}
-                limitePlaceholder="0,00"
-                rows={ativoLimites.map((r) => ({
-                  tipo: r.tipo,
-                  descricao: ativoLabel(r.tipo),
-                  limite: r.limite,
-                }))}
-                form={ativoForm}
-                onFormChange={(v) => setAtivoForm(v)}
-                onAdd={addAtivoLimite}
-                onRemove={(i) => setAtivoLimites((prev) => prev.filter((_, idx) => idx !== i))}
-              />
+              {/* Tab 2 — Totalizadores de ativos */}
+              {configTab === 'totalizadores' && (
+                <DynamicConcentration
+                  icon={Percent}
+                  title="% Concentração por Tipo de Ativo"
+                  qtdLabel="Tipo de Ativo"
+                  qtdPlaceholder="Selecione"
+                  qtdOptions={ativos.length ? ativos : lastroOpts.map((o) => o.key)}
+                  limitePlaceholder="0,00"
+                  rows={ativoLimites.map((r) => ({
+                    tipo: r.tipo,
+                    descricao: ativoLabel(r.tipo),
+                    limite: r.limite,
+                  }))}
+                  form={ativoForm}
+                  onFormChange={(v) => setAtivoForm(v)}
+                  onAdd={addAtivoLimite}
+                  onRemove={(i) => setAtivoLimites((prev) => prev.filter((_, idx) => idx !== i))}
+                />
+              )}
 
-              <DynamicConcentration
-                icon={Crown}
-                title="Concentração de TOP's Cedentes"
-                qtdLabel="Quantidade"
-                qtdPlaceholder="Ex: 5"
-                qtdNumeric
-                limitePlaceholder="0,00"
-                rows={topCed.map((r) => ({
-                  tipo: `TOP ${r.qtd}`,
-                  descricao: `TOP ${r.qtd}`,
-                  limite: r.limite,
-                }))}
-                form={{ tipo: topCedForm.qtd, limite: topCedForm.limite }}
-                onFormChange={(v) => setTopCedForm({ qtd: v.tipo, limite: v.limite })}
-                onAdd={addTopCed}
-                onRemove={(i) => setTopCed((prev) => prev.filter((_, idx) => idx !== i))}
-              />
+              {/* Tab 3 — TOP Cedente */}
+              {configTab === 'topCedente' && (
+                <DynamicConcentration
+                  icon={Crown}
+                  title="Concentração de TOP's Cedentes"
+                  qtdLabel="Quantidade"
+                  qtdPlaceholder="Ex: 5"
+                  qtdNumeric
+                  limitePlaceholder="0,00"
+                  rows={topCed.map((r) => ({
+                    tipo: `TOP ${r.qtd}`,
+                    descricao: `TOP ${r.qtd}`,
+                    limite: r.limite,
+                  }))}
+                  form={{ tipo: topCedForm.qtd, limite: topCedForm.limite }}
+                  onFormChange={(v) => setTopCedForm({ qtd: v.tipo, limite: v.limite })}
+                  onAdd={addTopCed}
+                  onRemove={(i) => setTopCed((prev) => prev.filter((_, idx) => idx !== i))}
+                />
+              )}
 
-              <DynamicConcentration
-                icon={Crown}
-                title="Concentração de TOP's Sacados"
-                qtdLabel="Quantidade"
-                qtdPlaceholder="Ex: 10"
-                qtdNumeric
-                limitePlaceholder="0,00"
-                rows={topSac.map((r) => ({
-                  tipo: `TOP ${r.qtd}`,
-                  descricao: `TOP ${r.qtd}`,
-                  limite: r.limite,
-                }))}
-                form={{ tipo: topSacForm.qtd, limite: topSacForm.limite }}
-                onFormChange={(v) => setTopSacForm({ qtd: v.tipo, limite: v.limite })}
-                onAdd={addTopSac}
-                onRemove={(i) => setTopSac((prev) => prev.filter((_, idx) => idx !== i))}
-              />
+              {/* Tab 4 — TOP Sacado */}
+              {configTab === 'topSacado' && (
+                <DynamicConcentration
+                  icon={Crown}
+                  title="Concentração de TOP's Sacados"
+                  qtdLabel="Quantidade"
+                  qtdPlaceholder="Ex: 10"
+                  qtdNumeric
+                  limitePlaceholder="0,00"
+                  rows={topSac.map((r) => ({
+                    tipo: `TOP ${r.qtd}`,
+                    descricao: `TOP ${r.qtd}`,
+                    limite: r.limite,
+                  }))}
+                  form={{ tipo: topSacForm.qtd, limite: topSacForm.limite }}
+                  onFormChange={(v) => setTopSacForm({ qtd: v.tipo, limite: v.limite })}
+                  onAdd={addTopSac}
+                  onRemove={(i) => setTopSac((prev) => prev.filter((_, idx) => idx !== i))}
+                />
+              )}
             </div>
           )}
 
@@ -521,68 +556,46 @@ export function CreateClassModal({ onClose }: Props) {
               <SectionHelp>
                 Selecione quais grupos econômicos estão aptos a operar nesta classe.
               </SectionHelp>
-              <div
-                className="relative"
-                style={{
-                  background: 'var(--surface-sunken)',
-                  borderRadius: 'var(--radius-lg)',
-                  marginBottom: 16,
-                }}
-              >
-                <Search
-                  size={16}
-                  style={{
-                    position: 'absolute',
-                    left: 14,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: 'var(--neutral-400)',
-                  }}
-                />
+              <div className="relative" style={{ background: 'var(--surface-sunken)', borderRadius: 'var(--radius-lg)', marginBottom: 16 }}>
+                <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--neutral-400)' }} />
                 <input
                   placeholder="Pesquisar grupos empresariais..."
-                  style={{
-                    width: '100%',
-                    height: 44,
-                    paddingLeft: 40,
-                    paddingRight: 14,
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    fontSize: 'var(--text-sm)',
-                    color: 'var(--text-strong)',
-                  }}
+                  value={grupoQ}
+                  onChange={(e) => setGrupoQ(e.target.value)}
+                  style={{ width: '100%', height: 44, paddingLeft: 40, paddingRight: 14, background: 'transparent', border: 'none', outline: 'none', fontSize: 'var(--text-sm)', color: 'var(--text-strong)' }}
                 />
               </div>
-              <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-                {['Grupo Agro Industrial', 'Grupo Alimentos S.A.', 'Grupo Ceres Holding', 'Grupo BTG Agro', 'Grupo Cerradinho', 'Grupo SLC'].map(
-                  (g) => (
-                    <label
-                      key={g}
-                      className="flex items-center"
-                      style={{
-                        gap: 12,
-                        padding: 14,
-                        borderWidth: 1,
-                        borderStyle: 'solid',
-                        borderColor: 'var(--border-default)',
-                        borderRadius: 'var(--radius-lg)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <input type="checkbox" defaultChecked style={{ accentColor: 'var(--gci-base)' }} />
-                      <span
-                        style={{
-                          fontSize: 'var(--text-sm)',
-                          fontWeight: 'var(--weight-semibold)',
-                          color: 'var(--text-strong)',
-                        }}
-                      >
-                        {g}
+              <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                {filteredGrupos.map((g) => {
+                  const selected = gruposSelecionados.includes(g.nome);
+                  return (
+                    <button key={g.nome} onClick={() => toggleGrupo(g.nome)} className="flex items-center" style={{
+                      gap: 10, padding: '12px 14px',
+                      borderWidth: 1, borderStyle: 'solid',
+                      borderColor: selected ? 'var(--gci-base)' : 'var(--border-default)',
+                      borderRadius: 'var(--radius-lg)',
+                      background: selected ? 'var(--gci-light)' : 'var(--surface-card)',
+                      cursor: 'pointer', textAlign: 'left', transition: 'all var(--duration-base)',
+                    }}>
+                      <span className="flex items-center justify-center" style={{
+                        width: 20, height: 20, borderRadius: '9999px', flexShrink: 0,
+                        background: selected ? 'var(--gci-base)' : 'var(--surface-sunken)',
+                        color: selected ? '#fff' : 'var(--text-muted)', transition: 'all var(--duration-base)',
+                      }}>
+                        {selected && <Check size={11} />}
                       </span>
-                    </label>
-                  ),
-                )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: 'var(--text-sm)',
+                          fontWeight: selected ? 'var(--weight-semibold)' : 'var(--weight-medium)',
+                          color: selected ? 'var(--gci-base)' : 'var(--text-default)',
+                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        }}>{g.nome}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{g.cnpj}</div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1266,7 +1279,7 @@ function DataTable<T extends Record<string, string>>({
   empty: string;
   onRemove: (idx: number) => void;
 }) {
-  const template = `${cols.map((c) => c.width).join(' ')} 80px`;
+  const template = `${cols.map((c) => c.width).join(' ')} 36px`;
   return (
     <div
       style={{
@@ -1293,7 +1306,7 @@ function DataTable<T extends Record<string, string>>({
         {cols.map((c) => (
           <div key={String(c.key)}>{c.label}</div>
         ))}
-        <div style={{ textAlign: 'center' }}>Ações</div>
+        <div />
       </div>
       {rows.length === 0 ? (
         <div

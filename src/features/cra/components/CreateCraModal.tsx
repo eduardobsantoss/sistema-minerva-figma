@@ -15,6 +15,7 @@ import {
 
 export interface NewCraData {
   tipoOperacao: string;
+  tipoOperacaoCra: string;
   numeroEmissao: string;
   nomeFantasia: string;
 }
@@ -36,15 +37,16 @@ const steps: Step[] = [
 ];
 
 const UF_OPTIONS = [
-  'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA',
-  'MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN',
-  'RS','RO','RR','SC','SP','SE','TO',
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
 ];
 
 export function CreateCraModal({ onClose, onCreate }: Props) {
   const [stepIdx, setStepIdx] = useState(0);
   const [form, setForm] = useState<NewCraData>({
     tipoOperacao: '',
+    tipoOperacaoCra: '',
     numeroEmissao: '',
     nomeFantasia: '',
   });
@@ -58,11 +60,10 @@ export function CreateCraModal({ onClose, onCreate }: Props) {
 
   const step = steps[stepIdx];
   const isFirst = stepIdx === 0;
-  const isLast  = stepIdx === steps.length - 1;
+  const isLast = stepIdx === steps.length - 1;
 
   return (
     <div
-      onClick={onClose}
       style={{
         position: 'fixed', inset: 0,
         background: 'rgba(8,60,74,0.55)',
@@ -105,7 +106,7 @@ export function CreateCraModal({ onClose, onCreate }: Props) {
         <div className="flex" style={{ background: 'var(--surface-sunken)', borderBottom: '1px solid var(--border-default)' }}>
           {steps.map((s, i) => {
             const Icon = s.icon;
-            const done    = i < stepIdx;
+            const done = i < stepIdx;
             const current = i === stepIdx;
             const color = current ? 'var(--agro-base)' : done ? 'var(--gci-base)' : 'var(--text-muted)';
             return (
@@ -136,12 +137,20 @@ export function CreateCraModal({ onClose, onCreate }: Props) {
           {step.key === 'info' && (
             <StepGrid>
               <SelectField
-                label="Tipo de Operação"
+                label="Categoria de Operação"
                 options={['Mono CRA', 'Multi CRA']}
                 placeholder="Selecione"
-                span={4}
+                span={6}
                 value={form.tipoOperacao}
                 onChange={setVal('tipoOperacao')}
+              />
+              <SelectField
+                label="Tipo da Operação"
+                options={['CRA Carteira', 'CRA Controle', 'CRA Terceiro']}
+                placeholder="Selecione"
+                span={6}
+                value={form.tipoOperacaoCra}
+                onChange={setVal('tipoOperacaoCra')}
               />
               <FormField
                 label="Número de Emissão"
@@ -153,7 +162,7 @@ export function CreateCraModal({ onClose, onCreate }: Props) {
               <FormField
                 label="Nome do CRA"
                 placeholder="Ex: CRA Semeagro"
-                span={4}
+                span={8}
                 value={form.nomeFantasia}
                 onChange={set('nomeFantasia')}
               />

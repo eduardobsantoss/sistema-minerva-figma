@@ -20,6 +20,7 @@ function buildCraFromForm(data: NewCraData): Cra {
     cnpj: '—',
     cessionaria: '—',
     status: 'EM ANDAMENTO',
+    tipo: data.tipoOperacao === 'Mono CRA' ? 'MONO CRA' : 'MULTI CRA',
     operacoes: [],
   };
 }
@@ -29,7 +30,7 @@ function buildOperacaoFromForm(data: NewCraOperacaoData): CraOperacao {
   return {
     id,
     nome: data.nome || 'NOVA OPERAÇÃO',
-    tipo: data.tipoOperacao === 'Mono CRA' ? 'MONO CRA' : 'MULTI CRA',
+    tipo: data.tipoCliente === 'Monocedente' ? 'MONO CRA' : 'MULTI CRA',
     numeroEmissao: data.numeroEmissao || '—',
     cessionaria: data.cessionaria || '—',
     prestadorServico: data.prestadorServico || '—',

@@ -2,6 +2,8 @@ export type CraTipo = 'MONO CRA' | 'MULTI CRA';
 export type CraStatus = 'EM ANDAMENTO' | 'ENCERRADO';
 export type TituloStatus = 'CONFIRMADO' | 'PENDENTE' | 'VENCIDO';
 
+export type CessaoStatus = 'LIQUIDADO' | 'PENDENTE' | 'PARCIAL';
+
 export interface CraTitulo {
   id: string;
   numero: string;
@@ -15,6 +17,22 @@ export interface CraTitulo {
   vrNominal: number;
   status: TituloStatus;
   operacaoId: string;
+  // Fiscal
+  chaveNfe?: string;
+  cfop?: string;
+  serie?: string;
+  modelo?: string;
+  // Valores
+  vrAquisicao?: number;
+  vrPresente?: number;
+  vrAberto?: number;
+  // Cessão
+  cessao?: {
+    cessionario: string;
+    data: string;
+    valor: number;
+    status: CessaoStatus;
+  };
 }
 
 export interface CraOperacao {
@@ -43,6 +61,7 @@ export interface Cra {
   cnpj: string;
   cessionaria: string;
   status: CraStatus;
+  tipo?: CraTipo;
   operacoes: CraOperacao[];
 }
 
@@ -68,6 +87,10 @@ function makeTitulos(prefix: string, operacaoId: string): CraTitulo[] {
       sacado: 'Exportações Agro LTDA', sacadoCnpj: '98.765.432/0001-10',
       emissao: '2024-01-15', vencimento: '2025-01-15', vrNominal: 450_000,
       status: 'CONFIRMADO', operacaoId,
+      chaveNfe: '35240112345678000199550010000001011234567890',
+      cfop: '6107', serie: '1', modelo: '55',
+      vrAquisicao: 441_000, vrPresente: 435_200, vrAberto: 0,
+      cessao: { cessionario: 'CERES SECURIZADORA S/A', data: '2024-01-16', valor: 441_000, status: 'LIQUIDADO' },
     },
     {
       id: `${prefix}-t2`, numero: `${prefix}-002`, tipo: 'CDA-WA',
@@ -75,6 +98,10 @@ function makeTitulos(prefix: string, operacaoId: string): CraTitulo[] {
       sacado: 'Coop. Agroindustrial Sul', sacadoCnpj: '55.666.777/0001-88',
       emissao: '2024-02-01', vencimento: '2025-02-01', vrNominal: 320_000,
       status: 'CONFIRMADO', operacaoId,
+      chaveNfe: '35240211222333000144550010000002021234567890',
+      cfop: '6101', serie: '1', modelo: '55',
+      vrAquisicao: 313_600, vrPresente: 309_800, vrAberto: 0,
+      cessao: { cessionario: 'CERES SECURIZADORA S/A', data: '2024-02-02', valor: 313_600, status: 'LIQUIDADO' },
     },
     {
       id: `${prefix}-t3`, numero: `${prefix}-003`, tipo: 'CDCA',
@@ -82,6 +109,10 @@ function makeTitulos(prefix: string, operacaoId: string): CraTitulo[] {
       sacado: 'Cerealista Norte LTDA', sacadoCnpj: '22.333.444/0001-55',
       emissao: '2024-03-10', vencimento: '2024-12-10', vrNominal: 185_000,
       status: 'VENCIDO', operacaoId,
+      chaveNfe: '35240344555666000177550010000003031234567890',
+      cfop: '6107', serie: '1', modelo: '55',
+      vrAquisicao: 181_300, vrPresente: 183_700, vrAberto: 185_000,
+      cessao: { cessionario: 'CERES SECURIZADORA S/A', data: '2024-03-11', valor: 181_300, status: 'PENDENTE' },
     },
     {
       id: `${prefix}-t4`, numero: `${prefix}-004`, tipo: 'CPR-F',
@@ -89,6 +120,10 @@ function makeTitulos(prefix: string, operacaoId: string): CraTitulo[] {
       sacado: 'Distribuidora Campo Verde', sacadoCnpj: '77.888.999/0001-11',
       emissao: '2024-04-05', vencimento: '2025-04-05', vrNominal: 610_000,
       status: 'PENDENTE', operacaoId,
+      chaveNfe: '35240433444555000122550010000004041234567890',
+      cfop: '6108', serie: '2', modelo: '55',
+      vrAquisicao: 597_800, vrPresente: 591_500, vrAberto: 610_000,
+      cessao: { cessionario: 'CERES SECURIZADORA S/A', data: '2024-04-06', valor: 597_800, status: 'PENDENTE' },
     },
     {
       id: `${prefix}-t5`, numero: `${prefix}-005`, tipo: 'CDCA',
@@ -96,6 +131,10 @@ function makeTitulos(prefix: string, operacaoId: string): CraTitulo[] {
       sacado: 'Tradings do Brasil S/A', sacadoCnpj: '11.223.334/0001-56',
       emissao: '2024-05-20', vencimento: '2025-05-20', vrNominal: 390_000,
       status: 'CONFIRMADO', operacaoId,
+      chaveNfe: '35240566777888000133550010000005051234567890',
+      cfop: '6101', serie: '1', modelo: '55',
+      vrAquisicao: 382_200, vrPresente: 378_900, vrAberto: 0,
+      cessao: { cessionario: 'CERES SECURIZADORA S/A', data: '2024-05-21', valor: 382_200, status: 'LIQUIDADO' },
     },
   ];
 }
@@ -206,11 +245,35 @@ export const cras: Cra[] = [
   },
 ];
 
-export const gruposEmpresariais = [
-  'Grupo Ceres', 'Semeagro', 'BTG Agro', 'Raízen', 'Cargill Brasil',
-  'JBS Agro', 'Marfrig Agro', 'São Martinho', 'Tereos', 'Amaggi Group',
-  'SLC Agrícola', 'BrasilAgro', 'Boa Safra Sementes', 'Lavoro', 'Vittia',
-  'Nutrien Soluções Agrícolas', 'Corteva Agriscience', 'Bayer CropScience',
-  'BASF Agricultural', 'Mosaic Fertilizantes', 'Heringer', 'Timac Agro',
-  'Copercampos', 'Coamo', 'Castrolanda',
+export interface GrupoEmpresarial {
+  nome: string;
+  cnpj: string;
+}
+
+export const gruposEmpresariais: GrupoEmpresarial[] = [
+  { nome: 'Grupo Ceres',                cnpj: '04.851.443/0001-10' },
+  { nome: 'Semeagro',                   cnpj: '12.345.678/0001-01' },
+  { nome: 'BTG Agro',                   cnpj: '30.306.294/0001-45' },
+  { nome: 'Raízen',                     cnpj: '08.070.508/0001-78' },
+  { nome: 'Cargill Brasil',             cnpj: '60.498.706/0001-44' },
+  { nome: 'JBS Agro',                   cnpj: '02.916.265/0001-60' },
+  { nome: 'Marfrig Agro',              cnpj: '03.853.896/0001-40' },
+  { nome: 'São Martinho',               cnpj: '51.466.860/0001-56' },
+  { nome: 'Tereos',                     cnpj: '72.779.265/0001-20' },
+  { nome: 'Amaggi Group',              cnpj: '37.527.352/0001-34' },
+  { nome: 'SLC Agrícola',              cnpj: '04.811.636/0001-60' },
+  { nome: 'BrasilAgro',                cnpj: '07.628.528/0001-06' },
+  { nome: 'Boa Safra Sementes',        cnpj: '17.779.019/0001-04' },
+  { nome: 'Lavoro',                    cnpj: '34.950.199/0001-10' },
+  { nome: 'Vittia',                    cnpj: '12.789.953/0001-77' },
+  { nome: 'Nutrien Soluções Agrícolas', cnpj: '26.674.547/0001-04' },
+  { nome: 'Corteva Agriscience',       cnpj: '15.476.384/0001-48' },
+  { nome: 'Bayer CropScience',         cnpj: '02.352.069/0001-97' },
+  { nome: 'BASF Agricultural',         cnpj: '58.432.246/0001-82' },
+  { nome: 'Mosaic Fertilizantes',      cnpj: '09.277.487/0001-44' },
+  { nome: 'Heringer',                  cnpj: '92.887.190/0001-03' },
+  { nome: 'Timac Agro',               cnpj: '23.145.612/0001-55' },
+  { nome: 'Copercampos',              cnpj: '83.980.679/0001-06' },
+  { nome: 'Coamo',                    cnpj: '75.593.261/0001-05' },
+  { nome: 'Castrolanda',              cnpj: '76.789.457/0001-48' },
 ];
