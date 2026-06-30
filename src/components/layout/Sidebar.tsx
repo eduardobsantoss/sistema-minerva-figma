@@ -15,6 +15,7 @@ import {
   BellRing,
   BarChart3,
   Receipt,
+  ClipboardList,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -33,6 +34,7 @@ interface NavItem {
 
 const items: NavItem[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { key: 'solicitacoes', label: 'Solicitação de Operação', icon: ClipboardList },
   {
     key: 'fidcs',
     label: "FIDC's",

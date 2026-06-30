@@ -9,6 +9,7 @@ import {
   Trees,
   AlertCircle,
   Receipt,
+  ClipboardList,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -22,6 +23,12 @@ export interface ModuleItem {
 }
 
 export const modules: ModuleItem[] = [
+  {
+    title: 'Solicitação de Operação',
+    description: 'Esteira de pedidos de operação: criação, triagem e acompanhamento por etapa do processo.',
+    icon: ClipboardList,
+    tone: 'accent',
+  },
   {
     title: 'Admin',
     description: 'Configurações gerais, permissões e administração da plataforma.',

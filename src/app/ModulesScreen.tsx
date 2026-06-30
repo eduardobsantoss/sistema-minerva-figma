@@ -5,9 +5,11 @@ import { ModuleCard, modules } from '@/features/dashboard';
 import { FidcScreen } from '@/features/fidc';
 import { CraScreen } from '@/features/cra';
 import { CobrancaScreen } from '@/features/cobranca';
+import { SolicitacaoScreen } from '@/features/solicitacao-operacao';
 
 type View =
   | 'dashboard'
+  | 'solicitacoes'
   | 'fidcs'
   | 'fidcs-cedentes'
   | 'fidcs-notif'
@@ -24,6 +26,7 @@ type View =
 
 const titleMap: Record<View, string> = {
   dashboard: 'Bem-vindo(a) ao Minerva Gestão',
+  solicitacoes: 'Solicitação de Operação',
   fidcs: "Gestão de FIDC's",
   'fidcs-cedentes': 'Cedentes & Contrapartes',
   'fidcs-notif': "Notificações de FIDC's",
@@ -40,7 +43,7 @@ const titleMap: Record<View, string> = {
 };
 
 const VALID_VIEWS = new Set<View>([
-  'dashboard','fidcs','fidcs-cedentes','fidcs-notif','fidcs-rel',
+  'dashboard','solicitacoes','fidcs','fidcs-cedentes','fidcs-notif','fidcs-rel',
   'cras','cras-cedentes','cras-rel','cobranca','cobranca-notif',
   'passivo','colab','rel','conf',
 ]);
@@ -55,6 +58,7 @@ export function ModulesScreen() {
   const [collapsed, setCollapsed] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(() => {
     const v = new URLSearchParams(window.location.search).get('view') ?? '';
+    if (v.startsWith('solicitacoes')) return 'solicitacoes';
     if (v.startsWith('fidcs')) return 'fidcs';
     if (v.startsWith('cras')) return 'cras';
     if (v.startsWith('cobranca')) return 'cobranca';
@@ -78,7 +82,10 @@ export function ModulesScreen() {
     setOpenMenu((prev) => (prev === key ? null : key));
 
   const handleModuleClick = (title: string) => {
-    if (title === "FIDC's") {
+    if (title === 'Solicitação de Operação') {
+      setView('solicitacoes');
+      setOpenMenu('solicitacoes');
+    } else if (title === "FIDC's") {
       setView('fidcs');
       setOpenMenu('fidcs');
     } else if (title === "CRA's") {
@@ -107,10 +114,11 @@ export function ModulesScreen() {
         <main className="overflow-auto" style={{ flex: 1, padding: 40 }}>
           <div style={{ maxWidth: 1456, margin: '0 auto' }}>
             {view === 'dashboard' && <DashboardView onModuleClick={handleModuleClick} />}
+            {view === 'solicitacoes' && <SolicitacaoScreen />}
             {view === 'fidcs' && <FidcScreen />}
             {view === 'cras' && <CraScreen />}
             {view === 'cobranca-notif' && <CobrancaScreen />}
-            {view !== 'dashboard' && view !== 'fidcs' && view !== 'cras' && view !== 'cobranca-notif' && (
+            {view !== 'dashboard' && view !== 'solicitacoes' && view !== 'fidcs' && view !== 'cras' && view !== 'cobranca-notif' && (
               <Placeholder name={titleMap[view]} />
             )}
 
