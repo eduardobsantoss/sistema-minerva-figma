@@ -18,7 +18,8 @@ import {
   Copy,
   Check as CheckIcon,
 } from 'lucide-react';
-import { brl, type Fidc, type FidcClass, type Title, type TitleStatus } from '../data/fidcsData';
+import { brl, detalhePagamentos, type Fidc, type FidcClass, type Title, type TitleStatus } from '../data/fidcsData';
+import { PagamentosTab } from './detail-tabs/PagamentosTab';
 
 interface Props {
   fidc: Fidc;
@@ -49,6 +50,7 @@ const statusTone: Record<TitleStatus, { bg: string; fg: string; iconBg: string }
 
 export function TitleDetailScreen({ fidc, klass, title, onBack }: Props) {
   const [tab, setTab] = useState<Tab>('detalhes');
+  const [det, setDet] = useState(() => detalhePagamentos(title));
   const tone = statusTone[title.status];
 
   return (
@@ -217,7 +219,7 @@ export function TitleDetailScreen({ fidc, klass, title, onBack }: Props) {
         {tab === 'detalhes'      && <DetailsTab title={title} klass={klass} />}
         {tab === 'anexos'        && <AnexosTab title={title} />}
         {tab === 'accrual'       && <AccrualTab title={title} />}
-        {tab === 'pagamentos'    && <PagamentosTab />}
+        {tab === 'pagamentos'    && <PagamentosTab title={title} det={det} setDet={setDet} />}
         {tab === 'confirmacoes'  && <ConfirmacoesTab title={title} />}
         {tab === 'movimentacoes' && <MovimentacoesTab title={title} />}
         {tab === 'historico'     && <MovimentoTab title={title} />}
@@ -527,21 +529,6 @@ function AnexosTab({ title }: { title: Title }) {
         ))}
       </div>
     </Section>
-  );
-}
-
-function PagamentosTab() {
-  return (
-    <div
-      style={{
-        padding: 40,
-        textAlign: 'center',
-        color: 'var(--text-muted)',
-        fontSize: 'var(--text-sm)',
-      }}
-    >
-      Histórico de repasses e custódias indisponível para este título.
-    </div>
   );
 }
 

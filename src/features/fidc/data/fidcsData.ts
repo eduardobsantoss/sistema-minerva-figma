@@ -197,6 +197,100 @@ export const fidcs: Fidc[] = [
   },
 ];
 
+/* ─── Pagamentos (aba "Pagamentos" da tela de detalhe do título) ──── */
+
+export type TipoPagamento =
+  | 'Baixa com desconto' | 'Baixa manual' | 'Baixa por exclusão' | 'Baixa por Recompra'
+  | 'Baixa por substituição' | 'Baixa por venda' | 'Boleto' | 'Devolução ao cedente'
+  | 'Pago pelo cedente' | 'Pago pelo sacado';
+
+export const TIPO_PAGAMENTO_OPTS: TipoPagamento[] = [
+  'Baixa com desconto', 'Baixa manual', 'Baixa por exclusão', 'Baixa por Recompra',
+  'Baixa por substituição', 'Baixa por venda', 'Boleto', 'Devolução ao cedente',
+  'Pago pelo cedente', 'Pago pelo sacado',
+];
+
+export interface PagamentoTitulo {
+  data: string;
+  valorAmortizacao: number;
+  tipoPagamento: TipoPagamento;
+  jurosRemuneratorio: number;
+  jurosMoratorio: number;
+  multa: number;
+  desconto: number;
+  observacao?: string;
+  estornado?: boolean;
+  justificativaEstorno?: string;
+}
+
+export type StatusParcela = 'PAGO' | 'PAGO_PARCIAL_VENCIDO' | 'DESCONHECIDO';
+export interface ParcelaCronograma {
+  vencimento: string;
+  status: StatusParcela;
+  totalEsperado: number;
+  emAberto: number;
+  amortizacao: number;
+  juros: number;
+}
+
+export interface ConfiguracaoTitulo {
+  tipoCalculo: 'Pré-Fixado' | 'Pós-Fixado';
+  valorEmissao: number;
+  vencimentoFinal: string;
+  taxa: string;
+  frequenciaTaxa: string;
+  tipoCapitalizacao: string;
+  baseDias: string;
+  fluxoAmortizacao: string;
+  fluxoJuros: string;
+}
+
+export interface DetalhePagamentos {
+  jurosRemuneratorioAberto: number;
+  configuracao: ConfiguracaoTitulo;
+  pagamentos: PagamentoTitulo[];
+  cronograma: ParcelaCronograma[];
+}
+
+/** dd/mm/aaaa + N meses -> dd/mm/aaaa */
+function addMonths(dateStr: string, months: number): string {
+  const [d, m, y] = dateStr.split('/').map(Number);
+  const date = new Date(y, (m - 1) + months, d);
+  return date.toLocaleDateString('pt-BR');
+}
+
+/**
+ * Deriva os dados de pagamentos/cronograma de um título para a aba Pagamentos.
+ * Tudo mockado a partir dos campos que o título já possui.
+ */
+export function detalhePagamentos(title: Title): DetalhePagamentos {
+  const parcela = title.vrNominal / 5;
+  const cronograma: ParcelaCronograma[] = [
+    { vencimento: title.emissao, status: 'PAGO', totalEsperado: parcela, emAberto: 0, amortizacao: parcela, juros: 0 },
+    { vencimento: addMonths(title.emissao, 1), status: title.status === 'VENCIDO' ? 'PAGO_PARCIAL_VENCIDO' : 'PAGO', totalEsperado: parcela * 1.02, emAberto: title.status === 'VENCIDO' ? parcela * 0.4 : 0, amortizacao: parcela, juros: parcela * 0.02 },
+    { vencimento: addMonths(title.emissao, 2), status: 'DESCONHECIDO', totalEsperado: parcela * 1.03, emAberto: parcela * 1.03, amortizacao: parcela, juros: parcela * 0.03 },
+    { vencimento: addMonths(title.emissao, 3), status: 'DESCONHECIDO', totalEsperado: parcela * 1.04, emAberto: parcela * 1.04, amortizacao: parcela, juros: parcela * 0.04 },
+    { vencimento: title.vencimento, status: 'DESCONHECIDO', totalEsperado: parcela * 1.05, emAberto: parcela * 1.05, amortizacao: parcela, juros: parcela * 0.05 },
+  ];
+
+  return {
+    jurosRemuneratorioAberto: 0,
+    configuracao: {
+      tipoCalculo: 'Pré-Fixado',
+      valorEmissao: title.vrNominal,
+      vencimentoFinal: title.vencimento,
+      taxa: '1,85% a.m.',
+      frequenciaTaxa: 'Mensal',
+      tipoCapitalizacao: 'Composto',
+      baseDias: 'M252',
+      fluxoAmortizacao: 'Indefinido',
+      fluxoJuros: 'Indefinido',
+    },
+    pagamentos: [],
+    cronograma,
+  };
+}
+
 export function brl(n: number, opts?: { compact?: boolean }) {
   if (opts?.compact) {
     if (n >= 1_000_000) return `R$ ${(n / 1_000_000).toFixed(1).replace('.', ',')}M`;

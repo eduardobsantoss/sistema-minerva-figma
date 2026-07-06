@@ -60,13 +60,53 @@ export interface Solicitacao {
 
 /* ─── Tipos auxiliares da tela de detalhe (somente exibição) ──────── */
 
-export type ParteTipo = 'AVA' | 'ITA' | 'SOC' | 'REP';
+export type ParteTipo = 'AVA' | 'ITA' | 'SOC' | 'REP' | 'CON' | 'PROC';
 export interface ParteRelacionada {
   nome: string;
   documento: string;
   email: string;
   telefone: string;
   tipos: ParteTipo[];
+}
+
+/** UFs usadas nos campos de Estado (mesma lista de CreateFidcModal.tsx). */
+export const UF_OPTIONS = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
+];
+
+/** Países + DDI pareados, usados nos campos de Contato/Endereço. */
+export const PAISES_DDI: { pais: string; ddi: string }[] = [
+  { pais: 'Brasil', ddi: '+55' },
+  { pais: 'Argentina', ddi: '+54' },
+  { pais: 'Paraguai', ddi: '+595' },
+  { pais: 'Uruguai', ddi: '+598' },
+  { pais: 'Chile', ddi: '+56' },
+  { pais: 'Bolívia', ddi: '+591' },
+  { pais: 'Estados Unidos', ddi: '+1' },
+];
+
+/** Uma parcela do título (manual ou gerada automaticamente pelo cronograma). */
+export interface ParcelaAtivo {
+  parcela: string;
+  vencimento: string;
+  amortizacao?: number;
+  juros?: number;
+  pagarJuros?: boolean;
+  valor?: number;
+}
+
+/** Um contrato/título vinculado a uma solicitação, criado via "Adicionar contrato". */
+export interface ContratoAtivo {
+  numero: string;
+  tipo: string;
+  emissao: string;
+  vencimento: string;
+  valorTotal: number;
+  sacadoNome: string;
+  sacadoDocumento: string;
+  parcelas: ParcelaAtivo[];
 }
 
 export type ValidacaoStatus = 'OK' | 'ALERTA' | 'ERRO';
@@ -95,7 +135,7 @@ export interface EventoHistorico {
 export interface DetalheSolicitacao {
   partes: ParteRelacionada[];
   limites: { agrupamento: string; limite: string; risco: string; riscoSolic: string }[];
-  ativos: unknown[];
+  ativos: ContratoAtivo[];
   garantias: { tipo: string; nome: string; valor: number }[];
   validacoes: ItemValidacao[];
   anexos: AnexoDoc[];
