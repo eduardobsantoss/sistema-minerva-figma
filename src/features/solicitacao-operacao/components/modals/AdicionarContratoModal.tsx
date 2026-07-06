@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Tag, Paperclip, Trash2, FileText, AlertTriangle } from 'lucide-react';
+import { X, Tag, Paperclip, Trash2, FileText, AlertTriangle, Layers, CalendarClock, type LucideIcon } from 'lucide-react';
 import { UF_OPTIONS, PAISES_DDI, type ContratoAtivo, type ParcelaAtivo } from '../../data/operacaoData';
 
 interface Props {
@@ -227,16 +227,14 @@ export function AdicionarContratoModal({ onClose, onCreate, valorOperacao, tipoC
                     <AddButton onClick={addParcela}>Adicionar parcela</AddButton>
                   </div>
 
-                  <div style={{ border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-                    <div className="grid" style={{ gridTemplateColumns: '1.4fr 1fr 1fr auto', padding: '10px 14px', background: 'var(--surface-card)', fontSize: 10, fontWeight: 'var(--weight-bold)', letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                      <div>Parcela</div><div>Valor</div><div>Vencimento</div><div />
-                    </div>
-                    {parcelas.length === 0 ? (
-                      <div style={{ padding: 14, background: 'var(--warning-base)', color: '#fff', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' }}>
-                        Não foi encontrado nenhum resultado.
+                  {parcelas.length === 0 ? (
+                    <EmptyState icon={Layers} title="Nenhuma parcela adicionada" hint="Use o formulário acima para adicionar as parcelas deste contrato." />
+                  ) : (
+                    <div style={{ border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+                      <div className="grid" style={{ gridTemplateColumns: '1.4fr 1fr 1fr auto', padding: '10px 14px', background: 'var(--surface-card)', fontSize: 10, fontWeight: 'var(--weight-bold)', letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        <div>Parcela</div><div>Valor</div><div>Vencimento</div><div />
                       </div>
-                    ) : (
-                      parcelas.map((p, i) => (
+                      {parcelas.map((p, i) => (
                         <div key={i} className="grid items-center" style={{ gridTemplateColumns: '1.4fr 1fr 1fr auto', padding: '10px 14px', borderTop: '1px solid var(--border-default)', fontSize: 'var(--text-sm)' }}>
                           <div style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-strong)' }}>{p.parcela}</div>
                           <div style={{ fontVariantNumeric: 'tabular-nums' }}>{brl(p.valor ?? 0)}</div>
@@ -245,12 +243,12 @@ export function AdicionarContratoModal({ onClose, onCreate, valorOperacao, tipoC
                             <Trash2 size={14} />
                           </button>
                         </div>
-                      ))
-                    )}
-                    <div className="flex items-center justify-center" style={{ padding: '10px 14px', borderTop: '1px solid var(--border-default)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)', color: 'var(--text-strong)' }}>
-                      Somatória das parcelas: {brl(somatoriaParcelas)}
+                      ))}
+                      <div className="flex items-center justify-center" style={{ padding: '10px 14px', borderTop: '1px solid var(--border-default)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)', color: 'var(--text-strong)' }}>
+                        Somatória das parcelas: {brl(somatoriaParcelas)}
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {somatoriaParcelas !== valorOperacao && (
                     <div className="flex items-center justify-center" style={{ gap: 6, fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)', color: 'var(--warning-base)' }}>
                       <AlertTriangle size={13} /> Total das parcelas diferente do valor total solicitado
@@ -286,16 +284,14 @@ export function AdicionarContratoModal({ onClose, onCreate, valorOperacao, tipoC
                     Obs: Em títulos pré-fixados, caso o cronograma mostre pagamento de juros com valor de R$ 0,00, será considerado o valor de juros projetado na simulação.
                   </div>
 
-                  <div style={{ border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-                    <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr auto', padding: '10px 14px', background: 'var(--surface-card)', fontSize: 10, fontWeight: 'var(--weight-bold)', letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                      <div>Parcela</div><div>Vencimento</div><div>Amortização</div><div>Juros</div><div>Pagar juros</div><div />
-                    </div>
-                    {cronograma.length === 0 ? (
-                      <div style={{ padding: 14, background: 'var(--warning-base)', color: '#fff', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' }}>
-                        Não foi encontrado nenhum resultado.
+                  {cronograma.length === 0 ? (
+                    <EmptyState icon={CalendarClock} title="Nenhum pagamento adicionado ao cronograma" hint="Use o formulário acima para adicionar pagamentos manualmente ou gere automaticamente pelo fluxo selecionado." />
+                  ) : (
+                    <div style={{ border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+                      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr auto', padding: '10px 14px', background: 'var(--surface-card)', fontSize: 10, fontWeight: 'var(--weight-bold)', letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        <div>Parcela</div><div>Vencimento</div><div>Amortização</div><div>Juros</div><div>Pagar juros</div><div />
                       </div>
-                    ) : (
-                      cronograma.map((c, i) => (
+                      {cronograma.map((c, i) => (
                         <div key={i} className="grid items-center" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr auto', padding: '10px 14px', borderTop: '1px solid var(--border-default)', fontSize: 'var(--text-sm)' }}>
                           <div style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--text-strong)' }}>{c.parcela}</div>
                           <div style={{ fontVariantNumeric: 'tabular-nums' }}>{c.vencimento}</div>
@@ -306,32 +302,61 @@ export function AdicionarContratoModal({ onClose, onCreate, valorOperacao, tipoC
                             <Trash2 size={14} />
                           </button>
                         </div>
-                      ))
-                    )}
-                    <div className="flex items-center justify-center" style={{ padding: '10px 14px', borderTop: '1px solid var(--border-default)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)', color: 'var(--text-strong)' }}>
-                      Amortização: {brl(somatoriaAmortizacao)}
+                      ))}
+                      <div className="flex items-center justify-center" style={{ padding: '10px 14px', borderTop: '1px solid var(--border-default)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-bold)', color: 'var(--text-strong)' }}>
+                        Amortização: {brl(somatoriaAmortizacao)}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </BentoBox>
             )}
 
             <BentoBox title="Dados do Sacado" icon={Tag}>
-              <BentoGrid cols={3}>
-                <FormField label="CPF/CNPJ" placeholder="—" value={form.sacadoDocumento} onChange={set('sacadoDocumento')} />
-                <FormField label="Nome" placeholder="—" value={form.sacadoNome} onChange={set('sacadoNome')} />
-                <FormField label="E-mail" placeholder="—" value={form.sacadoEmail} onChange={set('sacadoEmail')} />
-                <SelectField label="DDI" options={DDI_OPTS} value={form.ddi} onChange={setVal('ddi')} />
-                <FormField label="Telefone" placeholder="—" value={form.telefone} onChange={set('telefone')} />
-                <FormField label="CEP" placeholder="—" value={form.cep} onChange={set('cep')} />
-                <FormField label="Endereço" placeholder="—" value={form.endereco} onChange={set('endereco')} />
-                <FormField label="Número" placeholder="—" value={form.numeroEndereco} onChange={set('numeroEndereco')} />
-                <FormField label="Complemento" placeholder="—" value={form.complemento} onChange={set('complemento')} />
-                <FormField label="Bairro" placeholder="—" value={form.bairro} onChange={set('bairro')} />
-                <FormField label="Cidade" placeholder="—" value={form.cidade} onChange={set('cidade')} />
-                <SelectField label="Estado" options={UF_OPTIONS} placeholder="UF" value={form.estado} onChange={setVal('estado')} />
-                <SelectField label="País" options={PAIS_OPTS} placeholder="Selecione" value={form.pais} onChange={setVal('pais')} />
-              </BentoGrid>
+              <div className="grid" style={{ gridTemplateColumns: 'repeat(12, 1fr)', gap: 14 }}>
+                <div style={{ gridColumn: 'span 4' }}>
+                  <FormField label="CPF/CNPJ" placeholder="—" value={form.sacadoDocumento} onChange={set('sacadoDocumento')} />
+                </div>
+                <div style={{ gridColumn: 'span 5' }}>
+                  <FormField label="Nome" placeholder="—" value={form.sacadoNome} onChange={set('sacadoNome')} />
+                </div>
+                <div style={{ gridColumn: 'span 3' }}>
+                  <FormField label="E-mail" placeholder="—" value={form.sacadoEmail} onChange={set('sacadoEmail')} />
+                </div>
+
+                <div style={{ gridColumn: 'span 2' }}>
+                  <SelectField label="DDI" options={DDI_OPTS} value={form.ddi} onChange={setVal('ddi')} />
+                </div>
+                <div style={{ gridColumn: 'span 4' }}>
+                  <FormField label="Telefone" placeholder="—" value={form.telefone} onChange={set('telefone')} />
+                </div>
+                <div style={{ gridColumn: 'span 3' }}>
+                  <FormField label="CEP" placeholder="—" value={form.cep} onChange={set('cep')} />
+                </div>
+                <div style={{ gridColumn: 'span 3' }}>
+                  <FormField label="Número" placeholder="—" value={form.numeroEndereco} onChange={set('numeroEndereco')} />
+                </div>
+
+                <div style={{ gridColumn: 'span 6' }}>
+                  <FormField label="Endereço" placeholder="—" value={form.endereco} onChange={set('endereco')} />
+                </div>
+                <div style={{ gridColumn: 'span 6' }}>
+                  <FormField label="Complemento" placeholder="—" value={form.complemento} onChange={set('complemento')} />
+                </div>
+
+                <div style={{ gridColumn: 'span 4' }}>
+                  <FormField label="Bairro" placeholder="—" value={form.bairro} onChange={set('bairro')} />
+                </div>
+                <div style={{ gridColumn: 'span 4' }}>
+                  <FormField label="Cidade" placeholder="—" value={form.cidade} onChange={set('cidade')} />
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <SelectField label="Estado" options={UF_OPTIONS} placeholder="UF" value={form.estado} onChange={setVal('estado')} />
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <SelectField label="País" options={PAIS_OPTS} placeholder="Selecione" value={form.pais} onChange={setVal('pais')} />
+                </div>
+              </div>
             </BentoBox>
           </div>
         </div>
@@ -386,6 +411,16 @@ function BentoBox({ title, icon: Icon, children }: { title: string; icon?: typeo
 
 function BentoGrid({ cols, children }: { cols: number; children: React.ReactNode }) {
   return <div className="grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 14 }}>{children}</div>;
+}
+
+function EmptyState({ icon: Icon, title, hint }: { icon: LucideIcon; title: string; hint?: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center" style={{ gap: 10, padding: '40px 24px', textAlign: 'center', background: 'var(--surface-sunken)', borderRadius: 'var(--radius-lg)', border: '1px dashed var(--border-default)' }}>
+      <Icon size={28} strokeWidth={1.5} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
+      <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--text-default)' }}>{title}</div>
+      {hint && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', maxWidth: 360 }}>{hint}</div>}
+    </div>
+  );
 }
 
 function FieldLabel({ children, showError }: { children: React.ReactNode; showError?: boolean }) {
