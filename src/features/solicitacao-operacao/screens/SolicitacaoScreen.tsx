@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Plus,
   Search,
@@ -67,6 +67,8 @@ export function SolicitacaoScreen() {
   const [creating, setCreating] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [filterPlacement, setFilterPlacement] = useState<'below' | 'above'>('below');
+  const filterBtnRef = useRef<HTMLButtonElement>(null);
   const [etapasFiltro, setEtapasFiltro] = useState<Etapa[]>([]);
   const [validacaoFiltro, setValidacaoFiltro] = useState('');
   const [slaFiltro, setSlaFiltro] = useState('');
@@ -104,6 +106,16 @@ export function SolicitacaoScreen() {
       }),
     [lista, esteira, tipoOp, grupo, q, etapasFiltro, validacaoFiltro, slaFiltro],
   );
+
+  const openFilters = () => {
+    if (!showFilters && filterBtnRef.current) {
+      const rect = filterBtnRef.current.getBoundingClientRect();
+      const estimatedPanelHeight = 320;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setFilterPlacement(spaceBelow < estimatedPanelHeight && rect.top > spaceBelow ? 'above' : 'below');
+    }
+    setShowFilters((v) => !v);
+  };
 
   const handleCreate = (data: NewPedidoData) => {
     setLista((prev) => [buildFromForm(data), ...prev]);
@@ -191,28 +203,141 @@ export function SolicitacaoScreen() {
           <FilterSelect value={tipoOp} onChange={setTipoOp} placeholder="Tipo de Operação" options={tiposOperacao} />
           <FilterSelect value={grupo} onChange={setGrupo} placeholder="Grupo empresarial" options={grupos} />
 
-          {/* Filtros adicionais */}
-          <button
-            onClick={() => setShowFilters((v) => !v)}
-            className="flex items-center"
-            style={{
-              gap: 8, height: 42, padding: '0 16px', cursor: 'pointer',
-              background: showFilters || extraFilterCount > 0 ? 'var(--gci-light)' : 'var(--surface-card)',
-              border: `1px solid ${showFilters || extraFilterCount > 0 ? 'var(--gci-base)' : 'var(--border-default)'}`,
-              borderRadius: 'var(--radius-lg)', fontWeight: 'var(--weight-bold)',
-              fontSize: 'var(--text-xs)', letterSpacing: '0.04em',
-              color: showFilters || extraFilterCount > 0 ? 'var(--gci-base)' : 'var(--text-muted)',
-              transition: 'all var(--duration-fast)',
-            }}
-          >
-            <SlidersHorizontal size={15} strokeWidth={2} />
-            Filtros
-            {extraFilterCount > 0 && (
-              <span style={{ minWidth: 18, height: 18, padding: '0 5px', borderRadius: '9999px', background: 'var(--gci-base)', color: '#fff', fontSize: 10, fontWeight: 'var(--weight-bold)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {extraFilterCount}
-              </span>
+          {/* Filtros adicionais (popover, estilo date-picker) */}
+          <div style={{ position: 'relative' }}>
+            <button
+              ref={filterBtnRef}
+              onClick={openFilters}
+              className="flex items-center"
+              style={{
+                gap: 8, height: 42, padding: '0 16px', cursor: 'pointer',
+                background: showFilters || extraFilterCount > 0 ? 'var(--gci-light)' : 'var(--surface-card)',
+                border: `1px solid ${showFilters || extraFilterCount > 0 ? 'var(--gci-base)' : 'var(--border-default)'}`,
+                borderRadius: 'var(--radius-lg)', fontWeight: 'var(--weight-bold)',
+                fontSize: 'var(--text-xs)', letterSpacing: '0.04em',
+                color: showFilters || extraFilterCount > 0 ? 'var(--gci-base)' : 'var(--text-muted)',
+                transition: 'all var(--duration-fast)',
+              }}
+            >
+              <SlidersHorizontal size={15} strokeWidth={2} />
+              Filtros
+              {extraFilterCount > 0 && (
+                <span style={{ minWidth: 18, height: 18, padding: '0 5px', borderRadius: '9999px', background: 'var(--gci-base)', color: '#fff', fontSize: 10, fontWeight: 'var(--weight-bold)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {extraFilterCount}
+                </span>
+              )}
+              <ChevronDown size={14} style={{ transform: showFilters ? 'rotate(180deg)' : 'none', transition: 'transform var(--duration-base)' }} />
+            </button>
+
+            {/* Painel de filtros adicionais */}
+            {showFilters && (
+              <>
+                <div onClick={() => setShowFilters(false)} style={{ position: 'fixed', inset: 0, zIndex: 30 }} />
+                <div
+                  style={{
+                    position: 'absolute',
+                    [filterPlacement === 'below' ? 'top' : 'bottom']: 'calc(100% + 8px)',
+                    left: 0,
+                    zIndex: 31,
+                    width: 420,
+                    maxWidth: 'calc(100vw - 48px)',
+                    background: 'var(--surface-card)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: 'var(--radius-xl)',
+                    boxShadow: 'var(--shadow-lg)',
+                    padding: '16px 20px',
+                  }}
+                >
+                  <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
+                    <span style={{ fontSize: 11, fontWeight: 'var(--weight-bold)', letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                      Filtros adicionais
+                    </span>
+                    {extraFilterCount > 0 && (
+                      <button
+                        onClick={() => { setEtapasFiltro([]); setValidacaoFiltro(''); setSlaFiltro(''); }}
+                        className="flex items-center"
+                        style={{ gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 'var(--weight-semibold)' }}
+                      >
+                        <X size={12} /> Limpar filtros
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-col" style={{ gap: 16 }}>
+                    {/* Etapa — chips */}
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 'var(--weight-bold)', letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>Etapa</div>
+                      <div className="flex items-center" style={{ gap: 6, flexWrap: 'wrap' }}>
+                        {ETAPAS.map((e) => {
+                          const active = etapasFiltro.includes(e.key);
+                          return (
+                            <button
+                              key={e.key}
+                              onClick={() => setEtapasFiltro((prev) => active ? prev.filter((x) => x !== e.key) : [...prev, e.key])}
+                              style={{
+                                padding: '5px 12px', borderRadius: '9999px', cursor: 'pointer',
+                                fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)',
+                                border: `1px solid ${active ? e.cor : 'var(--border-default)'}`,
+                                background: active ? `color-mix(in srgb, ${e.cor} 12%, transparent)` : 'transparent',
+                                color: active ? e.cor : 'var(--text-muted)',
+                                transition: 'all var(--duration-fast)',
+                              }}
+                            >
+                              {e.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {/* Grade 2 colunas x 2 linhas: Validação + SLA */}
+                    <div className="grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 'var(--weight-bold)', letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>Validação</div>
+                        <div className="flex items-center" style={{ gap: 6, flexWrap: 'wrap' }}>
+                          {[{ v: '', l: 'Todas' }, { v: 'VALIDO', l: 'Válido' }, { v: 'INVALIDO', l: 'Inválido' }].map(({ v, l }) => (
+                            <button
+                              key={v}
+                              onClick={() => setValidacaoFiltro(v)}
+                              style={{
+                                padding: '5px 12px', borderRadius: '9999px', cursor: 'pointer',
+                                fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)',
+                                border: `1px solid ${validacaoFiltro === v ? 'var(--gci-base)' : 'var(--border-default)'}`,
+                                background: validacaoFiltro === v ? 'var(--gci-light)' : 'transparent',
+                                color: validacaoFiltro === v ? 'var(--gci-base)' : 'var(--text-muted)',
+                                transition: 'all var(--duration-fast)',
+                              }}
+                            >
+                              {l}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 'var(--weight-bold)', letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>SLA</div>
+                        <div className="flex items-center" style={{ gap: 6, flexWrap: 'wrap' }}>
+                          {[{ v: '', l: 'Todos' }, { v: 'ok', l: 'Dentro do prazo' }, { v: 'late', l: 'Atrasado' }].map(({ v, l }) => (
+                            <button
+                              key={v}
+                              onClick={() => setSlaFiltro(v)}
+                              style={{
+                                padding: '5px 12px', borderRadius: '9999px', cursor: 'pointer',
+                                fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)',
+                                border: `1px solid ${slaFiltro === v ? 'var(--gci-base)' : 'var(--border-default)'}`,
+                                background: slaFiltro === v ? 'var(--gci-light)' : 'transparent',
+                                color: slaFiltro === v ? 'var(--gci-base)' : 'var(--text-muted)',
+                                transition: 'all var(--duration-fast)',
+                              }}
+                            >
+                              {l}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
-          </button>
+          </div>
 
           {/* Segmented view toggle */}
           <div className="flex items-center" style={{ gap: 4, padding: 4, background: 'var(--surface-sunken)', borderRadius: 'var(--radius-lg)' }}>
@@ -240,98 +365,6 @@ export function SolicitacaoScreen() {
             })}
           </div>
         </div>
-
-        {/* Painel de filtros adicionais */}
-        {showFilters && (
-          <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', padding: '16px 20px' }}>
-            <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
-              <span style={{ fontSize: 11, fontWeight: 'var(--weight-bold)', letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Filtros adicionais
-              </span>
-              {extraFilterCount > 0 && (
-                <button
-                  onClick={() => { setEtapasFiltro([]); setValidacaoFiltro(''); setSlaFiltro(''); }}
-                  className="flex items-center"
-                  style={{ gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 'var(--weight-semibold)' }}
-                >
-                  <X size={12} /> Limpar filtros
-                </button>
-              )}
-            </div>
-            <div className="flex flex-col" style={{ gap: 16 }}>
-              {/* Etapa — chips */}
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 'var(--weight-bold)', letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>Etapa</div>
-                <div className="flex items-center" style={{ gap: 6, flexWrap: 'wrap' }}>
-                  {ETAPAS.map((e) => {
-                    const active = etapasFiltro.includes(e.key);
-                    return (
-                      <button
-                        key={e.key}
-                        onClick={() => setEtapasFiltro((prev) => active ? prev.filter((x) => x !== e.key) : [...prev, e.key])}
-                        style={{
-                          padding: '5px 12px', borderRadius: '9999px', cursor: 'pointer',
-                          fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)',
-                          border: `1px solid ${active ? e.cor : 'var(--border-default)'}`,
-                          background: active ? `color-mix(in srgb, ${e.cor} 12%, transparent)` : 'transparent',
-                          color: active ? e.cor : 'var(--text-muted)',
-                          transition: 'all var(--duration-fast)',
-                        }}
-                      >
-                        {e.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {/* Validação + SLA em linha */}
-              <div className="flex items-center" style={{ gap: 24, flexWrap: 'wrap' }}>
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 'var(--weight-bold)', letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>Validação</div>
-                  <div className="flex items-center" style={{ gap: 6 }}>
-                    {[{ v: '', l: 'Todas' }, { v: 'VALIDO', l: 'Válido' }, { v: 'INVALIDO', l: 'Inválido' }].map(({ v, l }) => (
-                      <button
-                        key={v}
-                        onClick={() => setValidacaoFiltro(v)}
-                        style={{
-                          padding: '5px 12px', borderRadius: '9999px', cursor: 'pointer',
-                          fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)',
-                          border: `1px solid ${validacaoFiltro === v ? 'var(--gci-base)' : 'var(--border-default)'}`,
-                          background: validacaoFiltro === v ? 'var(--gci-light)' : 'transparent',
-                          color: validacaoFiltro === v ? 'var(--gci-base)' : 'var(--text-muted)',
-                          transition: 'all var(--duration-fast)',
-                        }}
-                      >
-                        {l}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 'var(--weight-bold)', letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>SLA</div>
-                  <div className="flex items-center" style={{ gap: 6 }}>
-                    {[{ v: '', l: 'Todos' }, { v: 'ok', l: 'Dentro do prazo' }, { v: 'late', l: 'Atrasado' }].map(({ v, l }) => (
-                      <button
-                        key={v}
-                        onClick={() => setSlaFiltro(v)}
-                        style={{
-                          padding: '5px 12px', borderRadius: '9999px', cursor: 'pointer',
-                          fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)',
-                          border: `1px solid ${slaFiltro === v ? 'var(--gci-base)' : 'var(--border-default)'}`,
-                          background: slaFiltro === v ? 'var(--gci-light)' : 'transparent',
-                          color: slaFiltro === v ? 'var(--gci-base)' : 'var(--text-muted)',
-                          transition: 'all var(--duration-fast)',
-                        }}
-                      >
-                        {l}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── Conteúdo ── */}

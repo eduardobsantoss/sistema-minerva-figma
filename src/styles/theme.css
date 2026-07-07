@@ -140,6 +140,13 @@
   --duration-slow: 300ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-out:      cubic-bezier(0, 0, 0.2, 1);
+
+  /* ===== RESPONSIVIDADE (layout shell) ===== */
+  --sidebar-width-expanded: 280px;
+  --main-padding: 40px;
+  --topbar-padding-x: 32px;
+  --topbar-height: 80px;
+  --dashboard-grid-min: 240px;
 }
 
 html, body, #root {
@@ -152,3 +159,28 @@ html, body, #root {
 }
 
 * { box-sizing: border-box; }
+
+/* ===== BREAKPOINTS — notebooks e telas menores ===== */
+@media (max-width: 1440px) {
+  :root {
+    --sidebar-width-expanded: 240px;
+    --main-padding: 28px;
+    --topbar-padding-x: 24px;
+  }
+}
+
+@media (max-width: 1180px) {
+  :root {
+    --main-padding: 20px;
+    --topbar-padding-x: 16px;
+    --topbar-height: 72px;
+  }
+  .topbar-search { display: none; }
+}
+
+@media (max-width: 900px) {
+  :root {
+    --main-padding: 16px;
+  }
+  .topbar-user-meta { display: none; }
+}

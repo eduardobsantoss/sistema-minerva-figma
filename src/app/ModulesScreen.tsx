@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
 import { ModuleCard, modules } from '@/features/dashboard';
@@ -6,19 +6,20 @@ import { FidcScreen } from '@/features/fidc';
 import { CraScreen } from '@/features/cra';
 import { CobrancaScreen } from '@/features/cobranca';
 import { SolicitacaoScreen } from '@/features/solicitacao-operacao';
+import { RatingsScreen, AgrupamentosScreen, GruposScreen, RelatoriosScreen, RiscoDashboardScreen } from '@/features/risco';
 
 type View =
   | 'dashboard'
   | 'solicitacoes'
   | 'fidcs'
-  | 'fidcs-cedentes'
-  | 'fidcs-notif'
-  | 'fidcs-rel'
   | 'cras'
-  | 'cras-cedentes'
-  | 'cras-rel'
   | 'cobranca'
   | 'cobranca-notif'
+  | 'risco-dashboard'
+  | 'risco-grupos'
+  | 'risco-ratings'
+  | 'risco-agrupamentos'
+  | 'risco-rel'
   | 'passivo'
   | 'colab'
   | 'rel'
@@ -28,14 +29,14 @@ const titleMap: Record<View, string> = {
   dashboard: 'Bem-vindo(a) ao Minerva Gestão',
   solicitacoes: 'Solicitação de Operação',
   fidcs: "Gestão de FIDC's",
-  'fidcs-cedentes': 'Cedentes & Contrapartes',
-  'fidcs-notif': "Notificações de FIDC's",
-  'fidcs-rel': "Relatórios de FIDC's",
   cras: "Gestão de CRA's",
-  'cras-cedentes': "Cedentes de CRA's",
-  'cras-rel': "Relatórios de CRA's",
   cobranca: 'Cobrança',
   'cobranca-notif': 'Notificações de Cobrança',
+  'risco-dashboard': 'Risco',
+  'risco-grupos': 'Grupos Empresariais',
+  'risco-ratings': 'Cadastro de Rating',
+  'risco-agrupamentos': 'Agrupamentos de Limite',
+  'risco-rel': 'Relatórios de Risco',
   passivo: 'Passivo',
   colab: 'Colaboradores',
   rel: 'Relatórios',
@@ -43,8 +44,8 @@ const titleMap: Record<View, string> = {
 };
 
 const VALID_VIEWS = new Set<View>([
-  'dashboard','solicitacoes','fidcs','fidcs-cedentes','fidcs-notif','fidcs-rel',
-  'cras','cras-cedentes','cras-rel','cobranca','cobranca-notif',
+  'dashboard','solicitacoes','fidcs','cras','cobranca','cobranca-notif',
+  'risco-dashboard','risco-grupos','risco-ratings','risco-agrupamentos','risco-rel',
   'passivo','colab','rel','conf',
 ]);
 
@@ -53,17 +54,18 @@ function getViewFromUrl(): View {
   return VALID_VIEWS.has(v) ? v : 'dashboard';
 }
 
+const LAPTOP_BREAKPOINT = 1366;
+
 export function ModulesScreen() {
   const [view, setView] = useState<View>(getViewFromUrl);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => window.innerWidth <= LAPTOP_BREAKPOINT);
   const [openMenu, setOpenMenu] = useState<string | null>(() => {
     const v = new URLSearchParams(window.location.search).get('view') ?? '';
-    if (v.startsWith('solicitacoes')) return 'solicitacoes';
-    if (v.startsWith('fidcs')) return 'fidcs';
-    if (v.startsWith('cras')) return 'cras';
     if (v.startsWith('cobranca')) return 'cobranca';
-    return 'fidcs';
+    if (v.startsWith('risco')) return 'risco';
+    return null;
   });
+  const userToggledSidebar = useRef(false);
 
   useEffect(() => {
     const handler = () => {
@@ -74,6 +76,17 @@ export function ModulesScreen() {
     return () => window.removeEventListener('popstate', handler);
   }, []);
 
+  // Responsividade: colapsa automaticamente o menu lateral em telas de notebook,
+  // sem sobrescrever uma escolha manual do usuário.
+  useEffect(() => {
+    const handleResize = () => {
+      if (userToggledSidebar.current) return;
+      setCollapsed(window.innerWidth <= LAPTOP_BREAKPOINT);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const handleNavigate = (key: string) => {
     setView(key as View);
   };
@@ -81,19 +94,24 @@ export function ModulesScreen() {
   const onToggleMenu = (key: string) =>
     setOpenMenu((prev) => (prev === key ? null : key));
 
+  const handleToggleSidebar = () => {
+    userToggledSidebar.current = true;
+    setCollapsed((v) => !v);
+  };
+
   const handleModuleClick = (title: string) => {
     if (title === 'Solicitação de Operação') {
       setView('solicitacoes');
-      setOpenMenu('solicitacoes');
     } else if (title === "FIDC's") {
       setView('fidcs');
-      setOpenMenu('fidcs');
     } else if (title === "CRA's") {
       setView('cras');
-      setOpenMenu('cras');
     } else if (title === 'Cobrança') {
       setView('cobranca-notif');
       setOpenMenu('cobranca');
+    } else if (title === 'Risco') {
+      setView('risco-grupos');
+      setOpenMenu('risco');
     }
   };
 
@@ -103,7 +121,7 @@ export function ModulesScreen() {
         active={view}
         onNavigate={handleNavigate}
         collapsed={collapsed}
-        onToggle={() => setCollapsed((v) => !v)}
+        onToggle={handleToggleSidebar}
         openMenu={openMenu}
         onToggleMenu={onToggleMenu}
       />
@@ -111,14 +129,19 @@ export function ModulesScreen() {
       <div className="flex flex-col" style={{ flex: 1, minWidth: 0 }}>
         <Topbar title={titleMap[view]} />
 
-        <main className="overflow-auto" style={{ flex: 1, padding: 40 }}>
+        <main className="overflow-auto" style={{ flex: 1, padding: 'var(--main-padding)' }}>
           <div style={{ maxWidth: 1456, margin: '0 auto' }}>
             {view === 'dashboard' && <DashboardView onModuleClick={handleModuleClick} />}
             {view === 'solicitacoes' && <SolicitacaoScreen />}
             {view === 'fidcs' && <FidcScreen />}
             {view === 'cras' && <CraScreen />}
             {view === 'cobranca-notif' && <CobrancaScreen />}
-            {view !== 'dashboard' && view !== 'solicitacoes' && view !== 'fidcs' && view !== 'cras' && view !== 'cobranca-notif' && (
+            {view === 'risco-ratings' && <RatingsScreen />}
+            {view === 'risco-agrupamentos' && <AgrupamentosScreen />}
+            {view === 'risco-grupos' && <GruposScreen />}
+            {view === 'risco-rel' && <RelatoriosScreen />}
+            {view === 'risco-dashboard' && <RiscoDashboardScreen />}
+            {view !== 'dashboard' && view !== 'solicitacoes' && view !== 'fidcs' && view !== 'cras' && view !== 'cobranca-notif' && view !== 'risco-ratings' && view !== 'risco-agrupamentos' && view !== 'risco-grupos' && view !== 'risco-rel' && view !== 'risco-dashboard' && (
               <Placeholder name={titleMap[view]} />
             )}
 
@@ -167,7 +190,7 @@ function DashboardView({ onModuleClick }: { onModuleClick: (title: string) => vo
 
       <div
         className="grid"
-        style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 24 }}
+        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(var(--dashboard-grid-min), 1fr))', gap: 24 }}
       >
         {modules.map((m) => (
           <div key={m.title} onClick={() => onModuleClick(m.title)}>

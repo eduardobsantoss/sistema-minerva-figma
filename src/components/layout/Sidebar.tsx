@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   LayoutDashboard,
   Landmark,
@@ -16,8 +17,14 @@ import {
   BarChart3,
   Receipt,
   ClipboardList,
+  AlertCircle,
+  Gauge,
+  ScrollText,
+  Layers,
   type LucideIcon,
 } from 'lucide-react';
+import gciLogoMark from '@/assets/gci-logo-mark.png';
+import gciLogoFull from '@/assets/gci-logo-full.png';
 
 interface SubItem {
   key: string;
@@ -35,27 +42,8 @@ interface NavItem {
 const items: NavItem[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { key: 'solicitacoes', label: 'Solicitação de Operação', icon: ClipboardList },
-  {
-    key: 'fidcs',
-    label: "FIDC's",
-    icon: Landmark,
-    children: [
-      { key: 'fidcs', label: 'Listagem', icon: FileText },
-      { key: 'fidcs-cedentes', label: 'Cedentes', icon: Building2 },
-      { key: 'fidcs-notif', label: 'Notificações', icon: BellRing },
-      { key: 'fidcs-rel', label: 'Relatórios', icon: BarChart3 },
-    ],
-  },
-  {
-    key: 'cras',
-    label: "CRA's",
-    icon: Briefcase,
-    children: [
-      { key: 'cras', label: 'Listagem', icon: FileText },
-      { key: 'cras-cedentes', label: 'Cedentes', icon: Building2 },
-      { key: 'cras-rel', label: 'Relatórios', icon: BarChart3 },
-    ],
-  },
+  { key: 'fidcs', label: "FIDC's", icon: Landmark },
+  { key: 'cras', label: "CRA's", icon: Briefcase },
   {
     key: 'cobranca',
     label: 'Cobrança',
@@ -64,13 +52,25 @@ const items: NavItem[] = [
       { key: 'cobranca-notif', label: 'Notificações de Cobrança', icon: BellRing },
     ],
   },
+  {
+    key: 'risco',
+    label: 'Risco',
+    icon: AlertCircle,
+    children: [
+      { key: 'risco-dashboard', label: 'Dashboard', icon: Gauge },
+      { key: 'risco-grupos', label: 'Grupos Empresariais', icon: Building2 },
+      { key: 'risco-ratings', label: 'Ratings', icon: Layers },
+      { key: 'risco-agrupamentos', label: 'Agrupamentos de Limite', icon: ScrollText },
+      { key: 'risco-rel', label: 'Relatórios', icon: BarChart3 },
+    ],
+  },
   { key: 'passivo', label: 'Passivo', icon: Database },
   { key: 'colab', label: 'Colaboradores', icon: Users },
   { key: 'rel', label: 'Relatórios', icon: FileText },
   { key: 'conf', label: 'Configurações', icon: Settings },
 ];
 
-const EXPANDED = 280;
+const EXPANDED = 'var(--sidebar-width-expanded)';
 const COLLAPSED = 80;
 
 interface Props {
@@ -90,6 +90,8 @@ export function Sidebar({
   openMenu,
   onToggleMenu,
 }: Props) {
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+
   return (
     <aside
       className="relative flex flex-col"
@@ -108,43 +110,30 @@ export function Sidebar({
         onClick={() => onNavigate('dashboard')}
         className="flex items-center"
         style={{
-          gap: 12,
           padding: '0 4px',
           marginBottom: 32,
+          height: 56,
           justifyContent: collapsed ? 'center' : 'flex-start',
           background: 'transparent',
           border: 'none',
           cursor: 'pointer',
+          overflow: 'hidden',
+          flexShrink: 0,
         }}
       >
-        <div
-          className="flex items-center justify-center"
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 'var(--radius-lg)',
-            background: 'rgba(255,255,255,0.10)',
-            color: 'var(--agro-base)',
-            flexShrink: 0,
-          }}
-        >
-          <Database size={20} />
-        </div>
-        <div
-          style={{
-            fontSize: 22,
-            fontWeight: 'var(--weight-bold)',
-            color: '#fff',
-            letterSpacing: '-0.01em',
-            overflow: 'hidden',
-            whiteSpace: 'nowrap',
-            opacity: collapsed ? 0 : 1,
-            width: collapsed ? 0 : 'auto',
-            transition: 'opacity var(--duration-base), width var(--duration-slow)',
-          }}
-        >
-          Minerva
-        </div>
+        {collapsed ? (
+          <img
+            src={gciLogoMark}
+            alt="GCI"
+            style={{ width: 42, height: 42, objectFit: 'contain', flexShrink: 0 }}
+          />
+        ) : (
+          <img
+            src={gciLogoFull}
+            alt="Grupo Ceres Investimentos"
+            style={{ height: 56, width: 'auto', maxWidth: '100%', objectFit: 'cover', flexShrink: 0, borderRadius: 'var(--radius-md)' }}
+          />
+        )}
       </button>
 
       {/* Botão colapsar */}
@@ -195,7 +184,6 @@ export function Sidebar({
             <div key={it.key}>
               <button
                 onClick={handleClick}
-                title={collapsed ? it.label : undefined}
                 className="relative flex items-center"
                 style={{
                   gap: 16,
@@ -218,14 +206,55 @@ export function Sidebar({
                     e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
                     e.currentTarget.style.color = '#fff';
                   }
+                  if (collapsed) setHoveredKey(it.key);
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) {
                     e.currentTarget.style.background = 'transparent';
                     e.currentTarget.style.color = 'rgba(255,255,255,0.60)';
                   }
+                  setHoveredKey(null);
                 }}
               >
+                {collapsed && hoveredKey === it.key && (
+                  <div
+                    className="flex items-center"
+                    style={{
+                      position: 'absolute',
+                      left: '100%',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      marginLeft: 14,
+                      zIndex: 100,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 0,
+                        height: 0,
+                        borderTop: '5px solid transparent',
+                        borderBottom: '5px solid transparent',
+                        borderRight: '5px solid var(--surface-card)',
+                      }}
+                    />
+                    <div
+                      style={{
+                        background: 'var(--surface-card)',
+                        color: 'var(--text-strong)',
+                        fontSize: 'var(--text-xs)',
+                        fontWeight: 'var(--weight-semibold)',
+                        padding: '7px 12px',
+                        borderRadius: 'var(--radius-md)',
+                        whiteSpace: 'nowrap',
+                        boxShadow: 'var(--shadow-md)',
+                        border: '1px solid var(--border-default)',
+                      }}
+                    >
+                      {it.label}
+                    </div>
+                  </div>
+                )}
                 {isActive && (
                   <span
                     style={{

@@ -12,11 +12,12 @@ export function Topbar({ title }: Props) {
     <header
       className="flex items-center"
       style={{
-        height: 80,
+        height: 'var(--topbar-height)',
         background: 'var(--surface-card)',
         borderBottom: '1px solid var(--border-default)',
-        padding: '0 32px',
+        padding: '0 var(--topbar-padding-x)',
         gap: 24,
+        transition: 'height var(--duration-base), padding var(--duration-base)',
       }}
     >
       <h2
@@ -25,15 +26,19 @@ export function Topbar({ title }: Props) {
           fontWeight: 'var(--weight-bold)',
           color: 'var(--text-strong)',
           letterSpacing: '-0.01em',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          minWidth: 0,
         }}
       >
         {title}
       </h2>
 
-      <div style={{ flex: 1 }} />
+      <div style={{ flex: 1, minWidth: 8 }} />
 
       {/* Search */}
-      <div className="relative" style={{ width: 256 }}>
+      <div className="topbar-search relative" style={{ width: 256, flexShrink: 1, minWidth: 140 }}>
         <Search
           size={16}
           style={{
@@ -97,16 +102,18 @@ export function Topbar({ title }: Props) {
 
       {/* Divisor */}
       <div
+        className="topbar-user-meta"
         style={{
           width: 1,
           height: 32,
           background: 'var(--border-default)',
+          flexShrink: 0,
         }}
       />
 
       {/* User chip */}
-      <div className="flex items-center" style={{ gap: 12 }}>
-        <div style={{ textAlign: 'right' }}>
+      <div className="flex items-center" style={{ gap: 12, flexShrink: 0 }}>
+        <div className="topbar-user-meta" style={{ textAlign: 'right' }}>
           <div
             style={{
               fontSize: 'var(--text-sm)',
