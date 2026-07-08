@@ -25,6 +25,9 @@ pnpm-debug.log*
 .vite/
 *.local
 
+# Visual diff QA output (screenshots)
+scripts/visual-diff-output/
+
 # Editor / IDE
 .vscode/*
 !.vscode/extensions.json

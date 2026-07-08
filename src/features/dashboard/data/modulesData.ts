@@ -1,3 +1,4 @@
+import type { Component } from 'vue';
 import {
   Settings,
   BarChart3,
@@ -10,15 +11,14 @@ import {
   AlertCircle,
   Receipt,
   ClipboardList,
-  type LucideIcon,
-} from 'lucide-react';
+} from 'lucide-vue-next';
 
 export type Tone = 'info' | 'success' | 'warning' | 'danger' | 'accent';
 
 export interface ModuleItem {
   title: string;
   description: string;
-  icon: LucideIcon;
+  icon: Component;
   tone: Tone;
 }
 

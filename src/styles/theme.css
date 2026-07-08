@@ -160,6 +160,25 @@ html, body, #root {
 
 * { box-sizing: border-box; }
 
+/* Vuetify's base stylesheet resets native form control appearance (e.g. hides
+   the native <select> dropdown arrow). Since Vuetify is only used here for
+   structural components and plain HTML inputs/selects should keep their
+   original look, restore the native appearance for elements not managed by
+   Vuetify's own components. */
+select:not([class*="v-"]) {
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+
+/* Vuetify's base stylesheet forces `overflow-y: scroll` on <html> so a page
+   scrollbar is always reserved/visible, even when there's nothing to scroll
+   (and causes a double scrollbar when an inner container already scrolls).
+   Restore the default browser behavior of only showing a scrollbar when the
+   page actually overflows. */
+html {
+  overflow-y: visible;
+}
+
 /* ===== BREAKPOINTS — notebooks e telas menores ===== */
 @media (max-width: 1440px) {
   :root {

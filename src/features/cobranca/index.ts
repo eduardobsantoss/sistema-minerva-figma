@@ -1,1 +1,1 @@
-export { CobrancaScreen } from './screens/CobrancaScreen';
+export { default as CobrancaScreen } from './screens/CobrancaScreen.vue';

@@ -1,1 +1,1 @@
-export { CraScreen } from './screens/CraScreen';
+export { default as CraScreen } from './screens/CraScreen.vue';

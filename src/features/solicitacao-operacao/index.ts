@@ -1,1 +1,1 @@
-export { SolicitacaoScreen } from './screens/SolicitacaoScreen';
+export { default as SolicitacaoScreen } from './screens/SolicitacaoScreen.vue';
