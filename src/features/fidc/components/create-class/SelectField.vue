@@ -10,6 +10,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{ change: [v: string] }>();
+const model = defineModel<string>();
 </script>
 
 <template>
@@ -17,6 +18,7 @@ const emit = defineEmits<{ change: [v: string] }>();
     <FieldLabel v-if="label">{{ label }}</FieldLabel>
     <div style="position: relative">
       <select
+        v-model="model"
         style="
           height: 40px;
           padding-left: 14px;

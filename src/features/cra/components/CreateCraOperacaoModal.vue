@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import {
   X, Info, SlidersHorizontal, Network, Settings, Percent,
-  Wallet, FileText, AlertTriangle,
+  Wallet, FileText, AlertTriangle, ClipboardCheck,
   Check, ChevronRight, Search, Layers,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
@@ -18,6 +18,7 @@ import SectionGroup from './create-cra-operacao-modal/SectionGroup.vue';
 import AddButton from './create-cra-operacao-modal/AddButton.vue';
 import DataTable from './create-cra-operacao-modal/DataTable.vue';
 import LimiteRow from './create-cra-operacao-modal/LimiteRow.vue';
+import SummaryItem from './create-cra-operacao-modal/SummaryItem.vue';
 
 const BENEFICIARIO_OPTS = [
   'CERES SECURIZADORA S/A',
@@ -88,7 +89,9 @@ const steps: Step[] = [
   { key: 'registro', label: 'Registro',    icon: Network,           hint: 'Carteira de registro' },
   { key: 'pdd',      label: 'PDD',         icon: AlertTriangle,     hint: 'Parametrização de PDD' },
   { key: 'grupos',   label: 'Grupos',      icon: Layers,            hint: 'Seleção de grupos empresariais' },
-  { key: 'ativos',   label: 'Ativos',      icon: FileText,          hint: 'Tipo de ativos aceitos' },
+  // Etapa "Ativos" temporariamente desativada — visual mantido comentado (abaixo e no template) para reuso futuro.
+  // { key: 'ativos', label: 'Ativos',      icon: FileText,          hint: 'Tipo de ativos aceitos' },
+  { key: 'resumo',   label: 'Resumo',      icon: ClipboardCheck,    hint: 'Resumo dos dados cadastrados' },
 ];
 
 const TOGGLE_KEYS = [
@@ -224,6 +227,14 @@ const filteredGrupos = computed(() =>
   gruposEmpresariais.filter(
     (g) => !grupoQ.value || g.nome.toLowerCase().includes(grupoQ.value.toLowerCase()),
   ),
+);
+
+// Step Resumo — dados agregados das demais etapas
+const activeToggles = computed(() =>
+  TOGGLE_KEYS.filter((t) => form.value.toggles[t.key]).map((t) => t.label),
+);
+const concentracaoConfiguradas = computed(
+  () => Object.values(concentracao.value).filter((c) => c.pct).length,
 );
 
 const step = computed(() => steps[stepIdx.value]);
@@ -574,7 +585,11 @@ function handleCreate() {
           </StepGrid>
         </div>
 
-        <!-- Step 7 — Tipo de Ativos Aceitos -->
+        <!--
+        Step — Tipo de Ativos Aceitos
+        Temporariamente oculta desta etapa (ver comentário em `steps`). Visual mantido
+        comentado aqui para ser reaproveitado futuramente.
+
         <div v-else-if="step.key === 'ativos'">
           <SectionHelp>
             Selecione os tipos de ativos creditórios aceitos nesta operação CRA.
@@ -613,6 +628,7 @@ function handleCreate() {
             </button>
           </div>
         </div>
+        -->
 
         <!-- Step 8 — Parametrização de PDD -->
         <div v-else-if="step.key === 'pdd'" class="flex flex-col" style="gap: 16px">
@@ -650,6 +666,90 @@ function handleCreate() {
               empty="Nenhuma faixa cadastrada."
               @remove="(i) => (pddFaixas = pddFaixas.filter((_, idx) => idx !== i))"
             />
+          </SectionGroup>
+        </div>
+
+        <!-- Step 9 — Resumo dos dados cadastrados -->
+        <div v-else-if="step.key === 'resumo'" class="flex flex-col" style="gap: 16px">
+          <SectionHelp>
+            Revise as informações cadastradas em todas as etapas antes de finalizar a operação.
+          </SectionHelp>
+
+          <SectionGroup :icon="Info" title="Dados Cadastrais">
+            <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
+              <SummaryItem label="Tipo de Operação" :value="form.tipoOperacaoCra" />
+              <SummaryItem label="Tipo de Cliente" :value="form.tipoCliente" />
+              <SummaryItem label="Nº de Emissão" :value="form.numeroEmissao" />
+              <SummaryItem label="Nome da Operação" :value="form.nome" />
+              <SummaryItem label="Cessionária" :value="form.cessionaria" />
+              <SummaryItem label="Prestador de Serviço" :value="form.prestadorServico" />
+              <SummaryItem label="Custodiante" :value="form.custodiante" />
+              <SummaryItem label="Beneficiário Final" :value="form.beneficiarioFinal" />
+            </div>
+          </SectionGroup>
+
+          <SectionGroup :icon="Settings" title="Configurações do Veículo">
+            <div v-if="activeToggles.length" class="flex flex-wrap" style="gap: 8px">
+              <span v-for="t in activeToggles" :key="t" class="summary-tag">{{ t }}</span>
+            </div>
+            <div v-else style="font-size: var(--text-sm); color: var(--text-muted)">Nenhuma configuração ativada.</div>
+          </SectionGroup>
+
+          <SectionGroup :icon="SlidersHorizontal" title="Configurações Adicionais">
+            <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
+              <SummaryItem label="Dias Mín. Vencimento" :value="form.diasMinVencimento" />
+              <SummaryItem label="Dias Máx. Vencimento" :value="form.diasMaxVencimento" />
+              <SummaryItem label="Cálculo de Elegibilidade" :value="form.tipoCalculoElegibilidade" />
+              <SummaryItem label="Grupo de Limites" :value="form.grupoLimites" />
+              <SummaryItem label="Data de Emissão" :value="form.dataEmissao" />
+              <SummaryItem label="Data de Início" :value="form.dataInicio" />
+              <SummaryItem label="Data de Vencimento" :value="form.dataVencimento" />
+              <SummaryItem label="Método de Notificação" :value="form.metodoNotificacao" />
+              <SummaryItem label="Valor de Emissão" :value="form.valorEmissao" />
+              <SummaryItem label="Valor Mín. de Garantia" :value="form.valorGarantiaMinimo" />
+            </div>
+          </SectionGroup>
+
+          <SectionGroup :icon="Percent" title="Limites">
+            <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
+              <SummaryItem label="Regras de Concentração" :value="`${concentracaoConfiguradas} configuradas`" />
+              <SummaryItem label="Totalizadores de Ativos" :value="`${totalizadores.length} cadastrados`" />
+              <SummaryItem label="TOP Cedente" :value="`${topCedente.length} cadastrados`" />
+              <SummaryItem label="TOP Sacado" :value="`${topSacado.length} cadastrados`" />
+            </div>
+          </SectionGroup>
+
+          <SectionGroup :icon="Wallet" title="Carteira de Cobrança">
+            <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
+              <SummaryItem label="Nome da Carteira" :value="form.carteiraNome" />
+              <SummaryItem label="Banco" :value="form.banco" />
+              <SummaryItem label="Tipo de CNAB" :value="form.tipoCnab" />
+              <SummaryItem label="Carteira" :value="form.carteira" />
+              <SummaryItem label="Agência" :value="form.agencia" />
+              <SummaryItem label="Conta" :value="form.conta" />
+              <SummaryItem label="Taxa de Juros Padrão" :value="form.taxaJurosPadrao" />
+              <SummaryItem label="Taxa de Multa Padrão" :value="form.taxaMultaPadrao" />
+              <SummaryItem label="Fim de Semana" :value="form.permiteFimDeSemana ? 'Permitido' : 'Não permitido'" />
+            </div>
+          </SectionGroup>
+
+          <SectionGroup :icon="Network" title="Carteira de Registro">
+            <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
+              <SummaryItem label="Registradora" :value="form.registradora" />
+              <SummaryItem label="ID da Carteira" :value="form.idCarteira" />
+              <SummaryItem label="Credenciais de API" :value="form.apiToken ? 'Configuradas' : 'Não configuradas'" />
+            </div>
+          </SectionGroup>
+
+          <SectionGroup :icon="Layers" title="Grupos Empresariais">
+            <div v-if="form.gruposSelecionados.length" class="flex flex-wrap" style="gap: 8px">
+              <span v-for="g in form.gruposSelecionados" :key="g" class="summary-tag">{{ g }}</span>
+            </div>
+            <div v-else style="font-size: var(--text-sm); color: var(--text-muted)">Nenhum grupo selecionado.</div>
+          </SectionGroup>
+
+          <SectionGroup :icon="AlertTriangle" title="Parametrização de PDD">
+            <SummaryItem label="Faixas de Aging Cadastradas" :value="`${pddFaixas.length} faixas`" />
           </SectionGroup>
         </div>
       </div>
@@ -707,6 +807,16 @@ function handleCreate() {
 .ccm-trash button:hover {
   background: var(--danger-light);
   color: var(--danger-base);
+}
+.summary-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--gci-base);
+  background: var(--gci-light);
+  border-radius: var(--radius-md);
 }
 </style>
 

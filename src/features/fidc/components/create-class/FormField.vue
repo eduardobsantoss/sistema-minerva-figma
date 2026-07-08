@@ -10,11 +10,12 @@ defineProps<{
   disabled?: boolean;
   defaultValue?: string;
 }>();
+const model = defineModel<string>();
 </script>
 
 <template>
   <div :style="{ gridColumn: span ? `span ${span}` : undefined }">
     <FieldLabel>{{ label }}</FieldLabel>
-    <Input :placeholder="placeholder" :type="type" :disabled="disabled" :default-value="defaultValue" />
+    <Input v-model="model" :placeholder="placeholder" :type="type" :disabled="disabled" :default-value="defaultValue" />
   </div>
 </template>

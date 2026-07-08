@@ -7,11 +7,11 @@ import {
   Mail,
   FileText,
   Users,
-  SlidersHorizontal,
   Network,
   Banknote,
   ClipboardList,
   AlertTriangle,
+  ClipboardCheck,
   Check,
   ChevronRight,
   Plus,
@@ -38,6 +38,7 @@ import SectionGroup from './create-class/SectionGroup.vue';
 import AddButton from './create-class/AddButton.vue';
 import DataTable from './create-class/DataTable.vue';
 import DynamicConcentration from './create-class/DynamicConcentration.vue';
+import SummaryItem from './create-class/SummaryItem.vue';
 
 defineEmits<{ close: [] }>();
 
@@ -51,13 +52,15 @@ interface Step {
 const steps: Step[] = [
   { key: 'info', label: 'Info', icon: Info, hint: 'Identificação inicial' },
   { key: 'contato', label: 'Contato', icon: Mail, hint: 'Endereçamento' },
-  { key: 'ativos', label: 'Ativos', icon: FileText, hint: 'Lastros elegíveis' },
+  // Etapa "Ativos" temporariamente desativada — visual mantido comentado (abaixo e no template) para reuso futuro.
+  // { key: 'ativos', label: 'Ativos', icon: FileText, hint: 'Lastros elegíveis' },
   { key: 'partic', label: 'Participantes', icon: Users, hint: 'Prestadores' },
-  { key: 'configs', label: 'Configs', icon: SlidersHorizontal, hint: 'Limites' },
+  { key: 'limites', label: 'Limites', icon: Percent, hint: 'Configuração de limites' },
   { key: 'grupos', label: 'Grupos', icon: Network, hint: 'Econômicos' },
   { key: 'banco', label: 'Banco', icon: Banknote, hint: 'Domicílio bancário' },
   { key: 'registro', label: 'Registro', icon: ClipboardList, hint: 'Registradoras' },
   { key: 'pdd', label: 'PDD', icon: AlertTriangle, hint: 'Provisão' },
+  { key: 'resumo', label: 'Resumo', icon: ClipboardCheck, hint: 'Resumo dos dados cadastrados' },
 ];
 
 const lastroOpts = [
@@ -91,12 +94,69 @@ const partOpcionais: { key: string; label: string; toggleLabel: string }[] = [
   { key: 'benef', label: 'Beneficiário Final', toggleLabel: 'Fundo tem Beneficiário Final' },
 ];
 
+interface NewClassData {
+  cnpjVeiculo: string;
+  identificacaoVeiculo: string;
+  tipoEmpresa: string;
+  razaoSocial: string;
+  nomeFantasia: string;
+  naturezaLegal: string;
+  atividadePrincipal: string;
+  codigoSingulare: string;
+  dataConstituicao: string;
+  dataFimPrazo: string;
+  email: string;
+  ddi: string;
+  ddd: string;
+  telefone: string;
+  cep: string;
+  endereco: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  pais: string;
+  nomeCarteira: string;
+  banco: string;
+  carteiraSelecionada: string;
+  cnab: string;
+  codigoEmpresa: string;
+  numeroConta: string;
+  numeroAgencia: string;
+  campoExtra1: string;
+  boletoInstrucoes: string;
+  permiteFimDeSemana: boolean;
+  benefCnpj: string;
+  benefNome: string;
+  benefCep: string;
+  benefEndereco: string;
+  benefNumero: string;
+  benefComplemento: string;
+  benefBairro: string;
+  benefCidade: string;
+  benefEstado: string;
+}
+
+const form = ref<NewClassData>({
+  cnpjVeiculo: '', identificacaoVeiculo: '', tipoEmpresa: '',
+  razaoSocial: '', nomeFantasia: '', naturezaLegal: '', atividadePrincipal: '', codigoSingulare: '',
+  dataConstituicao: '', dataFimPrazo: '',
+  email: '', ddi: '', ddd: '', telefone: '',
+  cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', pais: '',
+  nomeCarteira: '', banco: '', carteiraSelecionada: '', cnab: '', codigoEmpresa: '',
+  numeroConta: '', numeroAgencia: '', campoExtra1: '', boletoInstrucoes: '', permiteFimDeSemana: true,
+  benefCnpj: '', benefNome: '', benefCep: '', benefEndereco: '', benefNumero: '',
+  benefComplemento: '', benefBairro: '', benefCidade: '', benefEstado: '',
+});
+
 const stepIdx = ref(0);
 const hoverIdx = ref<number | null>(null);
 const prazo = ref<'determinado' | 'indeterminado'>('determinado');
 const ativos = ref<string[]>(['NF', 'DM']);
 const cedTipo = ref<'mono' | 'multi'>('multi');
 const sacTipo = ref<'mono' | 'multi'>('multi');
+const concentracaoPool = ref({ sacadosNovos: '', sacadosElegiveis: '', totalNovos: '', totalElegiveis: '' });
 const ativoLimites = ref<{ tipo: string; limite: string }[]>([{ tipo: 'DM', limite: '30,00' }]);
 const ativoForm = ref<{ tipo: string; limite: string }>({ tipo: 'DM', limite: '' });
 const topCed = ref<{ qtd: string; limite: string }[]>([{ qtd: '5', limite: '40,00' }]);
@@ -134,9 +194,9 @@ function addTopSac() {
   topSacForm.value = { qtd: '', limite: '' };
 }
 
-type ConfigTab = 'concentracao' | 'totalizadores' | 'topCedente' | 'topSacado';
-const configTab = ref<ConfigTab>('concentracao');
-const configTabs: [ConfigTab, string][] = [
+type LimitTab = 'concentracao' | 'totalizadores' | 'topCedente' | 'topSacado';
+const limitTab = ref<LimitTab>('concentracao');
+const limitTabs: [LimitTab, string][] = [
   ['concentracao', 'Concentração'],
   ['totalizadores', 'Totalizadores de ativos'],
   ['topCedente', 'TOP Cedente'],
@@ -196,6 +256,11 @@ function addPdd() {
 
 const step = computed(() => steps[stepIdx.value]);
 const isLast = computed(() => stepIdx.value === steps.length - 1);
+
+// Step Resumo — dados agregados das demais etapas
+const activePartLabels = computed(() =>
+  partOpcionais.filter((p) => partToggles.value[p.key]).map((p) => p.label),
+);
 
 function toggleAtivo(k: string) {
   ativos.value = ativos.value.includes(k) ? ativos.value.filter((a) => a !== k) : [...ativos.value, k];
@@ -289,16 +354,16 @@ function stepDimmed(i: number) {
       <!-- Body -->
       <div style="flex: 1; overflow-y: auto; padding: 40px">
         <StepGrid v-if="step.key === 'info'">
-          <FormField label="CNPJ do Veículo (Classe)" placeholder="00.000.000/0000-00" :span="4" />
-          <FormField label="Identificação do Veículo" placeholder="Ex: CLASSE TECH A" :span="5" />
-          <SelectField label="Tipo de Empresa" :options="['Matriz', 'Filial']" :span="3" />
+          <FormField label="CNPJ do Veículo (Classe)" placeholder="00.000.000/0000-00" :span="4" v-model="form.cnpjVeiculo" />
+          <FormField label="Identificação do Veículo" placeholder="Ex: CLASSE TECH A" :span="5" v-model="form.identificacaoVeiculo" />
+          <SelectField label="Tipo de Empresa" :options="['Matriz', 'Filial']" :span="3" v-model="form.tipoEmpresa" />
 
-          <FormField label="Razão Social" placeholder="Razão social completa" :span="8" />
-          <FormField label="Nome Fantasia / Classe" placeholder="Ex: Sênior Classe A" :span="4" />
+          <FormField label="Razão Social" placeholder="Razão social completa" :span="8" v-model="form.razaoSocial" />
+          <FormField label="Nome Fantasia / Classe" placeholder="Ex: Sênior Classe A" :span="4" v-model="form.nomeFantasia" />
 
-          <FormField label="Natureza Legal" placeholder="Fundo" :span="4" />
-          <FormField label="Atividade Principal" placeholder="Direitos Creditórios" :span="5" />
-          <FormField label="Código Singulare (CNAB 444)" placeholder="000" :span="3" />
+          <FormField label="Natureza Legal" placeholder="Fundo" :span="4" v-model="form.naturezaLegal" />
+          <FormField label="Atividade Principal" placeholder="Direitos Creditórios" :span="5" v-model="form.atividadePrincipal" />
+          <FormField label="Código Singulare (CNAB 444)" placeholder="000" :span="3" v-model="form.codigoSingulare" />
 
           <SelectField
             label="Indicativo de Prazo"
@@ -311,8 +376,9 @@ function stepDimmed(i: number) {
             placeholder="dd/mm/aaaa"
             type="date"
             :span="prazo === 'determinado' ? 4 : 6"
+            v-model="form.dataConstituicao"
           />
-          <FormField v-if="prazo === 'determinado'" label="Data Fim do Prazo" placeholder="dd/mm/aaaa" type="date" :span="4" />
+          <FormField v-if="prazo === 'determinado'" label="Data Fim do Prazo" placeholder="dd/mm/aaaa" type="date" :span="4" v-model="form.dataFimPrazo" />
 
           <FormField label="Categoria CVM" placeholder="FIDC" disabled default-value="FIDC" :span="12" />
         </StepGrid>
@@ -321,26 +387,31 @@ function stepDimmed(i: number) {
           <div>
             <SectionTitle :icon="Phone">Contato</SectionTitle>
             <StepGrid>
-              <FormField label="Email do Veículo" placeholder="contato@classe.com.br" type="email" :span="6" />
-              <FormField label="DDI" placeholder="+55" :span="2" />
-              <FormField label="DDD" placeholder="11" :span="1" />
-              <FormField label="Telefone" placeholder="0000-0000" :span="3" />
+              <FormField label="Email do Veículo" placeholder="contato@classe.com.br" type="email" :span="6" v-model="form.email" />
+              <FormField label="DDI" placeholder="+55" :span="2" v-model="form.ddi" />
+              <FormField label="DDD" placeholder="11" :span="1" v-model="form.ddd" />
+              <FormField label="Telefone" placeholder="0000-0000" :span="3" v-model="form.telefone" />
             </StepGrid>
           </div>
           <div>
             <SectionTitle :icon="MapPin">Endereço</SectionTitle>
             <StepGrid>
-              <FormField label="CEP" placeholder="00000-000" :span="3" />
-              <FormField label="Endereço" placeholder="Av. ..." :span="7" />
-              <FormField label="Número" placeholder="—" :span="2" />
-              <FormField label="Complemento" placeholder="Sala 101" :span="4" />
-              <FormField label="Bairro" placeholder="—" :span="4" />
-              <FormField label="Cidade" placeholder="—" :span="4" />
-              <FormField label="Estado" placeholder="SP" :span="2" />
-              <FormField label="País" placeholder="Brasil" default-value="Brasil" :span="4" />
+              <FormField label="CEP" placeholder="00000-000" :span="3" v-model="form.cep" />
+              <FormField label="Endereço" placeholder="Av. ..." :span="7" v-model="form.endereco" />
+              <FormField label="Número" placeholder="—" :span="2" v-model="form.numero" />
+              <FormField label="Complemento" placeholder="Sala 101" :span="4" v-model="form.complemento" />
+              <FormField label="Bairro" placeholder="—" :span="4" v-model="form.bairro" />
+              <FormField label="Cidade" placeholder="—" :span="4" v-model="form.cidade" />
+              <FormField label="Estado" placeholder="SP" :span="2" v-model="form.estado" />
+              <FormField label="País" placeholder="Brasil" default-value="Brasil" :span="4" v-model="form.pais" />
             </StepGrid>
           </div>
         </div>
+
+        <!--
+        Step — Tipo de Ativos Aceitos
+        Temporariamente oculta desta etapa (ver comentário em `steps`). Visual mantido
+        comentado aqui para ser reaproveitado futuramente.
 
         <div v-else-if="step.key === 'ativos'">
           <SectionHelp>
@@ -380,6 +451,7 @@ function stepDimmed(i: number) {
             </button>
           </div>
         </div>
+        -->
 
         <div v-else-if="step.key === 'partic'" class="flex flex-col" style="gap: 16px">
           <SectionHelp>
@@ -417,11 +489,14 @@ function stepDimmed(i: number) {
           />
         </div>
 
-        <div v-else-if="step.key === 'configs'" class="flex flex-col" style="gap: 20px">
+        <div v-else-if="step.key === 'limites'" class="flex flex-col" style="gap: 20px">
+          <SectionHelp>
+            Configure os limites de concentração da carteira e os totalizadores por tipo de ativo e TOP.
+          </SectionHelp>
           <!-- Tab bar -->
           <div class="flex" style="gap: 4px; padding: 4px; background: var(--surface-sunken); border-radius: var(--radius-lg); align-self: flex-start; flex-wrap: wrap">
             <button
-              v-for="[k, label] in configTabs"
+              v-for="[k, label] in limitTabs"
               :key="k"
               :style="{
                 padding: '8px 16px',
@@ -431,19 +506,19 @@ function stepDimmed(i: number) {
                 border: 'none',
                 cursor: 'pointer',
                 borderRadius: 'var(--radius-md)',
-                background: configTab === k ? 'var(--surface-card)' : 'transparent',
-                color: configTab === k ? 'var(--text-strong)' : 'var(--text-muted)',
-                boxShadow: configTab === k ? 'var(--shadow-xs)' : 'none',
+                background: limitTab === k ? 'var(--surface-card)' : 'transparent',
+                color: limitTab === k ? 'var(--text-strong)' : 'var(--text-muted)',
+                boxShadow: limitTab === k ? 'var(--shadow-xs)' : 'none',
                 transition: 'all var(--duration-base)',
               }"
-              @click="configTab = k"
+              @click="limitTab = k"
             >
               {{ label }}
             </button>
           </div>
 
           <!-- Tab 1 — Concentração (diversificação do pool) -->
-          <SectionGroup v-if="configTab === 'concentracao'" :icon="Users2" title="Diversificação do Pool">
+          <SectionGroup v-if="limitTab === 'concentracao'" :icon="Users2" title="Diversificação do Pool">
             <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px">
               <div>
                 <FieldLabel>Tipo de Cedente</FieldLabel>
@@ -463,26 +538,26 @@ function stepDimmed(i: number) {
             <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px">
               <div>
                 <FieldLabel>Conc. Sacados Novos (%)</FieldLabel>
-                <Input placeholder="5,00" />
+                <Input placeholder="5,00" v-model="concentracaoPool.sacadosNovos" />
               </div>
               <div>
                 <FieldLabel>Conc. Sacados Elegíveis (%)</FieldLabel>
-                <Input placeholder="20,00" />
+                <Input placeholder="20,00" v-model="concentracaoPool.sacadosElegiveis" />
               </div>
               <div>
                 <FieldLabel>Conc. Total Novos (%)</FieldLabel>
-                <Input placeholder="3,00" />
+                <Input placeholder="3,00" v-model="concentracaoPool.totalNovos" />
               </div>
               <div>
                 <FieldLabel>Conc. Total Elegíveis (%)</FieldLabel>
-                <Input placeholder="100,00" />
+                <Input placeholder="100,00" v-model="concentracaoPool.totalElegiveis" />
               </div>
             </div>
           </SectionGroup>
 
           <!-- Tab 2 — Totalizadores de ativos -->
           <DynamicConcentration
-            v-else-if="configTab === 'totalizadores'"
+            v-else-if="limitTab === 'totalizadores'"
             :icon="Percent"
             title="% Concentração por Tipo de Ativo"
             qtd-label="Tipo de Ativo"
@@ -498,7 +573,7 @@ function stepDimmed(i: number) {
 
           <!-- Tab 3 — TOP Cedente -->
           <DynamicConcentration
-            v-else-if="configTab === 'topCedente'"
+            v-else-if="limitTab === 'topCedente'"
             :icon="Crown"
             title="Concentração de TOP's Cedentes"
             qtd-label="Quantidade"
@@ -514,7 +589,7 @@ function stepDimmed(i: number) {
 
           <!-- Tab 4 — TOP Sacado -->
           <DynamicConcentration
-            v-else-if="configTab === 'topSacado'"
+            v-else-if="limitTab === 'topSacado'"
             :icon="Crown"
             title="Concentração de TOP's Sacados"
             qtd-label="Quantidade"
@@ -597,22 +672,23 @@ function stepDimmed(i: number) {
           <div>
             <SectionTitle :icon="Wallet">Dados da Carteira</SectionTitle>
             <StepGrid>
-              <FormField label="Nome da Carteira" placeholder="Ex: Agrovita FIDC - Santander" :span="6" />
+              <FormField label="Nome da Carteira" placeholder="Ex: Agrovita FIDC - Santander" :span="6" v-model="form.nomeCarteira" />
               <SelectField
                 label="Selecione o Banco"
                 :options="['033 - Santander', '237 - Bradesco', '341 - Itaú', '001 - Banco do Brasil', '104 - Caixa']"
                 placeholder="Selecione"
                 :span="6"
+                v-model="form.banco"
               />
-              <SelectField label="Selecione a Carteira" :options="['Carteira 1', 'Carteira 2', 'Carteira 3']" placeholder="Selecione" :span="4" />
-              <SelectField label="Selecione o CNAB" :options="['CNAB 240', 'CNAB 400']" placeholder="Selecione" :span="4" />
-              <FormField label="Código da Empresa" placeholder="—" :span="4" />
-              <FormField label="Número da Conta" placeholder="000000-0" :span="4" />
-              <FormField label="Número da Agência" placeholder="0000-0" :span="4" />
-              <FormField label="Campo Extra 1" placeholder="—" :span="4" />
-              <FormField label="Configuração de dados padrões para Boleto" placeholder="Texto de instrução para impressão" :span="12" />
+              <SelectField label="Selecione a Carteira" :options="['Carteira 1', 'Carteira 2', 'Carteira 3']" placeholder="Selecione" :span="4" v-model="form.carteiraSelecionada" />
+              <SelectField label="Selecione o CNAB" :options="['CNAB 240', 'CNAB 400']" placeholder="Selecione" :span="4" v-model="form.cnab" />
+              <FormField label="Código da Empresa" placeholder="—" :span="4" v-model="form.codigoEmpresa" />
+              <FormField label="Número da Conta" placeholder="000000-0" :span="4" v-model="form.numeroConta" />
+              <FormField label="Número da Agência" placeholder="0000-0" :span="4" v-model="form.numeroAgencia" />
+              <FormField label="Campo Extra 1" placeholder="—" :span="4" v-model="form.campoExtra1" />
+              <FormField label="Configuração de dados padrões para Boleto" placeholder="Texto de instrução para impressão" :span="12" v-model="form.boletoInstrucoes" />
               <div class="flex items-center" style="gap: 12px; padding: 14px; background: var(--surface-sunken); border-radius: var(--radius-lg); grid-column: span 12">
-                <input type="checkbox" checked style="accent-color: var(--gci-base)" />
+                <input type="checkbox" v-model="form.permiteFimDeSemana" style="accent-color: var(--gci-base)" />
                 <div>
                   <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
                     Permitir Vencimento em Finais de Semana e Feriado
@@ -628,15 +704,15 @@ function stepDimmed(i: number) {
           <div>
             <SectionTitle :icon="UserCheck">Dados do Beneficiário</SectionTitle>
             <StepGrid>
-              <FormField label="CNPJ" placeholder="00.000.000/0000-00" :span="4" />
-              <FormField label="Nome" placeholder="Razão social do beneficiário" :span="8" />
-              <FormField label="CEP" placeholder="00000-000" :span="3" />
-              <FormField label="Endereço" placeholder="Rua / Avenida" :span="7" />
-              <FormField label="Número" placeholder="—" :span="2" />
-              <FormField label="Complemento" placeholder="Sala / Andar" :span="4" />
-              <FormField label="Bairro" placeholder="—" :span="4" />
-              <FormField label="Cidade" placeholder="—" :span="4" />
-              <SelectField label="Estado" :options="['SP', 'RJ', 'MG', 'RS', 'PR', 'SC', 'BA', 'GO', 'MT', 'MS', 'DF']" placeholder="UF" :span="12" />
+              <FormField label="CNPJ" placeholder="00.000.000/0000-00" :span="4" v-model="form.benefCnpj" />
+              <FormField label="Nome" placeholder="Razão social do beneficiário" :span="8" v-model="form.benefNome" />
+              <FormField label="CEP" placeholder="00000-000" :span="3" v-model="form.benefCep" />
+              <FormField label="Endereço" placeholder="Rua / Avenida" :span="7" v-model="form.benefEndereco" />
+              <FormField label="Número" placeholder="—" :span="2" v-model="form.benefNumero" />
+              <FormField label="Complemento" placeholder="Sala / Andar" :span="4" v-model="form.benefComplemento" />
+              <FormField label="Bairro" placeholder="—" :span="4" v-model="form.benefBairro" />
+              <FormField label="Cidade" placeholder="—" :span="4" v-model="form.benefCidade" />
+              <SelectField label="Estado" :options="['SP', 'RJ', 'MG', 'RS', 'PR', 'SC', 'BA', 'GO', 'MT', 'MS', 'DF']" placeholder="UF" :span="12" v-model="form.benefEstado" />
             </StepGrid>
           </div>
         </div>
@@ -719,6 +795,90 @@ function stepDimmed(i: number) {
             />
           </SectionGroup>
         </div>
+
+        <!-- Step — Resumo dos dados cadastrados -->
+        <div v-else-if="step.key === 'resumo'" class="flex flex-col" style="gap: 16px">
+          <SectionHelp>
+            Revise as informações cadastradas em todas as etapas antes de finalizar o cadastro da classe.
+          </SectionHelp>
+
+          <SectionGroup :icon="Info" title="Dados Cadastrais">
+            <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
+              <SummaryItem label="CNPJ do Veículo" :value="form.cnpjVeiculo" />
+              <SummaryItem label="Identificação do Veículo" :value="form.identificacaoVeiculo" />
+              <SummaryItem label="Tipo de Empresa" :value="form.tipoEmpresa" />
+              <SummaryItem label="Razão Social" :value="form.razaoSocial" />
+              <SummaryItem label="Nome Fantasia / Classe" :value="form.nomeFantasia" />
+              <SummaryItem label="Natureza Legal" :value="form.naturezaLegal" />
+              <SummaryItem label="Atividade Principal" :value="form.atividadePrincipal" />
+              <SummaryItem label="Código Singulare" :value="form.codigoSingulare" />
+              <SummaryItem label="Indicativo de Prazo" :value="prazo === 'determinado' ? 'Prazo Determinado' : 'Prazo Indeterminado'" />
+              <SummaryItem label="Data de Constituição" :value="form.dataConstituicao" />
+              <SummaryItem v-if="prazo === 'determinado'" label="Data Fim do Prazo" :value="form.dataFimPrazo" />
+              <SummaryItem label="Categoria CVM" value="FIDC" />
+            </div>
+          </SectionGroup>
+
+          <SectionGroup :icon="Phone" title="Contato e Endereço">
+            <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
+              <SummaryItem label="Email do Veículo" :value="form.email" />
+              <SummaryItem label="Telefone" :value="form.ddd || form.telefone ? `(${form.ddi || '+55'}) ${form.ddd} ${form.telefone}` : ''" />
+              <SummaryItem label="CEP" :value="form.cep" />
+              <SummaryItem label="Endereço" :value="form.endereco ? `${form.endereco}, ${form.numero || 's/n'}` : ''" />
+              <SummaryItem label="Bairro" :value="form.bairro" />
+              <SummaryItem label="Cidade / Estado" :value="form.cidade ? `${form.cidade} / ${form.estado}` : ''" />
+              <SummaryItem label="País" :value="form.pais" />
+            </div>
+          </SectionGroup>
+
+          <SectionGroup :icon="Users" title="Participantes">
+            <div v-if="activePartLabels.length" class="flex flex-wrap" style="gap: 8px">
+              <span class="summary-tag">Administradora</span>
+              <span class="summary-tag">Gestor</span>
+              <span v-for="p in activePartLabels" :key="p" class="summary-tag">{{ p }}</span>
+            </div>
+            <div v-else class="flex flex-wrap" style="gap: 8px">
+              <span class="summary-tag">Administradora</span>
+              <span class="summary-tag">Gestor</span>
+            </div>
+          </SectionGroup>
+
+          <SectionGroup :icon="Percent" title="Limites">
+            <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
+              <SummaryItem label="Tipo de Cedente / Sacado" :value="`${cedTipo === 'mono' ? 'Monocedente' : 'Multicedente'} · ${sacTipo === 'mono' ? 'Monosacado' : 'Multissacado'}`" />
+              <SummaryItem label="Totalizadores de Ativos" :value="`${ativoLimites.length} cadastrados`" />
+              <SummaryItem label="TOP Cedente" :value="`${topCed.length} cadastrados`" />
+              <SummaryItem label="TOP Sacado" :value="`${topSac.length} cadastrados`" />
+            </div>
+          </SectionGroup>
+
+          <SectionGroup :icon="Network" title="Grupos Econômicos">
+            <div v-if="gruposSelecionados.length" class="flex flex-wrap" style="gap: 8px">
+              <span v-for="g in gruposSelecionados" :key="g" class="summary-tag">{{ g }}</span>
+            </div>
+            <div v-else style="font-size: var(--text-sm); color: var(--text-muted)">Nenhum grupo selecionado.</div>
+          </SectionGroup>
+
+          <SectionGroup :icon="Wallet" title="Banco e Beneficiário">
+            <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
+              <SummaryItem label="Nome da Carteira" :value="form.nomeCarteira" />
+              <SummaryItem label="Banco" :value="form.banco" />
+              <SummaryItem label="Carteira" :value="form.carteiraSelecionada" />
+              <SummaryItem label="CNAB" :value="form.cnab" />
+              <SummaryItem label="Fim de Semana" :value="form.permiteFimDeSemana ? 'Permitido' : 'Não permitido'" />
+              <SummaryItem label="Beneficiário" :value="form.benefNome" />
+              <SummaryItem label="CNPJ do Beneficiário" :value="form.benefCnpj" />
+            </div>
+          </SectionGroup>
+
+          <SectionGroup :icon="ClipboardList" title="Registro">
+            <SummaryItem label="Registradoras Cadastradas" :value="`${regList.length} cadastradas`" />
+          </SectionGroup>
+
+          <SectionGroup :icon="AlertTriangle" title="Parametrização de PDD">
+            <SummaryItem label="Faixas de Aging Cadastradas" :value="`${pddFaixas.length} faixas`" />
+          </SectionGroup>
+        </div>
       </div>
 
       <!-- Footer -->
@@ -774,5 +934,15 @@ function stepDimmed(i: number) {
 .ccm-trash button:hover {
   background: var(--danger-light);
   color: var(--danger-base);
+}
+.summary-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--gci-base);
+  background: var(--gci-light);
+  border-radius: var(--radius-md);
 }
 </style>
