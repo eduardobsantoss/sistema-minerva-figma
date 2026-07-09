@@ -6,6 +6,7 @@ import {
   detalheSolicitacao,
   type Solicitacao,
   type ParteTipo,
+  type ParteRelacionada,
 } from '../../data/operacaoData';
 import { CopyButton, Section, Field, Card, EmptyState, GhostButton } from './shared';
 
@@ -13,7 +14,7 @@ const props = defineProps<{
   s: Solicitacao;
   det: ReturnType<typeof detalheSolicitacao>;
 }>();
-const emit = defineEmits<{ addParte: [] }>();
+const emit = defineEmits<{ addParte: []; openParte: [parte: ParteRelacionada] }>();
 
 const parteTone: Record<ParteTipo, { bg: string; fg: string }> = {
   AVA: { bg: 'var(--gci-light)', fg: 'var(--gci-base)' },
@@ -225,13 +226,19 @@ const partesTipos = Object.keys(PARTE_LEGENDA) as ParteTipo[];
         <div
           v-for="(p, i) in det.partes"
           :key="`${p.documento}-${i}`"
-          class="grid items-center"
+          class="grid items-center parte-row"
+          role="button"
+          tabindex="0"
           style="
             grid-template-columns: 1.6fr 1.1fr 1.4fr 1fr 0.9fr;
             padding: 12px 16px;
             border-top: 1px solid var(--border-default);
             font-size: var(--text-sm);
+            cursor: pointer;
+            transition: background var(--duration-fast);
           "
+          @click="emit('openParte', p)"
+          @keydown.enter="emit('openParte', p)"
         >
           <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ p.nome }}</div>
           <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ p.documento }}</div>
@@ -284,3 +291,9 @@ const partesTipos = Object.keys(PARTE_LEGENDA) as ParteTipo[];
     </Section>
   </div>
 </template>
+
+<style scoped>
+.parte-row:hover {
+  background: var(--surface-sunken);
+}
+</style>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import Checkbox from '@/components/ui/Checkbox.vue';
 import { nomesAgrupamentos, type Agrupamento, type OperacaoVinculavel } from '../../../data/riscoData';
 
 const props = defineProps<{ op: OperacaoVinculavel; agrupamentos: Agrupamento[]; checked: boolean }>();
@@ -12,11 +13,14 @@ const badgeColor = computed(() => (props.op.tipo === 'CRA' ? 'var(--agro-base)' 
 </script>
 
 <template>
-  <label
+  <div
     class="flex items-center"
     :style="{ gap: '10px', padding: '10px 14px', borderBottom: '1px solid var(--border-default)', cursor: 'pointer', background: checked ? 'var(--surface-selected)' : 'transparent' }"
+    @click="emit('toggle')"
   >
-    <input type="checkbox" :checked="checked" style="flex-shrink: 0" @change="emit('toggle')" />
+    <div @click.stop>
+      <Checkbox :checked="checked" @change="emit('toggle')" />
+    </div>
     <div style="flex: 1; min-width: 0">
       <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">
         {{ op.nome }}
@@ -34,5 +38,5 @@ const badgeColor = computed(() => (props.op.tipo === 'CRA' ? 'var(--agro-base)' 
     >
       {{ op.tipo }}
     </span>
-  </label>
+  </div>
 </template>

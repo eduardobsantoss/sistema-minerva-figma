@@ -42,7 +42,7 @@ const canConfirm = computed(() => gerente.value !== '' && gerente.value !== prop
           style="width: 100%; height: 40px; padding: 0 14px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
         >
           <option value="">Selecione</option>
-          <option v-for="g in GERENTES_SEED.filter((x) => x !== gerenteAtual)" :key="g" :value="g">{{ g }}</option>
+          <option v-for="g in GERENTES_SEED.filter((x) => x.nome !== gerenteAtual)" :key="g.id" :value="g.nome">{{ g.nome }}</option>
         </select>
       </div>
 

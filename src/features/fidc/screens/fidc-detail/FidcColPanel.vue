@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import Checkbox from '@/components/ui/Checkbox.vue';
 
 const props = defineProps<{ tab: 'classes' | 'titulos' }>();
 const emit = defineEmits<{ close: [] }>();
@@ -9,6 +10,10 @@ const FIDC_TIT_COLS = ['Classe', 'Nº Título', 'Lastro', 'Cedente', 'Sacado', '
 
 const cols = props.tab === 'classes' ? FIDC_CLASS_COLS : FIDC_TIT_COLS;
 const checked = ref<Record<string, boolean>>(Object.fromEntries(cols.map((c) => [c, true])));
+
+function toggleCol(col: string) {
+  checked.value = { ...checked.value, [col]: !checked.value[col] };
+}
 </script>
 
 <template>
@@ -33,15 +38,18 @@ const checked = ref<Record<string, boolean>>(Object.fromEntries(cols.map((c) => 
       Colunas visíveis
     </div>
     <div class="flex flex-col" style="gap: 8px">
-      <label v-for="c in cols" :key="c" class="flex items-center" style="gap: 10px; cursor: pointer">
-        <input
-          type="checkbox"
-          :checked="checked[c]"
-          style="accent-color: var(--gci-base); width: 14px; height: 14px"
-          @change="checked = { ...checked, [c]: !checked[c] }"
-        />
+      <div
+        v-for="c in cols"
+        :key="c"
+        class="flex items-center"
+        style="gap: 10px; cursor: pointer"
+        @click="toggleCol(c)"
+      >
+        <div @click.stop>
+          <Checkbox :checked="checked[c]" @change="toggleCol(c)" />
+        </div>
         <span style="font-size: var(--text-sm); color: var(--text-default)">{{ c }}</span>
-      </label>
+      </div>
     </div>
   </div>
 </template>

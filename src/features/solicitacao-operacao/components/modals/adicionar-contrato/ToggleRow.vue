@@ -1,5 +1,5 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ label: string; on: boolean; compact?: boolean }>(), { compact: false });
+withDefaults(defineProps<{ label: string; on: boolean; compact?: boolean; spacious?: boolean }>(), { compact: false, spacious: false });
 const emit = defineEmits<{ toggle: [] }>();
 </script>
 
@@ -7,7 +7,8 @@ const emit = defineEmits<{ toggle: [] }>();
   <div
     class="flex items-center justify-between"
     :style="{
-      padding: compact ? '10px 16px' : '14px 18px',
+      width: spacious ? '100%' : undefined,
+      padding: spacious ? '20px 24px' : compact ? '10px 16px' : '14px 18px',
       borderRadius: 'var(--radius-lg)',
       cursor: 'pointer',
       borderWidth: '1px',

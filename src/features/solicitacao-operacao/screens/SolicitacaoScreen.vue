@@ -9,14 +9,10 @@ import {
   Table2,
   ChevronDown,
   SlidersHorizontal,
-  X,
 } from 'lucide-vue-next';
 import {
   solicitacoes as initialSolicitacoes,
   ESTEIRAS,
-  ETAPAS,
-  slaRatio,
-  type Etapa,
   type Esteira,
   type Solicitacao,
 } from '../data/operacaoData';
@@ -26,7 +22,18 @@ import SolicitacaoTable from '../components/SolicitacaoTable.vue';
 import NovoPedidoModal from '../components/NovoPedidoModal.vue';
 import type { NewPedidoData } from '../components/novo-pedido';
 import SolicitacaoDetailScreen from './SolicitacaoDetailScreen.vue';
-import { FilterSelect } from './solicitacao-screen';
+import { SolicitacaoFiltersPanel, type SolicitacaoFilters } from './solicitacao-screen';
+
+const EMPTY_FILTERS: SolicitacaoFilters = {
+  idPedido: '',
+  veiculo: '',
+  tipoPedido: '',
+  dataAbertura: '',
+  grupoEmpresarial: '',
+  gerenteComercial: '',
+  requerente: '',
+  usuarioAtendimento: '',
+};
 
 type ViewMode = 'kanban' | 'cards' | 'tabela';
 type EsteiraFilter = Esteira | 'TODAS';
@@ -67,41 +74,46 @@ const lista = reactive<Solicitacao[]>([...initialSolicitacoes]);
 const esteira = ref<EsteiraFilter>('TODAS');
 const viewMode = ref<ViewMode>('kanban');
 const q = ref('');
-const tipoOp = ref('');
-const grupo = ref('');
 const creating = ref(false);
 const selectedId = ref<string | null>(null);
 const showFilters = ref(false);
 const filterPlacement = ref<'below' | 'above'>('below');
 const filterBtnRef = ref<HTMLButtonElement | null>(null);
-const etapasFiltro = ref<Etapa[]>([]);
-const validacaoFiltro = ref('');
-const slaFiltro = ref('');
+const filters = ref<SolicitacaoFilters>({ ...EMPTY_FILTERS });
 
-const tiposOperacao = computed(() => Array.from(new Set(initialSolicitacoes.map((s) => s.tipoOperacao))));
+const veiculos = computed(() => Array.from(new Set(initialSolicitacoes.map((s) => s.veiculo))).sort());
+const tiposPedido = computed(() => Array.from(new Set(initialSolicitacoes.map((s) => s.tipoContrato))).sort());
 const grupos = computed(() => Array.from(new Set(initialSolicitacoes.map((s) => s.grupoEmpresarial))).sort());
+const gerentes = computed(() => Array.from(new Set(initialSolicitacoes.map((s) => s.gerente))).sort());
+const requerentes = computed(() => Array.from(new Set(initialSolicitacoes.map((s) => s.cedente))).sort());
+const atendentes = computed(() =>
+  Array.from(new Set(initialSolicitacoes.map((s) => s.atendente).filter(Boolean))).sort(),
+);
 
-const extraFilterCount = computed(
-  () =>
-    (etapasFiltro.value.length > 0 ? 1 : 0) +
-    (validacaoFiltro.value ? 1 : 0) +
-    (slaFiltro.value ? 1 : 0),
+const activeFilterCount = computed(
+  () => Object.values(filters.value).filter((value) => value.trim() !== '').length,
 );
 
 const filtered = computed(() =>
   lista.filter((s) => {
     if (esteira.value !== 'TODAS' && s.esteira !== esteira.value) return false;
-    if (tipoOp.value && s.tipoOperacao !== tipoOp.value) return false;
-    if (grupo.value && s.grupoEmpresarial !== grupo.value) return false;
+
+    const f = filters.value;
+    if (f.idPedido && !s.id.toLowerCase().includes(f.idPedido.trim().toLowerCase())) return false;
+    if (f.veiculo && s.veiculo !== f.veiculo) return false;
+    if (f.tipoPedido && s.tipoContrato !== f.tipoPedido) return false;
+    if (f.dataAbertura && s.abertura !== f.dataAbertura) return false;
+    if (f.grupoEmpresarial && s.grupoEmpresarial !== f.grupoEmpresarial) return false;
+    if (f.gerenteComercial && s.gerente !== f.gerenteComercial) return false;
+    if (f.requerente && s.cedente !== f.requerente) return false;
+    if (f.usuarioAtendimento && s.atendente !== f.usuarioAtendimento) return false;
+
     if (q.value) {
       const needle = q.value.toLowerCase();
       const hay = `${s.id} ${s.cedente} ${s.veiculo} ${s.vinculo}`.toLowerCase();
       if (!hay.includes(needle)) return false;
     }
-    if (etapasFiltro.value.length > 0 && !etapasFiltro.value.includes(s.etapa)) return false;
-    if (validacaoFiltro.value && s.validacao !== validacaoFiltro.value) return false;
-    if (slaFiltro.value === 'ok' && slaRatio(s) > 1) return false;
-    if (slaFiltro.value === 'late' && slaRatio(s) <= 1) return false;
+
     return true;
   }),
 );
@@ -111,7 +123,7 @@ const filterPanelStyle = computed(() => ({
   [filterPlacement.value === 'below' ? 'top' : 'bottom']: 'calc(100% + 8px)',
   left: '0px',
   zIndex: 31,
-  width: '420px',
+  width: '440px',
   maxWidth: 'calc(100vw - 48px)',
   background: 'var(--surface-card)',
   border: '1px solid var(--border-default)',
@@ -123,23 +135,20 @@ const filterPanelStyle = computed(() => ({
 function openFilters() {
   if (!showFilters.value && filterBtnRef.value) {
     const rect = filterBtnRef.value.getBoundingClientRect();
-    const estimatedPanelHeight = 320;
+    const estimatedPanelHeight = 520;
     const spaceBelow = window.innerHeight - rect.bottom;
     filterPlacement.value = spaceBelow < estimatedPanelHeight && rect.top > spaceBelow ? 'above' : 'below';
   }
   showFilters.value = !showFilters.value;
 }
 
-function clearExtraFilters() {
-  etapasFiltro.value = [];
-  validacaoFiltro.value = '';
-  slaFiltro.value = '';
+function applyFilters(next: SolicitacaoFilters) {
+  filters.value = { ...next };
+  showFilters.value = false;
 }
 
-function toggleEtapaFiltro(key: Etapa) {
-  const idx = etapasFiltro.value.indexOf(key);
-  if (idx >= 0) etapasFiltro.value = etapasFiltro.value.filter((x) => x !== key);
-  else etapasFiltro.value = [...etapasFiltro.value, key];
+function clearFilters() {
+  filters.value = { ...EMPTY_FILTERS };
 }
 
 function handleCreate(data: NewPedidoData) {
@@ -148,17 +157,6 @@ function handleCreate(data: NewPedidoData) {
 }
 
 const selected = computed(() => (selectedId.value ? lista.find((s) => s.id === selectedId.value) ?? null : null));
-
-const validacaoOpts = [
-  { v: '', l: 'Todas' },
-  { v: 'VALIDO', l: 'Válido' },
-  { v: 'INVALIDO', l: 'Inválido' },
-];
-const slaOpts = [
-  { v: '', l: 'Todos' },
-  { v: 'ok', l: 'Dentro do prazo' },
-  { v: 'late', l: 'Atrasado' },
-];
 </script>
 
 <template>
@@ -237,10 +235,7 @@ const slaOpts = [
           />
         </div>
 
-        <FilterSelect v-model="tipoOp" placeholder="Tipo de Operação" :options="tiposOperacao" />
-        <FilterSelect v-model="grupo" placeholder="Grupo empresarial" :options="grupos" />
-
-        <!-- Filtros adicionais (popover, estilo date-picker) -->
+        <!-- Filtros (popover) -->
         <div style="position: relative">
           <button
             ref="filterBtnRef"
@@ -250,13 +245,13 @@ const slaOpts = [
               height: '42px',
               padding: '0 16px',
               cursor: 'pointer',
-              background: showFilters || extraFilterCount > 0 ? 'var(--gci-light)' : 'var(--surface-card)',
-              border: `1px solid ${showFilters || extraFilterCount > 0 ? 'var(--gci-base)' : 'var(--border-default)'}`,
+              background: showFilters || activeFilterCount > 0 ? 'var(--gci-light)' : 'var(--surface-card)',
+              border: `1px solid ${showFilters || activeFilterCount > 0 ? 'var(--gci-base)' : 'var(--border-default)'}`,
               borderRadius: 'var(--radius-lg)',
               fontWeight: 'var(--weight-bold)',
               fontSize: 'var(--text-xs)',
               letterSpacing: '0.04em',
-              color: showFilters || extraFilterCount > 0 ? 'var(--gci-base)' : 'var(--text-muted)',
+              color: showFilters || activeFilterCount > 0 ? 'var(--gci-base)' : 'var(--text-muted)',
               transition: 'all var(--duration-fast)',
             }"
             @click="openFilters"
@@ -264,106 +259,28 @@ const slaOpts = [
             <SlidersHorizontal :size="15" :stroke-width="2" />
             Filtros
             <span
-              v-if="extraFilterCount > 0"
+              v-if="activeFilterCount > 0"
               style="min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9999px; background: var(--gci-base); color: #fff; font-size: 10px; font-weight: var(--weight-bold); display: flex; align-items: center; justify-content: center"
             >
-              {{ extraFilterCount }}
+              {{ activeFilterCount }}
             </span>
             <ChevronDown :size="14" :style="{ transform: showFilters ? 'rotate(180deg)' : 'none', transition: 'transform var(--duration-base)' }" />
           </button>
 
-          <!-- Painel de filtros adicionais -->
           <template v-if="showFilters">
             <div style="position: fixed; inset: 0; z-index: 30" @click="showFilters = false" />
             <div :style="filterPanelStyle">
-              <div class="flex items-center justify-between" style="margin-bottom: 16px">
-                <span style="font-size: 11px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase">
-                  Filtros adicionais
-                </span>
-                <button
-                  v-if="extraFilterCount > 0"
-                  class="flex items-center"
-                  style="gap: 4px; background: none; border: none; cursor: pointer; font-size: var(--text-xs); color: var(--text-muted); font-weight: var(--weight-semibold)"
-                  @click="clearExtraFilters"
-                >
-                  <X :size="12" /> Limpar filtros
-                </button>
-              </div>
-              <div class="flex flex-col" style="gap: 16px">
-                <!-- Etapa — chips -->
-                <div>
-                  <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px">Etapa</div>
-                  <div class="flex items-center" style="gap: 6px; flex-wrap: wrap">
-                    <button
-                      v-for="e in ETAPAS"
-                      :key="e.key"
-                      :style="{
-                        padding: '5px 12px',
-                        borderRadius: '9999px',
-                        cursor: 'pointer',
-                        fontSize: 'var(--text-xs)',
-                        fontWeight: 'var(--weight-bold)',
-                        border: `1px solid ${etapasFiltro.includes(e.key) ? e.cor : 'var(--border-default)'}`,
-                        background: etapasFiltro.includes(e.key) ? `color-mix(in srgb, ${e.cor} 12%, transparent)` : 'transparent',
-                        color: etapasFiltro.includes(e.key) ? e.cor : 'var(--text-muted)',
-                        transition: 'all var(--duration-fast)',
-                      }"
-                      @click="toggleEtapaFiltro(e.key)"
-                    >
-                      {{ e.label }}
-                    </button>
-                  </div>
-                </div>
-                <!-- Grade 2 colunas x 2 linhas: Validação + SLA -->
-                <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 16px">
-                  <div>
-                    <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px">Validação</div>
-                    <div class="flex items-center" style="gap: 6px; flex-wrap: wrap">
-                      <button
-                        v-for="opt in validacaoOpts"
-                        :key="opt.v"
-                        :style="{
-                          padding: '5px 12px',
-                          borderRadius: '9999px',
-                          cursor: 'pointer',
-                          fontSize: 'var(--text-xs)',
-                          fontWeight: 'var(--weight-bold)',
-                          border: `1px solid ${validacaoFiltro === opt.v ? 'var(--gci-base)' : 'var(--border-default)'}`,
-                          background: validacaoFiltro === opt.v ? 'var(--gci-light)' : 'transparent',
-                          color: validacaoFiltro === opt.v ? 'var(--gci-base)' : 'var(--text-muted)',
-                          transition: 'all var(--duration-fast)',
-                        }"
-                        @click="validacaoFiltro = opt.v"
-                      >
-                        {{ opt.l }}
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px">SLA</div>
-                    <div class="flex items-center" style="gap: 6px; flex-wrap: wrap">
-                      <button
-                        v-for="opt in slaOpts"
-                        :key="opt.v"
-                        :style="{
-                          padding: '5px 12px',
-                          borderRadius: '9999px',
-                          cursor: 'pointer',
-                          fontSize: 'var(--text-xs)',
-                          fontWeight: 'var(--weight-bold)',
-                          border: `1px solid ${slaFiltro === opt.v ? 'var(--gci-base)' : 'var(--border-default)'}`,
-                          background: slaFiltro === opt.v ? 'var(--gci-light)' : 'transparent',
-                          color: slaFiltro === opt.v ? 'var(--gci-base)' : 'var(--text-muted)',
-                          transition: 'all var(--duration-fast)',
-                        }"
-                        @click="slaFiltro = opt.v"
-                      >
-                        {{ opt.l }}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <SolicitacaoFiltersPanel
+                v-model="filters"
+                :veiculos="veiculos"
+                :tipos-pedido="tiposPedido"
+                :grupos="grupos"
+                :gerentes="gerentes"
+                :requerentes="requerentes"
+                :atendentes="atendentes"
+                @apply="applyFilters"
+                @clear="clearFilters"
+              />
             </div>
           </template>
         </div>

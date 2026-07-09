@@ -33,6 +33,7 @@ import FormField from './create-class/FormField.vue';
 import SelectField from './create-class/SelectField.vue';
 import RadioPill from './create-class/RadioPill.vue';
 import SectionHelp from './create-class/SectionHelp.vue';
+import Checkbox from '@/components/ui/Checkbox.vue';
 import ParticipantBlock from './create-class/ParticipantBlock.vue';
 import SectionGroup from './create-class/SectionGroup.vue';
 import AddButton from './create-class/AddButton.vue';
@@ -687,8 +688,14 @@ function stepDimmed(i: number) {
               <FormField label="Número da Agência" placeholder="0000-0" :span="4" v-model="form.numeroAgencia" />
               <FormField label="Campo Extra 1" placeholder="—" :span="4" v-model="form.campoExtra1" />
               <FormField label="Configuração de dados padrões para Boleto" placeholder="Texto de instrução para impressão" :span="12" v-model="form.boletoInstrucoes" />
-              <div class="flex items-center" style="gap: 12px; padding: 14px; background: var(--surface-sunken); border-radius: var(--radius-lg); grid-column: span 12">
-                <input type="checkbox" v-model="form.permiteFimDeSemana" style="accent-color: var(--gci-base)" />
+              <div
+                class="flex items-center"
+                style="gap: 12px; padding: 14px; background: var(--surface-sunken); border-radius: var(--radius-lg); grid-column: span 12; cursor: pointer"
+                @click="form.permiteFimDeSemana = !form.permiteFimDeSemana"
+              >
+                <div @click.stop>
+                  <Checkbox :checked="form.permiteFimDeSemana" @change="form.permiteFimDeSemana = !form.permiteFimDeSemana" />
+                </div>
                 <div>
                   <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
                     Permitir Vencimento em Finais de Semana e Feriado

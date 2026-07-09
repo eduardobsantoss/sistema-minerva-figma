@@ -3,4 +3,3 @@ export { default as BentoGrid } from './BentoGrid.vue';
 export { default as FieldLabel } from './FieldLabel.vue';
 export { default as FormField } from './FormField.vue';
 export { default as SelectField } from './SelectField.vue';
-export { default as Checkbox } from './Checkbox.vue';

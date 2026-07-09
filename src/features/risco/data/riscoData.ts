@@ -1,7 +1,5 @@
 /**
  * Cadastro de Rating — registro global (PART 2).
- * Campo set confirmado com o usuário: Nome (texto livre, sem opções fixas),
- * Taxa (percentual) e Criado em (data). Sem status/ativo-inativo.
  */
 export interface Rating {
   id: string;
@@ -23,12 +21,21 @@ export function fmtPct(n: number): string {
   return `${n.toFixed(2).replace('.', ',')}%`;
 }
 
-/**
- * Grupos Empresariais — listagem + detalhe (PART 4/5).
- * Status de Operação e estados do Parecer de Crédito confirmados com o usuário.
- */
 export type StatusOperacao = 'Normal' | 'Terceiro' | 'Pré-Recovery' | 'Recovery' | 'Especial' | 'Special-Sit';
 export const STATUS_OPERACAO_OPTS: StatusOperacao[] = ['Normal', 'Terceiro', 'Pré-Recovery', 'Recovery', 'Especial', 'Special-Sit'];
+
+export type StatusGrupoPizza = 'Normal' | 'Recovery' | 'Especial' | 'Terceiro';
+
+export function statusGrupoPizza(s: StatusOperacao): StatusGrupoPizza {
+  switch (s) {
+    case 'Normal': return 'Normal';
+    case 'Terceiro': return 'Terceiro';
+    case 'Pré-Recovery':
+    case 'Recovery': return 'Recovery';
+    case 'Especial':
+    case 'Special-Sit': return 'Especial';
+  }
+}
 
 export function statusOperacaoColor(s: StatusOperacao): string {
   switch (s) {
@@ -64,14 +71,27 @@ export function parecerColor(s: ParecerStatus): string {
 export type TipoCliente = 'Monocedente' | 'Multicedente';
 export const TIPO_CLIENTE_OPTS: TipoCliente[] = ['Monocedente', 'Multicedente'];
 
-export const GERENTES_SEED: string[] = [
-  'Carlos Mendes',
-  'Fernanda Rocha',
-  'Rodrigo Alves',
-  'Juliana Prado',
-  'Marcelo Nogueira',
-  'Patrícia Lima',
+export interface Gerente {
+  id: string;
+  nome: string;
+  documento: string;
+  cidade: string;
+  uf: string;
+  telefone: string;
+}
+
+export const GERENTES_SEED: Gerente[] = [
+  { id: 'ger-1', nome: 'Carlos Mendes', documento: '123.456.789-00', cidade: 'Goiânia', uf: 'GO', telefone: '(62) 99876-5432' },
+  { id: 'ger-2', nome: 'Fernanda Rocha', documento: '234.567.890-11', cidade: 'São Paulo', uf: 'SP', telefone: '(11) 98765-4321' },
+  { id: 'ger-3', nome: 'Rodrigo Alves', documento: '345.678.901-22', cidade: 'Rio Verde', uf: 'GO', telefone: '(64) 99123-4567' },
+  { id: 'ger-4', nome: 'Juliana Prado', documento: '456.789.012-33', cidade: 'Cuiabá', uf: 'MT', telefone: '(65) 99234-5678' },
+  { id: 'ger-5', nome: 'Marcelo Nogueira', documento: '567.890.123-44', cidade: 'Campo Grande', uf: 'MS', telefone: '(67) 99345-6789' },
+  { id: 'ger-6', nome: 'Patrícia Lima', documento: '678.901.234-55', cidade: 'Brasília', uf: 'DF', telefone: '(61) 99456-7890' },
 ];
+
+export function gerentePorNome(nome: string): Gerente | undefined {
+  return GERENTES_SEED.find((g) => g.nome === nome);
+}
 
 export interface GrupoEmpresarial {
   id: string;
@@ -85,33 +105,75 @@ export interface GrupoEmpresarial {
   riscoUraStt: number;
   gerente: string;
   vencimentoLimite: string | null;
+  vencimentoParecer: string | null;
   parecerCredito: ParecerStatus;
+  rating: string;
+  valorVencido: number;
 }
 
-/**
- * Detalhe do Grupo — Parametrizações / Cedentes / Histórico (PART 5).
- * Indicativo de rating usa a lista de `RATINGS_SEED` + "NÃO SE APLICA" (confirmado).
- * Frequência do laudo: Mensal/Trimestral/Semestral/Anual (confirmado).
- * Tipo de cedente: Pessoa Física/Pessoa Jurídica (confirmado).
- */
-export interface AgrupamentoLimiteRow {
-  agrupamentoId: string;
-  produtos: number;
-  limite: number;
-  risco: number;
+export type PapelParteRelacionada = 'Avalista' | 'Sócio' | 'Representante Legal';
+
+export interface ParteRelacionada {
+  id: string;
+  nome: string;
+  documento: string;
+  email: string;
+  telefone: string;
+  papel: PapelParteRelacionada;
+  estadoCivil: string;
+}
+
+export const AGRUPAMENTO_LIMITE_OPTS = [
+  'Operações Monocedente',
+  'Operações Multicedente',
+  'Operações Confina',
+  'Operações Agrovita',
+  'Operações Securitizações',
+] as const;
+
+export type AgrupamentoLimite = (typeof AGRUPAMENTO_LIMITE_OPTS)[number];
+
+export const PRODUTO_LIMITE_OPTS = [
+  'Desconto Duplicata',
+  'Contrato CCB',
+  'Contrato CPRF',
+  'Contrato NC',
+] as const;
+
+export type ProdutoLimite = (typeof PRODUTO_LIMITE_OPTS)[number];
+
+export interface LimiteProdutoRow {
+  id: string;
+  agrupamento: AgrupamentoLimite;
+  produto: ProdutoLimite;
+  valor: number;
+  vencimento: string;
 }
 
 export interface ParametrizacaoLimite {
   parecerCreditoArquivo: string;
+  parecerAtualizadoEm: string | null;
+  parecerProximoVencimento: string | null;
   indicativoRating: string;
   reparametrizacaoData: string | null;
-  agrupamentos: AgrupamentoLimiteRow[];
+  limites: LimiteProdutoRow[];
 }
+
+export const VEICULO_OPERACAO_OPTS = [
+  'CRA CERES',
+  'FIDC URA',
+  'FIDC CULTURA',
+  'CRA ARTESANAL',
+  'CRA BTG',
+  'FIDC AGRO 25',
+] as const;
 
 export interface ParametrizacaoAutoatendimento {
   limiteOperacoesAutomaticas: number;
   taxaFee: number;
   taxaRisco: number;
+  taxaCessaoPadrao: number;
+  veiculoOperacaoPreferencial: string;
 }
 
 export interface ExcecaoConcentracao {
@@ -125,53 +187,61 @@ export interface AvalistaObrigatorio {
   id: string;
   nome: string;
   documento: string;
+  email: string;
+  telefone: string;
+  estadoCivil: string;
+  conjugeAnuente: boolean;
   obrigatorio: boolean;
 }
 
 export type FrequenciaLaudo = 'Mensal' | 'Trimestral' | 'Semestral' | 'Anual';
 export const FREQUENCIA_LAUDO_OPTS: FrequenciaLaudo[] = ['Mensal', 'Trimestral', 'Semestral', 'Anual'];
 
-/**
- * Campo set de "Geral" confirmado com o usuário a partir do sistema legado
- * (Parametrizações › Geral de um Grupo Empresarial): 6 blocos — Confirmação de
- * Cessões, Sacado, NF de Entrega Futura, Crédito e Validade Serasa, Laudo de
- * Ativo/Imóvel e Protocolos por Produto — além das tabelas de Exceções de
- * Concentração por Sacado e Avalistas com Obrigatoriedade de Assinatura.
- */
 export interface ParametrizacaoGeral {
-  // Confirmação de Cessões
   confirmacaoPreDesembolsoPct: number;
   prazoConfirmacaoTitulosDias: number;
   confirmacaoClientesNovosPct: number;
   confirmacaoClientesAntigosPct: number;
-  // Sacado
   notificacaoSacadosPct: number;
+  prazoConfirmacaoSacadosDias: number;
   concentracaoMaximaSacadoPct: number;
-  // NF de Entrega Futura
   nfEntregaFuturaPodeOperar: boolean;
   nfEntregaFuturaOperacaoMaximaPct: number;
-  // Crédito e Validade Serasa
   creditoPreAprovacaoSacado: boolean;
   validadeSerasaSacadoDias: number;
   validadeSerasaAvalistaDias: number;
   validadeSerasaCedenteDias: number;
   necessitaAvalConjuge: boolean;
-  // Laudo de Ativo/Imóvel
+  exigeAnuenciaConjuge: boolean;
+  aceitaRestritivoFinanceiroCedente: boolean;
+  valorRestritivoAceitoCedente: number;
+  aceitaRestritivoSocios: boolean;
+  valorRestritivoSocios: number;
   laudoAtivoAntesDesembolso: boolean;
   laudoFrequencia: FrequenciaLaudo;
   afImovelPrazoLaudoPosComiteDias: number;
   afImovelAprovadoSoEscrituraPublica: boolean;
-  // Protocolos por Produto
   protocoloCpr: boolean;
   protocoloGarantiaImovel: boolean;
-  // Tabelas
   excecoesConcentracao: ExcecaoConcentracao[];
   avalistas: AvalistaObrigatorio[];
 }
 
+export interface GarantiaRow {
+  id: string;
+  tipo: string;
+  percentualExigido: number;
+  prazoLaudoDias: number;
+  frequenciaLaudo: FrequenciaLaudo;
+  exigeEscrituraPublica: boolean;
+  exigeProtocolo: boolean;
+}
+
 export interface ParametrizacaoGarantia {
   requerConfirmacaoTitulos: boolean;
+  garantiasObrigatorias: boolean;
   percentualGarantia: number;
+  garantias: GarantiaRow[];
 }
 
 export interface Parametrizacoes {
@@ -184,11 +254,6 @@ export interface Parametrizacoes {
 export type TipoCedente = 'Pessoa Física' | 'Pessoa Jurídica';
 export const TIPO_CEDENTE_OPTS: TipoCedente[] = ['Pessoa Física', 'Pessoa Jurídica'];
 
-/**
- * Modal de Detalhes do Cedente (aba Cedentes > clique na linha).
- * Status Apto/Inapto: mockado manualmente, sem regra de negócio por trás.
- * KPIs (qtd. títulos em aberto, risco tomado): valores mockados estáticos.
- */
 export type StatusCedente = 'Apto' | 'Inapto';
 
 export function statusCedenteColor(s: StatusCedente): string {
@@ -243,14 +308,12 @@ export interface Cedente {
   qtdTitulosAberto: number;
   riscoTomado: number;
   dataAbertura: string;
-  // Cadastro — Pessoa Física
   rg?: string;
   inscricaoProdutorRural?: string;
   nacionalidade?: string;
   dataNascimento?: string;
   profissao?: string;
   estadoCivil?: string;
-  // Cadastro — Pessoa Jurídica
   razaoSocial?: string;
   nomeFantasia?: string;
   tipoEmpresa?: string;
@@ -271,27 +334,104 @@ export interface HistoricoEvento {
 }
 
 export interface DetalheGrupo {
+  partesRelacionadas: ParteRelacionada[];
   parametrizacoes: Parametrizacoes;
   cedentes: Cedente[];
   historico: HistoricoEvento[];
 }
 
+export function parseDateBR(d: string | null): number {
+  if (!d) return NaN;
+  const [dd, mm, yyyy] = d.split('/').map(Number);
+  return new Date(yyyy, mm - 1, dd).getTime();
+}
+
+export function diasEntre(dataBR: string | null, ref = new Date()): number {
+  const t = parseDateBR(dataBR);
+  if (Number.isNaN(t)) return NaN;
+  const refMs = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate()).getTime();
+  return Math.floor((refMs - t) / (1000 * 60 * 60 * 24));
+}
+
+export function isLimiteVencido(vencimento: string | null, ref = new Date()): boolean {
+  const t = parseDateBR(vencimento);
+  if (Number.isNaN(t)) return false;
+  const refMs = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate()).getTime();
+  return t < refMs;
+}
+
+export function isProximoAVencer(vencimento: string | null, dias = 30, ref = new Date()): boolean {
+  const t = parseDateBR(vencimento);
+  if (Number.isNaN(t)) return false;
+  const refMs = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate()).getTime();
+  const diff = Math.floor((t - refMs) / (1000 * 60 * 60 * 24));
+  return diff >= 0 && diff <= dias;
+}
+
+export function temRiscoAtivo(g: GrupoEmpresarial): boolean {
+  return g.riscoTotal > 0;
+}
+
+function buildLimites(grupo: GrupoEmpresarial): LimiteProdutoRow[] {
+  const agrup = (grupo.tipoCliente === 'Monocedente' ? 'Operações Monocedente' : 'Operações Multicedente') as AgrupamentoLimite;
+  return [
+    { id: `lim-${grupo.id}-1`, agrupamento: agrup, produto: 'Desconto Duplicata', valor: grupo.limite * 0.5, vencimento: grupo.vencimentoLimite ?? '31/12/2026' },
+    { id: `lim-${grupo.id}-2`, agrupamento: agrup, produto: 'Contrato CCB', valor: grupo.limite * 0.3, vencimento: grupo.vencimentoLimite ?? '31/12/2026' },
+    { id: `lim-${grupo.id}-3`, agrupamento: 'Operações Confina', produto: 'Contrato CPRF', valor: grupo.limite * 0.2, vencimento: grupo.vencimentoLimite ?? '31/12/2026' },
+  ].filter((l) => l.valor > 0);
+}
+
+function buildPartesRelacionadas(grupo: GrupoEmpresarial): ParteRelacionada[] {
+  return [
+    {
+      id: `pr-${grupo.id}-1`,
+      nome: 'José Roberto Andrade',
+      documento: '111.222.333-44',
+      email: 'jose.andrade@email.com',
+      telefone: '(64) 99901-2233',
+      papel: 'Avalista',
+      estadoCivil: 'Casado(a)',
+    },
+    {
+      id: `pr-${grupo.id}-2`,
+      nome: 'Maria Helena Andrade',
+      documento: '222.333.444-55',
+      email: 'maria.andrade@email.com',
+      telefone: '(64) 99902-3344',
+      papel: 'Sócio',
+      estadoCivil: 'Casado(a)',
+    },
+    {
+      id: `pr-${grupo.id}-3`,
+      nome: 'Paulo César Lima',
+      documento: '333.444.555-66',
+      email: 'paulo.lima@email.com',
+      telefone: '(64) 99903-4455',
+      papel: 'Representante Legal',
+      estadoCivil: 'Solteiro(a)',
+    },
+  ];
+}
+
 export function detalheGrupo(grupo: GrupoEmpresarial): DetalheGrupo {
+  const parecerArquivo = grupo.parecerCredito === 'AUSENTE' ? '' : `parecer-credito-${grupo.id}.pdf`;
   return {
+    partesRelacionadas: buildPartesRelacionadas(grupo),
     parametrizacoes: {
       limite: {
-        parecerCreditoArquivo: grupo.parecerCredito === 'AUSENTE' ? '' : `parecer-credito-${grupo.id}.pdf`,
-        indicativoRating: grupo.statusOperacao === 'Normal' ? 'A' : 'NÃO SE APLICA',
+        parecerCreditoArquivo: parecerArquivo,
+        parecerAtualizadoEm: parecerArquivo ? '18/06/2026' : null,
+        parecerProximoVencimento: grupo.vencimentoParecer,
+        indicativoRating: grupo.rating,
         reparametrizacaoData: grupo.statusOperacao === 'Recovery' || grupo.statusOperacao === 'Special-Sit' ? '15/09/2026' : null,
-        agrupamentos: [
-          { agrupamentoId: 'agp-confina', produtos: 3, limite: grupo.limite * 0.4, risco: grupo.riscoTotal * 0.35 },
-          { agrupamentoId: 'agp-agrovita', produtos: 2, limite: grupo.limite * 0.35, risco: grupo.riscoTotal * 0.3 },
-        ],
+        limites: buildLimites(grupo),
       },
       autoatendimento: {
         limiteOperacoesAutomaticas: grupo.limiteAutoatendimento,
         taxaFee: 0.35,
         taxaRisco: 0.55,
+        taxaCessaoPadrao: 1.20,
+        veiculoOperacaoPreferencial: 'CRA CERES',
       },
       geral: {
         confirmacaoPreDesembolsoPct: 40,
@@ -299,6 +439,7 @@ export function detalheGrupo(grupo: GrupoEmpresarial): DetalheGrupo {
         confirmacaoClientesNovosPct: 70,
         confirmacaoClientesAntigosPct: 50,
         notificacaoSacadosPct: 0,
+        prazoConfirmacaoSacadosDias: 30,
         concentracaoMaximaSacadoPct: grupo.tipoCliente === 'Multicedente' ? 20 : 0,
         nfEntregaFuturaPodeOperar: grupo.tipoCliente === 'Multicedente',
         nfEntregaFuturaOperacaoMaximaPct: grupo.tipoCliente === 'Multicedente' ? 30 : 0,
@@ -307,6 +448,11 @@ export function detalheGrupo(grupo: GrupoEmpresarial): DetalheGrupo {
         validadeSerasaAvalistaDias: 30,
         validadeSerasaCedenteDias: 60,
         necessitaAvalConjuge: false,
+        exigeAnuenciaConjuge: false,
+        aceitaRestritivoFinanceiroCedente: true,
+        valorRestritivoAceitoCedente: 5000,
+        aceitaRestritivoSocios: false,
+        valorRestritivoSocios: 0,
         laudoAtivoAntesDesembolso: true,
         laudoFrequencia: 'Semestral',
         afImovelPrazoLaudoPosComiteDias: 15,
@@ -315,12 +461,33 @@ export function detalheGrupo(grupo: GrupoEmpresarial): DetalheGrupo {
         protocoloGarantiaImovel: false,
         excecoesConcentracao: [],
         avalistas: [
-          { id: 'aval-1', nome: 'José Roberto Andrade', documento: '111.222.333-44', obrigatorio: true },
+          {
+            id: 'aval-1',
+            nome: 'José Roberto Andrade',
+            documento: '111.222.333-44',
+            email: 'jose.andrade@email.com',
+            telefone: '(64) 99901-2233',
+            estadoCivil: 'Casado(a)',
+            conjugeAnuente: true,
+            obrigatorio: true,
+          },
         ],
       },
       garantia: {
         requerConfirmacaoTitulos: grupo.statusOperacao !== 'Normal',
+        garantiasObrigatorias: grupo.statusOperacao === 'Recovery' || grupo.statusOperacao === 'Special-Sit',
         percentualGarantia: 120,
+        garantias: [
+          {
+            id: 'gar-1',
+            tipo: 'Imóvel Rural',
+            percentualExigido: 120,
+            prazoLaudoDias: 15,
+            frequenciaLaudo: 'Semestral',
+            exigeEscrituraPublica: true,
+            exigeProtocolo: false,
+          },
+        ],
       },
     },
     cedentes: [
@@ -361,12 +528,6 @@ export function detalheGrupo(grupo: GrupoEmpresarial): DetalheGrupo {
   };
 }
 
-/**
- * Relatórios de Risco (PART 6).
- * Único relatório confirmado com o usuário: "Relatório de Parecer de Crédito",
- * com filtros Nome do grupo, Status do grupo, Gerente e Status do parecer.
- * Exportação: CSV.
- */
 export const STATUS_GRUPO_RELATORIO_OPTS = ['Normal', 'Recovery', 'Terceiro'] as const;
 export const STATUS_PARECER_RELATORIO_OPTS = ['Vencido', 'A vencer'] as const;
 
@@ -374,32 +535,50 @@ export const GRUPOS_SEED: GrupoEmpresarial[] = [
   {
     id: 'grp-3a', documento: '12.345.678/0001-90', nome: '3A MAQUINAS E TRANSPORTES LTDA', tipoCliente: 'Multicedente',
     statusOperacao: 'Normal', limite: 4_500_000, limiteAutoatendimento: 800_000, riscoTotal: 2_150_000, riscoUraStt: 640_000,
-    gerente: 'Carlos Mendes', vencimentoLimite: '30/11/2026', parecerCredito: 'CONFORME',
+    gerente: 'Carlos Mendes', vencimentoLimite: '30/11/2026', vencimentoParecer: '30/11/2026', parecerCredito: 'CONFORME',
+    rating: 'A', valorVencido: 120_000,
   },
   {
     id: 'grp-fazenda-sn', documento: '98.765.432/0001-11', nome: 'FAZENDA SANTA NIVA AGROPECUARIA LTDA', tipoCliente: 'Monocedente',
     statusOperacao: 'Terceiro', limite: 1_200_000, limiteAutoatendimento: 200_000, riscoTotal: 980_000, riscoUraStt: 150_000,
-    gerente: 'Fernanda Rocha', vencimentoLimite: '15/09/2026', parecerCredito: 'EXPIRANDO',
+    gerente: 'Fernanda Rocha', vencimentoLimite: '15/09/2026', vencimentoParecer: '15/09/2026', parecerCredito: 'EXPIRANDO',
+    rating: 'A-', valorVencido: 85_000,
   },
   {
     id: 'grp-agropec-vale', documento: '45.112.998/0001-22', nome: 'AGROPECUARIA VALE VERDE S/A', tipoCliente: 'Multicedente',
     statusOperacao: 'Pré-Recovery', limite: 3_000_000, limiteAutoatendimento: 0, riscoTotal: 2_890_000, riscoUraStt: 410_000,
-    gerente: 'Rodrigo Alves', vencimentoLimite: '02/07/2026', parecerCredito: 'EXPIRADO',
+    gerente: 'Rodrigo Alves', vencimentoLimite: '02/07/2026', vencimentoParecer: '02/07/2026', parecerCredito: 'EXPIRADO',
+    rating: 'B++', valorVencido: 450_000,
   },
   {
     id: 'grp-cerrado-graos', documento: '33.220.114/0001-05', nome: 'CERRADO GRÃOS COMERCIO E EXPORTACAO LTDA', tipoCliente: 'Monocedente',
     statusOperacao: 'Recovery', limite: 5_600_000, limiteAutoatendimento: 500_000, riscoTotal: 5_450_000, riscoUraStt: 1_020_000,
-    gerente: 'Juliana Prado', vencimentoLimite: null, parecerCredito: 'AUSENTE',
+    gerente: 'Juliana Prado', vencimentoLimite: '01/06/2026', vencimentoParecer: null, parecerCredito: 'AUSENTE',
+    rating: 'B', valorVencido: 890_000,
   },
   {
     id: 'grp-boi-forte', documento: '11.998.223/0001-77', nome: 'BOI FORTE PECUARIA LTDA', tipoCliente: 'Multicedente',
     statusOperacao: 'Especial', limite: 900_000, limiteAutoatendimento: 100_000, riscoTotal: 610_000, riscoUraStt: 90_000,
-    gerente: 'Marcelo Nogueira', vencimentoLimite: '20/12/2026', parecerCredito: 'CONFORME',
+    gerente: 'Marcelo Nogueira', vencimentoLimite: '20/12/2026', vencimentoParecer: '20/12/2026', parecerCredito: 'CONFORME',
+    rating: 'A+', valorVencido: 0,
   },
   {
     id: 'grp-sertao-algodao', documento: '77.443.221/0001-38', nome: 'SERTAO ALGODAO PROCESSAMENTO S/A', tipoCliente: 'Monocedente',
     statusOperacao: 'Special-Sit', limite: 2_400_000, limiteAutoatendimento: 0, riscoTotal: 2_395_000, riscoUraStt: 380_000,
-    gerente: 'Patrícia Lima', vencimentoLimite: '10/08/2026', parecerCredito: 'EXPIRADO',
+    gerente: 'Patrícia Lima', vencimentoLimite: '10/08/2026', vencimentoParecer: '10/08/2026', parecerCredito: 'EXPIRADO',
+    rating: 'B', valorVencido: 320_000,
+  },
+  {
+    id: 'grp-sem-limite', documento: '88.554.332/0001-49', nome: 'COOPERATIVA RURAL DO SUL LTDA', tipoCliente: 'Monocedente',
+    statusOperacao: 'Normal', limite: 0, limiteAutoatendimento: 0, riscoTotal: 0, riscoUraStt: 0,
+    gerente: 'Carlos Mendes', vencimentoLimite: null, vencimentoParecer: null, parecerCredito: 'AUSENTE',
+    rating: 'NÃO SE APLICA', valorVencido: 0,
+  },
+  {
+    id: 'grp-sem-risco', documento: '99.665.443/0001-50', nome: 'AGRO INSUMOS PLANALTO LTDA', tipoCliente: 'Multicedente',
+    statusOperacao: 'Normal', limite: 1_500_000, limiteAutoatendimento: 300_000, riscoTotal: 0, riscoUraStt: 0,
+    gerente: 'Fernanda Rocha', vencimentoLimite: '25/10/2026', vencimentoParecer: '25/10/2026', parecerCredito: 'CONFORME',
+    rating: 'A', valorVencido: 0,
   },
 ];
 
@@ -415,14 +594,6 @@ export function brl(n: number, opts?: { compact?: boolean }) {
   });
 }
 
-/**
- * Agrupamentos de Limite — cadastro global (PART 3).
- * Campo set confirmado com o usuário: Nome (texto livre), CRAs/FIDCs/Total
- * (agora CALCULADOS a partir dos vínculos reais em `OPERACOES_VINCULAVEIS_SEED`,
- * ver `contarVinculos`), Criado em. Ações: renomear e deletar (sem status/
- * ativo-inativo, sem Limite/Risco aqui — esses vivem por grupo, na aba Limite
- * do Detalhe do Grupo).
- */
 export interface Agrupamento {
   id: string;
   nome: string;
@@ -438,11 +609,6 @@ export const AGRUPAMENTOS_SEED: Agrupamento[] = [
   { id: 'agp-trading', nome: 'Trading', criadoEm: '05/02/2025' },
 ];
 
-/**
- * Vinculação de Agrupamento — CRAs/FIDCs vinculáveis a um agrupamento (PART 3.1).
- * Uma operação PODE pertencer a vários agrupamentos ao mesmo tempo (confirmado
- * com o usuário) — por isso `agrupamentoIds` é um array, não um único id.
- */
 export type TipoOperacaoVinculo = 'CRA' | 'FIDC';
 
 export interface OperacaoVinculavel {
@@ -453,7 +619,6 @@ export interface OperacaoVinculavel {
 }
 
 export const OPERACOES_VINCULAVEIS_SEED: OperacaoVinculavel[] = [
-  // CRAs
   { id: 'ov-cra-1', nome: '4ª Emissão CRA Semeagro', tipo: 'CRA', agrupamentoIds: ['agp-agrovita'] },
   { id: 'ov-cra-2', nome: '5ª Emissão CRA Semeagro', tipo: 'CRA', agrupamentoIds: ['agp-agrovita', 'agp-multicedentes'] },
   { id: 'ov-cra-3', nome: '7ª Emissão CRA Ceres Agro', tipo: 'CRA', agrupamentoIds: ['agp-confina'] },
@@ -472,7 +637,6 @@ export const OPERACOES_VINCULAVEIS_SEED: OperacaoVinculavel[] = [
   { id: 'ov-cra-16', nome: '12ª Emissão CRA BrasilAgro', tipo: 'CRA', agrupamentoIds: [] },
   { id: 'ov-cra-17', nome: 'BMG FOODS IMPORTAÇÃO E EXPORTAÇÃO LTDA', tipo: 'CRA', agrupamentoIds: [] },
   { id: 'ov-cra-18', nome: '27ª Emissão CRA São Martinho', tipo: 'CRA', agrupamentoIds: [] },
-  // FIDCs
   { id: 'ov-fidc-1', nome: 'AGRO 25 FUNDO DE INVESTIMENTO EM DIREITOS CREDITÓRIOS', tipo: 'FIDC', agrupamentoIds: ['agp-agrovita'] },
   { id: 'ov-fidc-2', nome: 'T.I TECNOLOGIA FUNDO DE INVESTIMENTOS', tipo: 'FIDC', agrupamentoIds: ['agp-estruturadas'] },
   { id: 'ov-fidc-3', nome: 'T.I TECNOLOGIA COMPRA DE LEITE', tipo: 'FIDC', agrupamentoIds: ['agp-estruturadas'] },

@@ -5,12 +5,20 @@ import {
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import { brl, num, type Cra, type CraOperacao, type CraTitulo } from '../data/craData';
+import Checkbox from '@/components/ui/Checkbox.vue';
 
 const props = defineProps<{ cra: Cra; operacao: CraOperacao }>();
 const emit = defineEmits<{ back: []; openTitulo: [tituloId: string] }>();
 
+const TITULO_COLS = ['Classe', 'Nº Título', 'Tipo', 'Cedente', 'Sacado', 'Vencimento', 'VR. Nominal', 'Status'] as const;
+
 const q = ref('');
 const showColPanel = ref(false);
+const visibleCols = ref<Record<string, boolean>>(Object.fromEntries(TITULO_COLS.map((c) => [c, true])));
+
+function toggleCol(col: string) {
+  visibleCols.value = { ...visibleCols.value, [col]: !visibleCols.value[col] };
+}
 
 const filtered = computed(() =>
   props.operacao.titulos.filter(
@@ -127,15 +135,18 @@ const kpis = computed<Kpi[]>(() => [
             <div style="position: fixed; inset: 0; z-index: 10" @click="showColPanel = false" />
             <div style="position: absolute; top: 48px; right: 0; z-index: 20; background: var(--surface-card); border-width: 1px; border-style: solid; border-color: var(--border-default); border-radius: var(--radius-lg); padding: 16px; min-width: 200px; box-shadow: var(--shadow-md)">
               <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px">Colunas visíveis</div>
-              <label
-                v-for="c in ['Classe', 'Nº Título', 'Tipo', 'Cedente', 'Sacado', 'Vencimento', 'VR. Nominal', 'Status']"
+              <div
+                v-for="c in TITULO_COLS"
                 :key="c"
                 class="flex items-center"
                 style="gap: 10px; cursor: pointer; margin-bottom: 8px"
+                @click="toggleCol(c)"
               >
-                <input type="checkbox" checked style="accent-color: var(--gci-base); width: 14px; height: 14px" />
+                <div @click.stop>
+                  <Checkbox :checked="visibleCols[c]" @change="toggleCol(c)" />
+                </div>
                 <span style="font-size: var(--text-sm); color: var(--text-default)">{{ c }}</span>
-              </label>
+              </div>
             </div>
           </template>
         </div>

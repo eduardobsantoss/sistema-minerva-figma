@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, reactive, ref, type Component } from 'vue';
-import { ArrowLeft, MoreVertical, Settings2, Users, History, UserCog, BellRing, ShieldCheck } from 'lucide-vue-next';
+import { ArrowLeft, MoreVertical, Settings2, Users, History, UserCog, BellRing, ShieldCheck, Info } from 'lucide-vue-next';
 import { statusOperacaoColor, detalheGrupo, type GrupoEmpresarial } from '../data/riscoData';
 import { TabPill } from './detail-tabs/shared';
+import DetalhesTab from './detail-tabs/DetalhesTab.vue';
 import ParametrizacoesTab from './detail-tabs/ParametrizacoesTab.vue';
 import CedentesTab from './detail-tabs/CedentesTab.vue';
 import HistoricoTab from './detail-tabs/HistoricoTab.vue';
@@ -14,9 +15,10 @@ interface Props {
   grupo: GrupoEmpresarial;
 }
 
-type Tab = 'parametrizacoes' | 'cedentes' | 'historico';
+type Tab = 'detalhes' | 'parametrizacoes' | 'cedentes' | 'historico';
 
 const TABS: { key: Tab; label: string; icon: Component }[] = [
+  { key: 'detalhes', label: 'Detalhes', icon: Info },
   { key: 'parametrizacoes', label: 'Parametrizações', icon: Settings2 },
   { key: 'cedentes', label: 'Cedentes', icon: Users },
   { key: 'historico', label: 'Histórico', icon: History },
@@ -25,7 +27,7 @@ const TABS: { key: Tab; label: string; icon: Component }[] = [
 const props = defineProps<Props>();
 const emit = defineEmits<{ back: [] }>();
 
-const tab = ref<Tab>('parametrizacoes');
+const tab = ref<Tab>('detalhes');
 const det = reactive(detalheGrupo(props.grupo));
 const cor = statusOperacaoColor(props.grupo.statusOperacao);
 
@@ -114,6 +116,14 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
     </div>
 
     <!-- Conteúdo -->
+    <DetalhesTab
+      v-if="tab === 'detalhes'"
+      :grupo="grupo"
+      :partes-relacionadas="det.partesRelacionadas"
+      :limite="det.parametrizacoes.limite"
+      @update:limite="(limite) => { det.parametrizacoes = { ...det.parametrizacoes, limite }; }"
+      @update:rating="(rating) => { det.parametrizacoes.limite.indicativoRating = rating; }"
+    />
     <ParametrizacoesTab v-if="tab === 'parametrizacoes'" :data="det.parametrizacoes" @change="(parametrizacoes) => { det.parametrizacoes = parametrizacoes; }" />
     <CedentesTab
       v-if="tab === 'cedentes'"

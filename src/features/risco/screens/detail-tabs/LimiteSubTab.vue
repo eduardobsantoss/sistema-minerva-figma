@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { reactive } from 'vue';
-import { FileText, Eye, RefreshCw, AlertTriangle, Layers, Plus } from 'lucide-vue-next';
-import { RATINGS_SEED, AGRUPAMENTOS_SEED, brl, type ParametrizacaoLimite } from '../../data/riscoData';
+import { computed, reactive, ref } from 'vue';
+import { FileText, Eye, RefreshCw, AlertTriangle, Layers, Plus, Trash2 } from 'lucide-vue-next';
+import { RATINGS_SEED, brl, type ParametrizacaoLimite, type LimiteProdutoRow } from '../../data/riscoData';
 import { TabCard, FieldLabel, SelectField } from './shared';
+import IncluirLimiteModal from '../../components/modals/IncluirLimiteModal.vue';
 
 interface Props {
   data: ParametrizacaoLimite;
@@ -10,18 +11,38 @@ interface Props {
 
 const props = defineProps<Props>();
 const emit = defineEmits<{ save: [data: ParametrizacaoLimite] }>();
-const form = reactive<ParametrizacaoLimite>({ ...props.data });
+const form = reactive<ParametrizacaoLimite>({ ...props.data, limites: [...props.data.limites] });
+const modalOpen = ref(false);
+
+const LIMITE_TABLE_GRID = 'minmax(140px, 2fr) minmax(88px, 1fr) minmax(100px, 1.1fr) 40px';
 
 const RATING_OPTS = [...RATINGS_SEED.map((r) => r.nome), 'NÃO SE APLICA'];
 
-function nomeAgrupamento(id: string) {
-  return AGRUPAMENTOS_SEED.find((a) => a.id === id)?.nome ?? id;
+const limitesAgrupados = computed(() => {
+  const map = new Map<string, LimiteProdutoRow[]>();
+  for (const l of form.limites) {
+    const arr = map.get(l.agrupamento) ?? [];
+    arr.push(l);
+    map.set(l.agrupamento, arr);
+  }
+  return [...map.entries()];
+});
+
+function handleIncluirLimites(novos: LimiteProdutoRow[]) {
+  form.limites = [...form.limites, ...novos];
+  modalOpen.value = false;
+  emit('save', { ...form, limites: [...form.limites] });
+}
+
+function removeLimite(id: string) {
+  form.limites = form.limites.filter((l) => l.id !== id);
+  emit('save', { ...form, limites: [...form.limites] });
 }
 </script>
 
 <template>
   <div class="flex flex-col" style="gap: 20px">
-    <TabCard title="Dados da Análise" :icon="FileText" has-save @save="emit('save', form)">
+    <TabCard title="Dados da Análise" :icon="FileText" has-save @save="emit('save', { ...form, limites: [...form.limites] })">
       <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px">
         <div>
           <FieldLabel>* Parecer de crédito</FieldLabel>
@@ -59,28 +80,72 @@ function nomeAgrupamento(id: string) {
       </span>
     </div>
 
-    <TabCard title="Agrupamentos" :icon="Layers">
-      <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
-        <div class="grid items-center" style="grid-template-columns: 2fr 1fr 1fr 1fr 44px; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
-          <div>Agrupamento</div><div style="text-align: right">Produtos</div><div style="text-align: right">Limite</div><div style="text-align: right">Risco</div><div />
+    <TabCard title="Limites por Agrupamento" :icon="Layers">
+      <div class="flex justify-end" style="margin-bottom: 14px">
+        <button
+          class="flex items-center"
+          style="gap: 6px; height: 36px; padding: 0 16px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.06em"
+          @click="modalOpen = true"
+        >
+          <Plus :size="14" /> INCLUIR LIMITE
+        </button>
+      </div>
+
+      <div v-if="form.limites.length === 0" style="padding: 32px; text-align: center; color: var(--text-muted); font-size: var(--text-sm); border: 1px dashed var(--border-default); border-radius: var(--radius-lg)">
+        Nenhum limite cadastrado. Clique em "Incluir Limite" para adicionar.
+      </div>
+
+      <div v-for="[agrupamento, rows] in limitesAgrupados" :key="agrupamento" style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px">
+        <div style="padding: 12px 16px; background: var(--surface-sunken); font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+          {{ agrupamento }}
         </div>
-        <div v-for="(row, i) in form.agrupamentos" :key="i" class="grid items-center" style="grid-template-columns: 2fr 1fr 1fr 1fr 44px; padding: 12px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
-          <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ nomeAgrupamento(row.agrupamentoId) }}</div>
-          <div style="text-align: right; font-variant-numeric: tabular-nums">{{ row.produtos }}</div>
-          <div style="text-align: right; font-variant-numeric: tabular-nums">{{ brl(row.limite, { compact: true }) }}</div>
-          <div style="text-align: right; font-variant-numeric: tabular-nums">{{ brl(row.risco, { compact: true }) }}</div>
+        <div class="grid items-center limite-table-row limite-table-header" :style="{ gridTemplateColumns: LIMITE_TABLE_GRID }">
+          <div>Produto</div><div class="limite-col-num">Limite</div><div class="limite-col-date">Vencimento</div><div />
+        </div>
+        <div v-for="row in rows" :key="row.id" class="grid items-center limite-table-row" :style="{ gridTemplateColumns: LIMITE_TABLE_GRID }">
+          <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ row.produto }}</div>
+          <div class="limite-col-num">{{ brl(row.valor, { compact: true }) }}</div>
+          <div class="limite-col-date">{{ row.vencimento }}</div>
           <div class="flex justify-end">
-            <button
-              aria-label="Adicionar agrupamento"
-              title="Vincular novo agrupamento (em breve)"
-              class="flex items-center justify-center"
-              style="width: 28px; height: 28px; border-radius: var(--radius-md); border: 1px solid var(--border-default); background: none; cursor: pointer; color: var(--text-muted)"
-            >
-              <Plus :size="13" />
+            <button aria-label="Remover" class="flex items-center justify-center" style="width: 26px; height: 26px; border: none; background: none; border-radius: var(--radius-md); cursor: pointer; color: var(--action-danger-text-only)" @click="removeLimite(row.id)">
+              <Trash2 :size="13" />
             </button>
           </div>
         </div>
       </div>
     </TabCard>
+
+    <IncluirLimiteModal v-if="modalOpen" @close="modalOpen = false" @confirm="handleIncluirLimites" />
   </div>
 </template>
+
+<style scoped>
+.limite-table-row {
+  column-gap: 16px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-default);
+  font-size: var(--text-sm);
+}
+
+.limite-table-header {
+  padding: 10px 16px;
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.limite-col-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.limite-col-date {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  white-space: nowrap;
+  padding-left: 4px;
+}
+</style>

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue';
 import { X, Tag, User, Building2, Phone } from 'lucide-vue-next';
-import { UF_OPTIONS, PAISES_DDI, type ParteTipo, type ParteRelacionada } from '../../data/operacaoData';
-import { BentoBox, BentoGrid, FormField, SelectField, Checkbox } from './parte-relacionada';
+import { UF_OPTIONS, PAISES_DDI, enriquecerParteRelacionada, type ParteTipo, type ParteRelacionada } from '../../data/operacaoData';
+import { BentoBox, BentoGrid, FormField, SelectField } from './parte-relacionada';
+import Checkbox from '@/components/ui/Checkbox.vue';
 
 const emit = defineEmits<{ close: []; create: [data: ParteRelacionada] }>();
 
@@ -116,13 +117,42 @@ const canSubmit = computed(() => nome.value.trim() !== '' && documento.value.tri
 function handleSubmit() {
   if (!canSubmit.value) return;
   const codigos = TIPOS_OPTS.filter((t) => form.tipos.includes(t.label)).map((t) => t.codigo);
-  emit('create', {
+  emit('create', enriquecerParteRelacionada({
     nome: nome.value,
     documento: documento.value,
     email: form.email,
     telefone: form.telefone,
     tipos: codigos,
-  });
+    tipoPessoa: form.tipoPessoa,
+    cpf: form.cpf,
+    rg: form.rg,
+    inscricaoProdutorRural: form.inscricaoProdutorRural,
+    nacionalidade: form.nacionalidade,
+    dataNascimento: form.dataNascimento,
+    profissao: form.profissao,
+    estadoCivil: form.estadoCivil,
+    cnpj: form.cnpj,
+    razaoSocial: form.razaoSocial,
+    nomeFantasia: form.nomeFantasia,
+    dataAbertura: form.dataAbertura,
+    tipoEmpresa: form.tipoEmpresa,
+    porte: form.porte,
+    atividadePrincipal: form.atividadePrincipal,
+    naturezaJuridica: form.naturezaJuridica,
+    inscricaoMunicipal: form.inscricaoMunicipal,
+    inscricaoEstadual: form.inscricaoEstadual,
+    cep: form.cep,
+    localidade: form.localidade,
+    numero: form.numero,
+    bairro: form.bairro,
+    infoAdicionais: form.infoAdicionais,
+    cidade: form.cidade,
+    estado: form.estado,
+    pais: form.pais,
+    nomeContato: form.nomeContato,
+    ddi: form.ddi,
+    contatosRelacionados: [],
+  }));
 }
 </script>
 

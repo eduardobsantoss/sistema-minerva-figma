@@ -61,12 +61,54 @@ export interface Solicitacao {
 /* ─── Tipos auxiliares da tela de detalhe (somente exibição) ──────── */
 
 export type ParteTipo = 'AVA' | 'ITA' | 'SOC' | 'REP' | 'CON' | 'PROC';
+export type TipoPessoa = 'FISICA' | 'JURIDICA';
+
+export interface ParteContatoRelacionado {
+  documento: string;
+  nome: string;
+  email: string;
+  telefone: string;
+}
+
 export interface ParteRelacionada {
   nome: string;
   documento: string;
   email: string;
   telefone: string;
   tipos: ParteTipo[];
+  tipoPessoa: TipoPessoa;
+  // Anexo 1 — Identificação (PF)
+  cpf?: string;
+  rg?: string;
+  inscricaoProdutorRural?: string;
+  nacionalidade?: string;
+  dataNascimento?: string;
+  profissao?: string;
+  estadoCivil?: string;
+  // Anexo 1 — Identificação (PJ)
+  cnpj?: string;
+  razaoSocial?: string;
+  nomeFantasia?: string;
+  dataAbertura?: string;
+  tipoEmpresa?: string;
+  porte?: string;
+  atividadePrincipal?: string;
+  naturezaJuridica?: string;
+  inscricaoMunicipal?: string;
+  inscricaoEstadual?: string;
+  contatosRelacionados?: ParteContatoRelacionado[];
+  // Anexo 2 — Endereço
+  cep?: string;
+  localidade?: string;
+  numero?: string;
+  bairro?: string;
+  infoAdicionais?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
+  // Anexo 3 — Contato
+  nomeContato?: string;
+  ddi?: string;
 }
 
 /** UFs usadas nos campos de Estado (mesma lista de CreateFidcModal.tsx). */
@@ -97,8 +139,23 @@ export interface ParcelaAtivo {
   valor?: number;
 }
 
+import type {
+  AtivoAnexoDoc,
+  AtivoConfirmacao,
+  AtivoDetalhePagamentos,
+  AtivoObservacaoCobranca,
+  AtivoPessoa,
+  ConfirmacaoAtivo,
+  EntregaTipo,
+  SituacaoPagamento,
+  SituacaoTitulo,
+  StatusAnexos,
+} from './ativoData';
+import { seedAtivos } from './ativoData';
+
 /** Um contrato/título vinculado a uma solicitação, criado via "Adicionar contrato". */
 export interface ContratoAtivo {
+  id: string;
   numero: string;
   tipo: string;
   emissao: string;
@@ -107,6 +164,27 @@ export interface ContratoAtivo {
   sacadoNome: string;
   sacadoDocumento: string;
   parcelas: ParcelaAtivo[];
+  // Tabela
+  registro: string;
+  statusAnexos: StatusAnexos;
+  anexosEnviados: number;
+  anexosTotal: number;
+  lastro: string;
+  entrega: EntregaTipo;
+  confirmacao: ConfirmacaoAtivo;
+  situacao: SituacaoTitulo;
+  situacaoPagamento: SituacaoPagamento;
+  entrada: string;
+  cedenteNome: string;
+  cedenteDocumento: string;
+  // Detalhe
+  cedente: AtivoPessoa;
+  sacado: AtivoPessoa;
+  pagamentosDetalhe: AtivoDetalhePagamentos;
+  confirmacoes: AtivoConfirmacao[];
+  observacoesCobranca: AtivoObservacaoCobranca[];
+  historicoTitulo: EventoHistorico[];
+  anexosDocs: AtivoAnexoDoc[];
 }
 
 export type ValidacaoStatus = 'OK' | 'ALERTA' | 'ERRO';
@@ -142,16 +220,162 @@ export interface DetalheSolicitacao {
   historico: EventoHistorico[];
 }
 
+function inferTipoPessoa(documento: string): TipoPessoa {
+  const digits = documento.replace(/\D/g, '');
+  return digits.length > 11 ? 'JURIDICA' : 'FISICA';
+}
+
+/** Preenche campos dos anexos 1–3 quando o mock trouxe só identificação básica. */
+export function enriquecerParteRelacionada(
+  parte: Omit<ParteRelacionada, 'tipoPessoa'> & Partial<Pick<ParteRelacionada, 'tipoPessoa'>>,
+): ParteRelacionada {
+  const tipoPessoa = parte.tipoPessoa ?? inferTipoPessoa(parte.documento);
+  const isFisica = tipoPessoa === 'FISICA';
+
+  return {
+    ...parte,
+    tipoPessoa,
+    cpf: isFisica ? (parte.cpf ?? parte.documento) : parte.cpf,
+    cnpj: !isFisica ? (parte.cnpj ?? parte.documento) : parte.cnpj,
+    razaoSocial: !isFisica ? (parte.razaoSocial ?? parte.nome) : parte.razaoSocial,
+    nacionalidade: isFisica ? (parte.nacionalidade ?? 'Brasileira') : parte.nacionalidade,
+    pais: parte.pais ?? 'Brasil',
+    ddi: parte.ddi ?? '+55',
+    nomeContato: parte.nomeContato ?? parte.nome,
+    contatosRelacionados: parte.contatosRelacionados ?? [],
+  };
+}
+
 const PARTES_BASE: ParteRelacionada[] = [
-  { nome: 'Antonio Mazzo Junior',        documento: '105.746.818-50',     email: 'teste@email.com',    telefone: '(34) 3832-4637',  tipos: ['AVA'] },
-  { nome: 'Carlos Roberto Rosa',         documento: '003.876.916-69',     email: 'teste@email.com',    telefone: '(34) 99514-9848', tipos: ['AVA', 'ITA'] },
-  { nome: 'Mario Cesar de Oliveira',     documento: '902.712.036-68',     email: 'q32131@242342.com',  telefone: '(93) 84923-4234', tipos: ['AVA', 'SOC'] },
-  { nome: 'Helen Kristina Ferreira',     documento: '045.496.716-02',     email: 'cccw@email.com',     telefone: '(34) 99878-9789', tipos: ['SOC', 'AVA', 'ITA'] },
-  { nome: 'Hidiovana de Melo Freitas',   documento: '054.698.026-04',     email: 'email@email.com',    telefone: '(34) 99547-8979', tipos: ['AVA', 'ITA'] },
-  { nome: 'Eduardo Barbosa dos Santos',  documento: '116.644.266-71',     email: 'teste@email.com',    telefone: '(34) 99254-7879', tipos: ['REP'] },
-  { nome: 'Banco do Brasil SA',          documento: '00.000.000/0001-91', email: 'teste@email.com',    telefone: '(34) 99521-4589', tipos: ['ITA', 'AVA'] },
-  { nome: 'Receita Federal',             documento: '000.000.001-91',     email: 'asgvfgw@ctqw.com',   telefone: '(34) 99521-5967', tipos: ['AVA'] },
-  { nome: 'Cencosud Brasil Comercial',   documento: '39.346.861/0001-61', email: 'cdszgcgw@cgwgtw.com', telefone: '(34) 95195-4897', tipos: ['AVA'] },
+  enriquecerParteRelacionada({
+    nome: 'Antonio Mazzo Junior',
+    documento: '105.746.818-50',
+    email: 'teste@email.com',
+    telefone: '(34) 3832-4637',
+    tipos: ['AVA'],
+    nacionalidade: 'Brasileira',
+    estadoCivil: 'Casado(a)',
+    profissao: 'Produtor Rural',
+    cidade: 'Uberaba',
+    estado: 'MG',
+    pais: 'Brasil',
+    ddi: '+55',
+    nomeContato: 'Antonio Mazzo Junior',
+  }),
+  enriquecerParteRelacionada({
+    nome: 'Carlos Roberto Rosa',
+    documento: '003.876.916-69',
+    email: 'teste@email.com',
+    telefone: '(34) 99514-9848',
+    tipos: ['AVA', 'ITA'],
+    nacionalidade: 'Brasileira',
+    cidade: 'Uberlândia',
+    estado: 'MG',
+    pais: 'Brasil',
+    ddi: '+55',
+    nomeContato: 'Carlos Roberto Rosa',
+  }),
+  enriquecerParteRelacionada({
+    nome: 'Mario Cesar de Oliveira',
+    documento: '902.712.036-68',
+    email: 'q32131@242342.com',
+    telefone: '(93) 84923-4234',
+    tipos: ['AVA', 'SOC'],
+    nacionalidade: 'Brasileira',
+    cidade: 'Ituiutaba',
+    estado: 'MG',
+    pais: 'Brasil',
+    ddi: '+55',
+    nomeContato: 'Mario Cesar de Oliveira',
+  }),
+  enriquecerParteRelacionada({
+    nome: 'Helen Kristina Ferreira',
+    documento: '045.496.716-02',
+    email: 'cccw@email.com',
+    telefone: '(34) 99878-9789',
+    tipos: ['SOC', 'AVA', 'ITA'],
+    nacionalidade: 'Brasileira',
+    estadoCivil: 'Solteiro(a)',
+    cidade: 'Araguari',
+    estado: 'MG',
+    pais: 'Brasil',
+    ddi: '+55',
+    nomeContato: 'Helen Kristina Ferreira',
+  }),
+  enriquecerParteRelacionada({
+    nome: 'Hidiovana de Melo Freitas',
+    documento: '054.698.026-04',
+    email: 'email@email.com',
+    telefone: '(34) 99547-8979',
+    tipos: ['AVA', 'ITA'],
+    nacionalidade: 'Brasileira',
+    cidade: 'Uberaba',
+    estado: 'MG',
+    pais: 'Brasil',
+    ddi: '+55',
+    nomeContato: 'Hidiovana de Melo Freitas',
+  }),
+  enriquecerParteRelacionada({
+    nome: 'Eduardo Barbosa dos Santos',
+    documento: '116.644.266-71',
+    email: 'teste@email.com',
+    telefone: '(34) 99254-7879',
+    tipos: ['REP'],
+    nacionalidade: 'Brasileira',
+    profissao: 'Administrador',
+    cidade: 'Uberaba',
+    estado: 'MG',
+    pais: 'Brasil',
+    ddi: '+55',
+    nomeContato: 'Eduardo Barbosa dos Santos',
+  }),
+  enriquecerParteRelacionada({
+    nome: 'Banco do Brasil SA',
+    documento: '00.000.000/0001-91',
+    email: 'teste@email.com',
+    telefone: '(34) 99521-4589',
+    tipos: ['ITA', 'AVA'],
+    razaoSocial: 'Banco do Brasil SA',
+    nomeFantasia: 'Banco do Brasil',
+    dataAbertura: '01/08/1808',
+    tipoEmpresa: 'Sociedade de Economia Mista',
+    porte: 'Grande',
+    cidade: 'Brasília',
+    estado: 'DF',
+    pais: 'Brasil',
+    ddi: '+55',
+    nomeContato: 'Central de Atendimento',
+  }),
+  enriquecerParteRelacionada({
+    nome: 'Receita Federal',
+    documento: '000.000.001-91',
+    email: 'asgvfgw@ctqw.com',
+    telefone: '(34) 99521-5967',
+    tipos: ['AVA'],
+    nacionalidade: 'Brasileira',
+    cidade: 'Brasília',
+    estado: 'DF',
+    pais: 'Brasil',
+    ddi: '+55',
+    nomeContato: 'Receita Federal',
+  }),
+  enriquecerParteRelacionada({
+    nome: 'Cencosud Brasil Comercial',
+    documento: '39.346.861/0001-61',
+    email: 'cdszgcgw@cgwgtw.com',
+    telefone: '(34) 95195-4897',
+    tipos: ['AVA'],
+    razaoSocial: 'Cencosud Brasil Comercial Ltda',
+    nomeFantasia: 'Cencosud',
+    dataAbertura: '12/03/2004',
+    tipoEmpresa: 'Sociedade Limitada',
+    porte: 'Grande',
+    cidade: 'São Paulo',
+    estado: 'SP',
+    pais: 'Brasil',
+    ddi: '+55',
+    nomeContato: 'Departamento Financeiro',
+  }),
 ];
 
 /**
@@ -168,7 +392,7 @@ export function detalheSolicitacao(s: Solicitacao): DetalheSolicitacao {
   return {
     partes: PARTES_BASE,
     limites: [],
-    ativos: [],
+    ativos: seedAtivos(s.id),
     garantias: [],
     validacoes,
     anexos: [

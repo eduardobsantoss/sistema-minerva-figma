@@ -157,7 +157,7 @@ function handleExportCsv() {
             style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
           >
             <option value="">Todos</option>
-            <option v-for="o in GERENTES_SEED" :key="o" :value="o">{{ o }}</option>
+            <option v-for="o in GERENTES_SEED" :key="o.id" :value="o.nome">{{ o.nome }}</option>
           </select>
         </div>
         <div>

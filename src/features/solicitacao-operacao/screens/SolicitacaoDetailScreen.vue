@@ -9,6 +9,7 @@ import {
   etapaCor, etapaLabel, esteiraLabel, detalheSolicitacao,
   type Solicitacao, type ParteRelacionada, type ContratoAtivo,
 } from '../data/operacaoData';
+import { enriquecerContratoAtivo } from '../data/ativoData';
 import { CopyButton, TabPill } from './detail-tabs/shared';
 import DadosGeraisTab from './detail-tabs/DadosGeraisTab.vue';
 import AtivosTab from './detail-tabs/AtivosTab.vue';
@@ -19,13 +20,18 @@ import AtaTab from './detail-tabs/AtaTab.vue';
 import HistoricoTab from './detail-tabs/HistoricoTab.vue';
 import ParteRelacionadaModal from '../components/modals/ParteRelacionadaModal.vue';
 import AdicionarContratoModal from '../components/modals/AdicionarContratoModal.vue';
+import VincularAtivosModal from '../components/modals/VincularAtivosModal.vue';
+import ConfirmarTituloModal from '../components/modals/ConfirmarTituloModal.vue';
+import ProrrogarVencimentoModal from '../components/modals/ProrrogarVencimentoModal.vue';
 import { ActionMenu, RejectModal } from './solicitacao-detail';
+import { ParteRelacionadaDetailView } from './detail-tabs/parte-relacionada';
+import { AtivoDetailView } from './detail-tabs/ativo';
 
 const props = defineProps<{ solicitacao: Solicitacao }>();
 const emit = defineEmits<{ back: [] }>();
 
 type Tab = 'gerais' | 'ativos' | 'garantias' | 'validacoes' | 'anexos' | 'ata' | 'historico';
-type SubView = null | 'validacoes-detalhe';
+type SubView = null | 'validacoes-detalhe' | 'parte-detalhe' | 'ativo-detalhe';
 
 const TABS: { key: Tab; label: string; icon: Component }[] = [
   { key: 'gerais', label: 'Dados Gerais', icon: FileText },
@@ -43,6 +49,12 @@ const confirmReject = ref(false);
 const det = reactive(detalheSolicitacao(props.solicitacao));
 const showParteModal = ref(false);
 const showContratoModal = ref(false);
+const showVincularModal = ref(false);
+const showConfirmarModal = ref(false);
+const showProrrogarModal = ref(false);
+const selectedParte = ref<ParteRelacionada | null>(null);
+const selectedAtivo = ref<ContratoAtivo | null>(null);
+const ativosAcao = ref<ContratoAtivo[]>([]);
 const cor = computed(() => etapaCor(props.solicitacao.etapa));
 
 function handleAddParte(parte: ParteRelacionada) {
@@ -50,9 +62,77 @@ function handleAddParte(parte: ParteRelacionada) {
   showParteModal.value = false;
 }
 
-function handleAddContrato(ativo: ContratoAtivo) {
-  det.ativos.push(ativo);
+function openParte(parte: ParteRelacionada) {
+  selectedParte.value = parte;
+  subView.value = 'parte-detalhe';
+}
+
+function closeParteDetail() {
+  subView.value = null;
+  selectedParte.value = null;
+}
+
+function openAtivo(ativo: ContratoAtivo) {
+  selectedAtivo.value = ativo;
+  subView.value = 'ativo-detalhe';
+}
+
+function closeAtivoDetail() {
+  subView.value = null;
+  selectedAtivo.value = null;
+}
+
+function handleAddContrato(ativo: Omit<ContratoAtivo, 'id'> & Partial<Pick<ContratoAtivo, 'id'>>) {
+  det.ativos.push(enriquecerContratoAtivo(ativo));
   showContratoModal.value = false;
+}
+
+function handleVincular(ativos: ContratoAtivo[]) {
+  det.ativos.push(...ativos);
+  showVincularModal.value = false;
+}
+
+function handleRemover(ids: string[]) {
+  det.ativos = det.ativos.filter((a) => !ids.includes(a.id));
+}
+
+function handleProrrogar(ids: string[]) {
+  ativosAcao.value = det.ativos.filter((a) => ids.includes(a.id));
+  showProrrogarModal.value = true;
+}
+
+function handleConfirmar(ids: string[]) {
+  ativosAcao.value = det.ativos.filter((a) => ids.includes(a.id));
+  showConfirmarModal.value = true;
+}
+
+function onConfirmarTitulo(data: { status: string; data: string; observacao: string }) {
+  for (const a of ativosAcao.value) {
+    const idx = det.ativos.findIndex((x) => x.id === a.id);
+    if (idx >= 0) {
+      det.ativos[idx] = {
+        ...det.ativos[idx],
+        confirmacao: data.status as ContratoAtivo['confirmacao'],
+        confirmacoes: [
+          ...det.ativos[idx].confirmacoes,
+          { observacao: data.observacao, confirmadoPor: 'Usuário atual', data: data.data || '—', status: data.status as ContratoAtivo['confirmacao'] },
+        ],
+      };
+    }
+  }
+  showConfirmarModal.value = false;
+  ativosAcao.value = [];
+}
+
+function onProrrogarVencimento(data: { novoVencimento: string; motivo: string }) {
+  for (const a of ativosAcao.value) {
+    const idx = det.ativos.findIndex((x) => x.id === a.id);
+    if (idx >= 0) {
+      det.ativos[idx] = { ...det.ativos[idx], vencimento: data.novoVencimento };
+    }
+  }
+  showProrrogarModal.value = false;
+  ativosAcao.value = [];
 }
 </script>
 
@@ -62,6 +142,18 @@ function handleAddContrato(ativo: ContratoAtivo) {
     :det="det"
     :solicitacao-id="solicitacao.id"
     @back="subView = null"
+  />
+  <ParteRelacionadaDetailView
+    v-else-if="subView === 'parte-detalhe' && selectedParte"
+    :parte="selectedParte"
+    :solicitacao-id="solicitacao.id"
+    @back="closeParteDetail"
+  />
+  <AtivoDetailView
+    v-else-if="subView === 'ativo-detalhe' && selectedAtivo"
+    :ativo="selectedAtivo"
+    :solicitacao-id="solicitacao.id"
+    @back="closeAtivoDetail"
   />
   <div v-else class="flex flex-col" style="gap: 24px">
     <!-- Header + barra de ações -->
@@ -122,8 +214,24 @@ function handleAddContrato(ativo: ContratoAtivo) {
 
     <!-- Conteúdo -->
     <div style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 24px">
-      <DadosGeraisTab v-if="tab === 'gerais'" :s="solicitacao" :det="det" @add-parte="showParteModal = true" />
-      <AtivosTab v-else-if="tab === 'ativos'" :det="det" @add-contrato="showContratoModal = true" />
+      <DadosGeraisTab
+        v-if="tab === 'gerais'"
+        :s="solicitacao"
+        :det="det"
+        @add-parte="showParteModal = true"
+        @open-parte="openParte"
+      />
+      <AtivosTab
+        v-else-if="tab === 'ativos'"
+        :det="det"
+        @add-contrato="showContratoModal = true"
+        @open-ativo="openAtivo"
+        @vincular="showVincularModal = true"
+        @exportar="() => {}"
+        @remover="handleRemover"
+        @prorrogar="handleProrrogar"
+        @confirmar="handleConfirmar"
+      />
       <GarantiasTab v-else-if="tab === 'garantias'" :det="det" />
       <ValidacoesTab v-else-if="tab === 'validacoes'" :det="det" @open-full-view="subView = 'validacoes-detalhe'" />
       <AnexosTab v-else-if="tab === 'anexos'" :det="det" />
@@ -145,6 +253,26 @@ function handleAddContrato(ativo: ContratoAtivo) {
       :valor-operacao="solicitacao.valor"
       :tipo-calculo="solicitacao.tipoTaxa ?? 'Pré-fixado'"
       @create="handleAddContrato"
+    />
+
+    <VincularAtivosModal
+      v-if="showVincularModal"
+      @close="showVincularModal = false"
+      @vincular="handleVincular"
+    />
+
+    <ConfirmarTituloModal
+      v-if="showConfirmarModal"
+      :ativos="ativosAcao"
+      @close="showConfirmarModal = false"
+      @confirm="onConfirmarTitulo"
+    />
+
+    <ProrrogarVencimentoModal
+      v-if="showProrrogarModal"
+      :ativos="ativosAcao"
+      @close="showProrrogarModal = false"
+      @confirm="onProrrogarVencimento"
     />
   </div>
 </template>

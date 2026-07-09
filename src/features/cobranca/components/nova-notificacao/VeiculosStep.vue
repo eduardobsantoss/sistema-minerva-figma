@@ -3,7 +3,7 @@ import { ref, computed } from 'vue';
 import { X, Search } from 'lucide-vue-next';
 import type { VeiculoTipo } from '../../data/cobrancaData';
 import { mockVeiculos } from '../../data/cobrancaData';
-import CobrancaCheckbox from './CobrancaCheckbox.vue';
+import Checkbox from '@/components/ui/Checkbox.vue';
 
 type VeiculosTabKey = 'Todos' | 'FIDC' | 'CRA' | 'Garantia';
 
@@ -173,7 +173,7 @@ function selectTab(t: VeiculosTabKey) {
           cursor: pointer;
         "
       >
-        <CobrancaCheckbox :checked="allChecked" :indeterminate="indeterminate" @change="toggleAll" />
+        <Checkbox :checked="allChecked" :indeterminate="indeterminate" @change="toggleAll" />
         <span style="font-size: var(--text-xs); font-weight: 700; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase">
           Selecionar todos
         </span>
@@ -209,7 +209,7 @@ function selectTab(t: VeiculosTabKey) {
           @mouseenter="rowHover = v.id"
           @mouseleave="rowHover = null"
         >
-          <CobrancaCheckbox :checked="selected.includes(v.id)" @change="toggle(v.id)" />
+          <Checkbox :checked="selected.includes(v.id)" @change="toggle(v.id)" />
           <span
             :style="{
               fontSize: '11px',
