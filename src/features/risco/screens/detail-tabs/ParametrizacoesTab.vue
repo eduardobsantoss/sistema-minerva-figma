@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { Parametrizacoes } from '../../data/riscoData';
+import type { Parametrizacoes, ParteRelacionada } from '../../data/riscoData';
 import LimiteSubTab from './LimiteSubTab.vue';
 import AutoatendimentoSubTab from './AutoatendimentoSubTab.vue';
 import GeralSubTab from './GeralSubTab.vue';
@@ -8,10 +8,14 @@ import GarantiaSubTab from './GarantiaSubTab.vue';
 
 interface Props {
   data: Parametrizacoes;
+  partesRelacionadas: ParteRelacionada[];
 }
 
 defineProps<Props>();
-const emit = defineEmits<{ change: [data: Parametrizacoes] }>();
+const emit = defineEmits<{
+  change: [data: Parametrizacoes];
+  'update:partes-relacionadas': [data: ParteRelacionada[]];
+}>();
 
 const SUB_TABS = ['Limite', 'Autoatendimento', 'Geral', 'Garantia'] as const;
 type SubTab = (typeof SUB_TABS)[number];
@@ -40,7 +44,13 @@ const tab = ref<SubTab>('Limite');
 
     <LimiteSubTab v-if="tab === 'Limite'" :data="data.limite" @save="(limite) => emit('change', { ...data, limite })" />
     <AutoatendimentoSubTab v-if="tab === 'Autoatendimento'" :data="data.autoatendimento" @save="(autoatendimento) => emit('change', { ...data, autoatendimento })" />
-    <GeralSubTab v-if="tab === 'Geral'" :data="data.geral" @save="(geral) => emit('change', { ...data, geral })" />
+    <GeralSubTab
+      v-if="tab === 'Geral'"
+      :data="data.geral"
+      :partes-relacionadas="partesRelacionadas"
+      @save="(geral) => emit('change', { ...data, geral })"
+      @update:partes-relacionadas="(pr) => emit('update:partes-relacionadas', pr)"
+    />
     <GarantiaSubTab v-if="tab === 'Garantia'" :data="data.garantia" @save="(garantia) => emit('change', { ...data, garantia })" />
   </div>
 </template>

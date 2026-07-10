@@ -93,10 +93,11 @@ function isAnyChildActive(it: NavItem) {
 }
 
 function handleItemClick(it: NavItem) {
-  if (it.children?.length && !props.collapsed) {
-    emit('toggleMenu', it.key);
+  if (it.children?.length) {
+    if (!props.collapsed) emit('toggleMenu', it.key);
+    emit('navigate', it.children[0].key);
   } else {
-    emit('navigate', it.children?.length ? it.children[0].key : it.key);
+    emit('navigate', it.key);
   }
 }
 </script>

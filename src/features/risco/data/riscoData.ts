@@ -121,6 +121,10 @@ export interface ParteRelacionada {
   telefone: string;
   papel: PapelParteRelacionada;
   estadoCivil: string;
+  conjugeAnuente: boolean;
+  assinaturaObrigatoria: boolean;
+  aceitaRestritivo: boolean;
+  valorRestritivoAceito: number;
 }
 
 export const AGRUPAMENTO_LIMITE_OPTS = [
@@ -183,17 +187,6 @@ export interface ExcecaoConcentracao {
   percentual: number;
 }
 
-export interface AvalistaObrigatorio {
-  id: string;
-  nome: string;
-  documento: string;
-  email: string;
-  telefone: string;
-  estadoCivil: string;
-  conjugeAnuente: boolean;
-  obrigatorio: boolean;
-}
-
 export type FrequenciaLaudo = 'Mensal' | 'Trimestral' | 'Semestral' | 'Anual';
 export const FREQUENCIA_LAUDO_OPTS: FrequenciaLaudo[] = ['Mensal', 'Trimestral', 'Semestral', 'Anual'];
 
@@ -211,25 +204,15 @@ export interface ParametrizacaoGeral {
   validadeSerasaSacadoDias: number;
   validadeSerasaAvalistaDias: number;
   validadeSerasaCedenteDias: number;
-  necessitaAvalConjuge: boolean;
-  exigeAnuenciaConjuge: boolean;
-  aceitaRestritivoFinanceiroCedente: boolean;
-  valorRestritivoAceitoCedente: number;
-  aceitaRestritivoSocios: boolean;
-  valorRestritivoSocios: number;
-  laudoAtivoAntesDesembolso: boolean;
-  laudoFrequencia: FrequenciaLaudo;
-  afImovelPrazoLaudoPosComiteDias: number;
-  afImovelAprovadoSoEscrituraPublica: boolean;
-  protocoloCpr: boolean;
-  protocoloGarantiaImovel: boolean;
   excecoesConcentracao: ExcecaoConcentracao[];
-  avalistas: AvalistaObrigatorio[];
 }
+
+export const TIPO_GARANTIA_OPTS = ['AF Imóvel', 'AF Estoque', 'AF Agrícola', 'AF Bens Móvel'] as const;
+export type TipoGarantia = (typeof TIPO_GARANTIA_OPTS)[number];
 
 export interface GarantiaRow {
   id: string;
-  tipo: string;
+  tipo: TipoGarantia;
   percentualExigido: number;
   prazoLaudoDias: number;
   frequenciaLaudo: FrequenciaLaudo;
@@ -241,6 +224,11 @@ export interface ParametrizacaoGarantia {
   requerConfirmacaoTitulos: boolean;
   garantiasObrigatorias: boolean;
   percentualGarantia: number;
+  exigeLaudoImovelDesembolso: boolean;
+  frequenciaLaudoImovel: FrequenciaLaudo;
+  prazoLaudoPosComiteDias: number;
+  exigeEscrituraPublicaDesembolso: boolean;
+  exigeProtocoloDesembolso: boolean;
   garantias: GarantiaRow[];
 }
 
@@ -373,12 +361,13 @@ export function temRiscoAtivo(g: GrupoEmpresarial): boolean {
 }
 
 function buildLimites(grupo: GrupoEmpresarial): LimiteProdutoRow[] {
-  const agrup = (grupo.tipoCliente === 'Monocedente' ? 'Operações Monocedente' : 'Operações Multicedente') as AgrupamentoLimite;
-  return [
+  const agrup: AgrupamentoLimite = grupo.tipoCliente === 'Monocedente' ? 'Operações Monocedente' : 'Operações Multicedente';
+  const rows: LimiteProdutoRow[] = [
     { id: `lim-${grupo.id}-1`, agrupamento: agrup, produto: 'Desconto Duplicata', valor: grupo.limite * 0.5, vencimento: grupo.vencimentoLimite ?? '31/12/2026' },
     { id: `lim-${grupo.id}-2`, agrupamento: agrup, produto: 'Contrato CCB', valor: grupo.limite * 0.3, vencimento: grupo.vencimentoLimite ?? '31/12/2026' },
     { id: `lim-${grupo.id}-3`, agrupamento: 'Operações Confina', produto: 'Contrato CPRF', valor: grupo.limite * 0.2, vencimento: grupo.vencimentoLimite ?? '31/12/2026' },
-  ].filter((l) => l.valor > 0);
+  ];
+  return rows.filter((l) => l.valor > 0);
 }
 
 function buildPartesRelacionadas(grupo: GrupoEmpresarial): ParteRelacionada[] {
@@ -391,6 +380,10 @@ function buildPartesRelacionadas(grupo: GrupoEmpresarial): ParteRelacionada[] {
       telefone: '(64) 99901-2233',
       papel: 'Avalista',
       estadoCivil: 'Casado(a)',
+      conjugeAnuente: true,
+      assinaturaObrigatoria: true,
+      aceitaRestritivo: true,
+      valorRestritivoAceito: 5000,
     },
     {
       id: `pr-${grupo.id}-2`,
@@ -400,6 +393,10 @@ function buildPartesRelacionadas(grupo: GrupoEmpresarial): ParteRelacionada[] {
       telefone: '(64) 99902-3344',
       papel: 'Sócio',
       estadoCivil: 'Casado(a)',
+      conjugeAnuente: false,
+      assinaturaObrigatoria: false,
+      aceitaRestritivo: false,
+      valorRestritivoAceito: 0,
     },
     {
       id: `pr-${grupo.id}-3`,
@@ -409,6 +406,10 @@ function buildPartesRelacionadas(grupo: GrupoEmpresarial): ParteRelacionada[] {
       telefone: '(64) 99903-4455',
       papel: 'Representante Legal',
       estadoCivil: 'Solteiro(a)',
+      conjugeAnuente: false,
+      assinaturaObrigatoria: false,
+      aceitaRestritivo: true,
+      valorRestritivoAceito: 2500,
     },
   ];
 }
@@ -447,40 +448,21 @@ export function detalheGrupo(grupo: GrupoEmpresarial): DetalheGrupo {
         validadeSerasaSacadoDias: 30,
         validadeSerasaAvalistaDias: 30,
         validadeSerasaCedenteDias: 60,
-        necessitaAvalConjuge: false,
-        exigeAnuenciaConjuge: false,
-        aceitaRestritivoFinanceiroCedente: true,
-        valorRestritivoAceitoCedente: 5000,
-        aceitaRestritivoSocios: false,
-        valorRestritivoSocios: 0,
-        laudoAtivoAntesDesembolso: true,
-        laudoFrequencia: 'Semestral',
-        afImovelPrazoLaudoPosComiteDias: 15,
-        afImovelAprovadoSoEscrituraPublica: false,
-        protocoloCpr: true,
-        protocoloGarantiaImovel: false,
         excecoesConcentracao: [],
-        avalistas: [
-          {
-            id: 'aval-1',
-            nome: 'José Roberto Andrade',
-            documento: '111.222.333-44',
-            email: 'jose.andrade@email.com',
-            telefone: '(64) 99901-2233',
-            estadoCivil: 'Casado(a)',
-            conjugeAnuente: true,
-            obrigatorio: true,
-          },
-        ],
       },
       garantia: {
         requerConfirmacaoTitulos: grupo.statusOperacao !== 'Normal',
         garantiasObrigatorias: grupo.statusOperacao === 'Recovery' || grupo.statusOperacao === 'Special-Sit',
         percentualGarantia: 120,
+        exigeLaudoImovelDesembolso: true,
+        frequenciaLaudoImovel: 'Semestral',
+        prazoLaudoPosComiteDias: 15,
+        exigeEscrituraPublicaDesembolso: false,
+        exigeProtocoloDesembolso: true,
         garantias: [
           {
             id: 'gar-1',
-            tipo: 'Imóvel Rural',
+            tipo: 'AF Imóvel',
             percentualExigido: 120,
             prazoLaudoDias: 15,
             frequenciaLaudo: 'Semestral',

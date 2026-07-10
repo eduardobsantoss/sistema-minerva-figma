@@ -124,7 +124,13 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
       @update:limite="(limite) => { det.parametrizacoes = { ...det.parametrizacoes, limite }; }"
       @update:rating="(rating) => { det.parametrizacoes.limite.indicativoRating = rating; }"
     />
-    <ParametrizacoesTab v-if="tab === 'parametrizacoes'" :data="det.parametrizacoes" @change="(parametrizacoes) => { det.parametrizacoes = parametrizacoes; }" />
+    <ParametrizacoesTab
+      v-if="tab === 'parametrizacoes'"
+      :data="det.parametrizacoes"
+      :partes-relacionadas="det.partesRelacionadas"
+      @change="(parametrizacoes) => { det.parametrizacoes = parametrizacoes; }"
+      @update:partes-relacionadas="(pr) => { det.partesRelacionadas = pr; }"
+    />
     <CedentesTab
       v-if="tab === 'cedentes'"
       :cedentes="det.cedentes"

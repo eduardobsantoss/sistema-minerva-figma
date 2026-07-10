@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { FileText, Eye, RefreshCw, AlertTriangle, Layers, Plus, Trash2 } from 'lucide-vue-next';
-import { RATINGS_SEED, brl, type ParametrizacaoLimite, type LimiteProdutoRow } from '../../data/riscoData';
-import { TabCard, FieldLabel, SelectField } from './shared';
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
+import { AlertTriangle, Layers, Plus, MoreVertical, Pencil, Trash2 } from 'lucide-vue-next';
+import { brl, type ParametrizacaoLimite, type LimiteProdutoRow } from '../../data/riscoData';
+import { TabCard } from './shared';
 import IncluirLimiteModal from '../../components/modals/IncluirLimiteModal.vue';
+import EditarLimiteModal from '../../components/modals/EditarLimiteModal.vue';
 
 interface Props {
   data: ParametrizacaoLimite;
@@ -13,10 +14,10 @@ const props = defineProps<Props>();
 const emit = defineEmits<{ save: [data: ParametrizacaoLimite] }>();
 const form = reactive<ParametrizacaoLimite>({ ...props.data, limites: [...props.data.limites] });
 const modalOpen = ref(false);
+const editingLimite = ref<LimiteProdutoRow | null>(null);
+const openMenuId = ref<string | null>(null);
 
 const LIMITE_TABLE_GRID = 'minmax(140px, 2fr) minmax(88px, 1fr) minmax(100px, 1.1fr) 40px';
-
-const RATING_OPTS = [...RATINGS_SEED.map((r) => r.nome), 'NÃO SE APLICA'];
 
 const limitesAgrupados = computed(() => {
   const map = new Map<string, LimiteProdutoRow[]>();
@@ -36,43 +37,41 @@ function handleIncluirLimites(novos: LimiteProdutoRow[]) {
 
 function removeLimite(id: string) {
   form.limites = form.limites.filter((l) => l.id !== id);
+  openMenuId.value = null;
   emit('save', { ...form, limites: [...form.limites] });
 }
+
+function openEditModal(row: LimiteProdutoRow) {
+  editingLimite.value = row;
+  openMenuId.value = null;
+}
+
+function handleEditConfirm(valor: number, vencimento: string) {
+  if (!editingLimite.value) return;
+  form.limites = form.limites.map((l) =>
+    l.id === editingLimite.value!.id ? { ...l, valor, vencimento } : l,
+  );
+  editingLimite.value = null;
+  emit('save', { ...form, limites: [...form.limites] });
+}
+
+function toggleMenu(id: string) {
+  openMenuId.value = openMenuId.value === id ? null : id;
+}
+
+function handleClickOutside(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  if (!target.closest('[data-limite-action-menu]')) {
+    openMenuId.value = null;
+  }
+}
+
+onMounted(() => document.addEventListener('mousedown', handleClickOutside));
+onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside));
 </script>
 
 <template>
   <div class="flex flex-col" style="gap: 20px">
-    <TabCard title="Dados da Análise" :icon="FileText" has-save @save="emit('save', { ...form, limites: [...form.limites] })">
-      <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px">
-        <div>
-          <FieldLabel>* Parecer de crédito</FieldLabel>
-          <div v-if="form.parecerCreditoArquivo" class="flex items-center justify-between" style="height: 40px; padding: 0 8px 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-lg)">
-            <span style="font-size: var(--text-sm); color: var(--text-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ form.parecerCreditoArquivo }}</span>
-            <div class="flex items-center" style="gap: 4px">
-              <button aria-label="Visualizar" class="flex items-center justify-center" style="width: 28px; height: 28px; border: none; background: none; border-radius: var(--radius-md); cursor: pointer; color: var(--text-muted)">
-                <Eye :size="14" />
-              </button>
-              <button aria-label="Atualizar" class="flex items-center justify-center" style="width: 28px; height: 28px; border: none; background: none; border-radius: var(--radius-md); cursor: pointer; color: var(--text-muted)">
-                <RefreshCw :size="14" />
-              </button>
-            </div>
-          </div>
-          <div v-else class="flex items-center justify-between" style="height: 40px; padding: 0 14px; border: 1px dashed var(--danger-base); border-radius: var(--radius-lg); background: var(--status-danger-bg)">
-            <span style="font-size: var(--text-sm); color: var(--danger-base); font-weight: var(--weight-semibold)">Nenhum parecer anexado</span>
-            <button class="flex items-center justify-center" style="width: 28px; height: 28px; border: none; background: none; border-radius: var(--radius-md); cursor: pointer; color: var(--danger-base)">
-              <RefreshCw :size="14" />
-            </button>
-          </div>
-        </div>
-        <SelectField
-          label="Indicativo de rating"
-          :options="RATING_OPTS"
-          :value="form.indicativoRating"
-          @change="form.indicativoRating = ($event.target as HTMLSelectElement).value"
-        />
-      </div>
-    </TabCard>
-
     <div v-if="form.reparametrizacaoData" class="flex items-center" style="gap: 12px; padding: 14px 18px; border-radius: var(--radius-lg); background: var(--status-warning-bg); border: 1px solid var(--warning-base)">
       <AlertTriangle :size="18" style="color: var(--warning-dark); flex-shrink: 0" />
       <span style="font-size: var(--text-sm); color: var(--warning-dark); font-weight: var(--weight-semibold)">
@@ -106,16 +105,52 @@ function removeLimite(id: string) {
           <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ row.produto }}</div>
           <div class="limite-col-num">{{ brl(row.valor, { compact: true }) }}</div>
           <div class="limite-col-date">{{ row.vencimento }}</div>
-          <div class="flex justify-end">
-            <button aria-label="Remover" class="flex items-center justify-center" style="width: 26px; height: 26px; border: none; background: none; border-radius: var(--radius-md); cursor: pointer; color: var(--action-danger-text-only)" @click="removeLimite(row.id)">
-              <Trash2 :size="13" />
+          <div class="flex justify-end" style="position: relative" data-limite-action-menu>
+            <button
+              aria-label="Ações"
+              class="flex items-center justify-center"
+              style="width: 26px; height: 26px; border: none; background: none; border-radius: var(--radius-md); cursor: pointer; color: var(--text-muted)"
+              @click="toggleMenu(row.id)"
+            >
+              <MoreVertical :size="14" />
             </button>
+            <div
+              v-if="openMenuId === row.id"
+              class="flex flex-col"
+              style="position: absolute; top: 28px; right: 0; z-index: 50; min-width: 140px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 6px"
+            >
+              <button
+                class="flex items-center limite-action-item"
+                style="gap: 8px; padding: 8px 12px; background: none; border: none; cursor: pointer; border-radius: var(--radius-md); text-align: left; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-default); width: 100%"
+                @click="openEditModal(row)"
+              >
+                <Pencil :size="14" style="color: var(--text-muted)" />
+                Editar
+              </button>
+              <button
+                class="flex items-center limite-action-item"
+                style="gap: 8px; padding: 8px 12px; background: none; border: none; cursor: pointer; border-radius: var(--radius-md); text-align: left; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--action-danger-text-only); width: 100%"
+                @click="removeLimite(row.id)"
+              >
+                <Trash2 :size="14" />
+                Deletar
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </TabCard>
 
     <IncluirLimiteModal v-if="modalOpen" @close="modalOpen = false" @confirm="handleIncluirLimites" />
+    <EditarLimiteModal
+      v-if="editingLimite"
+      :agrupamento="editingLimite.agrupamento"
+      :produto="editingLimite.produto"
+      :valor="editingLimite.valor"
+      :vencimento="editingLimite.vencimento"
+      @close="editingLimite = null"
+      @confirm="handleEditConfirm"
+    />
   </div>
 </template>
 
@@ -147,5 +182,9 @@ function removeLimite(id: string) {
   color: var(--text-muted);
   white-space: nowrap;
   padding-left: 4px;
+}
+
+.limite-action-item:hover {
+  background: var(--surface-sunken);
 }
 </style>

@@ -1,18 +1,23 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
-import { ClipboardCheck, Users, Truck, ShieldCheck, FileSearch, ScrollText, UserCheck, FileSignature, Trash2 } from 'lucide-vue-next';
-import { FREQUENCIA_LAUDO_OPTS, type ParametrizacaoGeral, type ExcecaoConcentracao } from '../../data/riscoData';
-import { TabCard, FieldLabel, SelectField, ToggleRow, PctInput, DiasInput, EmptyState, AddButton } from './shared';
+import { ClipboardCheck, Users, Truck, ShieldCheck, UserCheck, Trash2 } from 'lucide-vue-next';
+import { type ParametrizacaoGeral, type ExcecaoConcentracao, type ParteRelacionada } from '../../data/riscoData';
+import { TabCard, FieldLabel, ToggleRow, PctInput, DiasInput, EmptyState, AddButton } from './shared';
 import Checkbox from '@/components/ui/Checkbox.vue';
 
 interface Props {
   data: ParametrizacaoGeral;
+  partesRelacionadas: ParteRelacionada[];
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<{ save: [data: ParametrizacaoGeral] }>();
+const emit = defineEmits<{
+  save: [data: ParametrizacaoGeral];
+  'update:partes-relacionadas': [data: ParteRelacionada[]];
+}>();
 
 const form = reactive<ParametrizacaoGeral>({ ...props.data });
+const partes = reactive<ParteRelacionada[]>(props.partesRelacionadas.map((p) => ({ ...p })));
 const excSacadoDoc = ref('');
 const excSacadoNome = ref('');
 const excPct = ref('');
@@ -35,25 +40,41 @@ function removeExcecao(id: string) {
   form.excecoesConcentracao = form.excecoesConcentracao.filter((e) => e.id !== id);
 }
 
-function toggleAvalistaObrigatorio(id: string) {
-  form.avalistas = form.avalistas.map((a) => (a.id === id ? { ...a, obrigatorio: !a.obrigatorio } : a));
-}
-
 function toggleConjugeAnuente(id: string) {
-  form.avalistas = form.avalistas.map((a) => (a.id === id ? { ...a, conjugeAnuente: !a.conjugeAnuente } : a));
+  const idx = partes.findIndex((p) => p.id === id);
+  if (idx >= 0) partes[idx] = { ...partes[idx], conjugeAnuente: !partes[idx].conjugeAnuente };
 }
 
-function removeAvalista(id: string) {
-  form.avalistas = form.avalistas.filter((a) => a.id !== id);
+function toggleAssinaturaObrigatoria(id: string) {
+  const idx = partes.findIndex((p) => p.id === id);
+  if (idx >= 0) partes[idx] = { ...partes[idx], assinaturaObrigatoria: !partes[idx].assinaturaObrigatoria };
 }
 
-function handleRestritivoInput(field: 'valorRestritivoAceitoCedente' | 'valorRestritivoSocios', e: Event) {
+function toggleAceitaRestritivo(id: string) {
+  const idx = partes.findIndex((p) => p.id === id);
+  if (idx >= 0) {
+    const next = !partes[idx].aceitaRestritivo;
+    partes[idx] = { ...partes[idx], aceitaRestritivo: next, valorRestritivoAceito: next ? partes[idx].valorRestritivoAceito : 0 };
+  }
+}
+
+function handleRestritivoInput(id: string, e: Event) {
   const target = e.target as HTMLInputElement;
-  form[field] = Number(target.value.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+  const idx = partes.findIndex((p) => p.id === id);
+  if (idx >= 0) {
+    partes[idx] = {
+      ...partes[idx],
+      valorRestritivoAceito: Number(target.value.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0,
+    };
+  }
 }
 
-function handleSave() {
+function handleSaveGeral() {
   emit('save', form);
+}
+
+function handleSavePartes() {
+  emit('update:partes-relacionadas', partes.map((p) => ({ ...p })));
 }
 </script>
 
@@ -62,16 +83,16 @@ function handleSave() {
     <TabCard title="Confirmações" :icon="ClipboardCheck">
       <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px">
         <div style="grid-column: span 3">
-          <PctInput label="* Confirmação pré-desembolso" :value="form.confirmacaoPreDesembolsoPct" @change="form.confirmacaoPreDesembolsoPct = $event" />
+          <PctInput label="* Percentual de confirmação pré-desembolso" :value="form.confirmacaoPreDesembolsoPct" @change="form.confirmacaoPreDesembolsoPct = $event" />
         </div>
-        <div style="grid-column: span 4">
-          <DiasInput label="* Prazo para confirmação dos títulos (dias)" :value="form.prazoConfirmacaoTitulosDias" @change="form.prazoConfirmacaoTitulosDias = $event" />
+        <div style="grid-column: span 3">
+          <PctInput label="* Percentual de confirmação pós-desembolso (Clientes Novos)" :value="form.confirmacaoClientesNovosPct" @change="form.confirmacaoClientesNovosPct = $event" />
         </div>
-        <div style="grid-column: span 5">
-          <PctInput label="* Confirmação pós-desembolso (Clientes Novos)" :value="form.confirmacaoClientesNovosPct" @change="form.confirmacaoClientesNovosPct = $event" />
+        <div style="grid-column: span 3">
+          <PctInput label="* Percentual de confirmação pós-desembolso (Clientes Antigos)" :value="form.confirmacaoClientesAntigosPct" @change="form.confirmacaoClientesAntigosPct = $event" />
         </div>
-        <div style="grid-column: span 5">
-          <PctInput label="* Confirmação pós-desembolso (Clientes Antigos)" :value="form.confirmacaoClientesAntigosPct" @change="form.confirmacaoClientesAntigosPct = $event" />
+        <div style="grid-column: span 3">
+          <DiasInput label="* Dias para confirmação dos ativos (Dias)" :value="form.prazoConfirmacaoTitulosDias" @change="form.prazoConfirmacaoTitulosDias = $event" />
         </div>
       </div>
     </TabCard>
@@ -87,7 +108,7 @@ function handleSave() {
       </div>
     </TabCard>
 
-    <TabCard title="Sacados" :icon="UserCheck">
+    <TabCard title="Concentração de Sacados" :icon="UserCheck">
       <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px; margin-bottom: 16px">
         <div style="grid-column: span 5">
           <PctInput label="* Concentração de sacados" :value="form.concentracaoMaximaSacadoPct" @change="form.concentracaoMaximaSacadoPct = $event" />
@@ -128,10 +149,50 @@ function handleSave() {
       </div>
     </TabCard>
 
-    <TabCard title="Tipos de Ativos" :icon="Truck">
-      <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px">
-        <div style="grid-column: span 4">
-          <ToggleRow label="Pode operar NFe de Entrega Futura" :on="form.nfEntregaFuturaPodeOperar" @toggle="form.nfEntregaFuturaPodeOperar = !form.nfEntregaFuturaPodeOperar" />
+    <TabCard title="Partes Relacionadas" :icon="Users" has-save @save="handleSavePartes">
+      <EmptyState v-if="partes.length === 0" :icon="Users" title="Nenhuma parte relacionada cadastrada" hint="Partes relacionadas são herdadas do cadastro do grupo." />
+      <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; overflow-x: auto">
+        <div class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 0.9fr 80px 80px 80px 120px; min-width: 900px; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
+          <div>Nome + Documento</div><div>E-mail + Telefone</div><div>Estado Civil</div><div>Cônjuge anuente</div><div>Assin. obrig.</div><div>Aceita restritivo</div><div>Valor restritivo</div>
+        </div>
+        <div v-for="p in partes" :key="p.id" class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 0.9fr 80px 80px 80px 120px; min-width: 900px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
+          <div>
+            <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ p.nome }}</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums">{{ p.documento }}</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">{{ p.papel }}</div>
+          </div>
+          <div>
+            <div style="color: var(--text-default)">{{ p.email }}</div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums">{{ p.telefone }}</div>
+          </div>
+          <div style="color: var(--text-default)">{{ p.estadoCivil }}</div>
+          <div>
+            <Checkbox :checked="p.conjugeAnuente" @change="toggleConjugeAnuente(p.id)" />
+          </div>
+          <div>
+            <Checkbox :checked="p.assinaturaObrigatoria" @change="toggleAssinaturaObrigatoria(p.id)" />
+          </div>
+          <div>
+            <Checkbox :checked="p.aceitaRestritivo" @change="toggleAceitaRestritivo(p.id)" />
+          </div>
+          <div>
+            <input
+              v-if="p.aceitaRestritivo"
+              type="text"
+              :value="p.valorRestritivoAceito.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })"
+              style="width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--border-default); border-radius: var(--radius-md); outline: none; font-size: var(--text-xs)"
+              @input="handleRestritivoInput(p.id, $event)"
+            />
+            <span v-else style="color: var(--text-muted); font-size: var(--text-xs)">—</span>
+          </div>
+        </div>
+      </div>
+    </TabCard>
+
+    <TabCard title="Ativos Não Performados" :icon="Truck">
+      <div class="grid geral-toggle-grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px; align-items: end">
+        <div class="geral-toggle-cell" style="grid-column: span 4">
+          <ToggleRow compact label="Pode operar NFe de Entrega Futura" :on="form.nfEntregaFuturaPodeOperar" @toggle="form.nfEntregaFuturaPodeOperar = !form.nfEntregaFuturaPodeOperar" />
         </div>
         <div style="grid-column: span 5">
           <PctInput label="Percentual máximo para NFe Entrega Futura" :value="form.nfEntregaFuturaOperacaoMaximaPct" :disabled="!form.nfEntregaFuturaPodeOperar" @change="form.nfEntregaFuturaOperacaoMaximaPct = $event" />
@@ -139,110 +200,36 @@ function handleSave() {
       </div>
     </TabCard>
 
-    <TabCard title="Crédito e Serasa" :icon="ShieldCheck">
-      <div class="flex flex-col" style="gap: 16px">
-        <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px">
-          <div style="grid-column: span 6">
-            <ToggleRow label="Exige pré-aprovação do sacado pelo Crédito" :on="form.creditoPreAprovacaoSacado" @toggle="form.creditoPreAprovacaoSacado = !form.creditoPreAprovacaoSacado" />
-          </div>
-          <div style="grid-column: span 3">
-            <DiasInput label="Validade Serasa do sacado (dias)" :value="form.validadeSerasaSacadoDias" @change="form.validadeSerasaSacadoDias = $event" />
-          </div>
-          <div style="grid-column: span 3">
-            <DiasInput label="Validade Serasa do avalista (dias)" :value="form.validadeSerasaAvalistaDias" @change="form.validadeSerasaAvalistaDias = $event" />
-          </div>
+    <TabCard title="Crédito e Serasa" :icon="ShieldCheck" has-save @save="handleSaveGeral">
+      <div class="grid geral-toggle-grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px; align-items: end">
+        <div class="geral-toggle-cell" style="grid-column: span 6">
+          <ToggleRow compact label="Indicativo se exige aprovação do sacado pelo setor de Crédito" :on="form.creditoPreAprovacaoSacado" @toggle="form.creditoPreAprovacaoSacado = !form.creditoPreAprovacaoSacado" />
         </div>
-        <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px">
-          <div style="grid-column: span 3">
-            <DiasInput label="Validade Serasa do cedente (dias)" :value="form.validadeSerasaCedenteDias" @change="form.validadeSerasaCedenteDias = $event" />
-          </div>
-          <div style="grid-column: span 4">
-            <ToggleRow label="Exige aval do cônjuge" :on="form.necessitaAvalConjuge" @toggle="form.necessitaAvalConjuge = !form.necessitaAvalConjuge" />
-          </div>
-          <div style="grid-column: span 5">
-            <ToggleRow label="Exige anuência do cônjuge" :on="form.exigeAnuenciaConjuge" @toggle="form.exigeAnuenciaConjuge = !form.exigeAnuenciaConjuge" />
-          </div>
+        <div style="grid-column: span 3">
+          <DiasInput label="Validade da consulta Serasa do sacado (Dias)" :value="form.validadeSerasaSacadoDias" @change="form.validadeSerasaSacadoDias = $event" />
         </div>
-        <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px">
-          <div style="grid-column: span 5">
-            <ToggleRow label="Aceita restritivo financeiro do cedente" :on="form.aceitaRestritivoFinanceiroCedente" @toggle="form.aceitaRestritivoFinanceiroCedente = !form.aceitaRestritivoFinanceiroCedente" />
-          </div>
-          <div v-if="form.aceitaRestritivoFinanceiroCedente" style="grid-column: span 3">
-            <FieldLabel>Valor de restritivo aceito</FieldLabel>
-            <input type="text" :value="form.valorRestritivoAceitoCedente.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })" style="width: 100%; height: 40px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)" @input="handleRestritivoInput('valorRestritivoAceitoCedente', $event)" />
-          </div>
-          <div style="grid-column: span 4">
-            <ToggleRow label="Aceita restritivo dos sócios" :on="form.aceitaRestritivoSocios" @toggle="form.aceitaRestritivoSocios = !form.aceitaRestritivoSocios" />
-          </div>
-          <div v-if="form.aceitaRestritivoSocios" style="grid-column: span 3">
-            <FieldLabel>Valor de restritivo</FieldLabel>
-            <input type="text" :value="form.valorRestritivoSocios.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })" style="width: 100%; height: 40px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)" @input="handleRestritivoInput('valorRestritivoSocios', $event)" />
-          </div>
+        <div style="grid-column: span 3">
+          <DiasInput label="Validade da consulta Serasa do Avalista (Dias)" :value="form.validadeSerasaAvalistaDias" @change="form.validadeSerasaAvalistaDias = $event" />
         </div>
-      </div>
-    </TabCard>
-
-    <TabCard title="Laudo de Ativo/Imóvel" :icon="FileSearch">
-      <div class="flex flex-col" style="gap: 16px">
-        <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px">
-          <div style="grid-column: span 5">
-            <ToggleRow label="Laudo do ativo antes do desembolso" :on="form.laudoAtivoAntesDesembolso" @toggle="form.laudoAtivoAntesDesembolso = !form.laudoAtivoAntesDesembolso" />
-          </div>
-          <div style="grid-column: span 3">
-            <SelectField label="Frequência do laudo do ativo" :options="FREQUENCIA_LAUDO_OPTS" :value="form.laudoFrequencia" @change="form.laudoFrequencia = ($event.target as HTMLSelectElement).value as ParametrizacaoGeral['laudoFrequencia']" />
-          </div>
-          <div style="grid-column: span 4">
-            <DiasInput label="(AF Imóvel) prazo do laudo pós comitê (dias)" :value="form.afImovelPrazoLaudoPosComiteDias" @change="form.afImovelPrazoLaudoPosComiteDias = $event" />
-          </div>
-        </div>
-        <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px">
-          <div style="grid-column: span 6">
-            <ToggleRow label="(AF Imóvel) AF aprovado só com escritura pública" :on="form.afImovelAprovadoSoEscrituraPublica" @toggle="form.afImovelAprovadoSoEscrituraPublica = !form.afImovelAprovadoSoEscrituraPublica" />
-          </div>
-        </div>
-      </div>
-    </TabCard>
-
-    <TabCard title="Protocolos por Produto" :icon="ScrollText">
-      <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px">
-        <div style="grid-column: span 5">
-          <ToggleRow label="(CPR) Desembolso só com protocolo" :on="form.protocoloCpr" @toggle="form.protocoloCpr = !form.protocoloCpr" />
-        </div>
-        <div style="grid-column: span 7">
-          <ToggleRow label="(Garantia de Imóvel) Desembolso só com protocolo" :on="form.protocoloGarantiaImovel" @toggle="form.protocoloGarantiaImovel = !form.protocoloGarantiaImovel" />
-        </div>
-      </div>
-    </TabCard>
-
-    <TabCard title="Lista de Avalistas" :icon="FileSignature" has-save @save="handleSave">
-      <EmptyState v-if="form.avalistas.length === 0" :icon="FileSignature" title="Nenhum avalista cadastrado" hint="Avalistas são herdados do cadastro do grupo." />
-      <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
-        <div class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 1fr 0.8fr 90px 90px 40px; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
-          <div>Nome + Documento</div><div>E-mail + Telefone</div><div>Estado Civil</div><div>Cônjuge anuente</div><div>Assin. obrig.</div><div />
-        </div>
-        <div v-for="a in form.avalistas" :key="a.id" class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 1fr 0.8fr 90px 90px 40px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
-          <div>
-            <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ a.nome }}</div>
-            <div style="font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums">{{ a.documento }}</div>
-          </div>
-          <div>
-            <div style="color: var(--text-default)">{{ a.email }}</div>
-            <div style="font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums">{{ a.telefone }}</div>
-          </div>
-          <div style="color: var(--text-default)">{{ a.estadoCivil }}</div>
-          <div>
-            <Checkbox :checked="a.conjugeAnuente" @change="toggleConjugeAnuente(a.id)" />
-          </div>
-          <div>
-            <Checkbox :checked="a.obrigatorio" @change="toggleAvalistaObrigatorio(a.id)" />
-          </div>
-          <div class="flex justify-end">
-            <button aria-label="Remover" class="flex items-center justify-center" style="width: 26px; height: 26px; border: none; background: none; border-radius: var(--radius-md); cursor: pointer; color: var(--action-danger-text-only)" @click="removeAvalista(a.id)">
-              <Trash2 :size="13" />
-            </button>
-          </div>
+        <div style="grid-column: span 3">
+          <DiasInput label="Validade da consulta Serasa do Cedente (Dias)" :value="form.validadeSerasaCedenteDias" @change="form.validadeSerasaCedenteDias = $event" />
         </div>
       </div>
     </TabCard>
   </div>
 </template>
+
+<style scoped>
+@media (max-width: 960px) {
+  .geral-toggle-grid > [style*='grid-column: span 4'],
+  .geral-toggle-grid > [style*='grid-column: span 5'],
+  .geral-toggle-grid > [style*='grid-column: span 6'],
+  .geral-toggle-grid > [style*='grid-column: span 3'] {
+    grid-column: span 12 !important;
+  }
+}
+
+.geral-toggle-cell {
+  min-height: 40px;
+}
+</style>

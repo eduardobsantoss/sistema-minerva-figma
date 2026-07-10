@@ -118,7 +118,7 @@ function handleModuleClick(title: string) {
     view.value = 'cobranca-notif';
     openMenu.value = 'cobranca';
   } else if (title === 'Risco') {
-    view.value = 'risco-grupos';
+    view.value = 'risco-dashboard';
     openMenu.value = 'risco';
   }
 }
