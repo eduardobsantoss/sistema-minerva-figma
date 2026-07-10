@@ -104,15 +104,18 @@ function handleItemClick(it: NavItem) {
 
 <template>
   <aside
-    class="relative flex flex-col"
+    class="sidebar-shell relative flex flex-col"
     :style="{
       width: collapsed ? COLLAPSED + 'px' : EXPANDED,
+      height: '100%',
       background: 'var(--gci-base)',
       padding: collapsed ? '24px 12px 16px' : '24px 16px 16px',
       boxShadow: '6px 0 24px rgba(15,23,42,0.12)',
       transition:
         'width var(--duration-slow) var(--ease-standard), padding var(--duration-slow) var(--ease-standard)',
       flexShrink: 0,
+      position: 'relative',
+      zIndex: 2,
     }"
   >
     <!-- Brand -->
@@ -170,7 +173,7 @@ function handleItemClick(it: NavItem) {
         align-items: center;
         justify-content: center;
         box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
-        z-index: 10;
+        z-index: 30;
         transition: background var(--duration-fast);
       "
       @click="emit('toggle')"
@@ -180,7 +183,7 @@ function handleItemClick(it: NavItem) {
     </button>
 
     <!-- Nav -->
-    <nav class="flex flex-col" style="gap: 4px">
+    <nav class="sidebar-nav-scroll flex flex-col" style="gap: 4px; flex: 1; min-height: 0; overflow-y: auto">
       <div v-for="it in items" :key="it.key">
         <button
           class="sidebar-nav-btn relative flex items-center"
@@ -320,7 +323,8 @@ function handleItemClick(it: NavItem) {
     <div
       class="flex items-center"
       :style="{
-        marginTop: 'auto',
+        marginTop: '12px',
+        flexShrink: 0,
         gap: '12px',
         padding: collapsed ? '8px' : '12px',
         borderRadius: 'var(--radius-xl)',
@@ -414,5 +418,14 @@ function handleItemClick(it: NavItem) {
 .sidebar-sub-btn--active:hover {
   background: rgba(242, 125, 38, 0.12);
   color: var(--agro-base);
+}
+
+.sidebar-nav-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar-nav-scroll::-webkit-scrollbar {
+  display: none;
 }
 </style>

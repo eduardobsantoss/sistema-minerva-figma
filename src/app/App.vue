@@ -10,7 +10,7 @@ const screen = ref<'login' | 'modules'>(SKIP_LOGIN ? 'modules' : 'login');
 </script>
 
 <template>
-  <div class="size-full">
+  <div class="size-full" :style="screen === 'modules' ? { overflow: 'hidden' } : undefined">
     <LoginScreen v-if="screen === 'login'" @submit="screen = 'modules'" />
     <ModulesScreen v-else />
   </div>

@@ -23,6 +23,41 @@ App.vue
 - `App.vue` decide entre `login` e `modules` com um `ref` local.
 - Se a URL já tiver `?view=`, o login é **pulado** (`SKIP_LOGIN`) — útil para capturas e deep links manuais.
 - Após submit do login, `screen` vira `'modules'` e `ModulesScreen` assume o layout completo.
+- Na tela de módulos, `App.vue` aplica `overflow: hidden` no wrapper raiz para evitar scroll duplo no `body`.
+
+### Modelo de altura e scroll (notebook / telas menores)
+
+O shell ocupa **exatamente a viewport** e concentra o scroll no conteúdo principal:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ App.vue (size-full, overflow:hidden quando modules)         │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ ModulesScreen (height:100vh, overflow:hidden)           │ │
+│ │ ┌──────────┬──────────────────────────────────────────┐ │ │
+│ │ │ Sidebar  │ Coluna principal (flex:1, min-height:0)  │ │ │
+│ │ │ height   │ ┌ Topbar (fixo) ───────────────────────┐ │ │ │
+│ │ │ 100%     │ └ Main (overflow-auto) ← ÚNICO SCROLL │ │ │ │
+│ │ │ z-index:2│    conteúdo da view ativa              │ │ │ │
+│ │ │          │                                        │ │ │ │
+│ │ │ nav      │                                        │ │ │ │
+│ │ │ scroll   │                                        │ │ │ │
+│ │ │ interno  │                                        │ │ │ │
+│ │ │ (oculto) │                                        │ │ │ │
+│ │ │ user card│                                        │ │ │ │
+│ │ └──────────┴──────────────────────────────────────────┘ │ │
+│ └─────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
+
+| Camada | Scroll | Observação |
+|---|---|---|
+| `html` / `body` | Não (padrão restaurado) | `theme.css` define `html { overflow-y: visible }` para não reservar barra global do Vuetify |
+| `ModulesScreen` | Não | `height: 100vh; overflow: hidden` |
+| Sidebar `<nav>` | Sim, interno | `overflow-y: auto` com barra **oculta** (`.sidebar-nav-scroll`) |
+| `<main>` | Sim | `overflow-auto` — scroll principal da aplicação |
+
+**Problemas que esse modelo evita:** faixa branca abaixo do menu lateral, sidebar mais alto que a viewport, e dois scrolls simultâneos (página + conteúdo).
 
 ### Árvore de arquivos relevante
 
@@ -117,14 +152,18 @@ Cards como Admin, Gerencial, Ativos, Passivo, Garantias e Confina **não têm ha
 
 ## 3. Sidebar (`Sidebar.vue`)
 
-### Estrutura visual
+### Estrutura visual (coluna flex, altura fixa)
 
-1. **Brand** — botão com logo; clique navega para `dashboard`.
+O `<aside>` preenche **100% da altura** do shell (`height: 100%` dentro do container `100vh`) e usa `flex-direction: column`:
+
+1. **Brand** — botão com logo; clique navega para `dashboard`. `flex-shrink: 0`.
    - Expandida: `gci-logo-full.png` (altura 56px).
    - Colapsada: `gci-logo-mark.png` (42×42px).
-2. **Botão colapsar** — círculo 24px, `position: absolute; right: -12px; top: 76px`, fundo `--agro-base`.
-3. **Nav** — lista `items` hardcoded no componente.
-4. **User card** — rodapé (`margin-top: auto`): avatar, nome "Eduardo Santos", role "Administrador", botão logout (visual apenas).
+2. **Botão colapsar** — círculo 24px, `position: absolute; right: -12px; top: 76px`, fundo `--agro-base`, **`z-index: 30`**. Fica parcialmente fora da borda direita da sidebar; o `<aside>` usa **`z-index: 2`** para empilhar acima da coluna de conteúdo (evita a bolinha laranja ficar atrás do main).
+3. **Nav** (`.sidebar-nav-scroll`) — lista `items` hardcoded; **`flex: 1; min-height: 0; overflow-y: auto`**. Quando há muitos itens/submenus abertos (notebook), **só esta área rola**; a barra de scroll é oculta via CSS (`scrollbar-width: none`, `::-webkit-scrollbar { display: none }`).
+4. **User card** — rodapé fixo (`flex-shrink: 0`, `margin-top: 12px`): avatar, nome "Eduardo Santos", role "Administrador", botão logout (visual apenas).
+
+**Importante:** não usar `overflow: hidden` no `<aside>` — isso cortava o botão colapsar (`right: -12px`) e/ou empilhava incorretamente com o conteúdo. O contenimento de scroll fica apenas no `<nav>`.
 
 ### Itens do menu (`items`)
 
@@ -157,8 +196,9 @@ Cards como Admin, Gerencial, Ativos, Passivo, Garantias e Confina **não têm ha
 
 - Fundo da sidebar: `--gci-base` (teal escuro).
 - Sombra: `6px 0 24px rgba(15,23,42,0.12)`.
+- Empilhamento: `position: relative; z-index: 2` no `<aside>`.
 - Submenu: animação `max-height` + `opacity`; linha vertical guia `rgba(255,255,255,0.1)` à esquerda dos subitens.
-- **Tooltip colapsada:** ao hover com sidebar colapsada, label flutuante à direita do ícone (card branco `--surface-card`).
+- **Tooltip colapsada:** ao hover com sidebar colapsada, label flutuante à direita do ícone (card branco `--surface-card`, `z-index: 100`).
 
 ### Props
 
@@ -236,21 +276,29 @@ Card clicável com micro-interações:
 | Hover | borda laranja 30%, `translateY(-4px)`, sombra suave, círculo decorativo no canto muda para laranja 8% |
 | CTA | "Acessar módulo →" aparece no hover (opacity + translate) |
 
-- Padding `24px`, `min-height: 200px`, `border-radius: --radius-xl`.
+- Padding `24px`, **`height: 100%`** + `min-height: 200px` — cards da mesma linha do grid ficam com **altura uniforme** (descrições com 2 ou 3 linhas não desalinham a linha).
 - Ícone em caixa 56×56 com fundo do `tone`.
 - Título `--text-lg` bold; descrição `--text-sm` muted, `--leading-relaxed`.
+- Espaçador flex interno empurra o CTA "Acessar módulo →" para o rodapé do card.
 
-### Container do main
+### Container do main e shell
+
+**ModulesScreen** — wrapper do shell:
 
 ```vue
-<main style="flex: 1; padding: var(--main-padding)">
-  <div style="max-width: 1456px; margin: 0 auto">
-    <!-- view ativa -->
+<div class="flex w-full" style="height: 100vh; overflow: hidden; background: var(--surface-page)">
+  <Sidebar ... />
+  <div class="flex flex-col" style="flex: 1; min-width: 0; min-height: 0">
+    <Topbar ... />
+    <main class="overflow-auto" style="flex: 1; padding: var(--main-padding)">
+      ...
+    </main>
   </div>
-</main>
+</div>
 ```
 
-Scroll vertical fica no `<main class="overflow-auto">`, não no body.
+- `min-height: 0` na coluna principal é **obrigatório** para o flex permitir scroll no `<main>` sem estourar o `100vh`.
+- Scroll vertical fica **somente** no `<main class="overflow-auto">`, não no `body` nem na sidebar inteira.
 
 ---
 
@@ -264,6 +312,11 @@ Tokens em `src/styles/theme.css`:
 | `--main-padding` | 40px | 28px | 20px | 16px |
 | `--topbar-padding-x` | 32px | 24px | 16px | — |
 | `--topbar-height` | 80px | — | 72px | — |
+
+### Global (`html`, `body`, `#root`)
+
+- `html, body, #root { height: 100% }` — cadeia de altura para login e shell.
+- `html { overflow-y: visible }` — anula o `overflow-y: scroll` forçado pelo Vuetify; evita barra de scroll global quando o conteúdo cabe na viewport.
 
 | Elemento | Tipografia |
 |---|---|
@@ -307,8 +360,10 @@ No **dashboard**, vários cards existem só como vitrine (Admin, Gerencial, Ativ
 3. **Dashboard** — adicionar entrada em `modulesData.ts` **e** mapear em `handleModuleClick` se o card deve navegar.
 4. **Título do header** — sempre via `titleMap`; não hardcodar título dentro das feature screens no shell.
 5. **Layout responsivo** — preferir tokens `--main-padding`, `--topbar-height`; classes utilitárias `.topbar-search` / `.topbar-user-meta` para esconder blocos.
-6. **Deep links** — ao integrar router ou `history.pushState`, manter `VALID_VIEWS` e lógica de `openMenu` para submenus.
-7. **Auth real** — substituir mock em `App.vue` + dados do usuário na Sidebar/Topbar por store/session compartilhada.
+6. **Scroll do shell** — manter `ModulesScreen` em `100vh` + `overflow: hidden`; scroll só no `<main>`. Sidebar: scroll interno no `<nav class="sidebar-nav-scroll">`, **sem** `overflow: hidden` no `<aside>`.
+7. **Botão colapsar** — permanece `right: -12px`; sidebar precisa `z-index: 2` (botão `z-index: 30`) para não ficar atrás do conteúdo.
+8. **Deep links** — ao integrar router ou `history.pushState`, manter `VALID_VIEWS` e lógica de `openMenu` para submenus.
+9. **Auth real** — substituir mock em `App.vue` + dados do usuário na Sidebar/Topbar por store/session compartilhada.
 
 ---
 
@@ -316,14 +371,15 @@ No **dashboard**, vários cards existem só como vitrine (Admin, Gerencial, Ativ
 
 | Arquivo | Conteúdo |
 |---|---|
-| `src/app/App.vue` | Gate login/modules; skip login com `?view=` |
-| `src/app/ModulesScreen.vue` | Estado `view`, sidebar, topbar, switch de telas |
+| `src/app/App.vue` | Gate login/modules; skip login com `?view=`; `overflow: hidden` no wrapper quando `modules` |
+| `src/app/ModulesScreen.vue` | Shell `100vh`, estado `view`, sidebar, topbar, switch de telas |
 | `src/app/DashboardView.vue` | Hero + grid de módulos |
 | `src/app/Placeholder.vue` | Fallback de módulo não implementado |
-| `src/components/layout/Sidebar.vue` | Menu, collapse, submenus, user card |
+| `src/components/layout/Sidebar.vue` | Menu, collapse (z-index), scroll interno oculto no nav, submenus, user card |
 | `src/components/layout/Topbar.vue` | Título, busca, notificações, chip usuário |
 | `src/features/dashboard/data/modulesData.ts` | Lista e tons dos cards |
-| `src/features/dashboard/components/ModuleCard.vue` | Card interativo do dashboard |
-| `src/styles/theme.css` | Tokens de layout shell e media queries |
+| `src/features/dashboard/components/ModuleCard.vue` | Card interativo do dashboard (altura uniforme por linha) |
+| `src/styles/theme.css` | Tokens de layout shell, media queries, `html overflow-y` |
 | `docs/handoff/risco.md` | Handoff do módulo Risco (submenu da sidebar) |
+| `docs/handoff/solicitacao-listagem.md` | Handoff da listagem de Solicitação de Operação |
 | `docs/handoff/solicitacao-detalhes.md` | Handoff do detalhe de Solicitação de Operação |

@@ -125,7 +125,10 @@ function handleModuleClick(title: string) {
 </script>
 
 <template>
-  <div class="flex h-full w-full" style="background: var(--surface-page)">
+  <div
+    class="flex w-full"
+    style="height: 100vh; overflow: hidden; background: var(--surface-page)"
+  >
     <Sidebar
       :active="view"
       :collapsed="collapsed"
@@ -135,7 +138,7 @@ function handleModuleClick(title: string) {
       @toggle-menu="onToggleMenu"
     />
 
-    <div class="flex flex-col" style="flex: 1; min-width: 0">
+    <div class="flex flex-col" style="flex: 1; min-width: 0; min-height: 0">
       <Topbar :title="titleMap[view]" />
 
       <main class="overflow-auto" style="flex: 1; padding: var(--main-padding)">
