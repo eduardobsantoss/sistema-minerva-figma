@@ -83,16 +83,16 @@ function handleSavePartes() {
     <TabCard title="Confirmações" :icon="ClipboardCheck">
       <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px">
         <div style="grid-column: span 3">
-          <PctInput label="* Percentual de confirmação pré-desembolso" :value="form.confirmacaoPreDesembolsoPct" @change="form.confirmacaoPreDesembolsoPct = $event" />
+          <PctInput label="* % Confirmação Pré-Desembolso" :value="form.confirmacaoPreDesembolsoPct" @change="form.confirmacaoPreDesembolsoPct = $event" />
         </div>
         <div style="grid-column: span 3">
-          <PctInput label="* Percentual de confirmação pós-desembolso (Clientes Novos)" :value="form.confirmacaoClientesNovosPct" @change="form.confirmacaoClientesNovosPct = $event" />
+          <PctInput label="* % Confirmação Pós-Desembolso (Clientes Novos)" :value="form.confirmacaoClientesNovosPct" @change="form.confirmacaoClientesNovosPct = $event" />
         </div>
         <div style="grid-column: span 3">
-          <PctInput label="* Percentual de confirmação pós-desembolso (Clientes Antigos)" :value="form.confirmacaoClientesAntigosPct" @change="form.confirmacaoClientesAntigosPct = $event" />
+          <PctInput label="* % Confirmação Pós-Desembolso (Clientes Antigos)" :value="form.confirmacaoClientesAntigosPct" @change="form.confirmacaoClientesAntigosPct = $event" />
         </div>
         <div style="grid-column: span 3">
-          <DiasInput label="* Dias para confirmação dos ativos (Dias)" :value="form.prazoConfirmacaoTitulosDias" @change="form.prazoConfirmacaoTitulosDias = $event" />
+          <DiasInput label="* Dias Confirmação dos Ativos (Dias)" :value="form.prazoConfirmacaoTitulosDias" @change="form.prazoConfirmacaoTitulosDias = $event" />
         </div>
       </div>
     </TabCard>
@@ -190,46 +190,29 @@ function handleSavePartes() {
     </TabCard>
 
     <TabCard title="Ativos Não Performados" :icon="Truck">
-      <div class="grid geral-toggle-grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px; align-items: end">
-        <div class="geral-toggle-cell" style="grid-column: span 4">
-          <ToggleRow compact label="Pode operar NFe de Entrega Futura" :on="form.nfEntregaFuturaPodeOperar" @toggle="form.nfEntregaFuturaPodeOperar = !form.nfEntregaFuturaPodeOperar" />
-        </div>
-        <div style="grid-column: span 5">
+      <div class="flex flex-col" style="gap: 16px">
+        <ToggleRow compact label="Pode operar NFe de Entrega Futura" :on="form.nfEntregaFuturaPodeOperar" @toggle="form.nfEntregaFuturaPodeOperar = !form.nfEntregaFuturaPodeOperar" />
+        <div style="max-width: 320px">
           <PctInput label="Percentual máximo para NFe Entrega Futura" :value="form.nfEntregaFuturaOperacaoMaximaPct" :disabled="!form.nfEntregaFuturaPodeOperar" @change="form.nfEntregaFuturaOperacaoMaximaPct = $event" />
         </div>
       </div>
     </TabCard>
 
     <TabCard title="Crédito e Serasa" :icon="ShieldCheck" has-save @save="handleSaveGeral">
-      <div class="grid geral-toggle-grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px; align-items: end">
-        <div class="geral-toggle-cell" style="grid-column: span 6">
-          <ToggleRow compact label="Indicativo se exige aprovação do sacado pelo setor de Crédito" :on="form.creditoPreAprovacaoSacado" @toggle="form.creditoPreAprovacaoSacado = !form.creditoPreAprovacaoSacado" />
-        </div>
-        <div style="grid-column: span 3">
-          <DiasInput label="Validade da consulta Serasa do sacado (Dias)" :value="form.validadeSerasaSacadoDias" @change="form.validadeSerasaSacadoDias = $event" />
-        </div>
-        <div style="grid-column: span 3">
-          <DiasInput label="Validade da consulta Serasa do Avalista (Dias)" :value="form.validadeSerasaAvalistaDias" @change="form.validadeSerasaAvalistaDias = $event" />
-        </div>
-        <div style="grid-column: span 3">
-          <DiasInput label="Validade da consulta Serasa do Cedente (Dias)" :value="form.validadeSerasaCedenteDias" @change="form.validadeSerasaCedenteDias = $event" />
+      <div class="flex flex-col" style="gap: 16px">
+        <ToggleRow compact label="Exige Aprovação do Sacado Pelo Setor de Crédito" :on="form.creditoPreAprovacaoSacado" @toggle="form.creditoPreAprovacaoSacado = !form.creditoPreAprovacaoSacado" />
+        <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px">
+          <div style="grid-column: span 4">
+            <DiasInput label="Validade da consulta Serasa do sacado (Dias)" :value="form.validadeSerasaSacadoDias" @change="form.validadeSerasaSacadoDias = $event" />
+          </div>
+          <div style="grid-column: span 4">
+            <DiasInput label="Validade da consulta Serasa do Avalista (Dias)" :value="form.validadeSerasaAvalistaDias" @change="form.validadeSerasaAvalistaDias = $event" />
+          </div>
+          <div style="grid-column: span 4">
+            <DiasInput label="Validade da consulta Serasa do Cedente (Dias)" :value="form.validadeSerasaCedenteDias" @change="form.validadeSerasaCedenteDias = $event" />
+          </div>
         </div>
       </div>
     </TabCard>
   </div>
 </template>
-
-<style scoped>
-@media (max-width: 960px) {
-  .geral-toggle-grid > [style*='grid-column: span 4'],
-  .geral-toggle-grid > [style*='grid-column: span 5'],
-  .geral-toggle-grid > [style*='grid-column: span 6'],
-  .geral-toggle-grid > [style*='grid-column: span 3'] {
-    grid-column: span 12 !important;
-  }
-}
-
-.geral-toggle-cell {
-  min-height: 40px;
-}
-</style>

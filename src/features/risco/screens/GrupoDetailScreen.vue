@@ -2,7 +2,7 @@
 import { onMounted, onUnmounted, reactive, ref, type Component } from 'vue';
 import { ArrowLeft, MoreVertical, Settings2, Users, History, UserCog, BellRing, ShieldCheck, Info } from 'lucide-vue-next';
 import { statusOperacaoColor, detalheGrupo, type GrupoEmpresarial } from '../data/riscoData';
-import { TabPill } from './detail-tabs/shared';
+import { TabPill, CopyButton } from './detail-tabs/shared';
 import DetalhesTab from './detail-tabs/DetalhesTab.vue';
 import ParametrizacoesTab from './detail-tabs/ParametrizacoesTab.vue';
 import CedentesTab from './detail-tabs/CedentesTab.vue';
@@ -75,8 +75,9 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
             {{ grupo.statusOperacao.toUpperCase() }}
           </span>
         </h2>
-        <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-          {{ grupo.documento }} · Gerente: {{ grupo.gerente }}
+        <p class="flex items-center" style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px; gap: 6px">
+          <span style="font-variant-numeric: tabular-nums">{{ grupo.documento }}</span>
+          <CopyButton :value="grupo.documento" />
         </p>
       </div>
 

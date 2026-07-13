@@ -6,7 +6,7 @@ import {
   Settings2, UserCog, BellRing, ShieldCheck, Search,
 } from 'lucide-vue-next';
 import {
-  GRUPOS_SEED, GERENTES_SEED, TIPO_CLIENTE_OPTS,
+  GRUPOS_SEED, GERENTES_SEED, TIPO_CLIENTE_OPTS, STATUS_OPERACAO_OPTS,
   statusOperacaoColor, parecerLabel, parecerColor, brl,
   type GrupoEmpresarial, type ParecerStatus,
 } from '../data/riscoData';
@@ -41,12 +41,13 @@ interface Filters {
   nome: string;
   gerente: string;
   tipoCliente: string;
+  statusOperacao: string;
   possuiParecer: string;
   vencMin: string;
   vencMax: string;
 }
 
-const EMPTY_FILTERS: Filters = { nome: '', gerente: '', tipoCliente: '', possuiParecer: '', vencMin: '', vencMax: '' };
+const EMPTY_FILTERS: Filters = { nome: '', gerente: '', tipoCliente: '', statusOperacao: '', possuiParecer: '', vencMin: '', vencMax: '' };
 
 function parseDateBR(d: string | null): number {
   if (!d) return NaN;
@@ -84,6 +85,7 @@ const filtered = computed(() =>
     if (applied.value.nome && !g.nome.toLowerCase().includes(applied.value.nome.toLowerCase())) return false;
     if (applied.value.gerente && g.gerente !== applied.value.gerente) return false;
     if (applied.value.tipoCliente && g.tipoCliente !== applied.value.tipoCliente) return false;
+    if (applied.value.statusOperacao && g.statusOperacao !== applied.value.statusOperacao) return false;
     if (applied.value.possuiParecer === 'Sim' && g.parecerCredito === 'AUSENTE') return false;
     if (applied.value.possuiParecer === 'Não' && g.parecerCredito !== 'AUSENTE') return false;
     if (applied.value.vencMin) {
@@ -109,7 +111,7 @@ const COL_WIDTHS: Record<ColKey, string> = {
   limite: 'minmax(88px, 1fr)',
   limiteAutoatendimento: 'minmax(100px, 1fr)',
   riscoTotal: 'minmax(96px, 1.1fr)',
-  gerente: 'minmax(120px, 1.3fr)',
+  gerente: 'minmax(140px, 1.4fr)',
   vencimentoParecer: 'minmax(150px, 1.4fr)',
 };
 
@@ -185,7 +187,7 @@ function menuActions(g: GrupoEmpresarial) {
 
     <!-- Toolbar -->
     <div class="flex items-center justify-between" style="gap: 10px; flex-wrap: wrap">
-      <div style="position: relative; width: 280px">
+      <div style="position: relative; flex: 1 1 50%; min-width: 240px; max-width: 50%">
         <Search :size="15" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted)" />
         <input
           v-model="searchQuery"
@@ -264,6 +266,13 @@ function menuActions(g: GrupoEmpresarial) {
                   </select>
                 </div>
                 <div>
+                  <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Status de Operação</div>
+                  <select v-model="draft.statusOperacao" style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)">
+                    <option value="">Todos</option>
+                    <option v-for="s in STATUS_OPERACAO_OPTS" :key="s" :value="s">{{ s }}</option>
+                  </select>
+                </div>
+                <div>
                   <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Possui Parecer de Crédito</div>
                   <select v-model="draft.possuiParecer" style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)">
                     <option value="">Todos</option>
@@ -317,7 +326,7 @@ function menuActions(g: GrupoEmpresarial) {
         <div style="width: max-content; min-width: 100%">
           <div class="grid grupos-table-row grupos-table-header" :style="{ gridTemplateColumns: gridTemplate }">
             <div>Grupo Empresarial</div>
-            <div v-for="c in cols" :key="c.key" :style="{ textAlign: c.align }">{{ c.label }}</div>
+            <div v-for="c in cols" :key="c.key" :class="{ 'grupos-col-gerente': c.key === 'gerente' }" :style="{ textAlign: c.align }">{{ c.label }}</div>
             <div style="text-align: right">Ações</div>
           </div>
 
@@ -346,7 +355,7 @@ function menuActions(g: GrupoEmpresarial) {
             <div v-if="visibleCols.has('limite')" style="text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--weight-bold); color: var(--text-strong)">{{ brl(g.limite, { compact: true }) }}</div>
             <div v-if="visibleCols.has('limiteAutoatendimento')" style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-default)">{{ brl(g.limiteAutoatendimento, { compact: true }) }}</div>
             <div v-if="visibleCols.has('riscoTotal')" style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-default)">{{ brl(g.riscoTotal, { compact: true }) }}</div>
-            <div v-if="visibleCols.has('gerente')" style="color: var(--text-default)">{{ g.gerente }}</div>
+            <div v-if="visibleCols.has('gerente')" class="grupos-col-gerente" style="color: var(--text-default)">{{ g.gerente }}</div>
             <div v-if="visibleCols.has('vencimentoParecer')" class="flex items-center" style="gap: 8px">
               <span :style="{ fontVariantNumeric: 'tabular-nums', color: g.vencimentoParecer ? 'var(--text-default)' : 'var(--text-muted)' }">
                 {{ g.vencimentoParecer ?? 'Não Informado' }}
@@ -427,4 +436,8 @@ function menuActions(g: GrupoEmpresarial) {
 .grupos-row:hover { background: var(--surface-sunken); }
 .grupos-cols-item:hover { background: var(--surface-sunken); }
 .grupos-menu-item:hover { background: var(--surface-sunken); }
+
+.grupos-col-gerente {
+  padding-left: 20px;
+}
 </style>

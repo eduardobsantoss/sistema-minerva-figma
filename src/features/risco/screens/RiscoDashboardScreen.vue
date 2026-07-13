@@ -30,10 +30,9 @@ function openGrupo(id: string) {
 const valorVencidoTotal = GRUPOS_SEED.reduce((s, g) => s + g.valorVencido, 0);
 const riscoTotalEmpresa = GRUPOS_SEED.reduce((s, g) => s + g.riscoTotal, 0);
 const pctVencido = riscoTotalEmpresa > 0 ? (valorVencidoTotal / riscoTotalEmpresa) * 100 : 0;
-const clientesTitulosVencidos = GRUPOS_SEED.filter((g) => g.valorVencido > 0).length;
-const clientesComRisco = GRUPOS_SEED.filter((g) => g.riscoTotal > 0).length;
+const clientesRiscoAcimaLimite = GRUPOS_SEED.filter((g) => g.riscoTotal > g.limite).length;
 const clientesLimiteVencido = GRUPOS_SEED.filter((g) => g.riscoTotal > 0 && isLimiteVencido(g.vencimentoLimite)).length;
-const clientesLimiteAVencer = GRUPOS_SEED.filter((g) => g.riscoTotal > 0 && isProximoAVencer(g.vencimentoLimite)).length;
+const clientesLimiteAVencer = GRUPOS_SEED.filter((g) => g.riscoTotal > 0 && isProximoAVencer(g.vencimentoLimite) && !isLimiteVencido(g.vencimentoLimite)).length;
 const clientesLimiteZerado = GRUPOS_SEED.filter((g) => g.limite === 0).length;
 const clientesLimiteSemRisco = GRUPOS_SEED.filter((g) => g.limite > 0 && g.riscoTotal === 0).length;
 
@@ -43,26 +42,25 @@ interface KpiCard { icon: Component; title: string; tone: string; metrics: KpiMe
 const kpis = computed<KpiCard[]>(() => [
   {
     icon: AlertTriangle,
-    title: 'Total de valores vencidos',
+    title: 'Inadimplência Geral',
     tone: 'var(--danger-base)',
     metrics: [
       { label: 'Valor Vencido', value: brl(valorVencidoTotal, { compact: true }) },
-      { label: 'Percentual Vencido', value: fmtPct(pctVencido) },
-      { label: 'Clientes c/ títulos vencidos', value: String(clientesTitulosVencidos) },
+      { label: 'Percentual na carteira', value: fmtPct(pctVencido) },
     ],
   },
   {
     icon: TrendingDown,
-    title: 'Total de risco da empresa',
+    title: 'Distribuição de Risco',
     tone: 'var(--agro-base)',
     metrics: [
-      { label: 'Exposição total', value: brl(riscoTotalEmpresa, { compact: true }) },
-      { label: 'Clientes com risco', value: String(clientesComRisco) },
+      { label: 'Risco total aberto', value: brl(riscoTotalEmpresa, { compact: true }) },
+      { label: 'Risco acima do limite', value: String(clientesRiscoAcimaLimite) },
     ],
   },
   {
     icon: Clock,
-    title: 'Clientes c/ risco vencido e a vencer',
+    title: 'Risco Vencido',
     tone: 'var(--warning-base)',
     metrics: [
       { label: 'Risco vencido', value: String(clientesLimiteVencido) },
@@ -71,7 +69,7 @@ const kpis = computed<KpiCard[]>(() => [
   },
   {
     icon: Users,
-    title: 'Clientes sem limite e sem risco',
+    title: 'Limite x Risco',
     tone: 'var(--gci-base)',
     metrics: [
       { label: 'Limite zerado', value: String(clientesLimiteZerado) },

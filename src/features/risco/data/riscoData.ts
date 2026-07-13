@@ -224,11 +224,6 @@ export interface ParametrizacaoGarantia {
   requerConfirmacaoTitulos: boolean;
   garantiasObrigatorias: boolean;
   percentualGarantia: number;
-  exigeLaudoImovelDesembolso: boolean;
-  frequenciaLaudoImovel: FrequenciaLaudo;
-  prazoLaudoPosComiteDias: number;
-  exigeEscrituraPublicaDesembolso: boolean;
-  exigeProtocoloDesembolso: boolean;
   garantias: GarantiaRow[];
 }
 
@@ -454,11 +449,6 @@ export function detalheGrupo(grupo: GrupoEmpresarial): DetalheGrupo {
         requerConfirmacaoTitulos: grupo.statusOperacao !== 'Normal',
         garantiasObrigatorias: grupo.statusOperacao === 'Recovery' || grupo.statusOperacao === 'Special-Sit',
         percentualGarantia: 120,
-        exigeLaudoImovelDesembolso: true,
-        frequenciaLaudoImovel: 'Semestral',
-        prazoLaudoPosComiteDias: 15,
-        exigeEscrituraPublicaDesembolso: false,
-        exigeProtocoloDesembolso: true,
         garantias: [
           {
             id: 'gar-1',
@@ -547,7 +537,7 @@ export const GRUPOS_SEED: GrupoEmpresarial[] = [
   {
     id: 'grp-sertao-algodao', documento: '77.443.221/0001-38', nome: 'SERTAO ALGODAO PROCESSAMENTO S/A', tipoCliente: 'Monocedente',
     statusOperacao: 'Special-Sit', limite: 2_400_000, limiteAutoatendimento: 0, riscoTotal: 2_395_000, riscoUraStt: 380_000,
-    gerente: 'Patrícia Lima', vencimentoLimite: '10/08/2026', vencimentoParecer: '10/08/2026', parecerCredito: 'EXPIRADO',
+    gerente: 'Patrícia Lima', vencimentoLimite: '05/08/2026', vencimentoParecer: '05/08/2026', parecerCredito: 'EXPIRADO',
     rating: 'B', valorVencido: 320_000,
   },
   {
