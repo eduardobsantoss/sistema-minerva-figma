@@ -163,7 +163,8 @@ function pessoaBase(nome: string, documento: string): AtivoPessoa {
 
 /** Preenche campos de tabela/detalhe quando o contrato veio só do modal. */
 export function enriquecerContratoAtivo(
-  ativo: Omit<ContratoAtivo, 'id'> & Partial<Pick<ContratoAtivo, 'id'>>,
+  ativo: Partial<ContratoAtivo> &
+    Pick<ContratoAtivo, 'numero' | 'tipo' | 'emissao' | 'vencimento' | 'valorTotal' | 'sacadoNome' | 'sacadoDocumento'>,
 ): ContratoAtivo {
   const id = ativo.id ?? `ativo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   return {
@@ -195,6 +196,7 @@ export function enriquecerContratoAtivo(
     observacoesCobranca: ativo.observacoesCobranca ?? [],
     historicoTitulo: ativo.historicoTitulo ?? [],
     anexosDocs: ativo.anexosDocs ?? defaultAnexosDocs(),
+    minuta: ativo.minuta,
   };
 }
 

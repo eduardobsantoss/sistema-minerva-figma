@@ -3,7 +3,7 @@ import { ref, computed } from 'vue';
 import FieldLabel from './FieldLabel.vue';
 
 const props = withDefaults(
-  defineProps<{ label: string; placeholder?: string; disabled?: boolean; required?: boolean }>(),
+  defineProps<{ label: string; placeholder?: string; disabled?: boolean; required?: boolean; span?: number }>(),
   { disabled: false, required: false },
 );
 const model = defineModel<string>({ default: '' });
@@ -13,7 +13,7 @@ const showError = computed(() => props.required && touched.value && !model.value
 </script>
 
 <template>
-  <div>
+  <div :style="{ gridColumn: span ? `span ${span}` : undefined }">
     <FieldLabel :show-error="showError">{{ label }}</FieldLabel>
     <input
       v-model="model"

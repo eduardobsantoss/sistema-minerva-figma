@@ -2,14 +2,14 @@
 import FieldLabel from './FieldLabel.vue';
 
 withDefaults(
-  defineProps<{ label?: string; options: string[]; placeholder?: string; disabled?: boolean }>(),
-  { disabled: false },
+  defineProps<{ label?: string; options: string[]; placeholder?: string; disabled?: boolean; required?: boolean; span?: number }>(),
+  { disabled: false, required: false },
 );
 const model = defineModel<string>({ default: '' });
 </script>
 
 <template>
-  <div>
+  <div :style="{ gridColumn: span ? `span ${span}` : undefined }">
     <FieldLabel v-if="label">{{ label }}</FieldLabel>
     <div style="position: relative">
       <select

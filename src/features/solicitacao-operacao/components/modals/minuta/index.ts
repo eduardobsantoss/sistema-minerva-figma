@@ -1,0 +1,9 @@
+export { default as MinutaWizard } from './MinutaWizard.vue';
+export { default as MinutaStepper } from './MinutaStepper.vue';
+export { default as EmitenteStep } from './EmitenteStep.vue';
+export { default as CredoraStep } from './CredoraStep.vue';
+export { default as AvalistaStep } from './AvalistaStep.vue';
+export { default as EmissaoStep } from './EmissaoStep.vue';
+export { default as ProdutoStep } from './ProdutoStep.vue';
+export { default as GarantiaMinutaStep } from './GarantiaMinutaStep.vue';
+export { default as TituloMinutaStep } from './TituloMinutaStep.vue';

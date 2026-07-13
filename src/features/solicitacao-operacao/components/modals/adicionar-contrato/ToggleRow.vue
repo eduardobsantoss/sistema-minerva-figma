@@ -1,27 +1,39 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ label: string; on: boolean; compact?: boolean; spacious?: boolean }>(), { compact: false, spacious: false });
+withDefaults(
+  defineProps<{ label: string; on: boolean; compact?: boolean; spacious?: boolean; disabled?: boolean }>(),
+  { compact: false, spacious: false, disabled: false },
+);
 const emit = defineEmits<{ toggle: [] }>();
 </script>
 
 <template>
   <div
     class="flex items-center justify-between"
+    :class="{ 'toggle-row--match-field': compact }"
     :style="{
       width: spacious ? '100%' : undefined,
-      padding: spacious ? '20px 24px' : compact ? '10px 16px' : '14px 18px',
+      padding: spacious ? '20px 24px' : compact ? '12px 16px' : '14px 18px',
       borderRadius: 'var(--radius-lg)',
-      cursor: 'pointer',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      opacity: disabled ? 0.55 : 1,
       borderWidth: '1px',
       borderStyle: 'solid',
       borderColor: on ? 'var(--success-base)' : 'var(--border-default)',
       background: on ? 'var(--success-light)' : 'var(--surface-card)',
       transition: 'all var(--duration-base)',
+      gap: '12px',
     }"
-    @click="emit('toggle')"
+    @click="!disabled && emit('toggle')"
   >
-    <span style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">{{
-      label
-    }}</span>
+    <span
+      style="
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+        color: var(--text-strong);
+        line-height: 1.35;
+        min-width: 0;
+      "
+    >{{ label }}</span>
     <div
       :style="{
         position: 'relative',
@@ -49,3 +61,12 @@ const emit = defineEmits<{ toggle: [] }>();
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Altura alinhada ao bloco SelectField (label + input 40px) */
+.toggle-row--match-field {
+  min-height: 64px;
+  height: 100%;
+  align-self: stretch;
+}
+</style>

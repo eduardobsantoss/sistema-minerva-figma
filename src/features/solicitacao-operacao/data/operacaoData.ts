@@ -109,6 +109,8 @@ export interface ParteRelacionada {
   // Anexo 3 — Contato
   nomeContato?: string;
   ddi?: string;
+  /** Usado na minuta CPR/CPR-F (etapa Avalista). */
+  possuiConjuge?: boolean;
 }
 
 /** UFs usadas nos campos de Estado (mesma lista de CreateFidcModal.tsx). */
@@ -185,6 +187,8 @@ export interface ContratoAtivo {
   observacoesCobranca: AtivoObservacaoCobranca[];
   historicoTitulo: EventoHistorico[];
   anexosDocs: AtivoAnexoDoc[];
+  /** Resumo das etapas da minuta quando Gerar minuta está ativo (CPR/CPR-F). */
+  minuta?: import('./minutaData').MinutaResumo;
 }
 
 export type ValidacaoStatus = 'OK' | 'ALERTA' | 'ERRO';
@@ -261,6 +265,7 @@ const PARTES_BASE: ParteRelacionada[] = [
     pais: 'Brasil',
     ddi: '+55',
     nomeContato: 'Antonio Mazzo Junior',
+    possuiConjuge: true,
   }),
   enriquecerParteRelacionada({
     nome: 'Carlos Roberto Rosa',
@@ -274,6 +279,7 @@ const PARTES_BASE: ParteRelacionada[] = [
     pais: 'Brasil',
     ddi: '+55',
     nomeContato: 'Carlos Roberto Rosa',
+    possuiConjuge: false,
   }),
   enriquecerParteRelacionada({
     nome: 'Mario Cesar de Oliveira',
@@ -287,6 +293,7 @@ const PARTES_BASE: ParteRelacionada[] = [
     pais: 'Brasil',
     ddi: '+55',
     nomeContato: 'Mario Cesar de Oliveira',
+    possuiConjuge: false,
   }),
   enriquecerParteRelacionada({
     nome: 'Helen Kristina Ferreira',
@@ -301,6 +308,7 @@ const PARTES_BASE: ParteRelacionada[] = [
     pais: 'Brasil',
     ddi: '+55',
     nomeContato: 'Helen Kristina Ferreira',
+    possuiConjuge: false,
   }),
   enriquecerParteRelacionada({
     nome: 'Hidiovana de Melo Freitas',
@@ -314,6 +322,7 @@ const PARTES_BASE: ParteRelacionada[] = [
     pais: 'Brasil',
     ddi: '+55',
     nomeContato: 'Hidiovana de Melo Freitas',
+    possuiConjuge: true,
   }),
   enriquecerParteRelacionada({
     nome: 'Eduardo Barbosa dos Santos',

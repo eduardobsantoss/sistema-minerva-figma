@@ -3,6 +3,7 @@ import { computed, reactive } from 'vue';
 import { X, Tag, User, Building2, Phone } from 'lucide-vue-next';
 import { UF_OPTIONS, PAISES_DDI, enriquecerParteRelacionada, type ParteTipo, type ParteRelacionada } from '../../data/operacaoData';
 import { BentoBox, BentoGrid, FormField, SelectField } from './parte-relacionada';
+import { ToggleRow } from './adicionar-contrato';
 import Checkbox from '@/components/ui/Checkbox.vue';
 
 const emit = defineEmits<{ close: []; create: [data: ParteRelacionada] }>();
@@ -40,6 +41,7 @@ export interface NewParteRelacionadaData {
   ddi: string;
   telefone: string;
   tipos: string[];
+  possuiConjuge: boolean;
 }
 
 const NACIONALIDADE_OPTS = ['Brasileira', 'Estrangeira'];
@@ -89,6 +91,7 @@ const form = reactive<NewParteRelacionadaData>({
   ddi: '+55',
   telefone: '',
   tipos: [],
+  possuiConjuge: false,
 });
 
 const tipoPessoaLabel = computed({
@@ -151,6 +154,7 @@ function handleSubmit() {
     pais: form.pais,
     nomeContato: form.nomeContato,
     ddi: form.ddi,
+    possuiConjuge: form.possuiConjuge,
     contatosRelacionados: [],
   }));
 }
@@ -272,16 +276,24 @@ function handleSubmit() {
           </BentoBox>
 
           <BentoBox title="Tipos" :icon="User">
-            <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px">
-              <label
-                v-for="t in TIPOS_OPTS"
-                :key="t.label"
-                class="flex items-center"
-                style="gap: 10px; cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)"
-              >
-                <Checkbox :checked="form.tipos.includes(t.label)" @change="toggleTipo(t.label)" />
-                {{ t.label }}
-              </label>
+            <div class="flex flex-col" style="gap: 14px">
+              <ToggleRow
+                label="Possui cônjuge"
+                :on="form.possuiConjuge"
+                compact
+                @toggle="form.possuiConjuge = !form.possuiConjuge"
+              />
+              <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px">
+                <label
+                  v-for="t in TIPOS_OPTS"
+                  :key="t.label"
+                  class="flex items-center"
+                  style="gap: 10px; cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)"
+                >
+                  <Checkbox :checked="form.tipos.includes(t.label)" @change="toggleTipo(t.label)" />
+                  {{ t.label }}
+                </label>
+              </div>
             </div>
           </BentoBox>
         </div>
