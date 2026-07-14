@@ -312,14 +312,14 @@ REGISTRAR_PAGAMENTO_FIELDS: PagamentoFormFieldDef[]
 
 | Modal | Abertura | Emissão | Efeito em `det.ativos` |
 |---|---|---|---|
-| `AdicionarContratoModal` | Adicionar Contrato | `create` | `push(enriquecerContratoAtivo(...))` — wizard com parcelas/cronograma automático |
+| `AdicionarContratoModal` | Adicionar Contrato | `create` | `push(enriquecerContratoAtivo(...))` — modo padrão + wizard Gerar minuta CPR/CPR-F |
 | `VincularAtivosModal` | Vincular Ativos | `vincular` | `push(...titulos selecionados)` via `tituloDisponivelParaContrato` |
 | `ConfirmarTituloModal` | Menu Confirmar | `confirm` | atualiza `confirmacao` + append em `confirmacoes[]` |
 | `ProrrogarVencimentoModal` | Menu Prorrogar | `confirm` | atualiza `vencimento` |
 
 Todos usam primitives de `components/modals/adicionar-contrato/` (`FormField`, `SelectField`, `ToggleRow`, `AddButton`).
 
-`AdicionarContratoModal` recebe `:valor-operacao` e `:tipo-calculo` da solicitação para contexto do cronograma.
+`AdicionarContratoModal` recebe `:valor-operacao`, `:tipo-calculo` e `:partes` da solicitação. Detalhamento pixel-perfect (campos, spans, tokens, 7 etapas da minuta): **`docs/handoff/solicitacao-adicionar-contrato.md`**.
 
 Upload de evidência/carta de correção nos modais Confirmar e Prorrogar é **somente visual**.
 

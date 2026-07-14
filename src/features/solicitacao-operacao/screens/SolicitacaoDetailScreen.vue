@@ -7,7 +7,7 @@ import {
 } from 'lucide-vue-next';
 import {
   etapaCor, etapaLabel, esteiraLabel, detalheSolicitacao,
-  type Solicitacao, type ParteRelacionada, type ContratoAtivo,
+  type Solicitacao, type ParteRelacionada, type ContratoAtivo, type Esteira,
 } from '../data/operacaoData';
 import { enriquecerContratoAtivo } from '../data/ativoData';
 import { CopyButton, TabPill } from './detail-tabs/shared';
@@ -85,6 +85,20 @@ function closeAtivoDetail() {
 function handleAddContrato(ativo: Omit<ContratoAtivo, 'id'> & Partial<Pick<ContratoAtivo, 'id'>>) {
   det.ativos.push(enriquecerContratoAtivo(ativo));
   showContratoModal.value = false;
+}
+
+function handleUpdateValor(valor: number) {
+  const fee = props.solicitacao.fee ?? 2;
+  props.solicitacao.valor = valor;
+  props.solicitacao.valorFee = valor * (fee / 100);
+}
+
+function handleUpdateEsteira(esteira: Esteira) {
+  props.solicitacao.esteira = esteira;
+}
+
+function handleUpdateQuitacao(value: boolean) {
+  props.solicitacao.quitacaoVencidos = value;
 }
 
 function handleVincular(ativos: ContratoAtivo[]) {
@@ -220,6 +234,9 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
         :det="det"
         @add-parte="showParteModal = true"
         @open-parte="openParte"
+        @update-valor="handleUpdateValor"
+        @update-esteira="handleUpdateEsteira"
+        @update-quitacao="handleUpdateQuitacao"
       />
       <AtivosTab
         v-else-if="tab === 'ativos'"

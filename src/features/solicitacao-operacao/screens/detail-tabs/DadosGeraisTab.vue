@@ -1,20 +1,33 @@
 <script setup lang="ts">
-import { Plus, Banknote, ArrowRightLeft, Layers } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import { Plus, Banknote, ArrowRightLeft, Layers, Pencil } from 'lucide-vue-next';
 import {
   brl,
   esteiraLabel,
+  ESTEIRAS,
   detalheSolicitacao,
   type Solicitacao,
   type ParteTipo,
   type ParteRelacionada,
+  type Esteira,
 } from '../../data/operacaoData';
 import { CopyButton, Section, Field, Card, EmptyState, GhostButton } from './shared';
+import { SelectField, ToggleRow } from '../../components/modals/adicionar-contrato';
+import EditarValorOperacaoModal from '../../components/modals/EditarValorOperacaoModal.vue';
 
 const props = defineProps<{
   s: Solicitacao;
   det: ReturnType<typeof detalheSolicitacao>;
 }>();
-const emit = defineEmits<{ addParte: []; openParte: [parte: ParteRelacionada] }>();
+const emit = defineEmits<{
+  addParte: [];
+  openParte: [parte: ParteRelacionada];
+  updateValor: [valor: number];
+  updateEsteira: [esteira: Esteira];
+  updateQuitacao: [value: boolean];
+}>();
+
+const showValorModal = ref(false);
 
 const parteTone: Record<ParteTipo, { bg: string; fg: string }> = {
   AVA: { bg: 'var(--gci-light)', fg: 'var(--gci-base)' },
@@ -33,8 +46,9 @@ const PARTE_LEGENDA: Record<ParteTipo, string> = {
   PROC: 'Procurador',
 };
 
-/** Defaults de exibição quando o mock não trouxe os campos opcionais. */
-function display(s: Solicitacao) {
+const d = computed(() => {
+  const s = props.s;
+  const fee = s.fee ?? 2;
   return {
     unidadeNegocio: s.unidadeNegocio ?? 'Ceres Investimentos',
     documento: s.documento ?? '07.366.063/0001-05',
@@ -43,16 +57,29 @@ function display(s: Solicitacao) {
     conta: s.conta ?? '43810-5',
     tipoTaxa: s.tipoTaxa ?? 'Pré-fixado',
     frequencia: s.frequencia ?? 'Mensal',
-    fee: s.fee ?? 2,
-    valorFee: s.valorFee ?? s.valor * 0.02,
+    fee,
+    valorFee: s.valorFee ?? s.valor * (fee / 100),
     percSeguro: s.percSeguro ?? 0,
     valorSeguro: s.valorSeguro ?? 0,
     quitacaoVencidos: s.quitacaoVencidos ?? false,
   };
-}
+});
 
-const d = display(props.s);
+const esteiraOpts = ESTEIRAS.map((e) => e.label);
+const esteiraModel = computed({
+  get: () => esteiraLabel(props.s.esteira),
+  set: (label: string) => {
+    const found = ESTEIRAS.find((e) => e.label === label);
+    if (found) emit('updateEsteira', found.key);
+  },
+});
+
 const partesTipos = Object.keys(PARTE_LEGENDA) as ParteTipo[];
+
+function onConfirmValor(valor: number) {
+  emit('updateValor', valor);
+  showValorModal.value = false;
+}
 </script>
 
 <template>
@@ -82,16 +109,40 @@ const partesTipos = Object.keys(PARTE_LEGENDA) as ParteTipo[];
         >
           Valor da Operação (Nominal)
         </div>
-        <div
-          style="
-            font-size: 32px;
-            font-weight: var(--weight-bold);
-            letter-spacing: -0.02em;
-            font-variant-numeric: tabular-nums;
-            line-height: 1.1;
-          "
-        >
-          {{ brl(s.valor) }}
+        <div class="flex items-center" style="gap: 12px">
+          <div
+            style="
+              font-size: 32px;
+              font-weight: var(--weight-bold);
+              letter-spacing: -0.02em;
+              font-variant-numeric: tabular-nums;
+              line-height: 1.1;
+            "
+          >
+            {{ brl(s.valor) }}
+          </div>
+          <button
+            type="button"
+            aria-label="Editar valor da operação"
+            class="flex items-center"
+            style="
+              gap: 6px;
+              height: 32px;
+              padding: 0 12px;
+              background: rgba(255, 255, 255, 0.12);
+              border: 1px solid rgba(255, 255, 255, 0.28);
+              border-radius: var(--radius-lg);
+              cursor: pointer;
+              color: #fff;
+              font-size: 10px;
+              font-weight: var(--weight-bold);
+              letter-spacing: 0.08em;
+              text-transform: uppercase;
+            "
+            @click="showValorModal = true"
+          >
+            <Pencil :size="13" /> Editar
+          </button>
         </div>
       </div>
       <div class="flex items-center" style="gap: 28px; flex-wrap: wrap">
@@ -171,9 +222,14 @@ const partesTipos = Object.keys(PARTE_LEGENDA) as ParteTipo[];
         </div>
       </Card>
       <Card title="Configuração" :icon="ArrowRightLeft">
-        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 18px">
-          <Field label="Esteira">{{ esteiraLabel(s.esteira) }}</Field>
-          <Field label="Quitação de Vencidos">{{ d.quitacaoVencidos ? 'Sim' : 'Não' }}</Field>
+        <div class="grid items-end" style="grid-template-columns: 1fr 1fr; gap: 14px">
+          <SelectField label="Esteira" :options="esteiraOpts" v-model="esteiraModel" />
+          <ToggleRow
+            label="Quitação de Vencidos"
+            :on="d.quitacaoVencidos"
+            compact
+            @toggle="emit('updateQuitacao', !d.quitacaoVencidos)"
+          />
         </div>
       </Card>
     </div>
@@ -289,6 +345,14 @@ const partesTipos = Object.keys(PARTE_LEGENDA) as ParteTipo[];
         </span>
       </div>
     </Section>
+
+    <EditarValorOperacaoModal
+      v-if="showValorModal"
+      :valor-atual="s.valor"
+      :fee-percent="d.fee"
+      @close="showValorModal = false"
+      @confirm="onConfirmValor"
+    />
   </div>
 </template>
 

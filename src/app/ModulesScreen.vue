@@ -8,6 +8,7 @@ import { FidcScreen } from '@/features/fidc';
 import { CraScreen } from '@/features/cra';
 import { CobrancaScreen } from '@/features/cobranca';
 import { SolicitacaoScreen } from '@/features/solicitacao-operacao';
+import { PassivoScreen } from '@/features/passivo';
 import {
   RatingsScreen,
   AgrupamentosScreen,
@@ -120,6 +121,8 @@ function handleModuleClick(title: string) {
   } else if (title === 'Risco') {
     view.value = 'risco-dashboard';
     openMenu.value = 'risco';
+  } else if (title === 'Passivo') {
+    view.value = 'passivo';
   }
 }
 </script>
@@ -153,6 +156,7 @@ function handleModuleClick(title: string) {
           <GruposScreen v-else-if="view === 'risco-grupos'" />
           <RelatoriosScreen v-else-if="view === 'risco-rel'" />
           <RiscoDashboardScreen v-else-if="view === 'risco-dashboard'" />
+          <PassivoScreen v-else-if="view === 'passivo'" />
           <Placeholder v-else :name="titleMap[view]" />
         </div>
       </main>

@@ -275,6 +275,25 @@ function toggleGerarMinuta() {
       <template v-else>
         <div style="flex: 1; overflow-y: auto; padding: 32px">
           <div class="flex flex-col" style="gap: 24px">
+            <ToggleRow
+              label="Gerar minuta"
+              :on="form.gerarMinuta"
+              :disabled="!minutaHabilitada"
+              @toggle="toggleGerarMinuta"
+            />
+            <div
+              v-if="!minutaHabilitada && form.tipo"
+              style="font-size: var(--text-xs); color: var(--text-muted); margin-top: -12px"
+            >
+              Disponível apenas para Contrato CPR e Contrato CPRF nesta versão.
+            </div>
+            <div
+              v-else-if="!form.tipo"
+              style="font-size: var(--text-xs); color: var(--text-muted); margin-top: -12px"
+            >
+              Selecione o tipo do título (CPR ou CPRF) em Dados do Título para habilitar a geração de minuta.
+            </div>
+
             <BentoBox title="Dados do Título" :icon="Tag">
               <div class="flex flex-col" style="gap: 14px">
                 <div
@@ -322,25 +341,6 @@ function toggleGerarMinuta() {
                 />
               </div>
             </BentoBox>
-
-            <ToggleRow
-              label="Gerar minuta"
-              :on="form.gerarMinuta"
-              :disabled="!minutaHabilitada"
-              @toggle="toggleGerarMinuta"
-            />
-            <div
-              v-if="!minutaHabilitada && form.tipo"
-              style="font-size: var(--text-xs); color: var(--text-muted); margin-top: -12px"
-            >
-              Disponível apenas para Contrato CPR e Contrato CPRF nesta versão.
-            </div>
-            <div
-              v-else-if="!form.tipo"
-              style="font-size: var(--text-xs); color: var(--text-muted); margin-top: -12px"
-            >
-              Selecione o tipo do título (CPR ou CPRF) para habilitar a geração de minuta.
-            </div>
 
             <ToggleRow label="Possui múltiplas parcelas" :on="form.possuiParcelas" @toggle="form.possuiParcelas = !form.possuiParcelas" />
             <BentoBox v-if="form.possuiParcelas" title="Parcelas" :icon="Tag">
