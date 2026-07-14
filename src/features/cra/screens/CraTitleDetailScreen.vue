@@ -6,7 +6,7 @@ import {
 } from 'lucide-vue-next';
 import { brl, type Cra, type CraOperacao, type CraTitulo, type TituloStatus } from '../data/craData';
 import CopyButton from './cra-title-detail/CopyButton.vue';
-import TabPill from './cra-title-detail/TabPill.vue';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import DetailsTab from './cra-title-detail/DetailsTab.vue';
 import AnexosTab from './cra-title-detail/AnexosTab.vue';
 import AccrualTab from './cra-title-detail/AccrualTab.vue';
@@ -19,6 +19,16 @@ const props = defineProps<{ cra: Cra; operacao: CraOperacao; titulo: CraTitulo }
 const emit = defineEmits<{ back: [] }>();
 
 type Tab = 'detalhes' | 'anexos' | 'accrual' | 'pagamentos' | 'confirmacoes' | 'movimentacoes' | 'historico';
+
+const TABS = [
+  { key: 'detalhes' as const, label: 'Detalhes', icon: FileText },
+  { key: 'anexos' as const, label: 'Anexos', icon: Paperclip },
+  { key: 'accrual' as const, label: 'Accrual', icon: TrendingUp },
+  { key: 'pagamentos' as const, label: 'Pagamentos', icon: CreditCard },
+  { key: 'confirmacoes' as const, label: 'Confirmações', icon: BadgeCheck },
+  { key: 'movimentacoes' as const, label: 'Movimentações', icon: ArrowLeftRight },
+  { key: 'historico' as const, label: 'Histórico', icon: Activity },
+];
 
 const statusTone: Record<TituloStatus, { bg: string; fg: string; iconBg: string }> = {
   CONFIRMADO: { bg: 'var(--success-light)', fg: 'var(--success-dark)', iconBg: 'var(--success-base)' },
@@ -80,16 +90,13 @@ const tone = computed(() => statusTone[props.titulo.status]);
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="flex items-center" style="gap: 4px; padding: 4px; background: var(--surface-card); border-width: 1px; border-style: solid; border-color: var(--border-default); border-radius: var(--radius-xl); align-self: flex-start; flex-wrap: wrap">
-      <TabPill :active="tab === 'detalhes'" :icon="FileText" @click="tab = 'detalhes'">Detalhes</TabPill>
-      <TabPill :active="tab === 'anexos'" :icon="Paperclip" @click="tab = 'anexos'">Anexos</TabPill>
-      <TabPill :active="tab === 'accrual'" :icon="TrendingUp" @click="tab = 'accrual'">Accrual</TabPill>
-      <TabPill :active="tab === 'pagamentos'" :icon="CreditCard" @click="tab = 'pagamentos'">Pagamentos</TabPill>
-      <TabPill :active="tab === 'confirmacoes'" :icon="BadgeCheck" @click="tab = 'confirmacoes'">Confirmações</TabPill>
-      <TabPill :active="tab === 'movimentacoes'" :icon="ArrowLeftRight" @click="tab = 'movimentacoes'">Movimentações</TabPill>
-      <TabPill :active="tab === 'historico'" :icon="Activity" @click="tab = 'historico'">Histórico</TabPill>
-    </div>
+    <SegmentedToggle
+      :model-value="tab"
+      :options="TABS"
+      variant="brand"
+      style="align-self: flex-start"
+      @update:model-value="tab = $event as Tab"
+    />
 
     <div style="background: var(--surface-card); border-width: 1px; border-style: solid; border-color: var(--border-default); border-radius: var(--radius-xl); padding: 24px">
       <DetailsTab v-if="tab === 'detalhes'" :titulo="titulo" :operacao="operacao" />

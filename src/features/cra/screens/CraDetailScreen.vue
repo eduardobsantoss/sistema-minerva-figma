@@ -7,7 +7,7 @@ import {
 } from 'lucide-vue-next';
 import { brl, num, type Cra, type CraTitulo } from '../data/craData';
 import CraHero from './cra-detail/CraHero.vue';
-import TabBtn from './cra-detail/TabBtn.vue';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import OperacoesTable from './cra-detail/OperacoesTable.vue';
 import TitulosTable from './cra-detail/TitulosTable.vue';
 import StatusKPI from './cra-detail/StatusKPI.vue';
@@ -22,6 +22,11 @@ const emit = defineEmits<{
 }>();
 
 type Tab = 'operacoes' | 'titulos';
+
+const VIEW_TABS = [
+  { key: 'operacoes' as const, label: 'VISUALIZAR OPERAÇÕES' },
+  { key: 'titulos' as const, label: 'VISUALIZAR TÍTULOS' },
+];
 
 const openCarteira = ref(true);
 const tab = ref<Tab>('operacoes');
@@ -165,20 +170,20 @@ function handleOpenTitulo(r: CraTitulo) {
           </div>
         </div>
 
-        <!-- Nova Operação button (always visible) -->
         <button
-          class="flex items-center"
+          class="flex items-center btn-animated btn-agro"
           style="gap: 8px; padding: 10px 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
           @click="emit('createOperacao')"
         >
           <Plus :size="14" /> NOVA OPERAÇÃO
         </button>
 
-        <!-- Tab toggle -->
-        <div class="flex" style="padding: 4px; background: var(--surface-sunken); border-radius: var(--radius-lg)">
-          <TabBtn :active="tab === 'operacoes'" @click="tab = 'operacoes'">VISUALIZAR OPERAÇÕES</TabBtn>
-          <TabBtn :active="tab === 'titulos'" @click="tab = 'titulos'">VISUALIZAR TÍTULOS</TabBtn>
-        </div>
+        <SegmentedToggle
+          :model-value="tab"
+          :options="VIEW_TABS"
+          variant="surface"
+          @update:model-value="tab = $event as Tab"
+        />
 
         <div class="flex items-center" style="gap: 6px; position: relative">
           <button
@@ -217,14 +222,7 @@ function handleOpenTitulo(r: CraTitulo) {
       <TitulosTable v-else :rows="filteredTitulos" :class-map="operacaoClassMap" @open="handleOpenTitulo" />
 
       <!-- Footer -->
-      <div class="flex items-center justify-between" style="padding: 16px 20px; border-top: 1px solid var(--border-default)">
-        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase">
-          Exibindo
-          <span style="color: var(--text-strong)">{{ tab === 'operacoes' ? cra.operacoes.length : filteredTitulos.length }}</span>
-          de
-          <span style="color: var(--text-strong)">{{ tab === 'operacoes' ? cra.operacoes.length : allTitulos.length }}</span>
-          registros
-        </div>
+      <div class="flex items-center justify-end" style="padding: 16px 20px; border-top: 1px solid var(--border-default)">
         <div class="flex items-center" style="gap: 12px">
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase">
             Operação Ativa:

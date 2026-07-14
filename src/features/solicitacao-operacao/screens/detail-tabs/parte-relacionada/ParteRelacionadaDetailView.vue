@@ -8,7 +8,10 @@ import {
   PARTE_TIPO_LABEL,
   TIPOS_PARTE_OPTS,
 } from '../../../data/parteRelacionadaFields';
-import { CopyButton, TabPill, Section, EmptyState } from '../shared';
+import { CopyButton, Section, EmptyState } from '../shared';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import DynamicFieldGrid from './DynamicFieldGrid.vue';
 
 const props = defineProps<{
@@ -29,6 +32,9 @@ const TAB_ICONS: Record<AnexoTab, Component> = {
 
 const tabs = computed(() => parteAnexoTabs(props.parte));
 const activeTab = computed(() => tabs.value.find((t) => t.key === tab.value) ?? tabs.value[0]);
+const tabOptions = computed(() =>
+  tabs.value.map((t) => ({ key: t.key, label: t.label, icon: TAB_ICONS[t.key] })),
+);
 
 const parteTone: Record<ParteTipo, { bg: string; fg: string }> = {
   AVA: { bg: 'var(--gci-light)', fg: 'var(--gci-base)' },
@@ -38,6 +44,15 @@ const parteTone: Record<ParteTipo, { bg: string; fg: string }> = {
   CON: { bg: 'var(--status-active-bg)', fg: '#7C3AED' },
   PROC: { bg: 'var(--gci-light)', fg: 'var(--gci-base)' },
 };
+
+const {
+  page: contatosPage,
+  pageSize: contatosPageSize,
+  total: contatosTotal,
+  pageItems: contatosPageItems,
+  setPage: setContatosPage,
+  setPageSize: setContatosPageSize,
+} = useTablePagination(() => props.parte.contatosRelacionados ?? [], { defaultPageSize: 10 });
 </script>
 
 <template>
@@ -102,28 +117,12 @@ const parteTone: Record<ParteTipo, { bg: string; fg: string }> = {
       </div>
     </div>
 
-    <!-- Tabs dos anexos -->
-    <div
-      class="flex items-center"
-      style="
-        gap: 4px;
-        padding: 4px;
-        background: var(--surface-card);
-        border: 1px solid var(--border-default);
-        border-radius: var(--radius-xl);
-        flex-wrap: wrap;
-      "
-    >
-      <TabPill
-        v-for="t in tabs"
-        :key="t.key"
-        :active="tab === t.key"
-        :icon="TAB_ICONS[t.key]"
-        @click="tab = t.key"
-      >
-        {{ t.label }}
-      </TabPill>
-    </div>
+    <SegmentedToggle
+      :model-value="tab"
+      :options="tabOptions"
+      variant="brand"
+      @update:model-value="tab = $event as AnexoTab"
+    />
 
     <!-- Conteúdo do anexo ativo -->
     <div
@@ -173,7 +172,7 @@ const parteTone: Record<ParteTipo, { bg: string; fg: string }> = {
               <div>Telefone</div>
             </div>
             <div
-              v-for="(c, i) in parte.contatosRelacionados"
+              v-for="(c, i) in contatosPageItems"
               :key="`${c.documento}-${i}`"
               class="grid items-center"
               style="
@@ -190,6 +189,15 @@ const parteTone: Record<ParteTipo, { bg: string; fg: string }> = {
               </div>
               <div style="color: var(--text-default); font-variant-numeric: tabular-nums">{{ c.telefone }}</div>
             </div>
+            <TablePagination
+              sunken
+              compact
+              :total="contatosTotal"
+              :page="contatosPage"
+              :page-size="contatosPageSize"
+              @update:page="setContatosPage"
+              @update:page-size="setContatosPageSize"
+            />
           </div>
         </Section>
       </div>

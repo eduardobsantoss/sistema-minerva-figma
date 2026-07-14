@@ -14,16 +14,21 @@ import {
   PowerOff,
   Power,
   MoreVertical,
+  Trash2,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import type { Notificacao, Metodo } from '../data/cobrancaData';
 import CobrancaCard from '../components/CobrancaCard.vue';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{ notificacoes: Notificacao[] }>();
 const emit = defineEmits<{
   new: [];
   edit: [id: string];
   toggleStatus: [id: string];
+  delete: [id: string];
 }>();
 
 type ViewMode = 'cards' | 'list';
@@ -39,12 +44,25 @@ const q = ref('');
 const focusSearch = ref(false);
 const viewMode = ref<ViewMode>('cards');
 const openRowMenu = ref<string | null>(null);
-const newBtnHover = ref(false);
 const rowHover = ref<string | null>(null);
+
+const VIEW_MODE_OPTIONS = [
+  { key: 'cards' as const, label: 'Visualização em Cards', icon: LayoutGrid },
+  { key: 'list' as const, label: 'Visualização em Lista', icon: List },
+];
 
 const filtered = computed(() =>
   props.notificacoes.filter((n) => !q.value || n.nome.toLowerCase().includes(q.value.toLowerCase())),
 );
+
+const {
+  page,
+  pageSize,
+  total,
+  pageItems,
+  setPage,
+  setPageSize,
+} = useTablePagination(() => filtered.value, { defaultPageSize: 10 });
 
 const kpis = computed(() => [
   {
@@ -86,6 +104,11 @@ function handleToggleStatus(id: string) {
   openRowMenu.value = null;
   emit('toggleStatus', id);
 }
+
+function handleDelete(id: string) {
+  openRowMenu.value = null;
+  emit('delete', id);
+}
 </script>
 
 <template>
@@ -123,6 +146,7 @@ function handleToggleStatus(id: string) {
           "
           @focus="focusSearch = true"
           @blur="focusSearch = false"
+          @input="setPage(1)"
         />
         <button
           style="
@@ -145,53 +169,32 @@ function handleToggleStatus(id: string) {
         </button>
       </div>
 
-      <!-- View toggle -->
-      <div class="flex items-center" style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 4px; gap: 2px; height: 56px">
-        <button
-          v-for="mode in (['cards', 'list'] as ViewMode[])"
-          :key="mode"
-          :title="mode === 'cards' ? 'Visualização em Cards' : 'Visualização em Lista'"
-          :style="{
-            width: '40px',
-            height: '40px',
-            borderRadius: 'var(--radius-lg)',
-            border: 'none',
-            cursor: 'pointer',
-            background: viewMode === mode ? 'var(--gci-base)' : 'transparent',
-            color: viewMode === mode ? '#fff' : 'var(--text-muted)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'background var(--duration-fast), color var(--duration-fast)',
-          }"
-          @click="viewMode = mode"
-        >
-          <component :is="mode === 'cards' ? LayoutGrid : List" :size="16" />
-        </button>
-      </div>
+      <SegmentedToggle
+        :model-value="viewMode"
+        :options="VIEW_MODE_OPTIONS"
+        variant="brand"
+        icon-only
+        @update:model-value="viewMode = $event as ViewMode"
+      />
 
-      <!-- New button -->
       <button
-        class="flex items-center"
-        :style="{
-          gap: '8px',
-          height: '56px',
-          padding: '0 24px',
-          background: newBtnHover ? 'var(--agro-hover)' : 'var(--agro-base)',
-          color: '#fff',
-          borderRadius: 'var(--radius-xl)',
-          border: 'none',
-          cursor: 'pointer',
-          fontWeight: 'var(--weight-bold)',
-          fontSize: 'var(--text-xs)',
-          letterSpacing: '0.10em',
-          boxShadow: '0 10px 24px -8px rgba(242,125,38,0.40)',
-          transition: 'background var(--duration-base)',
-          whiteSpace: 'nowrap',
-        }"
+        class="flex items-center btn-animated btn-agro"
+        style="
+          gap: 8px;
+          height: 56px;
+          padding: 0 24px;
+          background: var(--agro-base);
+          color: #fff;
+          border-radius: var(--radius-xl);
+          border: none;
+          cursor: pointer;
+          font-weight: var(--weight-bold);
+          font-size: var(--text-xs);
+          letter-spacing: 0.10em;
+          box-shadow: 0 10px 24px -8px rgba(242, 125, 38, 0.4);
+          white-space: nowrap;
+        "
         @click="emit('new')"
-        @mouseenter="newBtnHover = true"
-        @mouseleave="newBtnHover = false"
       >
         <span class="flex items-center justify-center" style="width: 22px; height: 22px; border-radius: 9999px; background: rgba(255,255,255,0.20)">
           <Plus :size="14" />
@@ -233,6 +236,7 @@ function handleToggleStatus(id: string) {
         :notificacao="n"
         @edit="emit('edit', $event)"
         @toggle-status="emit('toggleStatus', $event)"
+        @delete="emit('delete', $event)"
       />
     </div>
     <div v-else style="background: var(--surface-card); border-width: 1px; border-style: solid; border-color: var(--border-default); border-radius: var(--radius-xl); overflow: hidden">
@@ -249,14 +253,14 @@ function handleToggleStatus(id: string) {
 
       <!-- Rows -->
       <div
-        v-for="(n, idx) in filtered"
+        v-for="(n, idx) in pageItems"
         :key="n.id"
         class="grid"
         :style="{
           gridTemplateColumns: '2fr 1.4fr 120px 120px 100px 100px 56px',
           padding: '14px 20px',
           alignItems: 'center',
-          borderBottom: idx < filtered.length - 1 ? '1px solid var(--border-default)' : 'none',
+          borderBottom: idx < pageItems.length - 1 ? '1px solid var(--border-default)' : 'none',
           transition: 'background var(--duration-fast)',
           background: rowHover === n.id ? 'var(--surface-sunken)' : 'transparent',
         }"
@@ -372,7 +376,7 @@ function handleToggleStatus(id: string) {
                 gap: '10px', width: '100%', padding: '10px 14px',
                 background: 'transparent', border: 'none', cursor: 'pointer',
                 fontSize: 'var(--text-sm)',
-                color: n.status === 'Ativa' ? 'var(--action-danger-text-only)' : 'var(--success-dark)',
+                color: n.status === 'Ativa' ? 'var(--text-default)' : 'var(--success-dark)',
                 textAlign: 'left',
               }"
               @click="handleToggleStatus(n.id)"
@@ -381,9 +385,25 @@ function handleToggleStatus(id: string) {
               <Power v-else :size="14" />
               {{ n.status === 'Ativa' ? 'Desativar' : 'Ativar' }}
             </button>
+            <div style="height: 1px; background: var(--border-default); margin: 2px 0" />
+            <button
+              class="cobranca-row-menu-item flex items-center"
+              style="gap: 10px; width: 100%; padding: 10px 14px; background: transparent; border: none; cursor: pointer; font-size: var(--text-sm); color: var(--action-danger-text-only); text-align: left"
+              @click="handleDelete(n.id)"
+            >
+              <Trash2 :size="14" /> Deletar notificação
+            </button>
           </div>
         </div>
       </div>
+
+      <TablePagination
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </div>
   </div>
 </template>

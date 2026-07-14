@@ -6,7 +6,14 @@ import DashboardView from './DashboardView.vue';
 import Placeholder from './Placeholder.vue';
 import { FidcScreen } from '@/features/fidc';
 import { CraScreen } from '@/features/cra';
-import { CobrancaScreen } from '@/features/cobranca';
+import {
+  CobrancaScreen,
+  TitulosScreen,
+  NotificacoesCessaoScreen,
+  CobrancaDashboardScreen,
+  ResultadoNotificacoesScreen,
+  CobrancaRelatoriosScreen,
+} from '@/features/cobranca';
 import { SolicitacaoScreen } from '@/features/solicitacao-operacao';
 import { PassivoScreen } from '@/features/passivo';
 import {
@@ -23,7 +30,12 @@ type View =
   | 'fidcs'
   | 'cras'
   | 'cobranca'
+  | 'cobranca-titulos'
+  | 'cobranca-dashboard'
   | 'cobranca-notif'
+  | 'cobranca-notif-cessao'
+  | 'cobranca-resultado-notif'
+  | 'cobranca-rel'
   | 'risco-dashboard'
   | 'risco-grupos'
   | 'risco-ratings'
@@ -40,7 +52,12 @@ const titleMap: Record<View, string> = {
   fidcs: "Gestão de FIDC's",
   cras: "Gestão de CRA's",
   cobranca: 'Cobrança',
+  'cobranca-titulos': 'Títulos',
+  'cobranca-dashboard': 'Dashboard de Cobrança',
   'cobranca-notif': 'Notificações de Cobrança',
+  'cobranca-notif-cessao': 'Notificações de Cessão',
+  'cobranca-resultado-notif': 'Resultado de Notificações',
+  'cobranca-rel': 'Relatórios de Cobrança',
   'risco-dashboard': 'Risco',
   'risco-grupos': 'Grupos Empresariais',
   'risco-ratings': 'Cadastro de Rating',
@@ -53,7 +70,7 @@ const titleMap: Record<View, string> = {
 };
 
 const VALID_VIEWS = new Set<View>([
-  'dashboard', 'solicitacoes', 'fidcs', 'cras', 'cobranca', 'cobranca-notif',
+  'dashboard', 'solicitacoes', 'fidcs', 'cras', 'cobranca', 'cobranca-titulos', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-notif-cessao', 'cobranca-resultado-notif', 'cobranca-rel',
   'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-agrupamentos', 'risco-rel',
   'passivo', 'colab', 'rel', 'conf',
 ]);
@@ -116,7 +133,7 @@ function handleModuleClick(title: string) {
   } else if (title === "CRA's") {
     view.value = 'cras';
   } else if (title === 'Cobrança') {
-    view.value = 'cobranca-notif';
+    view.value = 'cobranca-titulos';
     openMenu.value = 'cobranca';
   } else if (title === 'Risco') {
     view.value = 'risco-dashboard';
@@ -150,7 +167,15 @@ function handleModuleClick(title: string) {
           <SolicitacaoScreen v-else-if="view === 'solicitacoes'" />
           <FidcScreen v-else-if="view === 'fidcs'" />
           <CraScreen v-else-if="view === 'cras'" />
+          <TitulosScreen v-else-if="view === 'cobranca-titulos'" />
+          <CobrancaDashboardScreen
+            v-else-if="view === 'cobranca-dashboard'"
+            @navigate="handleNavigate"
+          />
           <CobrancaScreen v-else-if="view === 'cobranca-notif'" />
+          <NotificacoesCessaoScreen v-else-if="view === 'cobranca-notif-cessao'" />
+          <ResultadoNotificacoesScreen v-else-if="view === 'cobranca-resultado-notif'" />
+          <CobrancaRelatoriosScreen v-else-if="view === 'cobranca-rel'" />
           <RatingsScreen v-else-if="view === 'risco-ratings'" />
           <AgrupamentosScreen v-else-if="view === 'risco-agrupamentos'" />
           <GruposScreen v-else-if="view === 'risco-grupos'" />

@@ -13,8 +13,6 @@ const showPwd = ref(false);
 const focused = ref<string | null>(null);
 const email = ref('');
 const password = ref('');
-const submitHover = ref(false);
-
 function handle() {
   emit('submit');
 }
@@ -56,11 +54,11 @@ const passwordInputStyle = computed(() => ({
   transition: 'box-shadow var(--duration-base), border-color var(--duration-base)',
 }));
 
-const submitButtonStyle = computed(() => ({
+const submitButtonStyle = {
   width: '100%',
   height: '48px',
   borderRadius: 'var(--radius-xl)',
-  background: submitHover.value ? 'var(--action-primary-bg-hover)' : 'var(--action-primary-bg)',
+  background: 'var(--action-primary-bg)',
   color: 'var(--action-primary-text)',
   fontWeight: 'var(--weight-bold)',
   fontSize: 'var(--text-base)',
@@ -71,8 +69,7 @@ const submitButtonStyle = computed(() => ({
   justifyContent: 'center',
   gap: '8px',
   boxShadow: '0 10px 24px -8px rgba(8,60,74,0.18)',
-  transition: 'background var(--duration-base)',
-}));
+};
 </script>
 
 <template>
@@ -220,13 +217,7 @@ const submitButtonStyle = computed(() => ({
           </div>
         </div>
 
-        <button
-          type="submit"
-          class="group"
-          :style="submitButtonStyle"
-          @mouseenter="submitHover = true"
-          @mouseleave="submitHover = false"
-        >
+        <button type="submit" class="group btn-animated btn-primary" :style="submitButtonStyle">
           Entrar no Sistema
           <ChevronRight :size="18" />
         </button>

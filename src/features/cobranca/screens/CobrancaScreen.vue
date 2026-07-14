@@ -13,10 +13,11 @@ function buildNotificacaoFromForm(data: NewNotificacaoData): Notificacao {
     intervalosVencidos: data.intervalosVencidos,
     veiculos: data.veiculos,
     status: 'Ativa',
+    enviaFimSemanaFeriado: data.enviaFimSemanaFeriado,
   };
 }
 
-const list = ref<Notificacao[]>(initialData);
+const list = ref<Notificacao[]>([...initialData]);
 const creating = ref(false);
 
 function handleCreate(data: NewNotificacaoData) {
@@ -28,6 +29,10 @@ function handleToggleStatus(id: string) {
   list.value = list.value.map((n) =>
     n.id === id ? { ...n, status: n.status === 'Ativa' ? 'Inativa' : 'Ativa' } : n,
   );
+}
+
+function handleDelete(id: string) {
+  list.value = list.value.filter((n) => n.id !== id);
 }
 
 function handleEdit() {
@@ -42,6 +47,7 @@ function handleEdit() {
     @new="creating = true"
     @edit="handleEdit"
     @toggle-status="handleToggleStatus"
+    @delete="handleDelete"
   />
   <NovaNotificacaoModal
     v-if="creating"

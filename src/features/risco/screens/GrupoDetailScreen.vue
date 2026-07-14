@@ -2,7 +2,8 @@
 import { onMounted, onUnmounted, reactive, ref, type Component } from 'vue';
 import { ArrowLeft, MoreVertical, Settings2, Users, History, UserCog, BellRing, ShieldCheck, Info } from 'lucide-vue-next';
 import { statusOperacaoColor, detalheGrupo, type GrupoEmpresarial } from '../data/riscoData';
-import { TabPill, CopyButton } from './detail-tabs/shared';
+import { CopyButton } from './detail-tabs/shared';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import DetalhesTab from './detail-tabs/DetalhesTab.vue';
 import ParametrizacoesTab from './detail-tabs/ParametrizacoesTab.vue';
 import CedentesTab from './detail-tabs/CedentesTab.vue';
@@ -109,12 +110,12 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="flex items-center" style="gap: 4px; padding: 4px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); flex-wrap: wrap">
-      <TabPill v-for="t in TABS" :key="t.key" :active="tab === t.key" :icon="t.icon" @click="tab = t.key">
-        {{ t.label }}
-      </TabPill>
-    </div>
+    <SegmentedToggle
+      :model-value="tab"
+      :options="TABS"
+      variant="brand"
+      @update:model-value="tab = $event as Tab"
+    />
 
     <!-- Conteúdo -->
     <DetalhesTab

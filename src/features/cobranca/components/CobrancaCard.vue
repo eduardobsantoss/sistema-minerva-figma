@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Mail, MessageCircle, Smartphone, Building2, MoreVertical, Pencil, EyeOff, Eye, BellOff } from 'lucide-vue-next';
+import { Mail, MessageCircle, Smartphone, Building2, MoreVertical, Pencil, EyeOff, Eye, Trash2 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import type { Notificacao, Metodo } from '../data/cobrancaData';
 
@@ -11,6 +11,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   edit: [id: string];
   toggleStatus: [id: string];
+  delete: [id: string];
 }>();
 
 const METODOS: Metodo[] = ['Email', 'WhatsApp', 'SMS'];
@@ -47,12 +48,9 @@ function handleToggleStatus() {
   emit('toggleStatus', props.notificacao.id);
 }
 
-// No `inativar` listener is wired up anywhere in the app today, so (matching
-// the original component's fallback logic) this always behaves as a status
-// toggle.
-function handleInativar() {
+function handleDelete() {
   menuOpen.value = false;
-  emit('toggleStatus', props.notificacao.id);
+  emit('delete', props.notificacao.id);
 }
 </script>
 
@@ -172,16 +170,15 @@ function handleInativar() {
             {{ isAtiva ? 'Pausar envios' : 'Reativar régua' }}
           </button>
 
-          <div v-if="isAtiva" style="height: 1px; background: var(--border-default); margin: 2px 0" />
+          <div style="height: 1px; background: var(--border-default); margin: 2px 0" />
 
           <button
-            v-if="isAtiva"
             class="cobranca-menu-item flex items-center"
             style="gap: 10px; width: 100%; padding: 10px 14px; background: transparent; border: none; cursor: pointer; font-size: var(--text-sm); color: var(--action-danger-text-only); text-align: left"
-            @click.stop="handleInativar"
+            @click.stop="handleDelete"
           >
-            <BellOff :size="14" />
-            Inativar notificação
+            <Trash2 :size="14" />
+            Deletar notificação
           </button>
         </div>
       </div>

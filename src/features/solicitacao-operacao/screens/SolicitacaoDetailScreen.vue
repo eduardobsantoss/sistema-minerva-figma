@@ -10,7 +10,8 @@ import {
   type Solicitacao, type ParteRelacionada, type ContratoAtivo, type Esteira,
 } from '../data/operacaoData';
 import { enriquecerContratoAtivo } from '../data/ativoData';
-import { CopyButton, TabPill } from './detail-tabs/shared';
+import { CopyButton } from './detail-tabs/shared';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import DadosGeraisTab from './detail-tabs/DadosGeraisTab.vue';
 import AtivosTab from './detail-tabs/AtivosTab.vue';
 import GarantiasTab from './detail-tabs/GarantiasTab.vue';
@@ -211,7 +212,10 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
 
       <!-- Ação primária + menu overflow -->
       <div class="flex items-center" style="gap: 10px; flex-shrink: 0">
-        <button class="flex items-center primary-action" style="gap: 8px; height: 44px; padding: 0 20px; background: var(--action-primary-bg); color: var(--action-primary-text); border-radius: var(--radius-lg); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; box-shadow: 0 10px 24px -10px rgba(8, 60, 74, 0.45); transition: background var(--duration-base)">
+        <button
+          class="flex items-center btn-animated btn-primary"
+          style="gap: 8px; height: 44px; padding: 0 20px; background: var(--action-primary-bg); color: var(--action-primary-text); border-radius: var(--radius-lg); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; box-shadow: 0 10px 24px -10px rgba(8, 60, 74, 0.45)"
+        >
           ANÁLISE OPERAÇÕES
           <ChevronRight :size="16" />
         </button>
@@ -219,12 +223,12 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="flex items-center" style="gap: 4px; padding: 4px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); flex-wrap: wrap">
-      <TabPill v-for="t in TABS" :key="t.key" :active="tab === t.key" :icon="t.icon" @click="tab = t.key">
-        {{ t.label }}
-      </TabPill>
-    </div>
+    <SegmentedToggle
+      :model-value="tab"
+      :options="TABS"
+      variant="brand"
+      @update:model-value="tab = $event as Tab"
+    />
 
     <!-- Conteúdo -->
     <div style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 24px">
@@ -294,9 +298,3 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
     />
   </div>
 </template>
-
-<style scoped>
-.primary-action:hover {
-  background: var(--action-primary-bg-hover);
-}
-</style>

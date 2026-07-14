@@ -9,6 +9,7 @@ import TemplateSelector from './nova-notificacao/TemplateSelector.vue';
 import IntervalStep from './nova-notificacao/IntervalStep.vue';
 import VeiculosStep from './nova-notificacao/VeiculosStep.vue';
 import { TEMPLATES, type TemplateTom } from './nova-notificacao/templates';
+import ToggleRow from '@/features/risco/screens/detail-tabs/shared/ToggleRow.vue';
 
 export interface NewNotificacaoData {
   nome: string;
@@ -18,6 +19,7 @@ export interface NewNotificacaoData {
   intervalosAVencer: number[];
   intervalosVencidos: number[];
   veiculos: string[];
+  enviaFimSemanaFeriado: boolean;
 }
 
 const emit = defineEmits<{ close: []; create: [data: NewNotificacaoData] }>();
@@ -45,6 +47,7 @@ const templateVencidos = ref<TemplateTom>('formal');
 const intervalosAVencer = ref<number[]>([30, 15, 7]);
 const intervalosVencidos = ref<number[]>([1, 5, 10]);
 const veiculos = ref<string[]>([]);
+const enviaFimSemanaFeriado = ref(false);
 const stepHover = ref<number | null>(null);
 
 const step = computed(() => steps[stepIdx.value]);
@@ -66,6 +69,7 @@ function handleSave() {
     intervalosAVencer: intervalosAVencer.value,
     intervalosVencidos: intervalosVencidos.value,
     veiculos: veiculos.value,
+    enviaFimSemanaFeriado: enviaFimSemanaFeriado.value,
   });
 }
 
@@ -166,7 +170,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
 
           <div>
             <FieldLabel>Método de Notificação</FieldLabel>
-            <div class="flex" style="gap: 8px">
+            <div class="flex items-center" style="gap: 8px; width: 100%">
               <button
                 v-for="m in METODOS"
                 :key="m"
@@ -182,11 +186,20 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
                   fontWeight: 600,
                   fontSize: 'var(--text-sm)',
                   transition: 'all var(--duration-fast)',
+                  flexShrink: 0,
                 }"
                 @click="toggleMetodo(m)"
               >
                 {{ m }}
               </button>
+              <div style="flex: 1; min-width: 0">
+                <ToggleRow
+                  compact
+                  label="Enviar em finais de semana e feriados"
+                  :on="enviaFimSemanaFeriado"
+                  @toggle="enviaFimSemanaFeriado = !enviaFimSemanaFeriado"
+                />
+              </div>
             </div>
           </div>
 

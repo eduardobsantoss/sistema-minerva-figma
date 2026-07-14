@@ -49,7 +49,12 @@ const items: NavItem[] = [
     label: 'Cobrança',
     icon: Receipt,
     children: [
+      { key: 'cobranca-titulos', label: 'Títulos', icon: FileText },
+      { key: 'cobranca-dashboard', label: 'Dashboard', icon: Gauge },
       { key: 'cobranca-notif', label: 'Notificações de Cobrança', icon: BellRing },
+      { key: 'cobranca-notif-cessao', label: 'Notificações de Cessão', icon: ScrollText },
+      { key: 'cobranca-resultado-notif', label: 'Resultado de Notificações', icon: Layers },
+      { key: 'cobranca-rel', label: 'Relatórios', icon: BarChart3 },
     ],
   },
   {

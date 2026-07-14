@@ -92,7 +92,11 @@ const kpis: KpiDef[] = [
           PESQUISAR
         </button>
       </div>
-      <button class="flex items-center new-fidc-btn" style="gap: 8px; height: 56px; padding: 0 24px; color: #fff; border-radius: var(--radius-xl); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -8px rgba(242,125,38,0.40); transition: background var(--duration-base)" @click="emit('new')">
+      <button
+        class="flex items-center btn-animated btn-agro"
+        style="gap: 8px; height: 56px; padding: 0 24px; background: var(--agro-base); color: #fff; border-radius: var(--radius-xl); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -8px rgba(242,125,38,0.40)"
+        @click="emit('new')"
+      >
         <span class="flex items-center justify-center" style="width: 22px; height: 22px; border-radius: 9999px; background: rgba(255,255,255,0.20)">
           <Plus :size="14" />
         </span>
@@ -128,12 +132,3 @@ const kpis: KpiDef[] = [
     </div>
   </div>
 </template>
-
-<style scoped>
-.new-fidc-btn {
-  background: var(--agro-base);
-}
-.new-fidc-btn:hover {
-  background: var(--agro-hover);
-}
-</style>

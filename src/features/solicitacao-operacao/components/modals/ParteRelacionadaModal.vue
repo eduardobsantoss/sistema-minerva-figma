@@ -309,7 +309,8 @@ function handleSubmit() {
         </button>
         <button
           :disabled="!canSubmit"
-          class="flex items-center"
+          class="flex items-center btn-animated"
+          :class="{ 'btn-primary': canSubmit }"
           :style="{
             gap: '8px',
             height: '44px',
@@ -322,7 +323,6 @@ function handleSubmit() {
             letterSpacing: '0.08em',
             background: canSubmit ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
             color: canSubmit ? '#fff' : 'var(--text-disabled)',
-            transition: 'background var(--duration-base)',
           }"
           @click="handleSubmit"
         >

@@ -1,4 +1,3 @@
-export { default as TabPill } from './TabPill.vue';
 export { default as Section } from './Section.vue';
 export { default as TabCard } from './TabCard.vue';
 export { default as FieldLabel } from './FieldLabel.vue';

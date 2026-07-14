@@ -18,7 +18,7 @@ import { brl, num, type Fidc, type Title } from '../data/fidcsData';
 import TitlesTable from '../components/TitlesTable.vue';
 import PLHero from '../components/PLHero.vue';
 import SubKPI from './fidc-detail/SubKPI.vue';
-import TabBtn from './fidc-detail/TabBtn.vue';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import ClassesTable from './fidc-detail/ClassesTable.vue';
 import FidcColPanel from './fidc-detail/FidcColPanel.vue';
 
@@ -31,6 +31,11 @@ const emit = defineEmits<{
 }>();
 
 type Tab = 'classes' | 'titulos';
+
+const VIEW_TABS = [
+  { key: 'classes' as const, label: 'VISUALIZAR CLASSES' },
+  { key: 'titulos' as const, label: 'VISUALIZAR TÍTULOS' },
+];
 
 const openCarteira = ref(true);
 const tab = ref<Tab>('classes');
@@ -238,7 +243,7 @@ function handleOpenTitle(t: Title) {
         </div>
         <button
           v-if="isMulticlasse && tab === 'classes'"
-          class="flex items-center"
+          class="flex items-center btn-animated btn-agro"
           style="
             gap: 8px;
             padding: 10px 18px;
@@ -256,10 +261,12 @@ function handleOpenTitle(t: Title) {
         >
           <Plus :size="14" /> NOVA CLASSE
         </button>
-        <div class="flex" style="padding: 4px; background: var(--surface-sunken); border-radius: var(--radius-lg)">
-          <TabBtn :active="tab === 'classes'" @click="tab = 'classes'">VISUALIZAR CLASSES</TabBtn>
-          <TabBtn :active="tab === 'titulos'" @click="tab = 'titulos'">VISUALIZAR TÍTULOS</TabBtn>
-        </div>
+        <SegmentedToggle
+          :model-value="tab"
+          :options="VIEW_TABS"
+          variant="surface"
+          @update:model-value="tab = $event as Tab"
+        />
         <div class="flex items-center" style="gap: 6px; position: relative">
           <button
             aria-label="Colunas"
@@ -304,14 +311,7 @@ function handleOpenTitle(t: Title) {
       <ClassesTable v-if="tab === 'classes'" :rows="fidc.classes" @open="emit('openClass', $event)" />
       <TitlesTable v-else :rows="filteredTitles" :class-map="classMap" @open="handleOpenTitle" />
 
-      <div class="flex items-center justify-between" style="padding: 16px 20px; border-top: 1px solid var(--border-default)">
-        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase">
-          Exibindo
-          <span style="color: var(--text-strong)">{{ tab === 'classes' ? fidc.classes.length : filteredTitles.length }}</span>
-          de
-          <span style="color: var(--text-strong)">{{ tab === 'classes' ? fidc.classes.length : allTitles.length }}</span>
-          registros
-        </div>
+      <div class="flex items-center justify-end" style="padding: 16px 20px; border-top: 1px solid var(--border-default)">
         <div class="flex items-center" style="gap: 12px">
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase">
             Classe Ativa:

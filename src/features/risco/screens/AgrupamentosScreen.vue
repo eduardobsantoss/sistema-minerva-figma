@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Plus, Layers, Pencil, Trash2 } from 'lucide-vue-next';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import {
   AGRUPAMENTOS_SEED, OPERACOES_VINCULAVEIS_SEED, contarVinculos,
   type Agrupamento, type OperacaoVinculavel,
@@ -17,6 +19,11 @@ const creating = ref(false);
 const editing = ref<Agrupamento | null>(null);
 const deleting = ref<Agrupamento | null>(null);
 const vinculando = ref<Agrupamento | null>(null);
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => agrupamentos.value,
+  { defaultPageSize: 10 },
+);
 
 function handleCreate(nome: string) {
   agrupamentos.value = [
@@ -54,7 +61,11 @@ function handleDelete() {
           {{ agrupamentos.length }} {{ agrupamentos.length === 1 ? 'agrupamento cadastrado' : 'agrupamentos cadastrados' }}
         </p>
       </div>
-      <button class="flex items-center risco-new-btn" style="gap: 8px; height: 48px; padding: 0 22px; color: #fff; border-radius: var(--radius-lg); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -8px rgba(242,125,38,0.40); transition: background var(--duration-base)" @click="creating = true">
+      <button
+        class="flex items-center btn-animated btn-agro"
+        style="gap: 8px; height: 48px; padding: 0 22px; background: var(--agro-base); color: #fff; border-radius: var(--radius-lg); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -8px rgba(242,125,38,0.40)"
+        @click="creating = true"
+      >
         <span class="flex items-center justify-center" style="width: 22px; height: 22px; border-radius: 9999px; background: rgba(255,255,255,0.20)">
           <Plus :size="14" />
         </span>
@@ -73,7 +84,7 @@ function handleDelete() {
         <div>Agrupamento</div><div>CRAs</div><div>FIDCs</div><div>Total</div><div>Criado em</div><div style="text-align: right">Ações</div>
       </div>
       <div
-        v-for="a in agrupamentos"
+        v-for="a in pageItems"
         :key="a.id"
         class="grid items-center agrupamentos-row"
         :style="{ gridTemplateColumns: COLS, padding: '14px 20px', borderTop: '1px solid var(--border-default)', fontSize: 'var(--text-sm)', cursor: 'pointer', transition: 'background var(--duration-fast)' }"
@@ -103,6 +114,13 @@ function handleDelete() {
           </button>
         </div>
       </div>
+      <TablePagination
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </div>
 
     <CreateAgrupamentoModal v-if="creating" @close="creating = false" @save="handleCreate" />
@@ -121,12 +139,6 @@ function handleDelete() {
 </template>
 
 <style scoped>
-.risco-new-btn {
-  background: var(--agro-base);
-}
-.risco-new-btn:hover {
-  background: var(--agro-hover);
-}
 .agrupamentos-row:hover {
   background: var(--surface-sunken);
 }

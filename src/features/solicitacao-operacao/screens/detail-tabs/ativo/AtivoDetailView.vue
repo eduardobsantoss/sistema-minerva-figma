@@ -4,7 +4,8 @@ import { ArrowLeft, FileText, User, Building2 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import { brl, type ContratoAtivo } from '../../../data/operacaoData';
 import { TONE_SITUACAO } from '../../../data/ativoData';
-import { CopyButton, TabPill } from '../shared';
+import { CopyButton } from '../shared';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import TituloTab from './TituloTab.vue';
 import PessoaDetailTabs from './PessoaDetailTabs.vue';
 
@@ -63,11 +64,12 @@ const tone = computed(() => TONE_SITUACAO[props.ativo.situacao]);
       </div>
     </div>
 
-    <div class="flex items-center" style="gap: 4px; padding: 4px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); flex-wrap: wrap">
-      <TabPill v-for="t in TABS" :key="t.key" :active="tab === t.key" :icon="t.icon" @click="tab = t.key">
-        {{ t.label }}
-      </TabPill>
-    </div>
+    <SegmentedToggle
+      :model-value="tab"
+      :options="TABS"
+      variant="brand"
+      @update:model-value="tab = $event as Tab"
+    />
 
     <TituloTab v-if="tab === 'titulo'" :ativo="ativo" />
     <PessoaDetailTabs v-else-if="tab === 'cedente'" :pessoa="ativo.cedente" titulo="Cedente" />

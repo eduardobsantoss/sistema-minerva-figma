@@ -5,6 +5,8 @@ import {
   GRUPOS_SEED, GERENTES_SEED, STATUS_GRUPO_RELATORIO_OPTS, STATUS_PARECER_RELATORIO_OPTS,
   parecerLabel, parecerColor, statusOperacaoColor,
 } from '../data/riscoData';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 type ReportKey = 'parecer-credito';
 
@@ -38,6 +40,7 @@ function toCsv(rows: { nome: string; documento: string; statusGrupo: string; ger
 }
 
 const selected = ref<ReportKey | null>(null);
+const hoveredKey = ref<ReportKey | null>(null);
 const draft = reactive<Filters>({ ...EMPTY_FILTERS });
 const applied = ref<Filters | null>(null);
 
@@ -56,6 +59,11 @@ const results = computed(() => {
 
 const report = computed(() => REPORTS.find((r) => r.key === selected.value) ?? null);
 
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => results.value,
+  { defaultPageSize: 10 },
+);
+
 function selectReport(key: ReportKey) {
   selected.value = key;
   Object.assign(draft, EMPTY_FILTERS);
@@ -64,6 +72,7 @@ function selectReport(key: ReportKey) {
 
 function handleGerar() {
   applied.value = { ...draft };
+  setPage(1);
 }
 
 function handleExportCsv() {
@@ -98,9 +107,23 @@ function handleExportCsv() {
       <button
         v-for="r in REPORTS"
         :key="r.key"
-        class="flex flex-col relatorios-card"
-        style="gap: 14px; text-align: left; padding: 22px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); cursor: pointer; transition: border-color var(--duration-base)"
+        class="flex flex-col"
+        :style="{
+          gap: '14px',
+          textAlign: 'left',
+          padding: '22px',
+          background: 'var(--surface-card)',
+          border: `1px solid ${hoveredKey === r.key ? 'rgba(242,125,38,0.30)' : 'var(--border-default)'}`,
+          borderRadius: 'var(--radius-xl)',
+          cursor: 'pointer',
+          boxShadow: hoveredKey === r.key ? '0 20px 40px -16px rgba(8,60,74,0.10)' : 'none',
+          transform: hoveredKey === r.key ? 'translateY(-4px)' : 'translateY(0)',
+          transition:
+            'transform var(--duration-base) var(--ease-standard), box-shadow var(--duration-base), border-color var(--duration-base)',
+        }"
         @click="selectReport(r.key)"
+        @mouseenter="hoveredKey = r.key"
+        @mouseleave="hoveredKey = null"
       >
         <div class="flex items-center justify-center" style="width: 42px; height: 42px; border-radius: var(--radius-lg); background: var(--accent-bg); color: var(--accent)">
           <ClipboardCheck :size="20" />
@@ -109,7 +132,19 @@ function handleExportCsv() {
           <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); margin-bottom: 6px">{{ r.title }}</div>
           <div style="font-size: var(--text-xs); color: var(--text-muted); line-height: 1.5">{{ r.description }}</div>
         </div>
-        <div class="flex items-center" style="gap: 4px; font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--accent); margin-top: auto">
+        <div style="flex: 1" />
+        <div
+          class="flex items-center"
+          :style="{
+            gap: '4px',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 'var(--weight-bold)',
+            color: 'var(--accent)',
+            opacity: hoveredKey === r.key ? 1 : 0,
+            transform: hoveredKey === r.key ? 'translateY(0)' : 'translateY(4px)',
+            transition: 'opacity var(--duration-base) var(--ease-standard), transform var(--duration-base) var(--ease-standard)',
+          }"
+        >
           Configurar e exportar <ChevronRight :size="14" />
         </div>
       </button>
@@ -204,19 +239,20 @@ function handleExportCsv() {
       <div v-else class="grid" style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr; padding: 10px 20px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase">
         <div>Nome do Grupo</div><div>Documento</div><div>Status do Grupo</div><div>Gerente</div><div>Parecer de Crédito</div>
       </div>
-      <div v-for="g in results" :key="g.id" class="grid items-center" style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr; padding: 12px 20px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
+      <div v-for="g in pageItems" :key="g.id" class="grid items-center" style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr; padding: 12px 20px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
         <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ g.nome }}</div>
         <div style="font-variant-numeric: tabular-nums; color: var(--text-muted)">{{ g.documento }}</div>
         <div :style="{ color: statusOperacaoColor(g.statusOperacao), fontWeight: 'var(--weight-semibold)' }">{{ g.statusOperacao }}</div>
         <div style="color: var(--text-default)">{{ g.gerente }}</div>
         <div :style="{ color: parecerColor(g.parecerCredito), fontWeight: 'var(--weight-semibold)' }">{{ parecerLabel(g.parecerCredito) }}</div>
       </div>
+      <TablePagination
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </div>
   </div>
 </template>
-
-<style scoped>
-.relatorios-card:hover {
-  border-color: var(--accent);
-}
-</style>

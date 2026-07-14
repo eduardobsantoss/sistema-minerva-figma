@@ -9,7 +9,6 @@ const emit = defineEmits<{ open: [id: string]; new: [] }>();
 
 const q = ref('');
 const focus = ref(false);
-const newBtnHover = ref(false);
 
 const filtered = computed(() =>
   props.cras.filter(
@@ -114,25 +113,22 @@ const kpis = computed(() => [
         </button>
       </div>
       <button
-        class="flex items-center"
-        :style="{
-          gap: '8px',
-          height: '56px',
-          padding: '0 24px',
-          background: newBtnHover ? 'var(--agro-hover)' : 'var(--agro-base)',
-          color: '#fff',
-          borderRadius: 'var(--radius-xl)',
-          border: 'none',
-          cursor: 'pointer',
-          fontWeight: 'var(--weight-bold)',
-          fontSize: 'var(--text-xs)',
-          letterSpacing: '0.10em',
-          boxShadow: '0 10px 24px -8px rgba(242,125,38,0.40)',
-          transition: 'background var(--duration-base)',
-        }"
+        class="flex items-center btn-animated btn-agro"
+        style="
+          gap: 8px;
+          height: 56px;
+          padding: 0 24px;
+          background: var(--agro-base);
+          color: #fff;
+          border-radius: var(--radius-xl);
+          border: none;
+          cursor: pointer;
+          font-weight: var(--weight-bold);
+          font-size: var(--text-xs);
+          letter-spacing: 0.10em;
+          box-shadow: 0 10px 24px -8px rgba(242, 125, 38, 0.4);
+        "
         @click="emit('new')"
-        @mouseenter="newBtnHover = true"
-        @mouseleave="newBtnHover = false"
       >
         <span
           class="flex items-center justify-center"

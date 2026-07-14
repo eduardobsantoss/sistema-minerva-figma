@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { toneStyles, type ModuleItem } from '../data/modulesData';
+import { useCardHover } from '@/composables/useCardHover';
 
 const props = defineProps<{ item: ModuleItem }>();
-const hover = ref(false);
+const { hover, onMouseenter, onMouseleave } = useCardHover();
 const tone = toneStyles[props.item.tone];
 </script>
 
@@ -23,8 +23,8 @@ const tone = toneStyles[props.item.tone];
       transition:
         'transform var(--duration-base) var(--ease-standard), box-shadow var(--duration-base), border-color var(--duration-base)',
     }"
-    @mouseenter="hover = true"
-    @mouseleave="hover = false"
+    @mouseenter="onMouseenter"
+    @mouseleave="onMouseleave"
   >
     <!-- Quarto de círculo decorativo no canto superior direito -->
     <div

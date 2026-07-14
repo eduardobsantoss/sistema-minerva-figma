@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Plus, Gauge, Pencil } from 'lucide-vue-next';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import { RATINGS_SEED, fmtPct, type Rating } from '../data/riscoData';
 import CreateRatingModal from '../components/modals/CreateRatingModal.vue';
 
@@ -9,6 +11,11 @@ const COLS = '1fr 1fr 1fr auto';
 const ratings = ref<Rating[]>(RATINGS_SEED);
 const creating = ref(false);
 const editing = ref<Rating | null>(null);
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => ratings.value,
+  { defaultPageSize: 10 },
+);
 
 function handleCreate(data: { nome: string; taxa: number }) {
   ratings.value = [
@@ -40,7 +47,11 @@ function handleEdit(data: { nome: string; taxa: number }) {
           {{ ratings.length }} {{ ratings.length === 1 ? 'rating cadastrado' : 'ratings cadastrados' }}
         </p>
       </div>
-      <button class="flex items-center risco-new-btn" style="gap: 8px; height: 48px; padding: 0 22px; color: #fff; border-radius: var(--radius-lg); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -8px rgba(242,125,38,0.40); transition: background var(--duration-base)" @click="creating = true">
+      <button
+        class="flex items-center btn-animated btn-agro"
+        style="gap: 8px; height: 48px; padding: 0 22px; background: var(--agro-base); color: #fff; border-radius: var(--radius-lg); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -8px rgba(242,125,38,0.40)"
+        @click="creating = true"
+      >
         <span class="flex items-center justify-center" style="width: 22px; height: 22px; border-radius: 9999px; background: rgba(255,255,255,0.20)">
           <Plus :size="14" />
         </span>
@@ -58,7 +69,7 @@ function handleEdit(data: { nome: string; taxa: number }) {
       <div class="grid" :style="{ gridTemplateColumns: COLS, padding: '12px 20px', background: 'var(--surface-sunken)', fontSize: '10px', fontWeight: 'var(--weight-bold)', letterSpacing: '0.12em', color: 'var(--text-muted)', textTransform: 'uppercase' }">
         <div>Nome</div><div>Taxa</div><div>Criado em</div><div style="text-align: right">Ações</div>
       </div>
-      <div v-for="r in ratings" :key="r.id" class="grid items-center" :style="{ gridTemplateColumns: COLS, padding: '14px 20px', borderTop: '1px solid var(--border-default)', fontSize: 'var(--text-sm)' }">
+      <div v-for="r in pageItems" :key="r.id" class="grid items-center" :style="{ gridTemplateColumns: COLS, padding: '14px 20px', borderTop: '1px solid var(--border-default)', fontSize: 'var(--text-sm)' }">
         <div style="font-weight: var(--weight-bold); color: var(--text-strong)">{{ r.nome }}</div>
         <div style="font-variant-numeric: tabular-nums; color: var(--text-default)">{{ fmtPct(r.taxa) }}</div>
         <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ r.criadoEm }}</div>
@@ -73,18 +84,16 @@ function handleEdit(data: { nome: string; taxa: number }) {
           </button>
         </div>
       </div>
+      <TablePagination
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </div>
 
     <CreateRatingModal v-if="creating" @close="creating = false" @save="handleCreate" />
     <CreateRatingModal v-if="editing" :initial="editing" @close="editing = null" @save="handleEdit" />
   </div>
 </template>
-
-<style scoped>
-.risco-new-btn {
-  background: var(--agro-base);
-}
-.risco-new-btn:hover {
-  background: var(--agro-hover);
-}
-</style>

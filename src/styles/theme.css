@@ -179,6 +179,31 @@ html {
   overflow-y: visible;
 }
 
+/* ===== BUTTON MOTION ===== */
+.btn-animated {
+  transition:
+    background var(--duration-base) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard),
+    color var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard);
+}
+.btn-animated:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.btn-agro:hover:not(:disabled) {
+  background: var(--agro-hover) !important;
+}
+.btn-agro:active:not(:disabled) {
+  background: var(--agro-active) !important;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--action-primary-bg-hover) !important;
+}
+.btn-primary:active:not(:disabled) {
+  background: var(--action-primary-bg-active) !important;
+}
+
 /* ===== BREAKPOINTS — notebooks e telas menores ===== */
 @media (max-width: 1440px) {
   :root {

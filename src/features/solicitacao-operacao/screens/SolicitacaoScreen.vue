@@ -23,6 +23,7 @@ import NovoPedidoModal from '../components/NovoPedidoModal.vue';
 import type { NewPedidoData } from '../components/novo-pedido';
 import SolicitacaoDetailScreen from './SolicitacaoDetailScreen.vue';
 import { SolicitacaoFiltersPanel, type SolicitacaoFilters } from './solicitacao-screen';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 
 const EMPTY_FILTERS: SolicitacaoFilters = {
   idPedido: '',
@@ -173,7 +174,7 @@ const selected = computed(() => (selectedId.value ? lista.find((s) => s.id === s
         </h1>
       </div>
       <button
-        class="flex items-center new-request-btn"
+        class="flex items-center btn-animated btn-agro"
         style="
           gap: 8px;
           height: 48px;
@@ -187,7 +188,6 @@ const selected = computed(() => (selectedId.value ? lista.find((s) => s.id === s
           font-size: var(--text-xs);
           letter-spacing: 0.10em;
           box-shadow: 0 10px 24px -8px rgba(242, 125, 38, 0.4);
-          transition: background var(--duration-base);
         "
         @click="creating = true"
       >
@@ -285,32 +285,12 @@ const selected = computed(() => (selectedId.value ? lista.find((s) => s.id === s
           </template>
         </div>
 
-        <!-- Segmented view toggle -->
-        <div class="flex items-center" style="gap: 4px; padding: 4px; background: var(--surface-sunken); border-radius: var(--radius-lg)">
-          <button
-            v-for="m in VIEW_MODES"
-            :key="m.key"
-            class="flex items-center"
-            :style="{
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-md)',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: 'var(--text-xs)',
-              fontWeight: 'var(--weight-bold)',
-              letterSpacing: '0.04em',
-              background: viewMode === m.key ? 'var(--surface-card)' : 'transparent',
-              color: viewMode === m.key ? 'var(--text-strong)' : 'var(--text-muted)',
-              boxShadow: viewMode === m.key ? 'var(--shadow-xs)' : 'none',
-              transition: 'all var(--duration-fast)',
-            }"
-            @click="viewMode = m.key"
-          >
-            <component :is="m.icon" :size="15" :stroke-width="2" />
-            {{ m.label }}
-          </button>
-        </div>
+        <SegmentedToggle
+          :model-value="viewMode"
+          :options="VIEW_MODES"
+          variant="surface"
+          @update:model-value="viewMode = $event as ViewMode"
+        />
       </div>
     </div>
 
@@ -334,9 +314,3 @@ const selected = computed(() => (selectedId.value ? lista.find((s) => s.id === s
     <NovoPedidoModal v-if="creating" @close="creating = false" @create="handleCreate" />
   </div>
 </template>
-
-<style scoped>
-.new-request-btn:hover {
-  background: var(--agro-hover);
-}
-</style>

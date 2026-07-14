@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { X, Pencil, FileUp, TrendingUp, MapPin, CalendarDays, Phone, Home, FileText } from 'lucide-vue-next';
 import { brl, statusCedenteColor, type Cedente } from '../../data/riscoData';
-import { TabPill } from '../../screens/detail-tabs/shared';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import { KpiCard, ContatosPanel, EnderecosPanel, DocumentosPanel } from './cedente-detail';
 import EditarCadastroCedenteModal from './EditarCadastroCedenteModal.vue';
 
@@ -89,9 +89,13 @@ function handleUpdate(updated: Cedente) {
           <KpiCard :icon="CalendarDays" label="Data de abertura" :value="cedente.dataAbertura" />
         </div>
 
-        <div class="flex items-center" style="gap: 4px; padding: 4px; background: var(--surface-sunken); border: 1px solid var(--border-default); border-radius: var(--radius-xl); width: fit-content">
-          <TabPill v-for="t in TABS" :key="t.key" :active="tab === t.key" :icon="t.icon" @click="tab = t.key">{{ t.label }}</TabPill>
-        </div>
+        <SegmentedToggle
+          :model-value="tab"
+          :options="TABS"
+          variant="brand"
+          style="width: fit-content"
+          @update:model-value="tab = $event as Tab"
+        />
 
         <ContatosPanel v-if="tab === 'contatos'" :cedente="cedente" @update="emit('update', $event)" />
         <EnderecosPanel v-if="tab === 'enderecos'" :cedente="cedente" @update="emit('update', $event)" />

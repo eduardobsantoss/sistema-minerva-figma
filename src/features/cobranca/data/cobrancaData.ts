@@ -9,6 +9,8 @@ export interface Notificacao {
   intervalosVencidos: number[];
   veiculos: string[];
   status: NotificacaoStatus;
+  /** Quando true, permite disparos em finais de semana e feriados. */
+  enviaFimSemanaFeriado: boolean;
 }
 
 export const notificacoes: Notificacao[] = [
@@ -20,6 +22,7 @@ export const notificacoes: Notificacao[] = [
     intervalosVencidos: [1, 5, 10, 15, 20],
     veiculos: ['FIDC Agro Capital', 'CRA Semeagro', 'CRA Rural Plus'],
     status: 'Ativa',
+    enviaFimSemanaFeriado: false,
   },
   {
     id: 'notif-2',
@@ -29,6 +32,7 @@ export const notificacoes: Notificacao[] = [
     intervalosVencidos: [1, 2, 3, 5, 10],
     veiculos: ['FIDC Agro Capital', 'FIDC Crédito Rural'],
     status: 'Ativa',
+    enviaFimSemanaFeriado: true,
   },
   {
     id: 'notif-3',
@@ -38,6 +42,7 @@ export const notificacoes: Notificacao[] = [
     intervalosVencidos: [5, 10],
     veiculos: ['CRA Semeagro'],
     status: 'Inativa',
+    enviaFimSemanaFeriado: false,
   },
 ];
 

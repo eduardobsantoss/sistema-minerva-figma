@@ -323,7 +323,7 @@ function pct(n: number): string {
         <div class="flex" style="gap: 12px">
           <button
             type="button"
-            class="flex items-center justify-center"
+            class="flex items-center justify-center btn-animated btn-primary"
             style="
               height: 44px;
               padding: 0 24px;
