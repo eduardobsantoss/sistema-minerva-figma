@@ -16,6 +16,8 @@ import GhostButton from './pagamentos/GhostButton.vue';
 import FormField from './pagamentos/FormField.vue';
 import SelectField from './pagamentos/SelectField.vue';
 import ToggleRow from './pagamentos/ToggleRow.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 defineProps<{ title: Title }>();
 const det = defineModel<DetalhePagamentos>('det', { required: true });
@@ -41,6 +43,26 @@ const configOpen = ref(false);
 const totalPago = computed(() =>
   det.value.pagamentos.filter((p) => !p.estornado).reduce((acc, p) => acc + p.valorAmortizacao, 0),
 );
+
+const {
+  page: pagamentosPage,
+  pageSize: pagamentosPageSize,
+  total: pagamentosTotal,
+  pageItems: pagamentosPageItems,
+  setPage: setPagamentosPage,
+  setPageSize: setPagamentosPageSize,
+} = useTablePagination(() => det.value.pagamentos, { defaultPageSize: 5 });
+
+const {
+  page: cronogramaPage,
+  pageSize: cronogramaPageSize,
+  total: cronogramaTotal,
+  pageItems: cronogramaPageItems,
+  setPage: setCronogramaPage,
+  setPageSize: setCronogramaPageSize,
+} = useTablePagination(() => det.value.cronograma, { defaultPageSize: 5 });
+
+const pagamentosStartIndex = computed(() => (pagamentosPage.value - 1) * pagamentosPageSize.value);
 
 const canSalvar = computed(
   () => form.value.valorAmortizacao.trim() !== '' && form.value.dataPagamento.trim() !== '' && form.value.tipoPagamento.trim() !== '',
@@ -128,8 +150,8 @@ function handleConfirmEstorno(justificativa: string) {
           <div>Data</div><div>Val. Amortização</div><div>Tipo pagamento</div><div>Val. Juros Rem.</div><div>Val. Juros Mor.</div><div>Val. Multa</div><div>Val. Desconto</div><div style="text-align: right">Estornar</div>
         </div>
         <div
-          v-for="(p, i) in det.pagamentos"
-          :key="i"
+          v-for="(p, i) in pagamentosPageItems"
+          :key="pagamentosStartIndex + i"
           class="grid items-center"
           :style="{
             gridTemplateColumns: '0.9fr 1fr 1.3fr 1.1fr 1fr 0.8fr 0.8fr 0.6fr', padding: '12px 16px',
@@ -151,12 +173,21 @@ function handleConfirmEstorno(justificativa: string) {
               :disabled="p.estornado"
               class="flex items-center justify-center"
               :style="{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', background: 'none', border: '1px solid var(--border-default)', cursor: p.estornado ? 'not-allowed' : 'pointer', color: p.estornado ? 'var(--text-disabled)' : 'var(--action-danger-text-only)' }"
-              @click="estornoAlvo = i"
+              @click="estornoAlvo = pagamentosStartIndex + i"
             >
               <Undo2 :size="14" />
             </button>
           </div>
         </div>
+        <TablePagination
+          sunken
+          compact
+          :total="pagamentosTotal"
+          :page="pagamentosPage"
+          :page-size="pagamentosPageSize"
+          @update:page="setPagamentosPage"
+          @update:page-size="setPagamentosPageSize"
+        />
       </div>
     </Section>
 
@@ -198,7 +229,7 @@ function handleConfirmEstorno(justificativa: string) {
           <div>Vencimento</div><div>Status</div><div>Total Esperado (PMT)</div><div style="text-align: right">Em Aberto</div>
         </div>
         <div
-          v-for="(c, i) in det.cronograma"
+          v-for="(c, i) in cronogramaPageItems"
           :key="i"
           class="grid items-center"
           style="grid-template-columns: 1fr 1.3fr 1.2fr 1.2fr; padding: 12px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
@@ -210,6 +241,15 @@ function handleConfirmEstorno(justificativa: string) {
           <div style="font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">{{ brl(c.totalEsperado) }}</div>
           <div :style="{ textAlign: 'right', fontWeight: 'var(--weight-bold)', color: c.emAberto > 0 ? 'var(--warning-dark)' : 'var(--success-dark)', fontVariantNumeric: 'tabular-nums' }">{{ brl(c.emAberto) }}</div>
         </div>
+        <TablePagination
+          sunken
+          compact
+          :total="cronogramaTotal"
+          :page="cronogramaPage"
+          :page-size="cronogramaPageSize"
+          @update:page="setCronogramaPage"
+          @update:page-size="setCronogramaPageSize"
+        />
       </div>
     </Section>
 

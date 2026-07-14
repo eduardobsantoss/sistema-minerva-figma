@@ -1,9 +1,20 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { brl, type FidcClass } from '../../data/fidcsData';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
-defineProps<{ rows: FidcClass[] }>();
+const props = defineProps<{ rows: FidcClass[] }>();
 const emit = defineEmits<{ open: [id: string] }>();
+
+const {
+  page,
+  pageSize,
+  total,
+  pageItems,
+  setPage,
+  setPageSize,
+} = useTablePagination(() => props.rows, { defaultPageSize: 10 });
 
 const rowHover = ref<string | null>(null);
 </script>
@@ -37,7 +48,7 @@ const rowHover = ref<string | null>(null);
       <div style="text-align: right">VR. Vencido</div>
     </div>
     <div
-      v-for="r in rows"
+      v-for="r in pageItems"
       :key="r.id"
       class="grid items-center"
       :style="{
@@ -106,5 +117,13 @@ const rowHover = ref<string | null>(null);
         {{ brl(r.vrVencido) }}
       </div>
     </div>
+
+    <TablePagination
+      :total="total"
+      :page="page"
+      :page-size="pageSize"
+      @update:page="setPage"
+      @update:page-size="setPageSize"
+    />
   </div>
 </template>

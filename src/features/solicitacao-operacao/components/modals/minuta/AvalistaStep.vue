@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { Check, Plus, X } from 'lucide-vue-next';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import { ToggleRow, AddButton } from '../adicionar-contrato';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import type { AvalistaMinutaRow } from '../../../data/minutaData';
 
-defineProps<{
+const props = defineProps<{
   possuiAvalistas: boolean;
   rows: AvalistaMinutaRow[];
 }>();
@@ -14,6 +16,15 @@ const emit = defineEmits<{
   toggleConjuge: [i: number];
   addAvalista: [];
 }>();
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => props.rows,
+  { defaultPageSize: 10 },
+);
+
+function globalIndex(pageIdx: number) {
+  return (page.value - 1) * pageSize.value + pageIdx;
+}
 </script>
 
 <template>
@@ -49,7 +60,7 @@ const emit = defineEmits<{
           <div>Cônjuge é interveniente anuente</div>
         </div>
         <div
-          v-for="(r, i) in rows"
+          v-for="(r, pageIdx) in pageItems"
           :key="r.documento"
           class="grid items-center"
           style="
@@ -59,7 +70,7 @@ const emit = defineEmits<{
             font-size: var(--text-sm);
           "
         >
-          <Checkbox :checked="r.selecionadoAssinatura" @change="emit('toggleAssinatura', i)" />
+          <Checkbox :checked="r.selecionadoAssinatura" @change="emit('toggleAssinatura', globalIndex(pageIdx))" />
           <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ r.nome }}</div>
           <div style="font-variant-numeric: tabular-nums; color: var(--text-muted)">{{ r.documento }}</div>
           <div class="flex items-center" style="color: r.possuiConjuge ? 'var(--success-base)' : 'var(--danger-base)'">
@@ -70,7 +81,7 @@ const emit = defineEmits<{
             <Checkbox
               :checked="r.conjugeInterveniente"
               :disabled="!r.possuiConjuge"
-              @change="r.possuiConjuge && emit('toggleConjuge', i)"
+              @change="r.possuiConjuge && emit('toggleConjuge', globalIndex(pageIdx))"
             />
           </div>
         </div>
@@ -80,6 +91,14 @@ const emit = defineEmits<{
         >
           Nenhum avalista cadastrado nesta solicitação.
         </div>
+        <TablePagination
+          v-if="rows.length > 0"
+          :total="total"
+          :page="page"
+          :page-size="pageSize"
+          @update:page="setPage"
+          @update:page-size="setPageSize"
+        />
       </div>
     </template>
   </div>

@@ -1,14 +1,26 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { X, Pencil, ChevronLeft, ChevronRight } from 'lucide-vue-next';
+import { X, Pencil } from 'lucide-vue-next';
 import { brl, type ParcelaCronograma } from '../../data/fidcsData';
 import EditableCell from './editar-parcelas/EditableCell.vue';
-import PageBtn from './editar-parcelas/PageBtn.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{ cronograma: ParcelaCronograma[] }>();
 const emit = defineEmits<{ close: []; update: [cronograma: ParcelaCronograma[]] }>();
 
 const rows = ref<ParcelaCronograma[]>(props.cronograma.map((c) => ({ ...c })));
+
+const {
+  page,
+  pageSize,
+  total,
+  pageItems,
+  setPage,
+  setPageSize,
+} = useTablePagination(() => rows.value, { defaultPageSize: 5 });
+
+const pageStartIndex = computed(() => (page.value - 1) * pageSize.value);
 
 function setValor(i: number, field: 'amortizacao' | 'juros', value: string) {
   const num = Number(value.replace(',', '.')) || 0;
@@ -76,27 +88,29 @@ const totalGeral = computed(() => totalAmortizacao.value + totalJuros.value);
             <div>Vencimento</div><div>Amortização</div><div>Juros</div>
           </div>
           <div
-            v-for="(r, i) in rows"
-            :key="i"
+            v-for="(r, i) in pageItems"
+            :key="pageStartIndex + i"
             class="grid items-center"
             style="grid-template-columns: 1.2fr 1fr 1fr; padding: 10px 16px; border-top: 1px solid var(--border-default)"
           >
             <div style="font-size: var(--text-sm); color: var(--text-muted); font-variant-numeric: tabular-nums">{{ r.vencimento }}</div>
-            <EditableCell :value="r.amortizacao" @change="(v) => setValor(i, 'amortizacao', v)" />
-            <EditableCell :value="r.juros" @change="(v) => setValor(i, 'juros', v)" />
+            <EditableCell :value="r.amortizacao" @change="(v) => setValor(pageStartIndex + i, 'amortizacao', v)" />
+            <EditableCell :value="r.juros" @change="(v) => setValor(pageStartIndex + i, 'juros', v)" />
           </div>
           <div class="grid items-center" style="grid-template-columns: 1.2fr 1fr 1fr; padding: 12px 16px; border-top: 1px solid var(--border-default); background: var(--surface-sunken); font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
             <div>Total</div>
             <div style="font-variant-numeric: tabular-nums">{{ brl(totalAmortizacao) }}</div>
             <div style="font-variant-numeric: tabular-nums">{{ brl(totalJuros) }}</div>
           </div>
-        </div>
-
-        <!-- Paginação decorativa (não funcional) -->
-        <div class="flex items-center justify-center" style="gap: 6px; margin-top: 16px">
-          <PageBtn :icon="ChevronLeft" disabled />
-          <span style="width: 30px; height: 30px; border-radius: var(--radius-md); background: var(--gci-base); color: #fff; font-size: var(--text-xs); font-weight: var(--weight-bold); display: flex; align-items: center; justify-content: center">1</span>
-          <PageBtn :icon="ChevronRight" disabled />
+          <TablePagination
+            sunken
+            compact
+            :total="total"
+            :page="page"
+            :page-size="pageSize"
+            @update:page="setPage"
+            @update:page-size="setPageSize"
+          />
         </div>
       </div>
 

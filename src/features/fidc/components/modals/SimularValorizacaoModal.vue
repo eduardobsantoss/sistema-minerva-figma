@@ -5,6 +5,8 @@ import { brl, type Title, type ParcelaCronograma } from '../../data/fidcsData';
 import FieldLabel from './simular-valorizacao/FieldLabel.vue';
 import FooterTotal from './simular-valorizacao/FooterTotal.vue';
 import ToggleRow from './simular-valorizacao/ToggleRow.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{ title: Title; cronograma: ParcelaCronograma[] }>();
 const emit = defineEmits<{ close: [] }>();
@@ -57,10 +59,20 @@ const linhas = ref<LinhaSimulacao[] | null>(null);
 
 function handleSimular() {
   linhas.value = simular(props.title, props.cronograma);
+  setPage(1);
 }
 
 const totalJuros = computed(() => linhas.value?.at(-1)?.jurosPago ?? 0);
 const totalPago = computed(() => (linhas.value ? linhas.value.reduce((acc, l) => acc + l.valorPago, 0) : 0));
+
+const {
+  page,
+  pageSize,
+  total,
+  pageItems,
+  setPage,
+  setPageSize,
+} = useTablePagination(() => linhas.value ?? [], { defaultPageSize: 5 });
 </script>
 
 <template>
@@ -157,7 +169,7 @@ const totalPago = computed(() => (linhas.value ? linhas.value.reduce((acc, l) =>
                   <div>Data</div><div>Saldo devedor</div><div>Juros</div><div>Juros acum.</div><div>Valor presente</div><div>Amort. paga</div><div>Juros pago</div><div>Valor pago</div><div>Fator CDI</div><div>Fator taxa</div><div>Fator total</div>
                 </div>
                 <div
-                  v-for="(l, i) in linhas"
+                  v-for="(l, i) in pageItems"
                   :key="i"
                   class="grid items-center"
                   style="grid-template-columns: repeat(11, 1fr); padding: 10px 14px; border-top: 1px solid var(--border-default); font-size: var(--text-xs); font-variant-numeric: tabular-nums"
@@ -176,6 +188,15 @@ const totalPago = computed(() => (linhas.value ? linhas.value.reduce((acc, l) =>
                 </div>
               </div>
             </div>
+            <TablePagination
+              sunken
+              compact
+              :total="total"
+              :page="page"
+              :page-size="pageSize"
+              @update:page="setPage"
+              @update:page-size="setPageSize"
+            />
             <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; padding: 14px 20px; border-top: 1px solid var(--border-default); background: var(--surface-sunken)">
               <FooterTotal label="Amortização Paga" :value="brl(linhas.at(-1)?.amortizacaoPaga ?? 0)" />
               <FooterTotal label="Juros Pago" :value="brl(totalJuros)" />

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
 import { X, Trash2, Shield, Home } from 'lucide-vue-next';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import { UF_OPTIONS, PAISES_DDI } from '../../../data/operacaoData';
 import {
   BentoBox,
@@ -98,6 +100,15 @@ function cadastrar() {
 function removeGarantia(i: number) {
   garantias.value = garantias.value.filter((_, idx) => idx !== i);
 }
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => garantias.value,
+  { defaultPageSize: 10 },
+);
+
+function globalIndex(pageIdx: number) {
+  return (page.value - 1) * pageSize.value + pageIdx;
+}
 </script>
 
 <template>
@@ -131,8 +142,8 @@ function removeGarantia(i: number) {
         <div />
       </div>
       <div
-        v-for="(g, i) in garantias"
-        :key="i"
+        v-for="(g, pageIdx) in pageItems"
+        :key="pageIdx"
         class="grid items-center"
         style="
           grid-template-columns: 1.4fr 1fr auto;
@@ -146,11 +157,18 @@ function removeGarantia(i: number) {
         <button
           aria-label="Remover"
           style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
-          @click="removeGarantia(i)"
+          @click="removeGarantia(globalIndex(pageIdx))"
         >
           <Trash2 :size="14" />
         </button>
       </div>
+      <TablePagination
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </div>
 
     <!-- Sub-modal Nova Garantia -->

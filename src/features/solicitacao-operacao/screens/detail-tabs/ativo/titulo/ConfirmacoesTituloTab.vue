@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { CheckCircle2 } from 'lucide-vue-next';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import type { ContratoAtivo } from '../../../../data/operacaoData';
 import { EmptyState } from '../../shared';
 
-defineProps<{ ativo: ContratoAtivo }>();
+const props = defineProps<{ ativo: ContratoAtivo }>();
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => props.ativo.confirmacoes,
+  { defaultPageSize: 10 },
+);
 </script>
 
 <template>
@@ -34,7 +41,7 @@ defineProps<{ ativo: ContratoAtivo }>();
       <div>Ações</div>
     </div>
     <div
-      v-for="(c, i) in ativo.confirmacoes"
+      v-for="(c, i) in pageItems"
       :key="i"
       class="grid items-center"
       style="grid-template-columns: 1.5fr 1fr 1fr 100px 80px; padding: 12px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
@@ -45,5 +52,14 @@ defineProps<{ ativo: ContratoAtivo }>();
       <div>{{ c.status }}</div>
       <div style="color: var(--accent); font-weight: var(--weight-semibold); cursor: pointer">Ver</div>
     </div>
+    <TablePagination
+      sunken
+      compact
+      :total="total"
+      :page="page"
+      :page-size="pageSize"
+      @update:page="setPage"
+      @update:page-size="setPageSize"
+    />
   </div>
 </template>

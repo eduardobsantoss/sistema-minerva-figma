@@ -4,6 +4,8 @@ import { ClipboardCheck, Users, Truck, ShieldCheck, UserCheck, Trash2 } from 'lu
 import { type ParametrizacaoGeral, type ExcecaoConcentracao, type ParteRelacionada } from '../../data/riscoData';
 import { TabCard, FieldLabel, ToggleRow, PctInput, DiasInput, EmptyState, AddButton } from './shared';
 import Checkbox from '@/components/ui/Checkbox.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 interface Props {
   data: ParametrizacaoGeral;
@@ -21,6 +23,24 @@ const partes = reactive<ParteRelacionada[]>(props.partesRelacionadas.map((p) => 
 const excSacadoDoc = ref('');
 const excSacadoNome = ref('');
 const excPct = ref('');
+
+const {
+  page: excecoesPage,
+  pageSize: excecoesPageSize,
+  total: excecoesTotal,
+  pageItems: excecoesPageItems,
+  setPage: setExcecoesPage,
+  setPageSize: setExcecoesPageSize,
+} = useTablePagination(() => form.excecoesConcentracao, { defaultPageSize: 5 });
+
+const {
+  page: partesPage,
+  pageSize: partesPageSize,
+  total: partesTotal,
+  pageItems: partesPageItems,
+  setPage: setPartesPage,
+  setPageSize: setPartesPageSize,
+} = useTablePagination(() => partes, { defaultPageSize: 5 });
 
 function addExcecao() {
   if (!excSacadoNome.value.trim() || !excPct.value) return;
@@ -135,7 +155,7 @@ function handleSavePartes() {
           <div class="grid items-center" style="grid-template-columns: 1.4fr 1fr 0.7fr 40px; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
             <div>Nome</div><div>Documento</div><div style="text-align: right">Percentual</div><div />
           </div>
-          <div v-for="e in form.excecoesConcentracao" :key="e.id" class="grid items-center" style="grid-template-columns: 1.4fr 1fr 0.7fr 40px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
+          <div v-for="e in excecoesPageItems" :key="e.id" class="grid items-center" style="grid-template-columns: 1.4fr 1fr 0.7fr 40px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
             <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ e.sacadoNome }}</div>
             <div style="font-variant-numeric: tabular-nums; color: var(--text-muted)">{{ e.sacadoDocumento || '—' }}</div>
             <div style="text-align: right; font-variant-numeric: tabular-nums">{{ e.percentual.toFixed(2).replace('.', ',') }}%</div>
@@ -145,6 +165,16 @@ function handleSavePartes() {
               </button>
             </div>
           </div>
+          <TablePagination
+            sunken
+            compact
+            :total="excecoesTotal"
+            :page="excecoesPage"
+            :page-size="excecoesPageSize"
+            :page-size-options="[5, 10, 25]"
+            @update:page="setExcecoesPage"
+            @update:page-size="setExcecoesPageSize"
+          />
         </div>
       </div>
     </TabCard>
@@ -155,7 +185,7 @@ function handleSavePartes() {
         <div class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 0.9fr 80px 80px 80px 120px; min-width: 900px; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
           <div>Nome + Documento</div><div>E-mail + Telefone</div><div>Estado Civil</div><div>Cônjuge anuente</div><div>Assin. obrig.</div><div>Aceita restritivo</div><div>Valor restritivo</div>
         </div>
-        <div v-for="p in partes" :key="p.id" class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 0.9fr 80px 80px 80px 120px; min-width: 900px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
+        <div v-for="p in partesPageItems" :key="p.id" class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 0.9fr 80px 80px 80px 120px; min-width: 900px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
           <div>
             <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ p.nome }}</div>
             <div style="font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums">{{ p.documento }}</div>
@@ -186,6 +216,16 @@ function handleSavePartes() {
             <span v-else style="color: var(--text-muted); font-size: var(--text-xs)">—</span>
           </div>
         </div>
+        <TablePagination
+          sunken
+          compact
+          :total="partesTotal"
+          :page="partesPage"
+          :page-size="partesPageSize"
+          :page-size-options="[5, 10, 25]"
+          @update:page="setPartesPage"
+          @update:page-size="setPartesPageSize"
+        />
       </div>
     </TabCard>
 

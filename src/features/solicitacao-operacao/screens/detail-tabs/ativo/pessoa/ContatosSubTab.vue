@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { Phone, Trash2 } from 'lucide-vue-next';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import type { AtivoPessoa } from '../../../../data/ativoData';
 import { EmptyState } from '../../shared';
 
-defineProps<{ pessoa: AtivoPessoa }>();
+const props = defineProps<{ pessoa: AtivoPessoa }>();
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => props.pessoa.contatos,
+  { defaultPageSize: 10 },
+);
 </script>
 
 <template>
@@ -24,7 +31,7 @@ defineProps<{ pessoa: AtivoPessoa }>();
       <div />
     </div>
     <div
-      v-for="c in pessoa.contatos"
+      v-for="c in pageItems"
       :key="c.id"
       class="grid items-center"
       style="grid-template-columns: 1.2fr 1.6fr 1.2fr 40px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
@@ -38,5 +45,14 @@ defineProps<{ pessoa: AtivoPessoa }>();
         </button>
       </div>
     </div>
+    <TablePagination
+      sunken
+      compact
+      :total="total"
+      :page="page"
+      :page-size="pageSize"
+      @update:page="setPage"
+      @update:page-size="setPageSize"
+    />
   </div>
 </template>

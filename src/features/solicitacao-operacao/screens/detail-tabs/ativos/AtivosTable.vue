@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import Checkbox from '@/components/ui/Checkbox.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import { brl, type ContratoAtivo } from '../../../data/operacaoData';
 import {
   TONE_ENTREGA,
@@ -25,6 +27,11 @@ const allSelected = computed(
 );
 const someSelected = computed(
   () => props.ativos.some((a) => props.selectedIds.has(a.id)) && !allSelected.value,
+);
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => props.ativos,
+  { defaultPageSize: 10 },
 );
 </script>
 
@@ -64,7 +71,7 @@ const someSelected = computed(
           <div>Vencimento</div>
         </div>
         <div
-          v-for="a in ativos"
+          v-for="a in pageItems"
           :key="a.id"
           class="grid items-center row-clickable"
           style="
@@ -150,6 +157,16 @@ const someSelected = computed(
         </div>
       </div>
     </div>
+    <TablePagination
+      v-if="ativos.length > 0"
+      sunken
+      compact
+      :total="total"
+      :page="page"
+      :page-size="pageSize"
+      @update:page="setPage"
+      @update:page-size="setPageSize"
+    />
   </div>
 </template>
 

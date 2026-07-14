@@ -6,6 +6,8 @@ import {
 import type { Component } from 'vue';
 import { brl, num, type Cra, type CraOperacao, type CraTitulo } from '../data/craData';
 import Checkbox from '@/components/ui/Checkbox.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{ cra: Cra; operacao: CraOperacao }>();
 const emit = defineEmits<{ back: []; openTitulo: [tituloId: string] }>();
@@ -29,6 +31,15 @@ const filtered = computed(() =>
       t.sacado.toLowerCase().includes(q.value.toLowerCase()),
   ),
 );
+
+const {
+  page,
+  pageSize,
+  total,
+  pageItems,
+  setPage,
+  setPageSize,
+} = useTablePagination(() => filtered.value, { defaultPageSize: 10 });
 
 // All titles in this operação belong to classe 1
 const classMap = computed<Record<string, string>>(() =>
@@ -160,6 +171,7 @@ const kpis = computed<Kpi[]>(() => [
             v-model="q"
             placeholder="Buscar por número, cedente ou sacado..."
             style="width: 100%; height: 44px; padding-left: 44px; padding-right: 16px; background: transparent; border: none; outline: none; font-size: var(--text-sm); color: var(--text-strong)"
+            @input="setPage(1)"
           />
         </div>
       </div>
@@ -181,7 +193,7 @@ const kpis = computed<Kpi[]>(() => [
           <div style="text-align: right">Status</div>
         </div>
         <div
-          v-for="r in filtered"
+          v-for="r in pageItems"
           :key="r.id"
           class="cra-op-detail-row grid items-center"
           :style="{ gridTemplateColumns: cols, padding: '16px 20px', borderTop: '1px solid var(--border-default)', fontSize: 'var(--text-sm)', cursor: 'pointer', transition: 'background var(--duration-fast)' }"
@@ -210,13 +222,14 @@ const kpis = computed<Kpi[]>(() => [
             <span :style="{ fontSize: '9px', fontWeight: 'var(--weight-bold)', letterSpacing: '0.10em', padding: '4px 8px', borderRadius: '9999px', background: statusStyle(r.status)!.bg, color: statusStyle(r.status)!.fg }">{{ r.status }}</span>
           </div>
         </div>
-      </div>
 
-      <!-- Footer -->
-      <div class="flex items-center justify-between" style="padding: 16px 20px; border-top: 1px solid var(--border-default)">
-        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase">
-          Exibindo <span style="color: var(--text-strong)">{{ filtered.length }}</span> de <span style="color: var(--text-strong)">{{ operacao.titulos.length }}</span> registros
-        </div>
+        <TablePagination
+          :total="total"
+          :page="page"
+          :page-size="pageSize"
+          @update:page="setPage"
+          @update:page-size="setPageSize"
+        />
       </div>
     </div>
   </div>

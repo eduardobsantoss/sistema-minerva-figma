@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Users } from 'lucide-vue-next';
+import { Users } from 'lucide-vue-next';
 import type { Cedente } from '../../data/riscoData';
 import { EmptyState } from './shared';
 import CedenteDetailModal from '../../components/modals/CedenteDetailModal.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 interface Props {
   cedentes: Cedente[];
@@ -14,29 +16,13 @@ const emit = defineEmits<{ 'update-cedente': [cedente: Cedente] }>();
 
 const COLS = '1.2fr 1.8fr 1.6fr 1fr 1fr';
 
-const page = ref(1);
-const pageSize = ref(10);
 const selecionadoId = ref<string | null>(null);
 const selecionado = computed(() => props.cedentes.find((c) => c.id === selecionadoId.value) ?? null);
 
-const totalPages = computed(() => Math.max(1, Math.ceil(props.cedentes.length / pageSize.value)));
-const clampedPage = computed(() => Math.min(page.value, totalPages.value));
-const pageItems = computed(() =>
-  props.cedentes.slice((clampedPage.value - 1) * pageSize.value, clampedPage.value * pageSize.value),
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => props.cedentes,
+  { defaultPageSize: 10 },
 );
-
-function handlePageSizeChange(e: Event) {
-  pageSize.value = Number((e.target as HTMLSelectElement).value);
-  page.value = 1;
-}
-
-function pageButtonStyle(disabled: boolean) {
-  return {
-    width: 28, height: 28, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)',
-    background: 'var(--surface-card)', cursor: disabled ? 'not-allowed' : 'pointer',
-    color: disabled ? 'var(--text-disabled)' : 'var(--text-muted)',
-  };
-}
 </script>
 
 <template>
@@ -60,31 +46,13 @@ function pageButtonStyle(disabled: boolean) {
         <div style="color: var(--text-default)">{{ c.tipo }}</div>
       </div>
 
-      <div class="flex items-center justify-between" style="padding: 12px 20px; border-top: 1px solid var(--border-default); font-size: var(--text-xs); color: var(--text-muted)">
-        <div class="flex items-center" style="gap: 8px">
-          <span>Itens por página</span>
-          <select
-            :value="pageSize"
-            style="height: 30px; padding: 0 8px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); color: var(--text-default); font-size: var(--text-xs)"
-            @change="handlePageSizeChange"
-          >
-            <option :value="10">10</option>
-            <option :value="25">25</option>
-            <option :value="50">50</option>
-          </select>
-        </div>
-        <div class="flex items-center" style="gap: 14px">
-          <span style="font-variant-numeric: tabular-nums">
-            {{ (clampedPage - 1) * pageSize + 1 }}–{{ Math.min(clampedPage * pageSize, cedentes.length) }} de {{ cedentes.length }}
-          </span>
-          <div class="flex items-center" style="gap: 4px">
-            <button class="flex items-center justify-center" :style="pageButtonStyle(clampedPage === 1)" :disabled="clampedPage === 1" @click="page = 1"><ChevronsLeft :size="14" /></button>
-            <button class="flex items-center justify-center" :style="pageButtonStyle(clampedPage === 1)" :disabled="clampedPage === 1" @click="page = Math.max(1, page - 1)"><ChevronLeft :size="14" /></button>
-            <button class="flex items-center justify-center" :style="pageButtonStyle(clampedPage === totalPages)" :disabled="clampedPage === totalPages" @click="page = Math.min(totalPages, page + 1)"><ChevronRight :size="14" /></button>
-            <button class="flex items-center justify-center" :style="pageButtonStyle(clampedPage === totalPages)" :disabled="clampedPage === totalPages" @click="page = totalPages"><ChevronsRight :size="14" /></button>
-          </div>
-        </div>
-      </div>
+      <TablePagination
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </div>
 
     <CedenteDetailModal

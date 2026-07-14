@@ -2,8 +2,19 @@
 import { Calendar, ChevronRight } from 'lucide-vue-next';
 import { EVENTOS, brl, TONE_B3, type EventoPagamento } from '../../data/passivoData';
 import ValidacaoAfBadge from './ValidacaoAfBadge.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const emit = defineEmits<{ openEvent: [evento: EventoPagamento] }>();
+
+const {
+  page,
+  pageSize,
+  total,
+  pageItems,
+  setPage,
+  setPageSize,
+} = useTablePagination(() => EVENTOS, { defaultPageSize: 10 });
 
 const cols = '1fr 1.4fr 1fr 1.2fr 1fr 0.9fr 48px';
 </script>
@@ -77,7 +88,7 @@ const cols = '1fr 1.4fr 1fr 1.2fr 1fr 0.9fr 48px';
       </div>
 
       <div
-        v-for="evento in EVENTOS"
+        v-for="evento in pageItems"
         :key="evento.id"
         class="evento-row grid items-center"
         :style="{
@@ -142,6 +153,14 @@ const cols = '1fr 1.4fr 1fr 1.2fr 1fr 0.9fr 48px';
         </div>
       </div>
     </div>
+
+    <TablePagination
+      :total="total"
+      :page="page"
+      :page-size="pageSize"
+      @update:page="setPage"
+      @update:page-size="setPageSize"
+    />
   </div>
 </template>
 

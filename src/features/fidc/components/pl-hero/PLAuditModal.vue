@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { X } from 'lucide-vue-next';
 import { brl, type Fidc } from '../../data/fidcsData';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 defineProps<{ fidc: Fidc }>();
 const emit = defineEmits<{ close: [] }>();
@@ -13,6 +15,8 @@ const PL_AUDIT_LOG = [
   { dt: '15/06/2026 10:05', value: 15500000.0, user: 'Mariana Costa' },
   { dt: '10/06/2026 08:30', value: 15200000.0, user: 'Eduardo Santos' },
 ];
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(() => PL_AUDIT_LOG, { defaultPageSize: 5 });
 </script>
 
 <template>
@@ -89,7 +93,7 @@ const PL_AUDIT_LOG = [
           <div style="text-align: right">Responsável</div>
         </div>
         <div
-          v-for="(entry, i) in PL_AUDIT_LOG"
+          v-for="(entry, i) in pageItems"
           :key="i"
           class="grid items-center"
           style="grid-template-columns: 1.2fr 1.4fr 1fr; padding: 16px 28px; border-top: 1px solid var(--border-default)"
@@ -104,6 +108,15 @@ const PL_AUDIT_LOG = [
             {{ entry.user }}
           </div>
         </div>
+        <TablePagination
+          sunken
+          compact
+          :total="total"
+          :page="page"
+          :page-size="pageSize"
+          @update:page="setPage"
+          @update:page-size="setPageSize"
+        />
       </div>
     </div>
   </div>

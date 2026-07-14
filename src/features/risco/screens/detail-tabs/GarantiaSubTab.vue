@@ -8,6 +8,8 @@ import {
 import { TabCard, FieldLabel, ToggleRow, SelectField, AddButton, EmptyState } from './shared';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import EditarGarantiaModal from '../../components/modals/EditarGarantiaModal.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 interface Props {
   data: ParametrizacaoGarantia;
@@ -27,6 +29,11 @@ const editingGarantia = ref<GarantiaRow | null>(null);
 const openMenuId = ref<string | null>(null);
 
 const GARANTIA_TABLE_GRID = 'minmax(120px, 1.2fr) minmax(72px, 0.7fr) minmax(72px, 0.7fr) minmax(100px, 1fr) minmax(80px, 0.7fr) minmax(80px, 0.7fr) 40px';
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => form.garantias,
+  { defaultPageSize: 5 },
+);
 
 function handlePercentualInput(e: Event) {
   const target = e.target as HTMLInputElement;
@@ -149,7 +156,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
           <div class="grid items-center garantia-table-row garantia-table-header" :style="{ gridTemplateColumns: GARANTIA_TABLE_GRID }">
             <div>Tipo</div><div class="garantia-col-num">Percentual</div><div class="garantia-col-num">Prazo</div><div class="garantia-col-freq">Frequência</div><div>Exige Escritura</div><div>Exige Protocolo</div><div />
           </div>
-          <div v-for="g in form.garantias" :key="g.id" class="grid items-center garantia-table-row" :style="{ gridTemplateColumns: GARANTIA_TABLE_GRID }">
+          <div v-for="g in pageItems" :key="g.id" class="grid items-center garantia-table-row" :style="{ gridTemplateColumns: GARANTIA_TABLE_GRID }">
             <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ g.tipo }}</div>
             <div class="garantia-col-num">{{ g.percentualExigido }}%</div>
             <div class="garantia-col-num">{{ g.prazoLaudoDias }}d</div>
@@ -189,6 +196,16 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
               </div>
             </div>
           </div>
+          <TablePagination
+            sunken
+            compact
+            :total="total"
+            :page="page"
+            :page-size="pageSize"
+            :page-size-options="[5, 10, 25]"
+            @update:page="setPage"
+            @update:page-size="setPageSize"
+          />
         </div>
       </div>
     </div>

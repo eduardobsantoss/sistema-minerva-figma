@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import FieldLabel from './FieldLabel.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
-defineProps<{ title: string; cols: string[]; rows: string[][] }>();
+const props = defineProps<{ title: string; cols: string[]; rows: string[][] }>();
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => props.rows,
+  { defaultPageSize: 5 },
+);
 </script>
 
 <template>
@@ -32,19 +39,37 @@ defineProps<{ title: string; cols: string[]; rows: string[][] }>();
         <div v-for="c in cols" :key="c">{{ c }}</div>
       </div>
       <div
-        v-for="(r, i) in rows"
-        :key="i"
-        class="grid"
-        :style="{
-          gridTemplateColumns: cols.map(() => '1fr').join(' '),
-          padding: '12px 14px',
-          fontSize: 'var(--text-sm)',
-          color: 'var(--text-muted)',
-          borderTop: '1px solid var(--border-default)',
-        }"
+        v-if="rows.length === 0"
+        style="padding: 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
       >
-        <div v-for="(cell, j) in r" :key="j">{{ cell }}</div>
+        Nenhum registro
       </div>
+      <template v-else>
+        <div
+          v-for="(r, i) in pageItems"
+          :key="i"
+          class="grid"
+          :style="{
+            gridTemplateColumns: cols.map(() => '1fr').join(' '),
+            padding: '12px 14px',
+            fontSize: 'var(--text-sm)',
+            color: 'var(--text-muted)',
+            borderTop: '1px solid var(--border-default)',
+          }"
+        >
+          <div v-for="(cell, j) in r" :key="j">{{ cell }}</div>
+        </div>
+        <TablePagination
+          sunken
+          compact
+          :total="total"
+          :page="page"
+          :page-size="pageSize"
+          :page-size-options="[5, 10, 25]"
+          @update:page="setPage"
+          @update:page-size="setPageSize"
+        />
+      </template>
     </div>
   </div>
 </template>

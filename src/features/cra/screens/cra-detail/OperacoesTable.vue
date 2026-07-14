@@ -1,8 +1,19 @@
 <script setup lang="ts">
 import { brl, num, type CraOperacao } from '../../data/craData';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
-defineProps<{ rows: CraOperacao[] }>();
+const props = defineProps<{ rows: CraOperacao[] }>();
 const emit = defineEmits<{ open: [id: string] }>();
+
+const {
+  page,
+  pageSize,
+  total,
+  pageItems,
+  setPage,
+  setPageSize,
+} = useTablePagination(() => props.rows, { defaultPageSize: 10 });
 
 const cols = '2.4fr 0.8fr 1fr 1.2fr 1.2fr 1.2fr 1.2fr';
 </script>
@@ -34,7 +45,7 @@ const cols = '2.4fr 0.8fr 1fr 1.2fr 1.2fr 1.2fr 1.2fr';
       <div style="text-align: right">Títulos</div>
     </div>
     <div
-      v-for="r in rows"
+      v-for="r in pageItems"
       :key="r.id"
       class="cra-op-row grid items-center"
       :style="{
@@ -89,6 +100,14 @@ const cols = '2.4fr 0.8fr 1fr 1.2fr 1.2fr 1.2fr 1.2fr';
       <div style="font-weight: var(--weight-bold); color: var(--danger-base); font-variant-numeric: tabular-nums">{{ brl(r.vencido.valor) }}</div>
       <div style="font-weight: var(--weight-bold); color: var(--text-strong); text-align: right; font-variant-numeric: tabular-nums">{{ num(r.carteira.titulos) }}</div>
     </div>
+
+    <TablePagination
+      :total="total"
+      :page="page"
+      :page-size="pageSize"
+      @update:page="setPage"
+      @update:page-size="setPageSize"
+    />
   </div>
 </template>
 

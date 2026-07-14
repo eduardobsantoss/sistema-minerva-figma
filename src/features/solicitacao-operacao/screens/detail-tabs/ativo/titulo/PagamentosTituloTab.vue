@@ -9,6 +9,8 @@ import {
   type PagamentoFormState,
 } from '../../../../data/pagamentoFields';
 import { Section, EmptyState, GhostButton } from '../../shared';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import DynamicPagamentoFormGrid from './DynamicPagamentoFormGrid.vue';
 import DynamicConfigGrid from './DynamicConfigGrid.vue';
 
@@ -27,6 +29,24 @@ const emptyForm: PagamentoFormState = {
 };
 const form = ref<PagamentoFormState>({ ...emptyForm });
 const configOpen = ref(false);
+
+const {
+  page: pagamentosPage,
+  pageSize: pagamentosPageSize,
+  total: pagamentosTotal,
+  pageItems: pagamentosPageItems,
+  setPage: setPagamentosPage,
+  setPageSize: setPagamentosPageSize,
+} = useTablePagination(() => det.value.pagamentos, { defaultPageSize: 10 });
+
+const {
+  page: cronogramaPage,
+  pageSize: cronogramaPageSize,
+  total: cronogramaTotal,
+  pageItems: cronogramaPageItems,
+  setPage: setCronogramaPage,
+  setPageSize: setCronogramaPageSize,
+} = useTablePagination(() => det.value.cronograma, { defaultPageSize: 10 });
 
 const totalPago = computed(() =>
   det.value.pagamentos.filter((p) => !p.estornado).reduce((acc, p) => acc + p.valorAmortizacao, 0),
@@ -93,12 +113,21 @@ function handleSalvar() {
         <div class="grid" style="grid-template-columns: 1fr 1fr 1fr 1fr; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
           <div>Data</div><div>Valor</div><div>Tipo</div><div>Status</div>
         </div>
-        <div v-for="(p, i) in det.pagamentos" :key="i" class="grid" style="grid-template-columns: 1fr 1fr 1fr 1fr; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
+        <div v-for="(p, i) in pagamentosPageItems" :key="i" class="grid" style="grid-template-columns: 1fr 1fr 1fr 1fr; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
           <div>{{ p.data }}</div>
           <div style="font-variant-numeric: tabular-nums">{{ brl(p.valorAmortizacao) }}</div>
           <div>{{ p.tipoPagamento }}</div>
           <div>{{ p.estornado ? 'Estornado' : 'Ativo' }}</div>
         </div>
+        <TablePagination
+          sunken
+          compact
+          :total="pagamentosTotal"
+          :page="pagamentosPage"
+          :page-size="pagamentosPageSize"
+          @update:page="setPagamentosPage"
+          @update:page-size="setPagamentosPageSize"
+        />
       </div>
     </Section>
 
@@ -120,12 +149,21 @@ function handleSalvar() {
         <div class="grid" style="grid-template-columns: 1fr 1fr 1fr 1fr; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
           <div>Parcela</div><div>Vencimento</div><div>Amortização</div><div>Valor</div>
         </div>
-        <div v-for="p in det.cronograma" :key="p.parcela" class="grid" style="grid-template-columns: 1fr 1fr 1fr 1fr; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
+        <div v-for="p in cronogramaPageItems" :key="p.parcela" class="grid" style="grid-template-columns: 1fr 1fr 1fr 1fr; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
           <div>{{ p.parcela }}</div>
           <div>{{ p.vencimento }}</div>
           <div>{{ p.amortizacao != null ? brl(p.amortizacao) : '—' }}</div>
           <div>{{ p.valor != null ? brl(p.valor) : '—' }}</div>
         </div>
+        <TablePagination
+          sunken
+          compact
+          :total="cronogramaTotal"
+          :page="cronogramaPage"
+          :page-size="cronogramaPageSize"
+          @update:page="setCronogramaPage"
+          @update:page-size="setCronogramaPageSize"
+        />
       </div>
     </Section>
   </div>

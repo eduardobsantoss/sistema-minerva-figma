@@ -12,6 +12,8 @@ import {
   type GrupoEmpresarial, type StatusGrupoPizza,
 } from '../data/riscoData';
 import GrupoDetailScreen from './GrupoDetailScreen.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 type Route = { level: 'dashboard' } | { level: 'detail'; grupoId: string };
 
@@ -96,6 +98,24 @@ const riscoLimiteProximo = computed<RiscoRow[]>(() =>
     .map((g) => ({ grupo: g, dias: -diasEntre(g.vencimentoLimite) }))
     .sort((a, b) => a.dias - b.dias),
 );
+
+const {
+  page: vencidoPage,
+  pageSize: vencidoPageSize,
+  total: vencidoTotal,
+  pageItems: vencidoPageItems,
+  setPage: setVencidoPage,
+  setPageSize: setVencidoPageSize,
+} = useTablePagination(() => riscoLimiteVencido.value, { defaultPageSize: 10 });
+
+const {
+  page: proximoPage,
+  pageSize: proximoPageSize,
+  total: proximoTotal,
+  pageItems: proximoPageItems,
+  setPage: setProximoPage,
+  setPageSize: setProximoPageSize,
+} = useTablePagination(() => riscoLimiteProximo.value, { defaultPageSize: 10 });
 
 const ratingsUnicos = [...new Set(GRUPOS_SEED.map((g) => g.rating).filter((r) => r !== 'NÃO SE APLICA'))];
 
@@ -321,7 +341,7 @@ function handleSearchSelect(id: string) {
             <div>Grupo</div><div class="risco-col-num">Limite</div><div class="risco-col-num">Risco</div><div class="risco-col-date">Vencimento</div><div class="risco-col-num">Dias Venc.</div>
           </div>
           <button
-            v-for="row in riscoLimiteVencido"
+            v-for="row in vencidoPageItems"
             :key="row.grupo.id"
             class="grid items-center risco-queue-row risco-data-table"
             :style="{ gridTemplateColumns: RISCO_TABLE_GRID }"
@@ -333,6 +353,13 @@ function handleSearchSelect(id: string) {
             <div class="risco-col-date">{{ row.grupo.vencimentoLimite }}</div>
             <div class="risco-col-num risco-col-danger">{{ row.dias }}</div>
           </button>
+          <TablePagination
+            :total="vencidoTotal"
+            :page="vencidoPage"
+            :page-size="vencidoPageSize"
+            @update:page="setVencidoPage"
+            @update:page-size="setVencidoPageSize"
+          />
         </template>
       </div>
 
@@ -349,7 +376,7 @@ function handleSearchSelect(id: string) {
             <div>Grupo</div><div class="risco-col-num">Limite</div><div class="risco-col-num">Risco</div><div class="risco-col-date">Vencimento</div><div class="risco-col-num">Dias p/ Venc.</div>
           </div>
           <button
-            v-for="row in riscoLimiteProximo"
+            v-for="row in proximoPageItems"
             :key="row.grupo.id"
             class="grid items-center risco-queue-row risco-data-table"
             :style="{ gridTemplateColumns: RISCO_TABLE_GRID }"
@@ -361,6 +388,13 @@ function handleSearchSelect(id: string) {
             <div class="risco-col-date">{{ row.grupo.vencimentoLimite }}</div>
             <div class="risco-col-num risco-col-warning">{{ row.dias }}</div>
           </button>
+          <TablePagination
+            :total="proximoTotal"
+            :page="proximoPage"
+            :page-size="proximoPageSize"
+            @update:page="setProximoPage"
+            @update:page-size="setProximoPageSize"
+          />
         </template>
       </div>
     </div>

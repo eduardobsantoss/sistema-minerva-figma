@@ -1,6 +1,8 @@
 <script setup lang="ts" generic="T extends Record<string, string>">
 import { computed } from 'vue';
 import RowTrash from './RowTrash.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{
   cols: { key: string; label: string; width: string; format?: (v: string) => string }[];
@@ -10,6 +12,14 @@ const props = defineProps<{
 const emit = defineEmits<{ remove: [i: number] }>();
 
 const template = computed(() => props.cols.map((c) => c.width).join(' ') + ' 36px');
+const { page, pageSize, total, pageItems, clampedPage, setPage, setPageSize } = useTablePagination(
+  () => props.rows,
+  { defaultPageSize: 5 },
+);
+
+function globalIndex(localIdx: number) {
+  return (clampedPage.value - 1) * pageSize.value + localIdx;
+}
 </script>
 
 <template>
@@ -34,8 +44,8 @@ const template = computed(() => props.cols.map((c) => c.width).join(' ') + ' 36p
       <div />
     </div>
     <div
-      v-for="(row, i) in rows"
-      :key="i"
+      v-for="(row, i) in pageItems"
+      :key="globalIndex(i)"
       class="grid items-center ccm-row"
       :style="{
         gridTemplateColumns: template,
@@ -48,7 +58,17 @@ const template = computed(() => props.cols.map((c) => c.width).join(' ') + ' 36p
       <div v-for="c in cols" :key="c.key" style="color: var(--text-strong); font-weight: var(--weight-semibold)">
         {{ c.format ? c.format(row[c.key] ?? '') : (row[c.key] ?? '') }}
       </div>
-      <RowTrash @click="emit('remove', i)" />
+      <RowTrash @click="emit('remove', globalIndex(i))" />
     </div>
+    <TablePagination
+      sunken
+      compact
+      :total="total"
+      :page="page"
+      :page-size="pageSize"
+      :page-size-options="[5, 10, 25]"
+      @update:page="setPage"
+      @update:page-size="setPageSize"
+    />
   </div>
 </template>

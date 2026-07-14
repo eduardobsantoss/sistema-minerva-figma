@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { brl, type Title, type TitleStatus } from '../data/fidcsData';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const statusTone: Record<TitleStatus, { bg: string; fg: string }> = {
   CONFIRMADO: { bg: 'var(--success-light)', fg: 'var(--success-dark)' },
@@ -16,6 +18,15 @@ interface Props {
 
 const props = defineProps<Props>();
 const emit = defineEmits<{ open: [t: Title] }>();
+
+const {
+  page,
+  pageSize,
+  total,
+  pageItems,
+  setPage,
+  setPageSize,
+} = useTablePagination(() => props.rows, { defaultPageSize: 10 });
 
 const hasClass = computed(() => !!props.classMap);
 
@@ -65,7 +76,7 @@ const rowHover = ref<string | null>(null);
 
       <!-- Linhas -->
       <div
-        v-for="t in rows"
+        v-for="t in pageItems"
         :key="t.id"
         class="grid items-center"
         :style="{
@@ -174,6 +185,14 @@ const rowHover = ref<string | null>(null);
           </span>
         </div>
       </div>
+
+      <TablePagination
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </template>
   </div>
 </template>

@@ -1,11 +1,22 @@
 <script setup lang="ts">
 import { brl, type CraTitulo } from '../../data/craData';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{
   rows: CraTitulo[];
   classMap: Record<string, string>;
 }>();
 const emit = defineEmits<{ open: [row: CraTitulo] }>();
+
+const {
+  page,
+  pageSize,
+  total,
+  pageItems,
+  setPage,
+  setPageSize,
+} = useTablePagination(() => props.rows, { defaultPageSize: 10 });
 
 const cols = '0.5fr 0.8fr 0.6fr 1.4fr 1.4fr 0.7fr 0.9fr 0.65fr';
 
@@ -46,7 +57,7 @@ function statusStyle(s: CraTitulo['status']) {
       <div style="text-align: right">Status</div>
     </div>
     <div
-      v-for="r in rows"
+      v-for="r in pageItems"
       :key="r.id"
       class="cra-tit-row grid items-center"
       :style="{
@@ -100,6 +111,14 @@ function statusStyle(s: CraTitulo['status']) {
         </span>
       </div>
     </div>
+
+    <TablePagination
+      :total="total"
+      :page="page"
+      :page-size="pageSize"
+      @update:page="setPage"
+      @update:page-size="setPageSize"
+    />
   </div>
 </template>
 

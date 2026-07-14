@@ -2,6 +2,8 @@
 import { computed } from 'vue';
 import { brl, type CraTitulo } from '../../data/craData';
 import Section from './Section.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{ titulo: CraTitulo }>();
 
@@ -10,6 +12,8 @@ const rows = computed(() => [
   { data: props.titulo.emissao, taxa: '1,8500%', base: '252', accrual: brl((props.titulo.vrNominal * 0.0185) / 252), acumulado: brl((((props.titulo.vrNominal * 0.0185) / 252) * 2)) },
   { data: props.titulo.vencimento, taxa: '1,8500%', base: '252', accrual: brl((props.titulo.vrNominal * 0.0185) / 252), acumulado: brl((props.titulo.vrNominal * 0.0185) / 252) },
 ]);
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(() => rows.value, { defaultPageSize: 5 });
 </script>
 
 <template>
@@ -19,7 +23,7 @@ const rows = computed(() => [
         <div>Data</div><div>Taxa</div><div>Base</div><div>Accrual Diário</div><div style="text-align: right">Acumulado</div>
       </div>
       <div
-        v-for="(r, i) in rows"
+        v-for="(r, i) in pageItems"
         :key="i"
         class="grid items-center"
         style="grid-template-columns: 1fr 1fr 1fr 1fr 1fr; padding: 14px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm); font-variant-numeric: tabular-nums"
@@ -30,6 +34,15 @@ const rows = computed(() => [
         <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ r.accrual }}</div>
         <div style="font-weight: var(--weight-bold); color: var(--text-strong); text-align: right">{{ r.acumulado }}</div>
       </div>
+      <TablePagination
+        sunken
+        compact
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </div>
   </Section>
 </template>

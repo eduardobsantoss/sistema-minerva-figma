@@ -5,6 +5,8 @@ import { brl, type ParametrizacaoLimite, type LimiteProdutoRow } from '../../dat
 import { TabCard } from './shared';
 import IncluirLimiteModal from '../../components/modals/IncluirLimiteModal.vue';
 import EditarLimiteModal from '../../components/modals/EditarLimiteModal.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 interface Props {
   data: ParametrizacaoLimite;
@@ -19,9 +21,14 @@ const openMenuId = ref<string | null>(null);
 
 const LIMITE_TABLE_GRID = 'minmax(140px, 2fr) minmax(88px, 1fr) minmax(100px, 1.1fr) 40px';
 
-const limitesAgrupados = computed(() => {
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => form.limites,
+  { defaultPageSize: 5 },
+);
+
+const limitesAgrupadosPage = computed(() => {
   const map = new Map<string, LimiteProdutoRow[]>();
-  for (const l of form.limites) {
+  for (const l of pageItems.value) {
     const arr = map.get(l.agrupamento) ?? [];
     arr.push(l);
     map.set(l.agrupamento, arr);
@@ -95,7 +102,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
       </div>
 
       <div
-        v-for="[agrupamento, rows] in limitesAgrupados"
+        v-for="[agrupamento, rows] in limitesAgrupadosPage"
         :key="agrupamento"
         class="limite-agrupamento"
         :class="{ 'limite-agrupamento--menu-open': rows.some((r) => r.id === openMenuId) }"
@@ -148,6 +155,22 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
             </div>
           </div>
         </div>
+      </div>
+
+      <div
+        v-if="form.limites.length > 0"
+        style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; margin-top: 4px"
+      >
+        <TablePagination
+          sunken
+          compact
+          :total="total"
+          :page="page"
+          :page-size="pageSize"
+          :page-size-options="[5, 10, 25]"
+          @update:page="setPage"
+          @update:page-size="setPageSize"
+        />
       </div>
     </TabCard>
 

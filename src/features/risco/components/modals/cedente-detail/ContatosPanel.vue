@@ -4,6 +4,8 @@ import { Phone, Trash2 } from 'lucide-vue-next';
 import type { Cedente, ContatoCedente } from '../../../data/riscoData';
 import { DDI_OPTS } from '../../../data/riscoData';
 import { FormField, SelectField, EmptyState, AddButton } from '../../../screens/detail-tabs/shared';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{ cedente: Cedente }>();
 const emit = defineEmits<{ update: [cedente: Cedente] }>();
@@ -12,6 +14,11 @@ const nome = ref('');
 const email = ref('');
 const ddi = ref('+55');
 const telefone = ref('');
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => props.cedente.contatos,
+  { defaultPageSize: 5 },
+);
 
 function add() {
   if (!nome.value.trim() || !email.value.trim()) return;
@@ -44,7 +51,7 @@ function remove(id: string) {
       <div class="grid items-center" style="grid-template-columns: 1.2fr 1.6fr 1.2fr 40px; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
         <div>Nome</div><div>E-mail</div><div>Telefone</div><div />
       </div>
-      <div v-for="c in cedente.contatos" :key="c.id" class="grid items-center" style="grid-template-columns: 1.2fr 1.6fr 1.2fr 40px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
+      <div v-for="c in pageItems" :key="c.id" class="grid items-center" style="grid-template-columns: 1.2fr 1.6fr 1.2fr 40px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
         <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ c.nome }}</div>
         <div style="color: var(--text-muted)">{{ c.email }}</div>
         <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ c.ddi }} {{ c.telefone }}</div>
@@ -54,6 +61,16 @@ function remove(id: string) {
           </button>
         </div>
       </div>
+      <TablePagination
+        sunken
+        compact
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        :page-size-options="[5, 10, 25]"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </div>
   </div>
 </template>

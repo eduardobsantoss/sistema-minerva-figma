@@ -4,6 +4,8 @@ import { Home, Trash2 } from 'lucide-vue-next';
 import type { Cedente, EnderecoCedente } from '../../../data/riscoData';
 import { UF_OPTIONS, PAIS_OPTS } from '../../../data/riscoData';
 import { FormField, SelectField, EmptyState, AddButton } from '../../../screens/detail-tabs/shared';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{ cedente: Cedente }>();
 const emit = defineEmits<{ update: [cedente: Cedente] }>();
@@ -16,6 +18,11 @@ const infoAdicionais = ref('');
 const cidade = ref('');
 const uf = ref('');
 const pais = ref('Brasil');
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => props.cedente.enderecos,
+  { defaultPageSize: 5 },
+);
 
 function add() {
   if (!cep.value.trim() || !cidade.value.trim()) return;
@@ -55,7 +62,7 @@ function remove(id: string) {
       <div class="grid items-center" style="grid-template-columns: 1fr 1.4fr 0.7fr 1fr 1fr 0.6fr 1fr 40px; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase; white-space: nowrap">
         <div>CEP</div><div>Localidade</div><div>Número</div><div>Bairro</div><div>Cidade</div><div>UF</div><div>País</div><div />
       </div>
-      <div v-for="e in cedente.enderecos" :key="e.id" class="grid items-center" style="grid-template-columns: 1fr 1.4fr 0.7fr 1fr 1fr 0.6fr 1fr 40px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm); white-space: nowrap">
+      <div v-for="e in pageItems" :key="e.id" class="grid items-center" style="grid-template-columns: 1fr 1.4fr 0.7fr 1fr 1fr 0.6fr 1fr 40px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm); white-space: nowrap">
         <div style="font-variant-numeric: tabular-nums; color: var(--text-muted)">{{ e.cep }}</div>
         <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ e.localidade || '—' }}</div>
         <div style="color: var(--text-muted)">{{ e.numero || '—' }}</div>
@@ -69,6 +76,16 @@ function remove(id: string) {
           </button>
         </div>
       </div>
+      <TablePagination
+        sunken
+        compact
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        :page-size-options="[5, 10, 25]"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </div>
   </div>
 </template>

@@ -9,6 +9,8 @@ import {
   type CraComposicao,
   type CraStatus,
 } from '../../data/passivoData';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const emit = defineEmits<{ openCra: [cra: CraComposicao] }>();
 
@@ -27,6 +29,15 @@ const filtered = computed(() =>
     return matchesSearch && matchesStatus;
   }),
 );
+
+const {
+  page,
+  pageSize,
+  total,
+  pageItems,
+  setPage,
+  setPageSize,
+} = useTablePagination(() => filtered.value, { defaultPageSize: 10 });
 
 const cols = '1.6fr 1fr 1.1fr 1fr 0.9fr 0.9fr';
 </script>
@@ -97,6 +108,7 @@ const cols = '1.6fr 1fr 1.1fr 1fr 0.9fr 0.9fr';
               outline: none;
               width: 180px;
             "
+            @input="setPage(1)"
           />
         </div>
 
@@ -126,7 +138,7 @@ const cols = '1.6fr 1fr 1.1fr 1fr 0.9fr 0.9fr';
               color: statusFilter === s ? 'var(--gci-base)' : 'var(--text-muted)',
               boxShadow: statusFilter === s ? 'var(--shadow-xs)' : 'none',
             }"
-            @click="statusFilter = s"
+            @click="statusFilter = s; setPage(1)"
           >
             {{ s }}
           </button>
@@ -159,7 +171,7 @@ const cols = '1.6fr 1fr 1.1fr 1fr 0.9fr 0.9fr';
 
       <template v-if="filtered.length">
         <div
-          v-for="cra in filtered"
+          v-for="cra in pageItems"
           :key="cra.id"
           class="cra-row grid items-center"
           :style="{
@@ -253,6 +265,15 @@ const cols = '1.6fr 1fr 1.1fr 1fr 0.9fr 0.9fr';
         Nenhum CRA encontrado.
       </div>
     </div>
+
+    <TablePagination
+      v-if="filtered.length"
+      :total="total"
+      :page="page"
+      :page-size="pageSize"
+      @update:page="setPage"
+      @update:page-size="setPageSize"
+    />
   </div>
 </template>
 

@@ -4,6 +4,8 @@ import { FileText, Paperclip, Download, Trash2 } from 'lucide-vue-next';
 import type { Cedente, DocumentoCedente } from '../../../data/riscoData';
 import { TIPO_ARQUIVO_OPTS } from '../../../data/riscoData';
 import { FormField, SelectField, EmptyState, AddButton } from '../../../screens/detail-tabs/shared';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{ cedente: Cedente }>();
 const emit = defineEmits<{ update: [cedente: Cedente] }>();
@@ -31,6 +33,11 @@ const documentosFiltrados = computed(() =>
     if (filtroTipo.value && d.tipo !== filtroTipo.value) return false;
     return true;
   }),
+);
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => documentosFiltrados.value,
+  { defaultPageSize: 5 },
 );
 </script>
 
@@ -68,7 +75,7 @@ const documentosFiltrados = computed(() =>
       <div class="grid items-center" style="grid-template-columns: 1.6fr 1fr 40px; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
         <div>Nome</div><div>Tipo</div><div />
       </div>
-      <div v-for="d in documentosFiltrados" :key="d.id" class="grid items-center" style="grid-template-columns: 1.6fr 1fr 40px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
+      <div v-for="d in pageItems" :key="d.id" class="grid items-center" style="grid-template-columns: 1.6fr 1fr 40px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
         <div class="flex items-center" style="gap: 8px; font-weight: var(--weight-semibold); color: var(--text-strong)">
           <Paperclip :size="13" style="color: var(--text-muted)" /> {{ d.nome }}
         </div>
@@ -79,6 +86,16 @@ const documentosFiltrados = computed(() =>
           </button>
         </div>
       </div>
+      <TablePagination
+        sunken
+        compact
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        :page-size-options="[5, 10, 25]"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </div>
   </div>
 </template>

@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { CheckCircle2, XCircle } from 'lucide-vue-next';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import { brl, fmtDuracao, slaRatio, etapaLabel, etapaCor, type Solicitacao } from '../data/operacaoData';
 
-defineProps<{
+const props = defineProps<{
   solicitacoes: Solicitacao[];
 }>();
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => props.solicitacoes,
+  { defaultPageSize: 10 },
+);
 const emit = defineEmits<{ open: [id: string] }>();
 
 const COLS = '90px 1.6fr 0.9fr 1.2fr 1fr 1.1fr 1fr';
@@ -56,7 +63,7 @@ const hoveredId = ref<string | null>(null);
     </div>
     <template v-else>
       <div
-        v-for="s in solicitacoes"
+        v-for="s in pageItems"
         :key="s.id"
         class="grid items-center"
         :style="{
@@ -155,6 +162,13 @@ const hoveredId = ref<string | null>(null);
           </span>
         </div>
       </div>
+      <TablePagination
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </template>
   </div>
 </template>

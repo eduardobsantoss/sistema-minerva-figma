@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, type Component } from 'vue';
 import {
-  Filter, ChevronDown, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight,
+  Filter, ChevronDown,
   MoreVertical, SlidersHorizontal, CheckCircle2, Clock, XCircle, Minus, Building2,
   Settings2, UserCog, BellRing, ShieldCheck, Search,
 } from 'lucide-vue-next';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import {
   GRUPOS_SEED, GERENTES_SEED, TIPO_CLIENTE_OPTS, STATUS_OPERACAO_OPTS,
   statusOperacaoColor, parecerLabel, parecerColor, brl,
@@ -65,8 +67,6 @@ const draft = ref<Filters>({ ...EMPTY_FILTERS });
 const applied = ref<Filters>({ ...EMPTY_FILTERS });
 const visibleCols = ref<Set<ColKey>>(new Set(ALL_COLS.map((c) => c.key)));
 const colsMenuOpen = ref(false);
-const page = ref(1);
-const pageSize = ref(10);
 const menuOpenId = ref<string | null>(null);
 const transferindo = ref<GrupoEmpresarial | null>(null);
 const configurandoNotif = ref<GrupoEmpresarial | null>(null);
@@ -100,9 +100,10 @@ const filtered = computed(() =>
   }),
 );
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / pageSize.value)));
-const clampedPage = computed(() => Math.min(page.value, totalPages.value));
-const pageItems = computed(() => filtered.value.slice((clampedPage.value - 1) * pageSize.value, clampedPage.value * pageSize.value));
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => filtered.value,
+  { defaultPageSize: 10 },
+);
 
 const activeFilterCount = computed(() => Object.values(applied.value).filter((v) => v !== '').length);
 
@@ -120,14 +121,14 @@ const gridTemplate = computed(() => `minmax(220px, 2.2fr) ${cols.value.map((c) =
 
 function handleFilter() {
   applied.value = { ...draft.value };
-  page.value = 1;
+  setPage(1);
   filterOpen.value = false;
 }
 
 function handleClear() {
   draft.value = { ...EMPTY_FILTERS };
   applied.value = { ...EMPTY_FILTERS };
-  page.value = 1;
+  setPage(1);
   filterOpen.value = false;
 }
 
@@ -140,7 +141,7 @@ function toggleCol(key: ColKey) {
 
 function toggleQuickFilter(status: ParecerStatus) {
   quickParecerFilter.value = quickParecerFilter.value === status ? null : status;
-  page.value = 1;
+  setPage(1);
 }
 
 function openFilters() {
@@ -151,14 +152,6 @@ function openFilters() {
     filterPlacement.value = spaceBelow < estimatedPanelHeight && rect.top > spaceBelow ? 'above' : 'below';
   }
   filterOpen.value = !filterOpen.value;
-}
-
-function pageButtonStyle(disabled: boolean) {
-  return {
-    width: 28, height: 28, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)',
-    background: 'var(--surface-card)', cursor: disabled ? 'not-allowed' : 'pointer',
-    color: disabled ? 'var(--text-disabled)' : 'var(--text-muted)',
-  };
 }
 
 function menuActions(g: GrupoEmpresarial) {
@@ -380,27 +373,13 @@ function menuActions(g: GrupoEmpresarial) {
         </div>
       </div>
 
-      <div class="flex items-center justify-between" style="padding: 12px 20px; border-top: 1px solid var(--border-default); font-size: var(--text-xs); color: var(--text-muted)">
-        <div class="flex items-center" style="gap: 8px">
-          <span>Itens por página</span>
-          <select :value="pageSize" style="height: 30px; padding: 0 8px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); color: var(--text-default); font-size: var(--text-xs)" @change="pageSize = Number(($event.target as HTMLSelectElement).value); page = 1">
-            <option :value="10">10</option>
-            <option :value="25">25</option>
-            <option :value="50">50</option>
-          </select>
-        </div>
-        <div class="flex items-center" style="gap: 14px">
-          <span style="font-variant-numeric: tabular-nums">
-            {{ filtered.length === 0 ? '0–0' : `${(clampedPage - 1) * pageSize + 1}–${Math.min(clampedPage * pageSize, filtered.length)}` }} de {{ filtered.length }}
-          </span>
-          <div class="flex items-center" style="gap: 4px">
-            <button class="flex items-center justify-center" :style="pageButtonStyle(clampedPage === 1)" :disabled="clampedPage === 1" @click="page = 1"><ChevronsLeft :size="14" /></button>
-            <button class="flex items-center justify-center" :style="pageButtonStyle(clampedPage === 1)" :disabled="clampedPage === 1" @click="page = Math.max(1, page - 1)"><ChevronLeft :size="14" /></button>
-            <button class="flex items-center justify-center" :style="pageButtonStyle(clampedPage === totalPages)" :disabled="clampedPage === totalPages" @click="page = Math.min(totalPages, page + 1)"><ChevronRight :size="14" /></button>
-            <button class="flex items-center justify-center" :style="pageButtonStyle(clampedPage === totalPages)" :disabled="clampedPage === totalPages" @click="page = totalPages"><ChevronsRight :size="14" /></button>
-          </div>
-        </div>
-      </div>
+      <TablePagination
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </div>
 
     <TransferirGerenteModal v-if="transferindo" :grupo-nome="transferindo.nome" :gerente-atual="transferindo.gerente" @close="transferindo = null" @confirm="transferindo = null" />

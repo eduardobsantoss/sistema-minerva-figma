@@ -2,6 +2,8 @@
 import { ref, computed } from 'vue';
 import { brl, type Title } from '../../data/fidcsData';
 import Section from './Section.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{ title: Title }>();
 
@@ -17,6 +19,24 @@ const registros = computed(() => [
 const cessoes = computed(() => [
   { data: props.title.emissao, cedente: props.title.cedente, cessionario: 'FIDC Fundo', valor: brl(props.title.vrNominal), status: 'LIQUIDADO' },
 ]);
+
+const {
+  page: registroPage,
+  pageSize: registroPageSize,
+  total: registroTotal,
+  pageItems: registroPageItems,
+  setPage: setRegistroPage,
+  setPageSize: setRegistroPageSize,
+} = useTablePagination(() => registros.value, { defaultPageSize: 5 });
+
+const {
+  page: cessaoPage,
+  pageSize: cessaoPageSize,
+  total: cessaoTotal,
+  pageItems: cessaoPageItems,
+  setPage: setCessaoPage,
+  setPageSize: setCessaoPageSize,
+} = useTablePagination(() => cessoes.value, { defaultPageSize: 5 });
 </script>
 
 <template>
@@ -54,7 +74,7 @@ const cessoes = computed(() => [
           <div>Data</div><div>Operação</div><div>Registradora</div><div>Protocolo</div><div style="text-align: right">Valor</div>
         </div>
         <div
-          v-for="(r, i) in registros"
+          v-for="(r, i) in registroPageItems"
           :key="i"
           class="grid items-center"
           style="grid-template-columns: 1fr 1fr 1fr 1fr 1fr; padding: 14px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
@@ -65,6 +85,15 @@ const cessoes = computed(() => [
           <div style="color: var(--text-muted); font-size: var(--text-xs)">{{ r.protocolo }}</div>
           <div style="font-weight: var(--weight-bold); color: var(--text-strong); text-align: right; font-variant-numeric: tabular-nums">{{ r.valor }}</div>
         </div>
+        <TablePagination
+          sunken
+          compact
+          :total="registroTotal"
+          :page="registroPage"
+          :page-size="registroPageSize"
+          @update:page="setRegistroPage"
+          @update:page-size="setRegistroPageSize"
+        />
       </div>
     </Section>
 
@@ -77,7 +106,7 @@ const cessoes = computed(() => [
           <div>Data</div><div>Cedente</div><div>Cessionário</div><div>Valor</div><div style="text-align: right">Status</div>
         </div>
         <div
-          v-for="(r, i) in cessoes"
+          v-for="(r, i) in cessaoPageItems"
           :key="i"
           class="grid items-center"
           style="grid-template-columns: 1fr 1.4fr 1.4fr 1fr 1fr; padding: 14px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
@@ -90,6 +119,15 @@ const cessoes = computed(() => [
             <span style="font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.10em; padding: 4px 8px; border-radius: 9999px; background: var(--success-light); color: var(--success-dark)">{{ r.status }}</span>
           </div>
         </div>
+        <TablePagination
+          sunken
+          compact
+          :total="cessaoTotal"
+          :page="cessaoPage"
+          :page-size="cessaoPageSize"
+          @update:page="setCessaoPage"
+          @update:page-size="setCessaoPageSize"
+        />
       </div>
     </Section>
   </div>

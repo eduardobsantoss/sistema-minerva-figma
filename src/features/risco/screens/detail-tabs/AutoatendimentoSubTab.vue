@@ -7,6 +7,8 @@ import {
   type VeiculoOperacao,
 } from '../../data/riscoData';
 import { TabCard, FieldLabel, EmptyState, AddButton } from './shared';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 interface Props {
   data: ParametrizacaoAutoatendimento;
@@ -23,6 +25,11 @@ const novoVeiculo = ref('');
 const novaTaxaCessao = ref('');
 
 const TABLE_GRID = '1fr 1.4fr 110px 40px';
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => form.veiculosOperacao,
+  { defaultPageSize: 5 },
+);
 
 const veiculosDisponiveis = computed(() =>
   VEICULO_OPERACAO_OPTS.filter(
@@ -170,7 +177,7 @@ function handleSave() {
               <div />
             </div>
             <div
-              v-for="v in form.veiculosOperacao"
+              v-for="v in pageItems"
               :key="v.id"
               class="grid items-center autoatendimento-table-row"
               :style="{ gridTemplateColumns: TABLE_GRID }"
@@ -201,6 +208,16 @@ function handleSave() {
                 </button>
               </div>
             </div>
+            <TablePagination
+              sunken
+              compact
+              :total="total"
+              :page="page"
+              :page-size="pageSize"
+              :page-size-options="[5, 10, 25]"
+              @update:page="setPage"
+              @update:page-size="setPageSize"
+            />
           </div>
         </div>
       </div>

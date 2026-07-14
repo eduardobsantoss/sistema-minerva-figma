@@ -6,6 +6,8 @@ import {
   type ParteRelacionada, type ParametrizacaoLimite,
 } from '../../data/riscoData';
 import { TabCard, FieldLabel, SelectField } from './shared';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 interface Props {
   grupo: GrupoEmpresarial;
@@ -20,6 +22,11 @@ const form = reactive({ ...props.limite });
 const gerente = gerentePorNome(props.grupo.gerente);
 const RATING_OPTS = [...RATINGS_SEED.map((r) => r.nome), 'NÃO SE APLICA'];
 
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => props.partesRelacionadas,
+  { defaultPageSize: 5 },
+);
+
 function saveRating() {
   emit('update:limite', { ...form });
   emit('update:rating', form.indicativoRating);
@@ -33,7 +40,7 @@ function saveRating() {
         <div class="grid items-center" style="grid-template-columns: 1.4fr 1fr 1.2fr 1fr 1fr; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
           <div>Nome</div><div>Documento</div><div>E-mail</div><div>Telefone</div><div>Estado Civil</div>
         </div>
-        <div v-for="p in partesRelacionadas" :key="p.id" class="grid items-center" style="grid-template-columns: 1.4fr 1fr 1.2fr 1fr 1fr; padding: 12px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
+        <div v-for="p in pageItems" :key="p.id" class="grid items-center" style="grid-template-columns: 1.4fr 1fr 1.2fr 1fr 1fr; padding: 12px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
           <div>
             <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ p.nome }}</div>
             <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">{{ p.papel }}</div>
@@ -43,6 +50,17 @@ function saveRating() {
           <div style="font-variant-numeric: tabular-nums; color: var(--text-default)">{{ p.telefone }}</div>
           <div style="color: var(--text-default)">{{ p.estadoCivil }}</div>
         </div>
+        <TablePagination
+          v-if="partesRelacionadas.length > 0"
+          sunken
+          compact
+          :total="total"
+          :page="page"
+          :page-size="pageSize"
+          :page-size-options="[5, 10, 25]"
+          @update:page="setPage"
+          @update:page-size="setPageSize"
+        />
       </div>
     </TabCard>
 

@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue';
 import { X, Search } from 'lucide-vue-next';
 import Checkbox from '@/components/ui/Checkbox.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import { brl, type ContratoAtivo } from '../../data/operacaoData';
 import { TITULOS_DISPONIVEIS, tituloDisponivelParaContrato } from '../../data/ativoData';
 import { FormField } from './adicionar-contrato';
@@ -38,6 +40,11 @@ const allSelected = computed(
 );
 const someSelected = computed(
   () => titulos.value.some((t) => selectedIds.value.has(t.id)) && !allSelected.value,
+);
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => titulos.value,
+  { defaultPageSize: 10 },
 );
 
 function toggle(id: string) {
@@ -140,7 +147,7 @@ function confirmar() {
                 <div>Entrega</div>
               </div>
               <div
-                v-for="t in titulos"
+                v-for="t in pageItems"
                 :key="t.id"
                 class="grid items-center"
                 style="
@@ -168,6 +175,14 @@ function confirmar() {
               </div>
             </div>
           </div>
+          <TablePagination
+            v-if="titulos.length > 0"
+            :total="total"
+            :page="page"
+            :page-size="pageSize"
+            @update:page="setPage"
+            @update:page-size="setPageSize"
+          />
         </div>
       </div>
 

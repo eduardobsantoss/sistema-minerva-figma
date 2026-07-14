@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { TrendingUp } from 'lucide-vue-next';
 import { HISTORICO_PU } from '../../data/passivoData';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const cols = '0.9fr 0.8fr 1fr 0.7fr 0.5fr 1.1fr 0.8fr';
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(() => HISTORICO_PU, { defaultPageSize: 10 });
 </script>
 
 <template>
@@ -45,7 +49,7 @@ const cols = '0.9fr 0.8fr 1fr 0.7fr 0.5fr 1.1fr 0.8fr';
               margin-top: 4px;
             "
           >
-            {{ HISTORICO_PU.length }} registros diários
+            Acompanhamento diário de PU
           </div>
         </div>
       </div>
@@ -66,9 +70,9 @@ const cols = '0.9fr 0.8fr 1fr 0.7fr 0.5fr 1.1fr 0.8fr';
       </button>
     </div>
 
-    <div style="max-height: 400px; overflow-y: auto">
+    <div>
       <div
-        class="grid sticky top-0"
+        class="grid"
         :style="{
           gridTemplateColumns: cols,
           padding: '14px 20px',
@@ -79,7 +83,6 @@ const cols = '0.9fr 0.8fr 1fr 0.7fr 0.5fr 1.1fr 0.8fr';
           color: 'var(--text-muted)',
           textTransform: 'uppercase',
           borderBottom: '1px solid var(--border-default)',
-          zIndex: 1,
         }"
       >
         <div>Data</div>
@@ -92,7 +95,7 @@ const cols = '0.9fr 0.8fr 1fr 0.7fr 0.5fr 1.1fr 0.8fr';
       </div>
 
       <div
-        v-for="h in HISTORICO_PU"
+        v-for="h in pageItems"
         :key="h.id"
         class="pu-row grid items-center"
         :style="{
@@ -114,6 +117,14 @@ const cols = '0.9fr 0.8fr 1fr 0.7fr 0.5fr 1.1fr 0.8fr';
           {{ h.juros.toFixed(2) }}
         </div>
       </div>
+
+      <TablePagination
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </div>
   </div>
 </template>

@@ -1,14 +1,44 @@
 <script setup lang="ts" generic="T extends Record<string, string>">
+import { computed } from 'vue';
 import { Trash2 } from 'lucide-vue-next';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
-const props = defineProps<{
-  cols: { key: keyof T; label: string; width: string }[];
-  rows: T[];
-  empty: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    cols: { key: keyof T; label: string; width: string }[];
+    rows: T[];
+    empty: string;
+    paginated?: boolean;
+    defaultPageSize?: number;
+    sunken?: boolean;
+    compact?: boolean;
+  }>(),
+  {
+    paginated: true,
+    defaultPageSize: 10,
+    sunken: false,
+    compact: false,
+  },
+);
 const emit = defineEmits<{ remove: [i: number] }>();
 
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => props.rows,
+  { defaultPageSize: props.defaultPageSize },
+);
+
+const displayRows = computed(() => (props.paginated ? pageItems.value : props.rows));
+
 const template = () => `${props.cols.map((c) => c.width).join(' ')} 36px`;
+
+function removeAt(pageIdx: number) {
+  if (props.paginated) {
+    emit('remove', (page.value - 1) * pageSize.value + pageIdx);
+  } else {
+    emit('remove', pageIdx);
+  }
+}
 </script>
 
 <template>
@@ -35,40 +65,51 @@ const template = () => `${props.cols.map((c) => c.width).join(' ')} 36px`;
     >
       {{ empty }}
     </div>
-    <div
-      v-for="(r, i) in rows"
-      v-else
-      :key="i"
-      class="npm-row grid items-center"
-      :style="{
-        gridTemplateColumns: template(),
-        padding: '12px 14px',
-        fontSize: 'var(--text-sm)',
-        color: 'var(--text-strong)',
-        borderTop: '1px solid var(--border-default)',
-      }"
-    >
+    <template v-else>
       <div
-        v-for="c in cols"
-        :key="String(c.key)"
+        v-for="(r, i) in displayRows"
+        :key="i"
+        class="npm-row grid items-center"
         :style="{
-          fontVariantNumeric: 'tabular-nums',
-          fontWeight: c.key === cols[0].key ? 'var(--weight-bold)' : 'var(--weight-regular)',
+          gridTemplateColumns: template(),
+          padding: '12px 14px',
+          fontSize: 'var(--text-sm)',
+          color: 'var(--text-strong)',
+          borderTop: '1px solid var(--border-default)',
         }"
       >
-        {{ (r[c.key] as string) || '—' }}
-      </div>
-      <div style="text-align: center">
-        <button
-          class="npm-trash"
-          aria-label="Remover"
-          style="background: none; border: none; cursor: pointer; color: var(--danger-base); display: inline-flex"
-          @click="emit('remove', i)"
+        <div
+          v-for="c in cols"
+          :key="String(c.key)"
+          :style="{
+            fontVariantNumeric: 'tabular-nums',
+            fontWeight: c.key === cols[0].key ? 'var(--weight-bold)' : 'var(--weight-regular)',
+          }"
         >
-          <Trash2 :size="15" />
-        </button>
+          {{ (r[c.key] as string) || '—' }}
+        </div>
+        <div style="text-align: center">
+          <button
+            class="npm-trash"
+            aria-label="Remover"
+            style="background: none; border: none; cursor: pointer; color: var(--danger-base); display: inline-flex"
+            @click="removeAt(i)"
+          >
+            <Trash2 :size="15" />
+          </button>
+        </div>
       </div>
-    </div>
+      <TablePagination
+        v-if="paginated"
+        :sunken="sunken"
+        :compact="compact"
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
+    </template>
   </div>
 </template>
 
