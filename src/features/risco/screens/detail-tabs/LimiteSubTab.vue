@@ -94,14 +94,25 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
         Nenhum limite cadastrado. Clique em "Incluir Limite" para adicionar.
       </div>
 
-      <div v-for="[agrupamento, rows] in limitesAgrupados" :key="agrupamento" style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px">
-        <div style="padding: 12px 16px; background: var(--surface-sunken); font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+      <div
+        v-for="[agrupamento, rows] in limitesAgrupados"
+        :key="agrupamento"
+        class="limite-agrupamento"
+        :class="{ 'limite-agrupamento--menu-open': rows.some((r) => r.id === openMenuId) }"
+      >
+        <div class="limite-agrupamento-header">
           {{ agrupamento }}
         </div>
         <div class="grid items-center limite-table-row limite-table-header" :style="{ gridTemplateColumns: LIMITE_TABLE_GRID }">
           <div>Produto</div><div class="limite-col-num">Limite</div><div class="limite-col-date">Vencimento</div><div />
         </div>
-        <div v-for="row in rows" :key="row.id" class="grid items-center limite-table-row" :style="{ gridTemplateColumns: LIMITE_TABLE_GRID }">
+        <div
+          v-for="row in rows"
+          :key="row.id"
+          class="grid items-center limite-table-row"
+          :class="{ 'limite-table-row--menu-open': openMenuId === row.id }"
+          :style="{ gridTemplateColumns: LIMITE_TABLE_GRID }"
+        >
           <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ row.produto }}</div>
           <div class="limite-col-num">{{ brl(row.valor, { compact: true }) }}</div>
           <div class="limite-col-date">{{ row.vencimento }}</div>
@@ -116,8 +127,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
             </button>
             <div
               v-if="openMenuId === row.id"
-              class="flex flex-col"
-              style="position: absolute; top: 28px; right: 0; z-index: 50; min-width: 140px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 6px"
+              class="flex flex-col limite-action-menu"
             >
               <button
                 class="flex items-center limite-action-item"
@@ -155,11 +165,40 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
 </template>
 
 <style scoped>
+.limite-agrupamento {
+  position: relative;
+  z-index: 1;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  margin-bottom: 12px;
+  /* overflow visible: menu de ações precisa sair da linha sem ser cortado */
+  overflow: visible;
+  background: var(--surface-card);
+}
+
+.limite-agrupamento--menu-open {
+  z-index: 40;
+}
+
+.limite-agrupamento-header {
+  padding: 12px 16px;
+  background: var(--surface-sunken);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-strong);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
 .limite-table-row {
   column-gap: 16px;
   padding: 12px 16px;
   border-top: 1px solid var(--border-default);
   font-size: var(--text-sm);
+  position: relative;
+}
+
+.limite-table-row--menu-open {
+  z-index: 41;
 }
 
 .limite-table-header {
@@ -182,6 +221,19 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
   color: var(--text-muted);
   white-space: nowrap;
   padding-left: 4px;
+}
+
+.limite-action-menu {
+  position: absolute;
+  top: 28px;
+  right: 0;
+  z-index: 50;
+  min-width: 140px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 6px;
 }
 
 .limite-action-item:hover {

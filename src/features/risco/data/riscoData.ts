@@ -172,12 +172,18 @@ export const VEICULO_OPERACAO_OPTS = [
   'FIDC AGRO 25',
 ] as const;
 
-export interface ParametrizacaoAutoatendimento {
+export interface VeiculoOperacao {
+  id: string;
+  veiculo: string;
   limiteOperacoesAutomaticas: number;
   taxaFee: number;
   taxaRisco: number;
   taxaCessaoPadrao: number;
-  veiculoOperacaoPreferencial: string;
+  preferencial: boolean;
+}
+
+export interface ParametrizacaoAutoatendimento {
+  veiculosOperacao: VeiculoOperacao[];
 }
 
 export interface ExcecaoConcentracao {
@@ -423,11 +429,17 @@ export function detalheGrupo(grupo: GrupoEmpresarial): DetalheGrupo {
         limites: buildLimites(grupo),
       },
       autoatendimento: {
-        limiteOperacoesAutomaticas: grupo.limiteAutoatendimento,
-        taxaFee: 0.35,
-        taxaRisco: 0.55,
-        taxaCessaoPadrao: 1.20,
-        veiculoOperacaoPreferencial: 'CRA CERES',
+        veiculosOperacao: [
+          {
+            id: 'vo-1',
+            veiculo: 'CRA CERES',
+            limiteOperacoesAutomaticas: grupo.limiteAutoatendimento,
+            taxaFee: 0.35,
+            taxaRisco: 0.55,
+            taxaCessaoPadrao: 1.20,
+            preferencial: true,
+          },
+        ],
       },
       geral: {
         confirmacaoPreDesembolsoPct: 40,
