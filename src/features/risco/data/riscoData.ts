@@ -175,14 +175,14 @@ export const VEICULO_OPERACAO_OPTS = [
 export interface VeiculoOperacao {
   id: string;
   veiculo: string;
-  limiteOperacoesAutomaticas: number;
-  taxaFee: number;
-  taxaRisco: number;
   taxaCessaoPadrao: number;
   preferencial: boolean;
 }
 
 export interface ParametrizacaoAutoatendimento {
+  limiteOperacoesAutomaticas: number;
+  taxaFee: number;
+  taxaRisco: number;
   veiculosOperacao: VeiculoOperacao[];
 }
 
@@ -429,13 +429,13 @@ export function detalheGrupo(grupo: GrupoEmpresarial): DetalheGrupo {
         limites: buildLimites(grupo),
       },
       autoatendimento: {
+        limiteOperacoesAutomaticas: grupo.limiteAutoatendimento,
+        taxaFee: 0.35,
+        taxaRisco: 0.55,
         veiculosOperacao: [
           {
             id: 'vo-1',
             veiculo: 'CRA CERES',
-            limiteOperacoesAutomaticas: grupo.limiteAutoatendimento,
-            taxaFee: 0.35,
-            taxaRisco: 0.55,
             taxaCessaoPadrao: 1.20,
             preferencial: true,
           },

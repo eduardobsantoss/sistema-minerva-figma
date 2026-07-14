@@ -15,16 +15,14 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits<{ save: [data: ParametrizacaoAutoatendimento] }>();
 const form = reactive<ParametrizacaoAutoatendimento>({
+  ...props.data,
   veiculosOperacao: props.data.veiculosOperacao.map((v) => ({ ...v })),
 });
 
 const novoVeiculo = ref('');
-const novoLimite = ref('');
-const novaTaxaFee = ref('');
-const novaTaxaRisco = ref('');
 const novaTaxaCessao = ref('');
 
-const TABLE_GRID = '1.3fr 1fr 1fr 1fr 1.4fr 110px 40px';
+const TABLE_GRID = '1fr 1.4fr 110px 40px';
 
 const veiculosDisponiveis = computed(() =>
   VEICULO_OPERACAO_OPTS.filter(
@@ -32,27 +30,26 @@ const veiculosDisponiveis = computed(() =>
   ),
 );
 
-function parseMoney(value: string): number {
-  return Number(value.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
-}
-
 function parsePct(value: string): number {
   return Number(value.replace('%', '').replace(',', '.')) || 0;
-}
-
-function formatMoney(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 function formatPct(value: number): string {
   return `${value.toFixed(2).replace('.', ',')}%`;
 }
 
+function handleMoneyInput(e: Event) {
+  const target = e.target as HTMLInputElement;
+  form.limiteOperacoesAutomaticas = Number(target.value.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+}
+
+function handlePctInput(field: 'taxaFee' | 'taxaRisco', e: Event) {
+  const target = e.target as HTMLInputElement;
+  form[field] = Number(target.value.replace('%', '').replace(',', '.')) || 0;
+}
+
 function resetForm() {
   novoVeiculo.value = '';
-  novoLimite.value = '';
-  novaTaxaFee.value = '';
-  novaTaxaRisco.value = '';
   novaTaxaCessao.value = '';
 }
 
@@ -61,9 +58,6 @@ function addVeiculo() {
   const nova: VeiculoOperacao = {
     id: `vo-${Date.now()}`,
     veiculo: novoVeiculo.value,
-    limiteOperacoesAutomaticas: parseMoney(novoLimite.value),
-    taxaFee: parsePct(novaTaxaFee.value),
-    taxaRisco: parsePct(novaTaxaRisco.value),
     taxaCessaoPadrao: parsePct(novaTaxaCessao.value),
     preferencial: form.veiculosOperacao.length === 0,
   };
@@ -90,111 +84,123 @@ function setPreferencial(id: string) {
 }
 
 function handleSave() {
-  emit('save', { veiculosOperacao: form.veiculosOperacao.map((v) => ({ ...v })) });
+  emit('save', {
+    limiteOperacoesAutomaticas: form.limiteOperacoesAutomaticas,
+    taxaFee: form.taxaFee,
+    taxaRisco: form.taxaRisco,
+    veiculosOperacao: form.veiculosOperacao.map((v) => ({ ...v })),
+  });
 }
 </script>
 
 <template>
   <TabCard title="Autoatendimento" :icon="Zap" has-save @save="handleSave">
-    <div class="flex flex-col" style="gap: 16px">
-      <div class="grid items-end" style="grid-template-columns: 1.2fr 0.8fr 0.8fr 0.8fr 1.2fr auto; gap: 10px">
+    <div class="flex flex-col" style="gap: 20px">
+      <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 16px">
         <div>
           <FieldLabel>Limite p/ operações automáticas</FieldLabel>
           <input
-            v-model="novoLimite"
-            placeholder="R$ 0,00"
-            style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)"
+            type="text"
+            :value="form.limiteOperacoesAutomaticas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })"
+            style="width: 100%; height: 40px; padding: 0 14px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong); font-variant-numeric: tabular-nums"
+            @input="handleMoneyInput"
           />
         </div>
         <div>
           <FieldLabel>Taxa fee padrão</FieldLabel>
           <input
-            v-model="novaTaxaFee"
-            placeholder="0,00%"
-            style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)"
+            type="text"
+            :value="`${form.taxaFee.toFixed(2).replace('.', ',')}%`"
+            style="width: 100%; height: 40px; padding: 0 14px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong); font-variant-numeric: tabular-nums"
+            @input="handlePctInput('taxaFee', $event)"
           />
         </div>
         <div>
           <FieldLabel>Taxa de risco</FieldLabel>
           <input
-            v-model="novaTaxaRisco"
-            placeholder="0,00%"
-            style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)"
+            type="text"
+            :value="`${form.taxaRisco.toFixed(2).replace('.', ',')}%`"
+            style="width: 100%; height: 40px; padding: 0 14px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong); font-variant-numeric: tabular-nums"
+            @input="handlePctInput('taxaRisco', $event)"
           />
         </div>
-        <div>
-          <FieldLabel>Taxa de cessão padrão</FieldLabel>
-          <input
-            v-model="novaTaxaCessao"
-            placeholder="0,00%"
-            style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)"
-          />
-        </div>
-        <div>
-          <FieldLabel>* Veículo</FieldLabel>
-          <select
-            v-model="novoVeiculo"
-            style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); background: var(--surface-card); color: var(--text-strong)"
-          >
-            <option value="">Selecione</option>
-            <option v-for="opt in veiculosDisponiveis" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
-        </div>
-        <AddButton @click="addVeiculo" />
       </div>
 
-      <EmptyState
-        v-if="form.veiculosOperacao.length === 0"
-        :icon="Zap"
-        title="Nenhum veículo cadastrado"
-        hint="Cadastre veículos de operação e marque o preferencial."
-      />
-      <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; overflow-x: auto">
-        <div
-          class="grid items-center autoatendimento-table-row autoatendimento-table-header"
-          :style="{ gridTemplateColumns: TABLE_GRID }"
-        >
-          <div class="col-num">Limite</div>
-          <div class="col-num">Taxa fee</div>
-          <div class="col-num">Taxa risco</div>
-          <div class="col-num">Taxa cessão</div>
-          <div class="col-veiculo">Veículo</div>
-          <div class="col-preferencial">Preferencial</div>
-          <div />
+      <div style="border-top: 1px solid var(--border-default); padding-top: 16px">
+        <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); margin-bottom: 12px">
+          Veículos de Operação Preferencial
         </div>
-        <div
-          v-for="v in form.veiculosOperacao"
-          :key="v.id"
-          class="grid items-center autoatendimento-table-row"
-          :style="{ gridTemplateColumns: TABLE_GRID }"
-        >
-          <div class="col-num">{{ formatMoney(v.limiteOperacoesAutomaticas) }}</div>
-          <div class="col-num">{{ formatPct(v.taxaFee) }}</div>
-          <div class="col-num">{{ formatPct(v.taxaRisco) }}</div>
-          <div class="col-num">{{ formatPct(v.taxaCessaoPadrao) }}</div>
-          <div class="col-veiculo">{{ v.veiculo }}</div>
-          <div class="col-preferencial">
-            <button
-              type="button"
-              role="switch"
-              :aria-checked="v.preferencial"
-              :aria-label="`Marcar ${v.veiculo} como preferencial`"
-              class="preferencial-toggle"
-              :class="{ 'preferencial-toggle--on': v.preferencial }"
-              @click="setPreferencial(v.id)"
-            >
-              <span class="preferencial-toggle__knob" />
-            </button>
+        <div class="flex flex-col" style="gap: 16px">
+          <div class="grid items-end" style="grid-template-columns: 1fr 1.4fr auto; gap: 10px">
+            <div>
+              <FieldLabel>Taxa de cessão padrão</FieldLabel>
+              <input
+                v-model="novaTaxaCessao"
+                placeholder="0,00%"
+                style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)"
+              />
+            </div>
+            <div>
+              <FieldLabel>* Veículo</FieldLabel>
+              <select
+                v-model="novoVeiculo"
+                style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); background: var(--surface-card); color: var(--text-strong)"
+              >
+                <option value="">Selecione</option>
+                <option v-for="opt in veiculosDisponiveis" :key="opt" :value="opt">{{ opt }}</option>
+              </select>
+            </div>
+            <AddButton @click="addVeiculo" />
           </div>
-          <div class="flex justify-end">
-            <button
-              aria-label="Remover"
-              class="flex items-center justify-center"
-              style="width: 26px; height: 26px; border: none; background: none; border-radius: var(--radius-md); cursor: pointer; color: var(--action-danger-text-only)"
-              @click="removeVeiculo(v.id)"
+
+          <EmptyState
+            v-if="form.veiculosOperacao.length === 0"
+            :icon="Zap"
+            title="Nenhum veículo cadastrado"
+            hint="Cadastre veículos de operação e marque o preferencial."
+          />
+          <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+            <div
+              class="grid items-center autoatendimento-table-row autoatendimento-table-header"
+              :style="{ gridTemplateColumns: TABLE_GRID }"
             >
-              <Trash2 :size="13" />
-            </button>
+              <div class="col-num">Taxa cessão</div>
+              <div class="col-veiculo">Veículo</div>
+              <div class="col-preferencial">Preferencial</div>
+              <div />
+            </div>
+            <div
+              v-for="v in form.veiculosOperacao"
+              :key="v.id"
+              class="grid items-center autoatendimento-table-row"
+              :style="{ gridTemplateColumns: TABLE_GRID }"
+            >
+              <div class="col-num">{{ formatPct(v.taxaCessaoPadrao) }}</div>
+              <div class="col-veiculo">{{ v.veiculo }}</div>
+              <div class="col-preferencial">
+                <button
+                  type="button"
+                  role="switch"
+                  :aria-checked="v.preferencial"
+                  :aria-label="`Marcar ${v.veiculo} como preferencial`"
+                  class="preferencial-toggle"
+                  :class="{ 'preferencial-toggle--on': v.preferencial }"
+                  @click="setPreferencial(v.id)"
+                >
+                  <span class="preferencial-toggle__knob" />
+                </button>
+              </div>
+              <div class="flex justify-end">
+                <button
+                  aria-label="Remover"
+                  class="flex items-center justify-center"
+                  style="width: 26px; height: 26px; border: none; background: none; border-radius: var(--radius-md); cursor: pointer; color: var(--action-danger-text-only)"
+                  @click="removeVeiculo(v.id)"
+                >
+                  <Trash2 :size="13" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
