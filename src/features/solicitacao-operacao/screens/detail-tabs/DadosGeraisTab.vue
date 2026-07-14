@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { Plus, Banknote, ArrowRightLeft, Layers, Pencil } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
+import {
+  Plus, Banknote, ArrowRightLeft, Layers, Pencil,
+  ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight,
+} from 'lucide-vue-next';
 import {
   brl,
   esteiraLabel,
@@ -28,6 +31,38 @@ const emit = defineEmits<{
 }>();
 
 const showValorModal = ref(false);
+
+const PARTES_COLS = '1.6fr 1.1fr 1.4fr 1fr 0.9fr';
+const partesPage = ref(1);
+const partesPageSize = ref(5);
+const partesTotal = computed(() => props.det.partes.length);
+const partesTotalPages = computed(() => Math.max(1, Math.ceil(partesTotal.value / partesPageSize.value)));
+const partesClampedPage = computed(() => Math.min(partesPage.value, partesTotalPages.value));
+const partesPageItems = computed(() => {
+  const start = (partesClampedPage.value - 1) * partesPageSize.value;
+  return props.det.partes.slice(start, start + partesPageSize.value);
+});
+
+watch(partesTotal, () => {
+  if (partesPage.value > partesTotalPages.value) partesPage.value = partesTotalPages.value;
+});
+
+function handlePartesPageSizeChange(e: Event) {
+  partesPageSize.value = Number((e.target as HTMLSelectElement).value);
+  partesPage.value = 1;
+}
+
+function pageButtonStyle(disabled: boolean) {
+  return {
+    width: '28px',
+    height: '28px',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--border-default)',
+    background: 'var(--surface-card)',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    color: disabled ? 'var(--text-disabled)' : 'var(--text-muted)',
+  };
+}
 
 const parteTone: Record<ParteTipo, { bg: string; fg: string }> = {
   AVA: { bg: 'var(--gci-light)', fg: 'var(--gci-base)' },
@@ -262,16 +297,16 @@ function onConfirmValor(valor: number) {
       <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
         <div
           class="grid"
-          style="
-            grid-template-columns: 1.6fr 1.1fr 1.4fr 1fr 0.9fr;
-            padding: 12px 16px;
-            background: var(--surface-sunken);
-            font-size: 10px;
-            font-weight: var(--weight-bold);
-            letter-spacing: 0.12em;
-            color: var(--text-muted);
-            text-transform: uppercase;
-          "
+          :style="{
+            gridTemplateColumns: PARTES_COLS,
+            padding: '12px 16px',
+            background: 'var(--surface-sunken)',
+            fontSize: '10px',
+            fontWeight: 'var(--weight-bold)',
+            letterSpacing: '0.12em',
+            color: 'var(--text-muted)',
+            textTransform: 'uppercase',
+          }"
         >
           <div>Nome</div>
           <div>Documento</div>
@@ -280,19 +315,19 @@ function onConfirmValor(valor: number) {
           <div>Tipo</div>
         </div>
         <div
-          v-for="(p, i) in det.partes"
+          v-for="(p, i) in partesPageItems"
           :key="`${p.documento}-${i}`"
           class="grid items-center parte-row"
           role="button"
           tabindex="0"
-          style="
-            grid-template-columns: 1.6fr 1.1fr 1.4fr 1fr 0.9fr;
-            padding: 12px 16px;
-            border-top: 1px solid var(--border-default);
-            font-size: var(--text-sm);
-            cursor: pointer;
-            transition: background var(--duration-fast);
-          "
+          :style="{
+            gridTemplateColumns: PARTES_COLS,
+            padding: '12px 16px',
+            borderTop: '1px solid var(--border-default)',
+            fontSize: 'var(--text-sm)',
+            cursor: 'pointer',
+            transition: 'background var(--duration-fast)',
+          }"
           @click="emit('openParte', p)"
           @keydown.enter="emit('openParte', p)"
         >
@@ -319,6 +354,68 @@ function onConfirmValor(valor: number) {
             >
               {{ t }}
             </span>
+          </div>
+        </div>
+
+        <div
+          class="flex items-center justify-between"
+          style="padding: 12px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-xs); color: var(--text-muted); background: var(--surface-sunken)"
+        >
+          <div class="flex items-center" style="gap: 8px">
+            <span>Itens por página</span>
+            <select
+              :value="partesPageSize"
+              style="height: 30px; padding: 0 8px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); color: var(--text-default); font-size: var(--text-xs)"
+              @change="handlePartesPageSizeChange"
+            >
+              <option :value="5">5</option>
+              <option :value="10">10</option>
+              <option :value="25">25</option>
+            </select>
+          </div>
+          <div class="flex items-center" style="gap: 14px">
+            <span style="font-variant-numeric: tabular-nums">
+              {{ partesTotal === 0 ? '0–0' : `${(partesClampedPage - 1) * partesPageSize + 1}–${Math.min(partesClampedPage * partesPageSize, partesTotal)}` }}
+              de {{ partesTotal }}
+            </span>
+            <div class="flex items-center" style="gap: 4px">
+              <button
+                class="flex items-center justify-center"
+                :style="pageButtonStyle(partesClampedPage === 1)"
+                :disabled="partesClampedPage === 1"
+                aria-label="Primeira página"
+                @click="partesPage = 1"
+              >
+                <ChevronsLeft :size="14" />
+              </button>
+              <button
+                class="flex items-center justify-center"
+                :style="pageButtonStyle(partesClampedPage === 1)"
+                :disabled="partesClampedPage === 1"
+                aria-label="Página anterior"
+                @click="partesPage = Math.max(1, partesPage - 1)"
+              >
+                <ChevronLeft :size="14" />
+              </button>
+              <button
+                class="flex items-center justify-center"
+                :style="pageButtonStyle(partesClampedPage === partesTotalPages)"
+                :disabled="partesClampedPage === partesTotalPages"
+                aria-label="Próxima página"
+                @click="partesPage = Math.min(partesTotalPages, partesPage + 1)"
+              >
+                <ChevronRight :size="14" />
+              </button>
+              <button
+                class="flex items-center justify-center"
+                :style="pageButtonStyle(partesClampedPage === partesTotalPages)"
+                :disabled="partesClampedPage === partesTotalPages"
+                aria-label="Última página"
+                @click="partesPage = partesTotalPages"
+              >
+                <ChevronsRight :size="14" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
