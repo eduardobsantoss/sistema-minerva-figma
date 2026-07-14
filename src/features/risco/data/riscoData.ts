@@ -595,46 +595,54 @@ export const AGRUPAMENTOS_SEED: Agrupamento[] = [
 
 export type TipoOperacaoVinculo = 'CRA' | 'FIDC';
 
+export type VinculoLinkKey = 'agrupamentoIds' | 'grupoIds';
+
+export interface EntidadeVinculo {
+  id: string;
+  nome: string;
+}
+
 export interface OperacaoVinculavel {
   id: string;
   nome: string;
   tipo: TipoOperacaoVinculo;
   agrupamentoIds: string[];
+  grupoIds: string[];
 }
 
 export const OPERACOES_VINCULAVEIS_SEED: OperacaoVinculavel[] = [
-  { id: 'ov-cra-1', nome: '4ª Emissão CRA Semeagro', tipo: 'CRA', agrupamentoIds: ['agp-agrovita'] },
-  { id: 'ov-cra-2', nome: '5ª Emissão CRA Semeagro', tipo: 'CRA', agrupamentoIds: ['agp-agrovita', 'agp-multicedentes'] },
-  { id: 'ov-cra-3', nome: '7ª Emissão CRA Ceres Agro', tipo: 'CRA', agrupamentoIds: ['agp-confina'] },
-  { id: 'ov-cra-4', nome: '2ª Emissão CRA BTG Agro', tipo: 'CRA', agrupamentoIds: ['agp-securitizacao'] },
-  { id: 'ov-cra-5', nome: '65ª - Confina CRA', tipo: 'CRA', agrupamentoIds: ['agp-confina'] },
-  { id: 'ov-cra-6', nome: '16ª - CRA Ura Agro (6)', tipo: 'CRA', agrupamentoIds: ['agp-multicedentes'] },
-  { id: 'ov-cra-7', nome: '20ª - CRA Jatobá', tipo: 'CRA', agrupamentoIds: [] },
-  { id: 'ov-cra-8', nome: '44ª - CRA Carteira', tipo: 'CRA', agrupamentoIds: ['agp-multicedentes'] },
-  { id: 'ov-cra-9', nome: '51ª - CRA Spaço', tipo: 'CRA', agrupamentoIds: ['agp-estruturadas'] },
-  { id: 'ov-cra-10', nome: '62ª - CRA Carteira', tipo: 'CRA', agrupamentoIds: ['agp-multicedentes'] },
-  { id: 'ov-cra-11', nome: 'Confina - CRA Interno - 50 MM - Junho/2025', tipo: 'CRA', agrupamentoIds: ['agp-confina'] },
-  { id: 'ov-cra-12', nome: 'Confina BTG 100 MM', tipo: 'CRA', agrupamentoIds: ['agp-confina', 'agp-securitizacao'] },
-  { id: 'ov-cra-13', nome: '18ª Emissão CRA Cargill Agro', tipo: 'CRA', agrupamentoIds: ['agp-multicedentes'] },
-  { id: 'ov-cra-14', nome: '33ª Emissão CRA Amaggi Group', tipo: 'CRA', agrupamentoIds: ['agp-multicedentes'] },
-  { id: 'ov-cra-15', nome: '9ª Emissão CRA SLC Agrícola', tipo: 'CRA', agrupamentoIds: ['agp-estruturadas'] },
-  { id: 'ov-cra-16', nome: '12ª Emissão CRA BrasilAgro', tipo: 'CRA', agrupamentoIds: [] },
-  { id: 'ov-cra-17', nome: 'BMG FOODS IMPORTAÇÃO E EXPORTAÇÃO LTDA', tipo: 'CRA', agrupamentoIds: [] },
-  { id: 'ov-cra-18', nome: '27ª Emissão CRA São Martinho', tipo: 'CRA', agrupamentoIds: [] },
-  { id: 'ov-fidc-1', nome: 'AGRO 25 FUNDO DE INVESTIMENTO EM DIREITOS CREDITÓRIOS', tipo: 'FIDC', agrupamentoIds: ['agp-agrovita'] },
-  { id: 'ov-fidc-2', nome: 'T.I TECNOLOGIA FUNDO DE INVESTIMENTOS', tipo: 'FIDC', agrupamentoIds: ['agp-estruturadas'] },
-  { id: 'ov-fidc-3', nome: 'T.I TECNOLOGIA COMPRA DE LEITE', tipo: 'FIDC', agrupamentoIds: ['agp-estruturadas'] },
-  { id: 'ov-fidc-4', nome: 'T.I TECNOLOGIA COMPRA DE ANIMAIS', tipo: 'FIDC', agrupamentoIds: ['agp-estruturadas', 'agp-trading'] },
-  { id: 'ov-fidc-5', nome: 'CERES BTG URA AGRO 2 FUNDO DE INVESTIMENTO', tipo: 'FIDC', agrupamentoIds: ['agp-confina'] },
-  { id: 'ov-fidc-6', nome: 'ARROBANK FIDC', tipo: 'FIDC', agrupamentoIds: ['agp-confina'] },
-  { id: 'ov-fidc-7', nome: 'ARROBANK RECEBÍVEIS AGROPECUÁRIOS FIDC', tipo: 'FIDC', agrupamentoIds: [] },
-  { id: 'ov-fidc-8', nome: 'CERES CONFINA FIDC', tipo: 'FIDC', agrupamentoIds: ['agp-confina'] },
-  { id: 'ov-fidc-9', nome: 'CERES TRADING FIDC', tipo: 'FIDC', agrupamentoIds: ['agp-trading'] },
-  { id: 'ov-fidc-10', nome: 'SECURITIZAÇÃO AGRO FIDC', tipo: 'FIDC', agrupamentoIds: ['agp-securitizacao'] },
-  { id: 'ov-fidc-11', nome: 'MULTICEDENTES RURAL FIDC', tipo: 'FIDC', agrupamentoIds: [] },
-  { id: 'ov-fidc-12', nome: 'ESTRUTURADAS FUNDO & SEC FIDC II', tipo: 'FIDC', agrupamentoIds: ['agp-estruturadas'] },
-  { id: 'ov-fidc-13', nome: 'AGROVITA RECEBÍVEIS FIDC', tipo: 'FIDC', agrupamentoIds: ['agp-agrovita'] },
-  { id: 'ov-fidc-14', nome: 'BTG PACTUAL AGRO FIDC', tipo: 'FIDC', agrupamentoIds: [] },
+  { id: 'ov-cra-1', nome: '4ª Emissão CRA Semeagro', tipo: 'CRA', agrupamentoIds: ['agp-agrovita'], grupoIds: ['grp-3a'] },
+  { id: 'ov-cra-2', nome: '5ª Emissão CRA Semeagro', tipo: 'CRA', agrupamentoIds: ['agp-agrovita', 'agp-multicedentes'], grupoIds: ['grp-3a'] },
+  { id: 'ov-cra-3', nome: '7ª Emissão CRA Ceres Agro', tipo: 'CRA', agrupamentoIds: ['agp-confina'], grupoIds: ['grp-fazenda-sn'] },
+  { id: 'ov-cra-4', nome: '2ª Emissão CRA BTG Agro', tipo: 'CRA', agrupamentoIds: ['agp-securitizacao'], grupoIds: [] },
+  { id: 'ov-cra-5', nome: '65ª - Confina CRA', tipo: 'CRA', agrupamentoIds: ['agp-confina'], grupoIds: ['grp-fazenda-sn'] },
+  { id: 'ov-cra-6', nome: '16ª - CRA Ura Agro (6)', tipo: 'CRA', agrupamentoIds: ['agp-multicedentes'], grupoIds: [] },
+  { id: 'ov-cra-7', nome: '20ª - CRA Jatobá', tipo: 'CRA', agrupamentoIds: [], grupoIds: [] },
+  { id: 'ov-cra-8', nome: '44ª - CRA Carteira', tipo: 'CRA', agrupamentoIds: ['agp-multicedentes'], grupoIds: ['grp-agropec-vale'] },
+  { id: 'ov-cra-9', nome: '51ª - CRA Spaço', tipo: 'CRA', agrupamentoIds: ['agp-estruturadas'], grupoIds: [] },
+  { id: 'ov-cra-10', nome: '62ª - CRA Carteira', tipo: 'CRA', agrupamentoIds: ['agp-multicedentes'], grupoIds: [] },
+  { id: 'ov-cra-11', nome: 'Confina - CRA Interno - 50 MM - Junho/2025', tipo: 'CRA', agrupamentoIds: ['agp-confina'], grupoIds: ['grp-boi-forte'] },
+  { id: 'ov-cra-12', nome: 'Confina BTG 100 MM', tipo: 'CRA', agrupamentoIds: ['agp-confina', 'agp-securitizacao'], grupoIds: [] },
+  { id: 'ov-cra-13', nome: '18ª Emissão CRA Cargill Agro', tipo: 'CRA', agrupamentoIds: ['agp-multicedentes'], grupoIds: [] },
+  { id: 'ov-cra-14', nome: '33ª Emissão CRA Amaggi Group', tipo: 'CRA', agrupamentoIds: ['agp-multicedentes'], grupoIds: [] },
+  { id: 'ov-cra-15', nome: '9ª Emissão CRA SLC Agrícola', tipo: 'CRA', agrupamentoIds: ['agp-estruturadas'], grupoIds: [] },
+  { id: 'ov-cra-16', nome: '12ª Emissão CRA BrasilAgro', tipo: 'CRA', agrupamentoIds: [], grupoIds: [] },
+  { id: 'ov-cra-17', nome: 'BMG FOODS IMPORTAÇÃO E EXPORTAÇÃO LTDA', tipo: 'CRA', agrupamentoIds: [], grupoIds: [] },
+  { id: 'ov-cra-18', nome: '27ª Emissão CRA São Martinho', tipo: 'CRA', agrupamentoIds: [], grupoIds: [] },
+  { id: 'ov-fidc-1', nome: 'AGRO 25 FUNDO DE INVESTIMENTO EM DIREITOS CREDITÓRIOS', tipo: 'FIDC', agrupamentoIds: ['agp-agrovita'], grupoIds: ['grp-3a'] },
+  { id: 'ov-fidc-2', nome: 'T.I TECNOLOGIA FUNDO DE INVESTIMENTOS', tipo: 'FIDC', agrupamentoIds: ['agp-estruturadas'], grupoIds: [] },
+  { id: 'ov-fidc-3', nome: 'T.I TECNOLOGIA COMPRA DE LEITE', tipo: 'FIDC', agrupamentoIds: ['agp-estruturadas'], grupoIds: [] },
+  { id: 'ov-fidc-4', nome: 'T.I TECNOLOGIA COMPRA DE ANIMAIS', tipo: 'FIDC', agrupamentoIds: ['agp-estruturadas', 'agp-trading'], grupoIds: ['grp-cerrado-graos'] },
+  { id: 'ov-fidc-5', nome: 'CERES BTG URA AGRO 2 FUNDO DE INVESTIMENTO', tipo: 'FIDC', agrupamentoIds: ['agp-confina'], grupoIds: [] },
+  { id: 'ov-fidc-6', nome: 'ARROBANK FIDC', tipo: 'FIDC', agrupamentoIds: ['agp-confina'], grupoIds: [] },
+  { id: 'ov-fidc-7', nome: 'ARROBANK RECEBÍVEIS AGROPECUÁRIOS FIDC', tipo: 'FIDC', agrupamentoIds: [], grupoIds: [] },
+  { id: 'ov-fidc-8', nome: 'CERES CONFINA FIDC', tipo: 'FIDC', agrupamentoIds: ['agp-confina'], grupoIds: ['grp-fazenda-sn'] },
+  { id: 'ov-fidc-9', nome: 'CERES TRADING FIDC', tipo: 'FIDC', agrupamentoIds: ['agp-trading'], grupoIds: [] },
+  { id: 'ov-fidc-10', nome: 'SECURITIZAÇÃO AGRO FIDC', tipo: 'FIDC', agrupamentoIds: ['agp-securitizacao'], grupoIds: [] },
+  { id: 'ov-fidc-11', nome: 'MULTICEDENTES RURAL FIDC', tipo: 'FIDC', agrupamentoIds: [], grupoIds: [] },
+  { id: 'ov-fidc-12', nome: 'ESTRUTURADAS FUNDO & SEC FIDC II', tipo: 'FIDC', agrupamentoIds: ['agp-estruturadas'], grupoIds: [] },
+  { id: 'ov-fidc-13', nome: 'AGROVITA RECEBÍVEIS FIDC', tipo: 'FIDC', agrupamentoIds: ['agp-agrovita'], grupoIds: [] },
+  { id: 'ov-fidc-14', nome: 'BTG PACTUAL AGRO FIDC', tipo: 'FIDC', agrupamentoIds: [], grupoIds: [] },
 ];
 
 export function contarVinculos(agrupamentoId: string, operacoes: OperacaoVinculavel[]) {
@@ -647,5 +655,21 @@ export function contarVinculos(agrupamentoId: string, operacoes: OperacaoVincula
 export function nomesAgrupamentos(op: OperacaoVinculavel, agrupamentos: Agrupamento[]): string[] {
   return op.agrupamentoIds
     .map((id) => agrupamentos.find((a) => a.id === id)?.nome)
+    .filter((n): n is string => Boolean(n));
+}
+
+export function nomesGrupos(op: OperacaoVinculavel, grupos: EntidadeVinculo[]): string[] {
+  return op.grupoIds
+    .map((id) => grupos.find((g) => g.id === id)?.nome)
+    .filter((n): n is string => Boolean(n));
+}
+
+export function nomesEntidadesVinculo(
+  op: OperacaoVinculavel,
+  entidades: EntidadeVinculo[],
+  linkKey: VinculoLinkKey,
+): string[] {
+  return op[linkKey]
+    .map((id) => entidades.find((e) => e.id === id)?.nome)
     .filter((n): n is string => Boolean(n));
 }

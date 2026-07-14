@@ -1,16 +1,21 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { X, Pencil, ArrowRight, ArrowLeft, Link2 } from 'lucide-vue-next';
-import type { Agrupamento, OperacaoVinculavel } from '../../data/riscoData';
+import type { EntidadeVinculo, OperacaoVinculavel, VinculoLinkKey } from '../../data/riscoData';
 import { SummaryCard, TransferButton, TransferPanel, type FiltroTipo } from './vincular-agrupamento';
 
 interface Props {
-  agrupamento: Agrupamento;
-  agrupamentos: Agrupamento[];
+  target: EntidadeVinculo;
+  targetLabel: string;
+  linkKey: VinculoLinkKey;
+  entidades: EntidadeVinculo[];
   operacoes: OperacaoVinculavel[];
+  editable?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  editable: false,
+});
 const emit = defineEmits<{
   close: [];
   edit: [];
@@ -24,8 +29,12 @@ const filterRight = ref<FiltroTipo>('TODOS');
 const selectedLeft = ref<Set<string>>(new Set());
 const selectedRight = ref<Set<string>>(new Set());
 
-const disponiveis = computed(() => props.operacoes.filter((o) => !o.agrupamentoIds.includes(props.agrupamento.id)));
-const vinculadas = computed(() => props.operacoes.filter((o) => o.agrupamentoIds.includes(props.agrupamento.id)));
+const disponiveis = computed(() =>
+  props.operacoes.filter((o) => !o[props.linkKey].includes(props.target.id)),
+);
+const vinculadas = computed(() =>
+  props.operacoes.filter((o) => o[props.linkKey].includes(props.target.id)),
+);
 
 function filtrarOperacoes(list: OperacaoVinculavel[], filtro: FiltroTipo, search: string): OperacaoVinculavel[] {
   const needle = search.trim().toLowerCase();
@@ -54,7 +63,9 @@ function handleVincular() {
   emit(
     'update:operacoes',
     props.operacoes.map((o) =>
-      selectedLeft.value.has(o.id) ? { ...o, agrupamentoIds: [...o.agrupamentoIds, props.agrupamento.id] } : o,
+      selectedLeft.value.has(o.id)
+        ? { ...o, [props.linkKey]: [...o[props.linkKey], props.target.id] }
+        : o,
     ),
   );
   selectedLeft.value = new Set();
@@ -65,7 +76,9 @@ function handleDesvincular() {
   emit(
     'update:operacoes',
     props.operacoes.map((o) =>
-      selectedRight.value.has(o.id) ? { ...o, agrupamentoIds: o.agrupamentoIds.filter((id) => id !== props.agrupamento.id) } : o,
+      selectedRight.value.has(o.id)
+        ? { ...o, [props.linkKey]: o[props.linkKey].filter((id) => id !== props.target.id) }
+        : o,
     ),
   );
   selectedRight.value = new Set();
@@ -94,11 +107,12 @@ function handleDesvincular() {
       <div class="flex items-center justify-between" style="padding: 20px 28px; border-bottom: 1px solid var(--border-default); flex-shrink: 0">
         <div class="flex items-center" style="gap: 10px">
           <h2 style="font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: 0.02em; text-transform: uppercase">
-            Agrupamento: {{ agrupamento.nome }}
+            {{ targetLabel }}: {{ target.nome }}
           </h2>
           <button
-            aria-label="Editar agrupamento"
-            title="Editar agrupamento"
+            v-if="editable"
+            :aria-label="`Editar ${targetLabel.toLowerCase()}`"
+            :title="`Editar ${targetLabel.toLowerCase()}`"
             class="flex items-center justify-center"
             style="width: 30px; height: 30px; border-radius: var(--radius-md); border: 1px solid var(--border-default); background: var(--surface-card); cursor: pointer; color: var(--text-muted); flex-shrink: 0"
             @click="emit('edit')"
@@ -140,7 +154,9 @@ function handleDesvincular() {
               :search="searchLeft"
               :filter="filterLeft"
               :items="disponiveisFiltradas"
-              :agrupamentos="agrupamentos"
+              :entidades="entidades"
+              :entity-label="targetLabel"
+              :link-key="linkKey"
               :selected="selectedLeft"
               @update:search="searchLeft = $event"
               @update:filter="filterLeft = $event"
@@ -169,7 +185,9 @@ function handleDesvincular() {
               :search="searchRight"
               :filter="filterRight"
               :items="vinculadasFiltradas"
-              :agrupamentos="agrupamentos"
+              :entidades="entidades"
+              :entity-label="targetLabel"
+              :link-key="linkKey"
               :selected="selectedRight"
               @update:search="searchRight = $event"
               @update:filter="filterRight = $event"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Search } from 'lucide-vue-next';
-import type { Agrupamento, OperacaoVinculavel, TipoOperacaoVinculo } from '../../../data/riscoData';
+import type { EntidadeVinculo, OperacaoVinculavel, TipoOperacaoVinculo, VinculoLinkKey } from '../../../data/riscoData';
 import OperationRow from './OperationRow.vue';
 import { FILTRO_OPTS } from './constants';
 
@@ -11,7 +11,9 @@ defineProps<{
   search: string;
   filter: FiltroTipo;
   items: OperacaoVinculavel[];
-  agrupamentos: Agrupamento[];
+  entidades: EntidadeVinculo[];
+  entityLabel: string;
+  linkKey: VinculoLinkKey;
   selected: Set<string>;
 }>();
 
@@ -64,7 +66,9 @@ const emit = defineEmits<{
         v-for="op in items"
         :key="op.id"
         :op="op"
-        :agrupamentos="agrupamentos"
+        :entidades="entidades"
+        :entity-label="entityLabel"
+        :link-key="linkKey"
         :checked="selected.has(op.id)"
         @toggle="emit('toggle-item', op.id)"
       />

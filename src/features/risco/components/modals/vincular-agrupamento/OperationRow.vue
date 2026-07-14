@@ -1,13 +1,28 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import Checkbox from '@/components/ui/Checkbox.vue';
-import { nomesAgrupamentos, type Agrupamento, type OperacaoVinculavel } from '../../../data/riscoData';
+import {
+  nomesEntidadesVinculo,
+  type EntidadeVinculo,
+  type OperacaoVinculavel,
+  type VinculoLinkKey,
+} from '../../../data/riscoData';
 
-const props = defineProps<{ op: OperacaoVinculavel; agrupamentos: Agrupamento[]; checked: boolean }>();
+const props = defineProps<{
+  op: OperacaoVinculavel;
+  entidades: EntidadeVinculo[];
+  entityLabel: string;
+  linkKey: VinculoLinkKey;
+  checked: boolean;
+}>();
 const emit = defineEmits<{ toggle: [] }>();
 
-const nomes = computed(() => nomesAgrupamentos(props.op, props.agrupamentos));
-const subtitle = computed(() => (nomes.value.length > 0 ? `Agrupamento: ${nomes.value.join(', ')}` : 'Sem agrupamento'));
+const nomes = computed(() => nomesEntidadesVinculo(props.op, props.entidades, props.linkKey));
+const subtitle = computed(() =>
+  nomes.value.length > 0
+    ? `${props.entityLabel}: ${nomes.value.join(', ')}`
+    : `Sem ${props.entityLabel.toLowerCase()}`,
+);
 const badgeBg = computed(() => (props.op.tipo === 'CRA' ? 'var(--agro-light)' : 'var(--gci-light)'));
 const badgeColor = computed(() => (props.op.tipo === 'CRA' ? 'var(--agro-base)' : 'var(--gci-base)'));
 </script>

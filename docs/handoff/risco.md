@@ -65,7 +65,7 @@ Hoje **tudo é mock** em `src/features/risco/data/riscoData.ts`. A estrutura já
 |---|---|---|
 | `RATINGS_SEED` | `Rating` | Tela Ratings + select de rating em Detalhes/Parametrizações |
 | `AGRUPAMENTOS_SEED` | `Agrupamento` | Tela Agrupamentos de Limite |
-| `OPERACOES_VINCULAVEIS_SEED` | `OperacaoVinculavel` | Modal Vincular Agrupamento (CRAs/FIDCs) |
+| `OPERACOES_VINCULAVEIS_SEED` | `OperacaoVinculavel` | Modal Vincular (`agrupamentoIds` / `grupoIds` — CRAs/FIDCs) |
 | `GERENTES_SEED` | `Gerente` | Filtros, transferência de gerente, card de gerente |
 | `GRUPOS_SEED` | `GrupoEmpresarial` | Dashboard, listagem, relatórios, detalhe |
 
@@ -142,8 +142,10 @@ export function detalheGrupo(grupo: GrupoEmpresarial): DetalheGrupo {
 | `temRiscoAtivo(g)` | `g.riscoTotal > 0` |
 | `diasEntre(dataBR)` | Dias entre data dd/mm/aaaa e hoje |
 | `statusGrupoPizza(s)` | Agrupa status para gráfico pizza do dashboard |
-| `contarVinculos(agrupamentoId, operacoes)` | Conta CRAs/FIDCs vinculados |
+| `contarVinculos(agrupamentoId, operacoes)` | Conta CRAs/FIDCs vinculados a um agrupamento |
 | `nomesAgrupamentos(op, agrupamentos)` | Nomes dos agrupamentos de uma operação |
+| `nomesGrupos(op, grupos)` | Nomes dos grupos empresariais de uma operação |
+| `nomesEntidadesVinculo(op, entidades, linkKey)` | Nomes genéricos (agrupamento ou grupo) via `linkKey` |
 | `gerentePorNome(nome)` | Busca gerente em `GERENTES_SEED` |
 
 ### Regra prática para achar um campo
@@ -174,7 +176,9 @@ flowchart TD
   GD -->|voltar| GL
 
   G --> CedenteModal[CedenteDetailModal]
-  A --> VincularModal[VincularAgrupamentoModal]
+  GL -->|menu Vincular veiculo| VincularModal[VincularAgrupamentoModal]
+  GD -->|menu Vincular veiculo| VincularModal
+  A -->|clique linha| VincularModal
 ```
 
 ### Dashboard (`RiscoDashboardScreen.vue`)
@@ -190,12 +194,12 @@ Listagem completa com:
 - Busca por nome, filtros avançados (gerente, tipo cliente, parecer, vencimento), quick filters de parecer (Vencido / Próximo a Vencer / Em Dia);
 - Colunas configuráveis (menu com `Checkbox` padrão `@/components/ui/Checkbox.vue`);
 - Paginação (10/25/50 por página);
-- Menu ⋮ por linha: Transferir gerente, Configurar notificações, Habilitar para operar;
+- Menu ⋮ por linha: Parametrizações, Vincular a um veículo, Transferir gerente, Configurar notificações, Habilitar para operar;
 - Clique na linha → `GrupoDetailScreen`.
 
 ### Detalhe do Grupo (`GrupoDetailScreen.vue`)
 
-Header padrão (voltar 48×48, eyebrow "Risco · Grupo Empresarial", badge de status, menu ⋮) + **4 abas TabPill**:
+Header padrão (voltar 48×48, eyebrow "Risco · Grupo Empresarial", badge de status, menu ⋮: Vincular a um veículo, Transferir gerente, Configurar notificações, Habilitar para operar) + **4 abas TabPill**:
 
 | Aba | Componente | Conteúdo |
 |---|---|---|
@@ -267,7 +271,7 @@ Salvar em cada sub-aba emite `@save` → `ParametrizacoesTab` propaga `@change` 
 | `CreateRatingModal` | Ratings | Criar/editar rating (nome + taxa) |
 | `CreateAgrupamentoModal` | Agrupamentos | Criar/renomear agrupamento |
 | `DeleteAgrupamentoModal` | Agrupamentos | Confirmar exclusão |
-| `VincularAgrupamentoModal` | Agrupamentos (clique linha) | Vincular/desvincular CRAs e FIDCs |
+| `VincularAgrupamentoModal` | Agrupamentos (clique linha) · Grupos (menu ⋮ lista/detalhe) | Vincular/desvincular CRAs e FIDCs a agrupamento (`agrupamentoIds`) ou grupo (`grupoIds`) |
 | `TransferirGerenteModal` | Grupo detail / listagem | Trocar gerente (mock) |
 | `ConfigurarNotificacoesModal` | Grupo detail / listagem | Configurar alertas (mock) |
 | `HabilitarOperarModal` | Grupo detail / listagem | Habilitar grupo (mock) |
@@ -275,7 +279,7 @@ Salvar em cada sub-aba emite `@save` → `ParametrizacoesTab` propaga `@change` 
 | `EditarCadastroCedenteModal` | Cedente detail | Formulário de cadastro |
 | `IncluirLimiteModal` | Limite sub-tab | Adicionar linha de limite por produto |
 
-`VincularAgrupamentoModal` usa subcomponentes em `components/modals/vincular-agrupamento/` (`TransferPanel`, `OperationRow`, `SummaryCard`, `TransferButton`). Seleção de operações via `Checkbox` padrão (`@/components/ui/Checkbox.vue`).
+`VincularAgrupamentoModal` é reutilizável: props `target`, `targetLabel`, `linkKey` (`agrupamentoIds` | `grupoIds`), `entidades`, `operacoes`, `editable?`. Subcomponentes em `components/modals/vincular-agrupamento/` (`TransferPanel`, `OperationRow`, `SummaryCard`, `TransferButton`). Seleção de operações via `Checkbox` padrão (`@/components/ui/Checkbox.vue`).
 
 ---
 

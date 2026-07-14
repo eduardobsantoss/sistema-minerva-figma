@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, reactive, ref, type Component } from 'vue';
-import { ArrowLeft, MoreVertical, Settings2, Users, History, UserCog, BellRing, ShieldCheck, Info } from 'lucide-vue-next';
-import { statusOperacaoColor, detalheGrupo, type GrupoEmpresarial } from '../data/riscoData';
+import { ArrowLeft, MoreVertical, Settings2, Users, History, UserCog, BellRing, ShieldCheck, Info, Link2 } from 'lucide-vue-next';
+import {
+  statusOperacaoColor, detalheGrupo, OPERACOES_VINCULAVEIS_SEED, GRUPOS_SEED,
+  type GrupoEmpresarial, type OperacaoVinculavel,
+} from '../data/riscoData';
 import { CopyButton } from './detail-tabs/shared';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import DetalhesTab from './detail-tabs/DetalhesTab.vue';
@@ -11,6 +14,7 @@ import HistoricoTab from './detail-tabs/HistoricoTab.vue';
 import TransferirGerenteModal from '../components/modals/TransferirGerenteModal.vue';
 import ConfigurarNotificacoesModal from '../components/modals/ConfigurarNotificacoesModal.vue';
 import HabilitarOperarModal from '../components/modals/HabilitarOperarModal.vue';
+import VincularAgrupamentoModal from '../components/modals/VincularAgrupamentoModal.vue';
 
 interface Props {
   grupo: GrupoEmpresarial;
@@ -35,11 +39,14 @@ const cor = statusOperacaoColor(props.grupo.statusOperacao);
 const transferindo = ref(false);
 const configurandoNotif = ref(false);
 const habilitando = ref(false);
+const vinculandoVeiculo = ref(false);
+const operacoes = ref<OperacaoVinculavel[]>(OPERACOES_VINCULAVEIS_SEED.map((o) => ({ ...o, agrupamentoIds: [...o.agrupamentoIds], grupoIds: [...o.grupoIds] })));
 
 const actionMenuOpen = ref(false);
 const actionMenuRef = ref<HTMLDivElement | null>(null);
 
 const actions = [
+  { label: 'Vincular a um veículo', icon: Link2, onClick: () => { vinculandoVeiculo.value = true; } },
   { label: 'Transferir gerente', icon: UserCog, onClick: () => { transferindo.value = true; } },
   { label: 'Configurar notificações', icon: BellRing, onClick: () => { configurandoNotif.value = true; } },
   { label: 'Habilitar para operar', icon: ShieldCheck, onClick: () => { habilitando.value = true; } },
@@ -143,6 +150,16 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
     <TransferirGerenteModal v-if="transferindo" :grupo-nome="grupo.nome" :gerente-atual="grupo.gerente" @close="transferindo = false" @confirm="transferindo = false" />
     <ConfigurarNotificacoesModal v-if="configurandoNotif" :grupo-nome="grupo.nome" @close="configurandoNotif = false" @confirm="configurandoNotif = false" />
     <HabilitarOperarModal v-if="habilitando" :grupo-nome="grupo.nome" @close="habilitando = false" @confirm="habilitando = false" />
+    <VincularAgrupamentoModal
+      v-if="vinculandoVeiculo"
+      :target="grupo"
+      target-label="Grupo"
+      link-key="grupoIds"
+      :entidades="GRUPOS_SEED"
+      :operacoes="operacoes"
+      @update:operacoes="operacoes = $event"
+      @close="vinculandoVeiculo = false"
+    />
   </div>
 </template>
 

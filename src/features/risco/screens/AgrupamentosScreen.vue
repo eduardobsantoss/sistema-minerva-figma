@@ -128,9 +128,12 @@ function handleDelete() {
     <DeleteAgrupamentoModal v-if="deleting" :agrupamento="deleting" @close="deleting = null" @confirm="handleDelete" />
     <VincularAgrupamentoModal
       v-if="vinculando"
-      :agrupamento="vinculando"
-      :agrupamentos="agrupamentos"
+      :target="vinculando"
+      target-label="Agrupamento"
+      link-key="agrupamentoIds"
+      :entidades="agrupamentos"
       :operacoes="operacoes"
+      editable
       @update:operacoes="operacoes = $event"
       @close="vinculando = null"
       @edit="() => { editing = vinculando; vinculando = null; }"

@@ -3,18 +3,20 @@ import { computed, ref, type Component } from 'vue';
 import {
   Filter, ChevronDown,
   MoreVertical, SlidersHorizontal, CheckCircle2, Clock, XCircle, Minus, Building2,
-  Settings2, UserCog, BellRing, ShieldCheck, Search,
+  Settings2, UserCog, BellRing, ShieldCheck, Search, Link2,
 } from 'lucide-vue-next';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import {
   GRUPOS_SEED, GERENTES_SEED, TIPO_CLIENTE_OPTS, STATUS_OPERACAO_OPTS,
+  OPERACOES_VINCULAVEIS_SEED,
   statusOperacaoColor, parecerLabel, parecerColor, brl,
-  type GrupoEmpresarial, type ParecerStatus,
+  type GrupoEmpresarial, type ParecerStatus, type OperacaoVinculavel,
 } from '../data/riscoData';
 import TransferirGerenteModal from '../components/modals/TransferirGerenteModal.vue';
 import ConfigurarNotificacoesModal from '../components/modals/ConfigurarNotificacoesModal.vue';
 import HabilitarOperarModal from '../components/modals/HabilitarOperarModal.vue';
+import VincularAgrupamentoModal from '../components/modals/VincularAgrupamentoModal.vue';
 import Checkbox from '@/components/ui/Checkbox.vue';
 
 const emit = defineEmits<{ open: [id: string] }>();
@@ -71,6 +73,8 @@ const menuOpenId = ref<string | null>(null);
 const transferindo = ref<GrupoEmpresarial | null>(null);
 const configurandoNotif = ref<GrupoEmpresarial | null>(null);
 const habilitando = ref<GrupoEmpresarial | null>(null);
+const vinculando = ref<GrupoEmpresarial | null>(null);
+const operacoes = ref<OperacaoVinculavel[]>(OPERACOES_VINCULAVEIS_SEED.map((o) => ({ ...o, agrupamentoIds: [...o.agrupamentoIds], grupoIds: [...o.grupoIds] })));
 
 const QUICK_FILTERS: { key: QuickParecerFilter; label: string; status: ParecerStatus }[] = [
   { key: 'EXPIRADO', label: 'Vencido', status: 'EXPIRADO' },
@@ -157,6 +161,7 @@ function openFilters() {
 function menuActions(g: GrupoEmpresarial) {
   return [
     { icon: Settings2, label: 'Parametrizações', onClick: () => { menuOpenId.value = null; emit('open', g.id); } },
+    { icon: Link2, label: 'Vincular a um veículo', onClick: () => { menuOpenId.value = null; vinculando.value = g; } },
     { icon: UserCog, label: 'Transferir gerente', onClick: () => { menuOpenId.value = null; transferindo.value = g; } },
     { icon: BellRing, label: 'Configurar notificações', onClick: () => { menuOpenId.value = null; configurandoNotif.value = g; } },
     { icon: ShieldCheck, label: 'Habilitar para operar', onClick: () => { menuOpenId.value = null; habilitando.value = g; } },
@@ -385,6 +390,16 @@ function menuActions(g: GrupoEmpresarial) {
     <TransferirGerenteModal v-if="transferindo" :grupo-nome="transferindo.nome" :gerente-atual="transferindo.gerente" @close="transferindo = null" @confirm="transferindo = null" />
     <ConfigurarNotificacoesModal v-if="configurandoNotif" :grupo-nome="configurandoNotif.nome" @close="configurandoNotif = null" @confirm="configurandoNotif = null" />
     <HabilitarOperarModal v-if="habilitando" :grupo-nome="habilitando.nome" @close="habilitando = null" @confirm="habilitando = null" />
+    <VincularAgrupamentoModal
+      v-if="vinculando"
+      :target="vinculando"
+      target-label="Grupo"
+      link-key="grupoIds"
+      :entidades="grupos"
+      :operacoes="operacoes"
+      @update:operacoes="operacoes = $event"
+      @close="vinculando = null"
+    />
   </div>
 </template>
 
