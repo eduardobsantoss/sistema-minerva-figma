@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { X, Search } from 'lucide-vue-next';
+import { X } from 'lucide-vue-next';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
@@ -16,6 +16,11 @@ const filtroDataIni = ref('');
 const filtroDataFim = ref('');
 const filtroSacado = ref('');
 const selectedIds = ref<Set<string>>(new Set());
+
+/** Fixed column track — total wider than modal so overflow-x scrolls. */
+const COLS =
+  '48px 100px 110px 72px 100px 110px 110px 110px 130px minmax(180px, 1.2fr) minmax(180px, 1.2fr) 110px 72px';
+const TABLE_MIN_WIDTH = '1480px';
 
 const titulos = computed(() => {
   const l = filtroLastro.value.trim().toLowerCase();
@@ -98,14 +103,14 @@ function confirmar() {
         overflow: hidden;
       "
     >
-      <div class="flex items-center justify-between" style="padding: 20px 24px; border-bottom: 1px solid var(--border-default)">
+      <div class="flex items-center justify-between" style="padding: 20px 24px; border-bottom: 1px solid var(--border-default); flex-shrink: 0">
         <h3 style="font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-strong)">Vincular Ativos</h3>
         <button aria-label="Fechar" style="background: none; border: none; cursor: pointer; color: var(--text-muted)" @click="emit('close')">
           <X :size="20" />
         </button>
       </div>
 
-      <div style="padding: 20px 24px; overflow-y: auto; flex: 1">
+      <div style="padding: 20px 24px; overflow-y: auto; flex: 1; min-height: 0">
         <div class="grid" style="grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px">
           <FormField label="Lastro" placeholder="Buscar lastro" v-model="filtroLastro" />
           <FormField label="Números" placeholder="Buscar número" v-model="filtroNumeros" />
@@ -115,20 +120,21 @@ function confirmar() {
         </div>
 
         <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
-          <div style="overflow-x: auto">
-            <div style="min-width: 1000px">
+          <div class="vincular-ativos-scroll" style="overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch">
+            <div :style="{ minWidth: TABLE_MIN_WIDTH }">
               <div
                 class="grid items-center"
-                style="
-                  grid-template-columns: 40px 80px 90px 70px 90px 100px 100px 120px 1.2fr 1.2fr 90px 70px;
-                  padding: 10px 14px;
-                  background: var(--surface-sunken);
-                  font-size: 10px;
-                  font-weight: var(--weight-bold);
-                  letter-spacing: 0.08em;
-                  color: var(--text-muted);
-                  text-transform: uppercase;
-                "
+                :style="{
+                  gridTemplateColumns: COLS,
+                  columnGap: '12px',
+                  padding: '12px 16px',
+                  background: 'var(--surface-sunken)',
+                  fontSize: '10px',
+                  fontWeight: 'var(--weight-bold)',
+                  letterSpacing: '0.08em',
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                }"
               >
                 <div class="flex items-center justify-center">
                   <Checkbox :checked="allSelected" :indeterminate="someSelected" @change="toggleAll" />
@@ -150,28 +156,45 @@ function confirmar() {
                 v-for="t in pageItems"
                 :key="t.id"
                 class="grid items-center"
-                style="
-                  grid-template-columns: 40px 80px 90px 70px 90px 100px 100px 120px 1.2fr 1.2fr 90px 70px;
-                  padding: 10px 14px;
-                  border-top: 1px solid var(--border-default);
-                  font-size: var(--text-sm);
-                "
+                :style="{
+                  gridTemplateColumns: COLS,
+                  columnGap: '12px',
+                  padding: '14px 16px',
+                  borderTop: '1px solid var(--border-default)',
+                  fontSize: 'var(--text-sm)',
+                }"
               >
                 <div class="flex items-center justify-center">
                   <Checkbox :checked="selectedIds.has(t.id)" @change="toggle(t.id)" />
                 </div>
-                <div>{{ t.lastro }}</div>
-                <div style="font-weight: var(--weight-semibold)">{{ t.numero }}</div>
-                <div>{{ t.tipoOperacao }}</div>
-                <div>{{ t.situacao }}</div>
-                <div>{{ t.confirmacao }}</div>
-                <div>{{ t.dataCriacao }}</div>
-                <div>{{ t.dataEmissao }}</div>
-                <div style="font-variant-numeric: tabular-nums">{{ brl(t.valorNominal) }}</div>
-                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ t.cedente }}</div>
-                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ t.sacado }}</div>
-                <div>{{ t.vencimento }}</div>
-                <div>{{ t.entrega }}</div>
+                <div style="white-space: nowrap">{{ t.lastro }}</div>
+                <div style="font-weight: var(--weight-semibold); white-space: nowrap">{{ t.numero }}</div>
+                <div style="white-space: nowrap">{{ t.tipoOperacao }}</div>
+                <div style="white-space: nowrap">{{ t.situacao }}</div>
+                <div style="white-space: nowrap">{{ t.confirmacao }}</div>
+                <div style="white-space: nowrap">{{ t.dataCriacao }}</div>
+                <div style="white-space: nowrap">{{ t.dataEmissao }}</div>
+                <div style="font-variant-numeric: tabular-nums; white-space: nowrap">{{ brl(t.valorNominal) }}</div>
+                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap" :title="t.cedente">{{ t.cedente }}</div>
+                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap" :title="t.sacado">{{ t.sacado }}</div>
+                <div style="white-space: nowrap">{{ t.vencimento }}</div>
+                <div>
+                  <span
+                    :style="{
+                      display: 'inline-block',
+                      fontSize: '10px',
+                      fontWeight: 'var(--weight-bold)',
+                      letterSpacing: '0.06em',
+                      padding: '3px 8px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: t.entrega === 'FUT' ? 'var(--gci-light)' : 'var(--agro-light)',
+                      color: t.entrega === 'FUT' ? 'var(--gci-base)' : 'var(--agro-base)',
+                      whiteSpace: 'nowrap',
+                    }"
+                  >
+                    {{ t.entrega }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -188,7 +211,7 @@ function confirmar() {
 
       <div
         class="flex items-center justify-between"
-        style="padding: 16px 24px; border-top: 1px solid var(--border-default); flex-wrap: wrap; gap: 12px"
+        style="padding: 16px 24px; border-top: 1px solid var(--border-default); flex-wrap: wrap; gap: 12px; flex-shrink: 0"
       >
         <div class="flex items-center" style="gap: 20px; flex-wrap: wrap">
           <div>
@@ -217,6 +240,7 @@ function confirmar() {
             font-weight: var(--weight-bold);
             font-size: var(--text-xs);
             letter-spacing: 0.08em;
+            opacity: selectedIds.size === 0 ? 0.5 : 1;
           "
           @click="confirmar"
         >

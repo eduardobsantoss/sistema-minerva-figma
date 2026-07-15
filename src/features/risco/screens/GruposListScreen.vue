@@ -9,10 +9,10 @@ import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import {
   GRUPOS_SEED, GERENTES_SEED, TIPO_CLIENTE_OPTS, STATUS_OPERACAO_OPTS,
-  OPERACOES_VINCULAVEIS_SEED,
   statusOperacaoColor, parecerLabel, parecerColor, brl,
-  type GrupoEmpresarial, type ParecerStatus, type OperacaoVinculavel,
+  type GrupoEmpresarial, type ParecerStatus,
 } from '../data/riscoData';
+import { applyGrupoVinculos, operacoesVinculaveis } from '../data/vinculosStore';
 import TransferirGerenteModal from '../components/modals/TransferirGerenteModal.vue';
 import ConfigurarNotificacoesModal from '../components/modals/ConfigurarNotificacoesModal.vue';
 import HabilitarOperarModal from '../components/modals/HabilitarOperarModal.vue';
@@ -74,7 +74,6 @@ const transferindo = ref<GrupoEmpresarial | null>(null);
 const configurandoNotif = ref<GrupoEmpresarial | null>(null);
 const habilitando = ref<GrupoEmpresarial | null>(null);
 const vinculando = ref<GrupoEmpresarial | null>(null);
-const operacoes = ref<OperacaoVinculavel[]>(OPERACOES_VINCULAVEIS_SEED.map((o) => ({ ...o, agrupamentoIds: [...o.agrupamentoIds], grupoIds: [...o.grupoIds] })));
 
 const QUICK_FILTERS: { key: QuickParecerFilter; label: string; status: ParecerStatus }[] = [
   { key: 'EXPIRADO', label: 'Vencido', status: 'EXPIRADO' },
@@ -395,9 +394,8 @@ function menuActions(g: GrupoEmpresarial) {
       :target="vinculando"
       target-label="Grupo"
       link-key="grupoIds"
-      :entidades="grupos"
-      :operacoes="operacoes"
-      @update:operacoes="operacoes = $event"
+      :operacoes="operacoesVinculaveis"
+      @update:operacoes="(ops) => { applyGrupoVinculos(vinculando!.id, ops); vinculando = null; }"
       @close="vinculando = null"
     />
   </div>

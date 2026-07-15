@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { X, Pencil, ArrowRight, ArrowLeft, Link2 } from 'lucide-vue-next';
-import type { EntidadeVinculo, OperacaoVinculavel, VinculoLinkKey } from '../../data/riscoData';
-import { SummaryCard, TransferButton, TransferPanel, type FiltroTipo } from './vincular-agrupamento';
+import { computed, ref, watch } from 'vue';
+import { X, Pencil, Search, Check, Link2 } from 'lucide-vue-next';
+import type { EntidadeVinculo, OperacaoVinculavel, TipoOperacaoVinculo, VinculoLinkKey } from '../../data/riscoData';
+
+type FiltroTipo = 'TODOS' | TipoOperacaoVinculo;
 
 interface Props {
   target: EntidadeVinculo;
   targetLabel: string;
   linkKey: VinculoLinkKey;
-  entidades: EntidadeVinculo[];
   operacoes: OperacaoVinculavel[];
   editable?: boolean;
 }
@@ -22,93 +22,107 @@ const emit = defineEmits<{
   'update:operacoes': [operacoes: OperacaoVinculavel[]];
 }>();
 
-const searchLeft = ref('');
-const searchRight = ref('');
-const filterLeft = ref<FiltroTipo>('TODOS');
-const filterRight = ref<FiltroTipo>('TODOS');
-const selectedLeft = ref<Set<string>>(new Set());
-const selectedRight = ref<Set<string>>(new Set());
+const search = ref('');
+const filtro = ref<FiltroTipo>('TODOS');
+const selectedIds = ref<Set<string>>(new Set());
 
-const disponiveis = computed(() =>
-  props.operacoes.filter((o) => !o[props.linkKey].includes(props.target.id)),
-);
-const vinculadas = computed(() =>
-  props.operacoes.filter((o) => o[props.linkKey].includes(props.target.id)),
+function syncSelectionFromProps() {
+  selectedIds.value = new Set(
+    props.operacoes.filter((o) => o[props.linkKey].includes(props.target.id)).map((o) => o.id),
+  );
+}
+
+watch(
+  () => [props.target.id, props.linkKey, props.operacoes] as const,
+  () => syncSelectionFromProps(),
+  { immediate: true },
 );
 
-function filtrarOperacoes(list: OperacaoVinculavel[], filtro: FiltroTipo, search: string): OperacaoVinculavel[] {
-  const needle = search.trim().toLowerCase();
-  return list.filter((o) => {
-    if (filtro !== 'TODOS' && o.tipo !== filtro) return false;
+const filtered = computed(() => {
+  const needle = search.value.trim().toLowerCase();
+  return props.operacoes.filter((o) => {
+    if (filtro.value !== 'TODOS' && o.tipo !== filtro.value) return false;
     if (needle && !o.nome.toLowerCase().includes(needle)) return false;
     return true;
   });
+});
+
+const selectedCount = computed(() => selectedIds.value.size);
+const crasCount = computed(() =>
+  props.operacoes.filter((o) => selectedIds.value.has(o.id) && o.tipo === 'CRA').length,
+);
+const fidcsCount = computed(() =>
+  props.operacoes.filter((o) => selectedIds.value.has(o.id) && o.tipo === 'FIDC').length,
+);
+
+function isSelected(id: string) {
+  return selectedIds.value.has(id);
 }
 
-const disponiveisFiltradas = computed(() => filtrarOperacoes(disponiveis.value, filterLeft.value, searchLeft.value));
-const vinculadasFiltradas = computed(() => filtrarOperacoes(vinculadas.value, filterRight.value, searchRight.value));
-
-const crasVinculados = computed(() => vinculadas.value.filter((o) => o.tipo === 'CRA').length);
-const fidcsVinculados = computed(() => vinculadas.value.filter((o) => o.tipo === 'FIDC').length);
-
-function toggle(set: Set<string>, assign: (s: Set<string>) => void, id: string) {
-  const next = new Set(set);
+function toggle(id: string) {
+  const next = new Set(selectedIds.value);
   if (next.has(id)) next.delete(id);
   else next.add(id);
-  assign(next);
+  selectedIds.value = next;
 }
 
-function handleVincular() {
-  if (selectedLeft.value.size === 0) return;
+function confirmar() {
+  const targetId = props.target.id;
   emit(
     'update:operacoes',
-    props.operacoes.map((o) =>
-      selectedLeft.value.has(o.id)
-        ? { ...o, [props.linkKey]: [...o[props.linkKey], props.target.id] }
-        : o,
-    ),
+    props.operacoes.map((o) => {
+      const linked = o[props.linkKey].includes(targetId);
+      const shouldLink = selectedIds.value.has(o.id);
+      if (shouldLink && !linked) return { ...o, [props.linkKey]: [...o[props.linkKey], targetId] };
+      if (!shouldLink && linked) return { ...o, [props.linkKey]: o[props.linkKey].filter((id) => id !== targetId) };
+      return o;
+    }),
   );
-  selectedLeft.value = new Set();
-}
-
-function handleDesvincular() {
-  if (selectedRight.value.size === 0) return;
-  emit(
-    'update:operacoes',
-    props.operacoes.map((o) =>
-      selectedRight.value.has(o.id)
-        ? { ...o, [props.linkKey]: o[props.linkKey].filter((id) => id !== props.target.id) }
-        : o,
-    ),
-  );
-  selectedRight.value = new Set();
+  emit('close');
 }
 </script>
 
 <template>
   <div
     style="
-      position: fixed; inset: 0;
-      background: rgba(8,60,74,0.55); backdrop-filter: blur(8px);
-      z-index: 400; display: flex; align-items: center; justify-content: center;
-      padding: 32px; animation: fadeIn 0.2s ease-out;
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 60, 74, 0.55);
+      backdrop-filter: blur(8px);
+      z-index: 400;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      animation: fadeIn 0.2s ease-out;
     "
+    @click.self="emit('close')"
   >
     <div
       class="flex flex-col"
       style="
-        background: var(--surface-card); border-radius: var(--radius-xl);
-        width: 100%; max-width: 1040px; max-height: 92vh;
-        overflow: hidden; box-shadow: var(--shadow-lg);
+        background: var(--surface-card);
+        border-radius: var(--radius-xl);
+        width: 100%;
+        max-width: 1100px;
+        max-height: calc(100vh - 64px);
+        height: calc(100vh - 64px);
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
       "
       @click.stop
     >
-      <!-- Header — claro, conforme tokens (sem faixa teal) -->
-      <div class="flex items-center justify-between" style="padding: 20px 28px; border-bottom: 1px solid var(--border-default); flex-shrink: 0">
-        <div class="flex items-center" style="gap: 10px">
-          <h2 style="font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: 0.02em; text-transform: uppercase">
-            {{ targetLabel }}: {{ target.nome }}
-          </h2>
+      <div class="flex items-center justify-between" style="padding: 24px 32px; border-bottom: 1px solid var(--border-default); flex-shrink: 0">
+        <div class="flex items-center" style="gap: 10px; min-width: 0; flex: 1">
+          <Link2 :size="18" style="color: var(--text-muted); flex-shrink: 0" />
+          <div style="min-width: 0">
+            <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.02em; line-height: 1.2">
+              Vincular veículos
+            </h2>
+            <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+              {{ targetLabel }}: {{ target.nome }}
+            </p>
+          </div>
           <button
             v-if="editable"
             :aria-label="`Editar ${targetLabel.toLowerCase()}`"
@@ -123,87 +137,123 @@ function handleDesvincular() {
         <button
           aria-label="Fechar"
           class="flex items-center justify-center"
-          style="width: 32px; height: 32px; border-radius: var(--radius-lg); border: 1px solid var(--border-default); background: var(--surface-card); cursor: pointer; color: var(--text-muted); flex-shrink: 0"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
           @click="emit('close')"
         >
-          <X :size="16" />
+          <X :size="18" />
         </button>
       </div>
 
-      <!-- Body -->
-      <div class="flex flex-col" style="padding: 24px; gap: 20px; overflow: auto">
-        <!-- Cards de resumo — somente leitura, calculados -->
-        <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px">
-          <SummaryCard label="CRAs vinculados" :value="crasVinculados" />
-          <SummaryCard label="FIDCs vinculados" :value="fidcsVinculados" />
-          <SummaryCard label="Total" :value="vinculadas.length" strong />
+      <div class="flex flex-col" style="padding: 28px 32px; gap: 16px; overflow-y: auto; overflow-x: hidden; flex: 1; min-height: 0">
+        <p style="font-size: var(--text-sm); color: var(--text-muted); line-height: 1.5; margin: 0">
+          Selecione os veículos (CRA/FIDC) vinculados a este {{ targetLabel.toLowerCase() }}.
+          <strong style="color: var(--text-default)">{{ selectedCount }} selecionados</strong>
+          <span style="color: var(--text-muted)"> · {{ crasCount }} CRA · {{ fidcsCount }} FIDC</span>.
+        </p>
+
+        <div class="relative" style="background: var(--surface-sunken); border-radius: var(--radius-lg); flex-shrink: 0">
+          <Search :size="16" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--neutral-400)" />
+          <input
+            v-model="search"
+            placeholder="Filtrar veículos..."
+            style="width: 100%; height: 44px; padding-left: 44px; padding-right: 16px; background: transparent; border: none; outline: none; font-size: var(--text-sm); color: var(--text-strong)"
+          />
         </div>
 
-        <!-- Transferência dupla -->
-        <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 20px">
-          <div class="flex items-center" style="gap: 8px; margin-bottom: 14px">
-            <Link2 :size="14" style="color: var(--text-muted)" />
-            <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase">
-              Operações Vinculadas
+        <div class="flex items-center" style="gap: 6px; flex-shrink: 0">
+          <button
+            v-for="f in ([
+              { key: 'TODOS', label: 'Todos' },
+              { key: 'CRA', label: 'CRA' },
+              { key: 'FIDC', label: 'FIDC' },
+            ] as const)"
+            :key="f.key"
+            :style="{
+              padding: '6px 12px', borderRadius: '9999px', cursor: 'pointer',
+              fontSize: '10px', fontWeight: 'var(--weight-bold)',
+              border: `1px solid ${filtro === f.key ? 'var(--gci-base)' : 'var(--border-default)'}`,
+              background: filtro === f.key ? 'var(--surface-selected)' : 'var(--surface-card)',
+              color: filtro === f.key ? 'var(--gci-base)' : 'var(--text-muted)',
+              transition: 'all var(--duration-fast)',
+            }"
+            @click="filtro = f.key"
+          >
+            {{ f.label }}
+          </button>
+        </div>
+
+        <div
+          v-if="filtered.length === 0"
+          style="padding: 40px 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+        >
+          Nenhum veículo encontrado.
+        </div>
+        <div v-else class="grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+          <button
+            v-for="o in filtered"
+            :key="o.id"
+            class="flex items-center"
+            :style="{
+              gap: '10px',
+              padding: '12px 14px',
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: isSelected(o.id) ? 'var(--gci-base)' : 'var(--border-default)',
+              borderRadius: 'var(--radius-lg)',
+              background: isSelected(o.id) ? 'var(--gci-light)' : 'var(--surface-card)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all var(--duration-base)',
+              minWidth: 0,
+              overflow: 'hidden',
+            }"
+            @click="toggle(o.id)"
+          >
+            <span
+              class="flex items-center justify-center"
+              :style="{
+                width: '20px',
+                height: '20px',
+                borderRadius: '9999px',
+                flexShrink: 0,
+                background: isSelected(o.id) ? 'var(--gci-base)' : 'var(--surface-sunken)',
+                color: isSelected(o.id) ? '#fff' : 'var(--text-muted)',
+                transition: 'all var(--duration-base)',
+              }"
+            >
+              <Check v-if="isSelected(o.id)" :size="11" />
             </span>
-          </div>
-
-          <div class="grid" style="grid-template-columns: 1fr 140px 1fr; gap: 16px; align-items: stretch">
-            <TransferPanel
-              :title="`Disponíveis (${disponiveisFiltradas.length})`"
-              :search="searchLeft"
-              :filter="filterLeft"
-              :items="disponiveisFiltradas"
-              :entidades="entidades"
-              :entity-label="targetLabel"
-              :link-key="linkKey"
-              :selected="selectedLeft"
-              @update:search="searchLeft = $event"
-              @update:filter="filterLeft = $event"
-              @toggle-item="toggle(selectedLeft, (s) => (selectedLeft = s), $event)"
-            />
-
-            <!-- Ações centrais -->
-            <div class="flex flex-col items-center justify-center" style="gap: 10px">
-              <TransferButton
-                :icon="ArrowRight"
-                label="Vincular"
-                :active="selectedLeft.size > 0"
-                @click="handleVincular"
-              />
-              <TransferButton
-                :icon="ArrowLeft"
-                label="Desvincular"
-                :active="selectedRight.size > 0"
-                reverse
-                @click="handleDesvincular"
-              />
+            <div style="flex: 1; min-width: 0; overflow: hidden">
+              <div
+                :style="{
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: isSelected(o.id) ? 'var(--weight-semibold)' : 'var(--weight-medium)',
+                  color: isSelected(o.id) ? 'var(--gci-base)' : 'var(--text-default)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }"
+              >
+                {{ o.nome }}
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px">{{ o.tipo }}</div>
             </div>
-
-            <TransferPanel
-              :title="`Vinculadas (${vinculadasFiltradas.length})`"
-              :search="searchRight"
-              :filter="filterRight"
-              :items="vinculadasFiltradas"
-              :entidades="entidades"
-              :entity-label="targetLabel"
-              :link-key="linkKey"
-              :selected="selectedRight"
-              @update:search="searchRight = $event"
-              @update:filter="filterRight = $event"
-              @toggle-item="toggle(selectedRight, (s) => (selectedRight = s), $event)"
-            />
-          </div>
+          </button>
         </div>
       </div>
 
-      <!-- Footer -->
-      <div class="flex items-center justify-end" style="gap: 12px; padding: 14px 28px; border-top: 1px solid var(--border-default); background: var(--surface-card); flex-shrink: 0">
+      <div class="flex items-center justify-end" style="gap: 12px; padding: 16px 32px; border-top: 1px solid var(--border-default); background: var(--surface-card); flex-shrink: 0">
         <button
-          style="height: 40px; padding: 0 20px; background: var(--surface-card); color: var(--text-strong); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
+          style="height: 44px; padding: 0 20px; background: var(--surface-card); color: var(--text-strong); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
           @click="emit('close')"
         >
-          Fechar
+          Cancelar
+        </button>
+        <button
+          style="height: 44px; padding: 0 24px; background: var(--action-primary-bg); color: var(--action-primary-text); border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
+          @click="confirmar"
+        >
+          Confirmar
         </button>
       </div>
     </div>

@@ -9,9 +9,10 @@ import GarantiaSubTab from './GarantiaSubTab.vue';
 interface Props {
   data: Parametrizacoes;
   partesRelacionadas: ParteRelacionada[];
+  grupoId: string;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 const emit = defineEmits<{
   change: [data: Parametrizacoes];
   'update:partes-relacionadas': [data: ParteRelacionada[]];
@@ -43,7 +44,12 @@ const tab = ref<SubTab>('Limite');
     </div>
 
     <LimiteSubTab v-if="tab === 'Limite'" :data="data.limite" @save="(limite) => emit('change', { ...data, limite })" />
-    <AutoatendimentoSubTab v-if="tab === 'Autoatendimento'" :data="data.autoatendimento" @save="(autoatendimento) => emit('change', { ...data, autoatendimento })" />
+    <AutoatendimentoSubTab
+      v-if="tab === 'Autoatendimento'"
+      :data="data.autoatendimento"
+      :grupo-id="props.grupoId"
+      @save="(autoatendimento) => emit('change', { ...data, autoatendimento })"
+    />
     <GeralSubTab
       v-if="tab === 'Geral'"
       :data="data.geral"

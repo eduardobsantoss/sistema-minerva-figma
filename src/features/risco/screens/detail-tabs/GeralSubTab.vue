@@ -231,7 +231,7 @@ function handleSavePartes() {
 
     <TabCard title="Ativos Não Performados" :icon="Truck">
       <div class="flex flex-col" style="gap: 16px">
-        <ToggleRow compact label="Pode operar NFe de Entrega Futura" :on="form.nfEntregaFuturaPodeOperar" @toggle="form.nfEntregaFuturaPodeOperar = !form.nfEntregaFuturaPodeOperar" />
+        <ToggleRow label="Pode operar NFe de Entrega Futura" :on="form.nfEntregaFuturaPodeOperar" @toggle="form.nfEntregaFuturaPodeOperar = !form.nfEntregaFuturaPodeOperar" />
         <div style="max-width: 320px">
           <PctInput label="Percentual máximo para NFe Entrega Futura" :value="form.nfEntregaFuturaOperacaoMaximaPct" :disabled="!form.nfEntregaFuturaPodeOperar" @change="form.nfEntregaFuturaOperacaoMaximaPct = $event" />
         </div>
@@ -240,7 +240,7 @@ function handleSavePartes() {
 
     <TabCard title="Crédito e Serasa" :icon="ShieldCheck" has-save @save="handleSaveGeral">
       <div class="flex flex-col" style="gap: 16px">
-        <ToggleRow compact label="Exige Aprovação do Sacado Pelo Setor de Crédito" :on="form.creditoPreAprovacaoSacado" @toggle="form.creditoPreAprovacaoSacado = !form.creditoPreAprovacaoSacado" />
+        <ToggleRow label="Exige Aprovação do Sacado Pelo Setor de Crédito" :on="form.creditoPreAprovacaoSacado" @toggle="form.creditoPreAprovacaoSacado = !form.creditoPreAprovacaoSacado" />
         <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px">
           <div style="grid-column: span 4">
             <DiasInput label="Validade da consulta Serasa do sacado (Dias)" :value="form.validadeSerasaSacadoDias" @change="form.validadeSerasaSacadoDias = $event" />

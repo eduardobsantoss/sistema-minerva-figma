@@ -1,48 +1,56 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { Zap, Trash2 } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { Zap, MoreVertical, Percent, X } from 'lucide-vue-next';
 import {
-  VEICULO_OPERACAO_OPTS,
   type ParametrizacaoAutoatendimento,
   type VeiculoOperacao,
 } from '../../data/riscoData';
-import { TabCard, FieldLabel, EmptyState, AddButton } from './shared';
+import { rememberVeiculosMeta } from '../../data/vinculosStore';
+import { TabCard, FieldLabel, EmptyState } from './shared';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 
 interface Props {
   data: ParametrizacaoAutoatendimento;
+  grupoId: string;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<{ save: [data: ParametrizacaoAutoatendimento] }>();
+
 const form = reactive<ParametrizacaoAutoatendimento>({
   ...props.data,
   veiculosOperacao: props.data.veiculosOperacao.map((v) => ({ ...v })),
 });
 
-const novoVeiculo = ref('');
-const novaTaxaCessao = ref('');
+watch(
+  () => props.data,
+  (data) => {
+    form.limiteOperacoesAutomaticas = data.limiteOperacoesAutomaticas;
+    form.taxaFee = data.taxaFee;
+    form.taxaRisco = data.taxaRisco;
+    form.veiculosOperacao = data.veiculosOperacao.map((v) => ({ ...v }));
+  },
+  { deep: true },
+);
 
-const TABLE_GRID = '1fr 1.4fr 110px 40px';
+const TABLE_GRID = '1fr 1.4fr 110px 44px';
 
 const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
   () => form.veiculosOperacao,
   { defaultPageSize: 5 },
 );
 
-const veiculosDisponiveis = computed(() =>
-  VEICULO_OPERACAO_OPTS.filter(
-    (opt) => !form.veiculosOperacao.some((v) => v.veiculo === opt),
-  ),
-);
-
-function parsePct(value: string): number {
-  return Number(value.replace('%', '').replace(',', '.')) || 0;
-}
+const menuOpenId = ref<string | null>(null);
+const editandoTaxa = ref<VeiculoOperacao | null>(null);
+const taxaDraft = ref('');
 
 function formatPct(value: number): string {
   return `${value.toFixed(2).replace('.', ',')}%`;
+}
+
+function parsePct(value: string): number {
+  return Number(value.replace('%', '').replace(',', '.')) || 0;
 }
 
 function handleMoneyInput(e: Event) {
@@ -55,42 +63,31 @@ function handlePctInput(field: 'taxaFee' | 'taxaRisco', e: Event) {
   form[field] = Number(target.value.replace('%', '').replace(',', '.')) || 0;
 }
 
-function resetForm() {
-  novoVeiculo.value = '';
-  novaTaxaCessao.value = '';
-}
-
-function addVeiculo() {
-  if (!novoVeiculo.value) return;
-  const nova: VeiculoOperacao = {
-    id: `vo-${Date.now()}`,
-    veiculo: novoVeiculo.value,
-    taxaCessaoPadrao: parsePct(novaTaxaCessao.value),
-    preferencial: form.veiculosOperacao.length === 0,
-  };
-  form.veiculosOperacao = [...form.veiculosOperacao, nova];
-  resetForm();
-}
-
-function removeVeiculo(id: string) {
-  const removed = form.veiculosOperacao.find((v) => v.id === id);
-  form.veiculosOperacao = form.veiculosOperacao.filter((v) => v.id !== id);
-  if (removed?.preferencial && form.veiculosOperacao.length > 0) {
-    form.veiculosOperacao = form.veiculosOperacao.map((v, i) => ({
-      ...v,
-      preferencial: i === 0,
-    }));
-  }
-}
-
 function setPreferencial(id: string) {
   form.veiculosOperacao = form.veiculosOperacao.map((v) => ({
     ...v,
-    preferencial: v.id === id,
+    preferencial: v.id === id ? !v.preferencial : false,
   }));
 }
 
+function openAlterarTaxa(v: VeiculoOperacao) {
+  menuOpenId.value = null;
+  editandoTaxa.value = v;
+  taxaDraft.value = formatPct(v.taxaCessaoPadrao);
+}
+
+function confirmarTaxa() {
+  if (!editandoTaxa.value) return;
+  const id = editandoTaxa.value.id;
+  const taxa = parsePct(taxaDraft.value);
+  form.veiculosOperacao = form.veiculosOperacao.map((v) =>
+    v.id === id ? { ...v, taxaCessaoPadrao: taxa } : v,
+  );
+  editandoTaxa.value = null;
+}
+
 function handleSave() {
+  rememberVeiculosMeta(props.grupoId, form.veiculosOperacao);
   emit('save', {
     limiteOperacoesAutomaticas: form.limiteOperacoesAutomaticas,
     taxaFee: form.taxaFee,
@@ -98,6 +95,19 @@ function handleSave() {
     veiculosOperacao: form.veiculosOperacao.map((v) => ({ ...v })),
   });
 }
+
+function handleClickOutside(e: MouseEvent) {
+  const el = e.target as HTMLElement | null;
+  if (el?.closest?.('[data-veiculo-menu]')) return;
+  menuOpenId.value = null;
+}
+
+onMounted(() => document.addEventListener('mousedown', handleClickOutside));
+onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside));
+
+const emptyHint = computed(() =>
+  'Vincule veículos ao grupo pela ação “Vincular a um veículo” para listá-los aqui.',
+);
 </script>
 
 <template>
@@ -123,7 +133,7 @@ function handleSave() {
           />
         </div>
         <div>
-          <FieldLabel>Taxa de risco</FieldLabel>
+          <FieldLabel>Taxa de risco padrão</FieldLabel>
           <input
             type="text"
             :value="`${form.taxaRisco.toFixed(2).replace('.', ',')}%`"
@@ -137,92 +147,133 @@ function handleSave() {
         <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); margin-bottom: 12px">
           Veículos de Operação Preferencial
         </div>
-        <div class="flex flex-col" style="gap: 16px">
-          <div class="grid items-end" style="grid-template-columns: 1fr 1.4fr auto; gap: 10px">
-            <div>
-              <FieldLabel>Taxa de cessão padrão</FieldLabel>
-              <input
-                v-model="novaTaxaCessao"
-                placeholder="0,00%"
-                style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)"
-              />
-            </div>
-            <div>
-              <FieldLabel>* Veículo</FieldLabel>
-              <select
-                v-model="novoVeiculo"
-                style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); background: var(--surface-card); color: var(--text-strong)"
+        <EmptyState
+          v-if="form.veiculosOperacao.length === 0"
+          :icon="Zap"
+          title="Nenhum veículo vinculado"
+          :hint="emptyHint"
+        />
+        <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: visible">
+          <div
+            class="grid items-center autoatendimento-table-row autoatendimento-table-header"
+            :style="{ gridTemplateColumns: TABLE_GRID }"
+          >
+            <div class="col-num">Taxa cessão</div>
+            <div class="col-veiculo">Veículo</div>
+            <div class="col-preferencial">Preferencial</div>
+            <div />
+          </div>
+          <div
+            v-for="v in pageItems"
+            :key="v.id"
+            class="grid items-center autoatendimento-table-row"
+            :style="{ gridTemplateColumns: TABLE_GRID }"
+          >
+            <div class="col-num">{{ formatPct(v.taxaCessaoPadrao) }}</div>
+            <div class="col-veiculo">{{ v.veiculo }}</div>
+            <div class="col-preferencial">
+              <button
+                type="button"
+                role="switch"
+                :aria-checked="v.preferencial"
+                :aria-label="`Marcar ${v.veiculo} como preferencial`"
+                class="preferencial-toggle"
+                :class="{ 'preferencial-toggle--on': v.preferencial }"
+                @click="setPreferencial(v.id)"
               >
-                <option value="">Selecione</option>
-                <option v-for="opt in veiculosDisponiveis" :key="opt" :value="opt">{{ opt }}</option>
-              </select>
+                <span class="preferencial-toggle__knob" />
+              </button>
             </div>
-            <AddButton @click="addVeiculo" />
+            <div class="flex justify-end" style="position: relative" data-veiculo-menu>
+              <button
+                aria-label="Ações do veículo"
+                class="flex items-center justify-center"
+                style="width: 28px; height: 28px; border: none; background: none; border-radius: var(--radius-md); cursor: pointer; color: var(--text-muted)"
+                @click.stop="menuOpenId = menuOpenId === v.id ? null : v.id"
+              >
+                <MoreVertical :size="15" />
+              </button>
+              <div
+                v-if="menuOpenId === v.id"
+                class="flex flex-col"
+                style="position: absolute; top: 32px; right: 0; z-index: 40; min-width: 200px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 6px"
+              >
+                <button
+                  class="flex items-center veiculo-action-item"
+                  style="gap: 10px; padding: 10px 12px; background: none; border: none; cursor: pointer; border-radius: var(--radius-md); text-align: left; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-default); width: 100%"
+                  @click="openAlterarTaxa(v)"
+                >
+                  <Percent :size="15" style="color: var(--text-muted)" />
+                  Alterar Taxa de Cessão
+                </button>
+              </div>
+            </div>
           </div>
-
-          <EmptyState
-            v-if="form.veiculosOperacao.length === 0"
-            :icon="Zap"
-            title="Nenhum veículo cadastrado"
-            hint="Cadastre veículos de operação e marque o preferencial."
+          <TablePagination
+            sunken
+            compact
+            :total="total"
+            :page="page"
+            :page-size="pageSize"
+            :page-size-options="[5, 10, 25]"
+            @update:page="setPage"
+            @update:page-size="setPageSize"
           />
-          <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
-            <div
-              class="grid items-center autoatendimento-table-row autoatendimento-table-header"
-              :style="{ gridTemplateColumns: TABLE_GRID }"
-            >
-              <div class="col-num">Taxa cessão</div>
-              <div class="col-veiculo">Veículo</div>
-              <div class="col-preferencial">Preferencial</div>
-              <div />
-            </div>
-            <div
-              v-for="v in pageItems"
-              :key="v.id"
-              class="grid items-center autoatendimento-table-row"
-              :style="{ gridTemplateColumns: TABLE_GRID }"
-            >
-              <div class="col-num">{{ formatPct(v.taxaCessaoPadrao) }}</div>
-              <div class="col-veiculo">{{ v.veiculo }}</div>
-              <div class="col-preferencial">
-                <button
-                  type="button"
-                  role="switch"
-                  :aria-checked="v.preferencial"
-                  :aria-label="`Marcar ${v.veiculo} como preferencial`"
-                  class="preferencial-toggle"
-                  :class="{ 'preferencial-toggle--on': v.preferencial }"
-                  @click="setPreferencial(v.id)"
-                >
-                  <span class="preferencial-toggle__knob" />
-                </button>
-              </div>
-              <div class="flex justify-end">
-                <button
-                  aria-label="Remover"
-                  class="flex items-center justify-center"
-                  style="width: 26px; height: 26px; border: none; background: none; border-radius: var(--radius-md); cursor: pointer; color: var(--action-danger-text-only)"
-                  @click="removeVeiculo(v.id)"
-                >
-                  <Trash2 :size="13" />
-                </button>
-              </div>
-            </div>
-            <TablePagination
-              sunken
-              compact
-              :total="total"
-              :page="page"
-              :page-size="pageSize"
-              :page-size-options="[5, 10, 25]"
-              @update:page="setPage"
-              @update:page-size="setPageSize"
-            />
-          </div>
         </div>
       </div>
     </div>
   </TabCard>
+
+  <div
+    v-if="editandoTaxa"
+    style="
+      position: fixed; inset: 0; z-index: 450;
+      background: rgba(8,60,74,0.45); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+    "
+    @click.self="editandoTaxa = null"
+  >
+    <div
+      style="
+        width: 100%; max-width: 420px;
+        background: var(--surface-card); border-radius: var(--radius-xl);
+        border: 1px solid var(--border-default); box-shadow: var(--shadow-lg); overflow: hidden;
+      "
+      @click.stop
+    >
+      <div class="flex items-center justify-between" style="padding: 18px 20px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h3 style="font-size: var(--text-base); font-weight: var(--weight-bold); color: var(--text-strong)">Alterar Taxa de Cessão</h3>
+          <p style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">{{ editandoTaxa.veiculo }}</p>
+        </div>
+        <button aria-label="Fechar" style="background: none; border: none; cursor: pointer; color: var(--text-muted)" @click="editandoTaxa = null">
+          <X :size="18" />
+        </button>
+      </div>
+      <div style="padding: 20px">
+        <FieldLabel>Taxa de cessão padrão</FieldLabel>
+        <input
+          v-model="taxaDraft"
+          placeholder="0,00%"
+          style="width: 100%; height: 40px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
+        />
+      </div>
+      <div class="flex justify-end" style="gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border-default)">
+        <button
+          style="height: 40px; padding: 0 16px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
+          @click="editandoTaxa = null"
+        >
+          Cancelar
+        </button>
+        <button
+          style="height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: var(--action-primary-text); border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
+          @click="confirmarTaxa"
+        >
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -254,6 +305,8 @@ function handleSave() {
   font-weight: var(--weight-semibold);
   color: var(--text-strong);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .autoatendimento-table-header .col-veiculo {
@@ -299,5 +352,9 @@ function handleSave() {
 
 .preferencial-toggle--on .preferencial-toggle__knob {
   left: 16px;
+}
+
+.veiculo-action-item:hover {
+  background: var(--surface-sunken);
 }
 </style>

@@ -432,14 +432,12 @@ export function detalheGrupo(grupo: GrupoEmpresarial): DetalheGrupo {
         limiteOperacoesAutomaticas: grupo.limiteAutoatendimento,
         taxaFee: 0.35,
         taxaRisco: 0.55,
-        veiculosOperacao: [
-          {
-            id: 'vo-1',
-            veiculo: 'CRA CERES',
-            taxaCessaoPadrao: 1.20,
-            preferencial: true,
-          },
-        ],
+        veiculosOperacao: OPERACOES_VINCULAVEIS_SEED.filter((o) => o.grupoIds.includes(grupo.id)).map((o) => ({
+          id: `vo-${o.id}`,
+          veiculo: o.nome,
+          taxaCessaoPadrao: 0,
+          preferencial: false,
+        })),
       },
       geral: {
         confirmacaoPreDesembolsoPct: 40,

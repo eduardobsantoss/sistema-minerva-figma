@@ -131,7 +131,6 @@ function handleDelete() {
       :target="vinculando"
       target-label="Agrupamento"
       link-key="agrupamentoIds"
-      :entidades="agrupamentos"
       :operacoes="operacoes"
       editable
       @update:operacoes="operacoes = $event"

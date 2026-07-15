@@ -220,7 +220,7 @@ Tabela com contagem de CRAs/FIDCs vinculados. Ações:
 - **Novo agrupamento** → `CreateAgrupamentoModal`;
 - **Renomear** → mesmo modal com `initial`;
 - **Excluir** → `DeleteAgrupamentoModal`;
-- **Clique na linha** → `VincularAgrupamentoModal` (painel duplo de transferência CRA/FIDC).
+- **Clique na linha** → `VincularAgrupamentoModal` (busca + grade de cards CRA/FIDC).
 
 ### Relatórios (`RelatoriosScreen.vue`)
 
@@ -244,7 +244,7 @@ interface Parametrizacoes {
 | Sub-aba | Arquivo | Destaques |
 |---|---|---|
 | Limite | `LimiteSubTab.vue` | Upload parecer, rating, tabela agrupamento×produto, `IncluirLimiteModal` |
-| Autoatendimento | `AutoatendimentoSubTab.vue` | Limite auto, taxas fee/risco/cessão, veículo preferencial |
+| Autoatendimento | `AutoatendimentoSubTab.vue` | Limites/taxas; veículos vêm da vinculação ao grupo (taxa 0%, preferencial off); menu ⋮ → Alterar Taxa de Cessão |
 | Geral | `GeralSubTab.vue` | Percentuais, toggles (`ToggleRow`), exceções de concentração, avalistas obrigatórios |
 | Garantia | `GarantiaSubTab.vue` | Confirmação de títulos, % garantia, tabela de tipos de garantia |
 
@@ -279,7 +279,7 @@ Salvar em cada sub-aba emite `@save` → `ParametrizacoesTab` propaga `@change` 
 | `EditarCadastroCedenteModal` | Cedente detail | Formulário de cadastro |
 | `IncluirLimiteModal` | Limite sub-tab | Adicionar linha de limite por produto |
 
-`VincularAgrupamentoModal` é reutilizável: props `target`, `targetLabel`, `linkKey` (`agrupamentoIds` | `grupoIds`), `entidades`, `operacoes`, `editable?`. Subcomponentes em `components/modals/vincular-agrupamento/` (`TransferPanel`, `OperationRow`, `SummaryCard`, `TransferButton`). Seleção de operações via `Checkbox` padrão (`@/components/ui/Checkbox.vue`).
+`VincularAgrupamentoModal` é reutilizável: props `target`, `targetLabel`, `linkKey` (`agrupamentoIds` | `grupoIds`), `operacoes`, `editable?`. UX: busca + filtros CRA/FIDC + grade de cards selecionáveis (padrão Grupos da Nova Operação CRA) + Confirmar. Seleção de operações via cards com check circular.
 
 ---
 

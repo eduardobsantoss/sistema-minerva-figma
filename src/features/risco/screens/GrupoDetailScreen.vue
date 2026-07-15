@@ -2,9 +2,14 @@
 import { onMounted, onUnmounted, reactive, ref, type Component } from 'vue';
 import { ArrowLeft, MoreVertical, Settings2, Users, History, UserCog, BellRing, ShieldCheck, Info, Link2 } from 'lucide-vue-next';
 import {
-  statusOperacaoColor, detalheGrupo, OPERACOES_VINCULAVEIS_SEED, GRUPOS_SEED,
-  type GrupoEmpresarial, type OperacaoVinculavel,
+  statusOperacaoColor, detalheGrupo,
+  type GrupoEmpresarial,
 } from '../data/riscoData';
+import {
+  applyGrupoVinculos,
+  operacoesVinculaveis,
+  veiculosFromVinculos,
+} from '../data/vinculosStore';
 import { CopyButton } from './detail-tabs/shared';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import DetalhesTab from './detail-tabs/DetalhesTab.vue';
@@ -34,13 +39,14 @@ const emit = defineEmits<{ back: [] }>();
 
 const tab = ref<Tab>('detalhes');
 const det = reactive(detalheGrupo(props.grupo));
+// Sync vehicles from shared vinculação state (may have changed since seed build)
+det.parametrizacoes.autoatendimento.veiculosOperacao = veiculosFromVinculos(props.grupo.id);
 const cor = statusOperacaoColor(props.grupo.statusOperacao);
 
 const transferindo = ref(false);
 const configurandoNotif = ref(false);
 const habilitando = ref(false);
 const vinculandoVeiculo = ref(false);
-const operacoes = ref<OperacaoVinculavel[]>(OPERACOES_VINCULAVEIS_SEED.map((o) => ({ ...o, agrupamentoIds: [...o.agrupamentoIds], grupoIds: [...o.grupoIds] })));
 
 const actionMenuOpen = ref(false);
 const actionMenuRef = ref<HTMLDivElement | null>(null);
@@ -55,6 +61,10 @@ const actions = [
 function handleActionClick(action: (typeof actions)[number]) {
   actionMenuOpen.value = false;
   action.onClick();
+}
+
+function handleVinculosUpdate(ops: typeof operacoesVinculaveis.value) {
+  det.parametrizacoes.autoatendimento.veiculosOperacao = applyGrupoVinculos(props.grupo.id, ops);
 }
 
 function handleClickOutside(e: MouseEvent) {
@@ -136,6 +146,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
     <ParametrizacoesTab
       v-if="tab === 'parametrizacoes'"
       :data="det.parametrizacoes"
+      :grupo-id="grupo.id"
       :partes-relacionadas="det.partesRelacionadas"
       @change="(parametrizacoes) => { det.parametrizacoes = parametrizacoes; }"
       @update:partes-relacionadas="(pr) => { det.partesRelacionadas = pr; }"
@@ -155,9 +166,8 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
       :target="grupo"
       target-label="Grupo"
       link-key="grupoIds"
-      :entidades="GRUPOS_SEED"
-      :operacoes="operacoes"
-      @update:operacoes="operacoes = $event"
+      :operacoes="operacoesVinculaveis"
+      @update:operacoes="handleVinculosUpdate"
       @close="vinculandoVeiculo = false"
     />
   </div>
