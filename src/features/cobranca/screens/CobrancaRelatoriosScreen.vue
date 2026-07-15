@@ -12,11 +12,11 @@ import {
 import {
   TITULOS_SEED,
   VEICULO_OPTS,
-  TITULO_STATUS_OPTS,
+  STATUS_PAGAMENTO_OPTS,
   brl,
-  statusTituloLabel,
-  statusTituloColor,
-  type TituloStatus,
+  statusPagamentoLabel,
+  statusPagamentoColor,
+  type StatusPagamento,
 } from '../data/titulosData';
 import {
   DISPAROS_SEED,
@@ -77,10 +77,10 @@ const resultadosTitulos = computed(() => {
   if (!applied.value || (selected.value !== 'inadimplencia' && selected.value !== 'boletagem')) return [];
   const f = applied.value;
   return TITULOS_SEED.filter((t) => {
-    if (selected.value === 'inadimplencia' && !(t.status === 'VENCIDO' || t.diasAtraso > 0)) return false;
+    if (selected.value === 'inadimplencia' && !(t.statusPagamento === 'VENCIDO' || t.diasAtraso > 0)) return false;
     if (selected.value === 'boletagem' && t.vrAberto <= 0) return false;
     if (f.veiculoId && t.veiculoId !== f.veiculoId) return false;
-    if (f.status && t.status !== f.status) return false;
+    if (f.status && t.statusPagamento !== f.status) return false;
     return true;
   });
 });
@@ -144,7 +144,7 @@ function handleExportCsv() {
       t.veiculoNome,
       t.sacado,
       brl(t.vrAberto),
-      statusTituloLabel(t.status),
+      statusPagamentoLabel(t.statusPagamento),
       String(t.diasAtraso),
       t.boletoGeradoEm ?? 'Pendente',
     ]
@@ -388,8 +388,8 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
             "
           >
             <option value="">Todos</option>
-            <option v-for="s in TITULO_STATUS_OPTS" :key="s" :value="s">
-              {{ statusTituloLabel(s as TituloStatus) }}
+            <option v-for="s in STATUS_PAGAMENTO_OPTS" :key="s" :value="s">
+              {{ statusPagamentoLabel(s as StatusPagamento) }}
             </option>
           </select>
         </div>
@@ -643,8 +643,8 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
             <div style="font-variant-numeric: tabular-nums; font-weight: var(--weight-bold)">
               {{ brl(t.vrAberto) }}
             </div>
-            <div :style="{ color: statusTituloColor(t.status), fontWeight: 'var(--weight-semibold)' }">
-              {{ statusTituloLabel(t.status) }}
+            <div :style="{ color: statusPagamentoColor(t.statusPagamento), fontWeight: 'var(--weight-semibold)' }">
+              {{ statusPagamentoLabel(t.statusPagamento) }}
             </div>
             <div style="font-variant-numeric: tabular-nums; color: var(--text-muted)">{{ t.diasAtraso }}</div>
             <div style="color: var(--text-muted); font-size: var(--text-xs)">

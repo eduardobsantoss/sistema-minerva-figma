@@ -133,7 +133,7 @@ function handleModuleClick(title: string) {
   } else if (title === "CRA's") {
     view.value = 'cras';
   } else if (title === 'Cobrança') {
-    view.value = 'cobranca-titulos';
+    view.value = 'cobranca-dashboard';
     openMenu.value = 'cobranca';
   } else if (title === 'Risco') {
     view.value = 'risco-dashboard';

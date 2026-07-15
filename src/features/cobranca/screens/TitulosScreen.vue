@@ -41,16 +41,25 @@ function handleGerarBoleto(id: string) {
 
 function handleNotificar(id: string) {
   list.value = list.value.map((t) =>
-    t.id === id ? { ...t, ultimaNotificacaoEm: todayBR() } : t,
+    t.id === id
+      ? { ...t, ultimaNotificacaoEm: todayBR(), statusNotificacao: 'NOTIFICADO' }
+      : t,
   );
   showToast('Notificação enviada (mock)');
 }
 
+function handleConfirmar(id: string) {
+  list.value = list.value.map((t) =>
+    t.id === id ? { ...t, statusConfirmacao: 'CONFIRMADO' } : t,
+  );
+  showToast('Ativo confirmado (mock)');
+}
+
 function handleNegociar(id: string) {
   list.value = list.value.map((t) =>
-    t.id === id ? { ...t, status: 'EM_NEGOCIACAO' } : t,
+    t.id === id ? { ...t, emNegociacao: true } : t,
   );
-  showToast('Título marcado em negociação');
+  showToast('Negociação sinalizada');
 }
 </script>
 
@@ -61,6 +70,7 @@ function handleNegociar(id: string) {
     @open="openDetail"
     @gerar-boleto="handleGerarBoleto"
     @notificar="handleNotificar"
+    @confirmar="handleConfirmar"
     @negociar="handleNegociar"
   />
   <template v-else>
@@ -70,6 +80,7 @@ function handleNegociar(id: string) {
       @back="route = { level: 'list' }"
       @gerar-boleto="handleGerarBoleto"
       @notificar="handleNotificar"
+      @confirmar="handleConfirmar"
       @negociar="handleNegociar"
     />
     <TitulosListScreen
@@ -78,6 +89,7 @@ function handleNegociar(id: string) {
       @open="openDetail"
       @gerar-boleto="handleGerarBoleto"
       @notificar="handleNotificar"
+      @confirmar="handleConfirmar"
       @negociar="handleNegociar"
     />
   </template>

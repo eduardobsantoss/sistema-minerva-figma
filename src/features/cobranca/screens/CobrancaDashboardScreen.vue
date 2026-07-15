@@ -5,25 +5,32 @@ import {
   FileText,
   BellRing,
   Receipt,
-  Clock,
+  CalendarClock,
   ChevronRight,
-  Wallet,
   Search,
+  BadgeCheck,
 } from 'lucide-vue-next';
-import { TITULOS_SEED, brl, statusTituloLabel } from '../data/titulosData';
 import {
-  NOTIFICACOES_CESSAO_SEED,
-  statusCessaoLabel,
-} from '../data/notificacoesCessaoData';
+  TITULOS_SEED,
+  brl,
+  pct,
+  isVencido,
+  isVincendoHoje,
+  isNaoBoletado,
+  isNaoNotificado,
+  getResumoPorVeiculo,
+  getResumoPorCliente,
+  getBoletagemPorVeiculo,
+  getNotificacoesPendentesPorCliente,
+  getConfirmacoesPendentesPorCliente,
+} from '../data/titulosData';
 import TituloDetailScreen from './TituloDetailScreen.vue';
-import NotificacaoCessaoDetailScreen from './NotificacaoCessaoDetailScreen.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 
 const emit = defineEmits<{ navigate: [view: string] }>();
 
-type Route =
-  | { level: 'dashboard' }
-  | { level: 'titulo'; id: string }
-  | { level: 'notif'; id: string };
+type Route = { level: 'dashboard' } | { level: 'titulo'; id: string };
 
 const route = ref<Route>({ level: 'dashboard' });
 const query = ref('');
@@ -31,16 +38,10 @@ const toast = ref<string | null>(null);
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
 const titulos = ref(TITULOS_SEED.map((t) => ({ ...t })));
-const notifs = ref(NOTIFICACOES_CESSAO_SEED.map((n) => ({ ...n })));
 
 const tituloAtual = computed(() => {
   const r = route.value;
   return r.level === 'titulo' ? titulos.value.find((t) => t.id === r.id) : undefined;
-});
-
-const notifAtual = computed(() => {
-  const r = route.value;
-  return r.level === 'notif' ? notifs.value.find((n) => n.id === r.id) : undefined;
 });
 
 function showToast(msg: string) {
@@ -55,82 +56,139 @@ function todayBR() {
   return new Date().toLocaleDateString('pt-BR');
 }
 
-function nowBR() {
-  const d = new Date();
-  return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-}
-
-const vencidos = computed(() =>
-  titulos.value.filter((t) => t.status === 'VENCIDO' || t.diasAtraso > 0).sort((a, b) => b.diasAtraso - a.diasAtraso),
-);
-
-const semBoleto = computed(() =>
-  titulos.value.filter((t) => t.vrAberto > 0 && !t.boletoGeradoEm),
-);
-
-const notifsPendentes = computed(() =>
-  notifs.value.filter((n) => n.status === 'PENDENTE' || n.status === 'FALHOU'),
-);
-
+const valorCarteira = computed(() => titulos.value.reduce((s, t) => s + t.vrNominal, 0));
 const valorVencido = computed(() =>
-  vencidos.value.reduce((s, t) => s + t.vrAberto, 0),
+  titulos.value.filter(isVencido).reduce((s, t) => s + t.vrAberto, 0),
+);
+const pctVencido = computed(() =>
+  valorCarteira.value > 0 ? (valorVencido.value / valorCarteira.value) * 100 : 0,
 );
 
-const valorAbertoTotal = computed(() =>
-  titulos.value.reduce((s, t) => s + t.vrAberto, 0),
+const vincendoHoje = computed(() => titulos.value.filter(isVincendoHoje));
+const valorVincendoHoje = computed(() =>
+  vincendoHoje.value.reduce((s, t) => s + t.vrAberto, 0),
+);
+const pctVincendo = computed(() =>
+  valorCarteira.value > 0 ? (valorVincendoHoje.value / valorCarteira.value) * 100 : 0,
 );
 
-interface KpiCard {
+const semBoleto = computed(() => titulos.value.filter(isNaoBoletado));
+const valorNaoBoletado = computed(() =>
+  semBoleto.value.reduce((s, t) => s + t.vrAberto, 0),
+);
+
+const naoNotificados = computed(() =>
+  titulos.value.filter((t) => isNaoNotificado(t) && t.vrAberto > 0),
+);
+const valorNaoNotificado = computed(() =>
+  naoNotificados.value.reduce((s, t) => s + t.vrAberto, 0),
+);
+const pctNotificacao = computed(() => {
+  const comAberto = titulos.value.filter((t) => t.vrAberto > 0);
+  if (comAberto.length === 0) return 100;
+  const notificados = comAberto.filter((t) => t.statusNotificacao === 'NOTIFICADO').length;
+  return (notificados / comAberto.length) * 100;
+});
+
+interface KpiHero {
   icon: Component;
   title: string;
   tone: string;
-  metrics: { label: string; value: string }[];
+  primaryLabel: string;
+  primaryValue: string;
+  secondaryLabel: string;
+  secondaryValue: string;
 }
 
-const kpis = computed<KpiCard[]>(() => [
+const kpis = computed<KpiHero[]>(() => [
   {
     icon: AlertTriangle,
-    title: 'Inadimplência',
+    title: 'Inadimplência Geral',
     tone: 'var(--danger-base)',
-    metrics: [
-      { label: 'Valor vencido', value: brl(valorVencido.value, { compact: true }) },
-      { label: 'Títulos vencidos', value: String(vencidos.value.length) },
-    ],
+    primaryLabel: 'Valor vencido',
+    primaryValue: brl(valorVencido.value),
+    secondaryLabel: '% vencidos na carteira',
+    secondaryValue: pct(pctVencido.value),
   },
   {
-    icon: Wallet,
-    title: 'Carteira em aberto',
-    tone: 'var(--gci-base)',
-    metrics: [
-      { label: 'Valor em aberto', value: brl(valorAbertoTotal.value, { compact: true }) },
-      { label: 'Total de títulos', value: String(titulos.value.length) },
-    ],
+    icon: CalendarClock,
+    title: 'Vincendo Hoje',
+    tone: 'var(--warning-base)',
+    primaryLabel: 'Valor vincendo hoje',
+    primaryValue: brl(valorVincendoHoje.value),
+    secondaryLabel: '% vincendo',
+    secondaryValue: pct(pctVincendo.value),
   },
   {
     icon: Receipt,
     title: 'Boletagem',
     tone: 'var(--agro-base)',
-    metrics: [
-      { label: 'Pendentes de boleto', value: String(semBoleto.value.length) },
-      {
-        label: 'Com boleto gerado',
-        value: String(titulos.value.filter((t) => !!t.boletoGeradoEm).length),
-      },
-    ],
+    primaryLabel: 'Valor não boletado',
+    primaryValue: brl(valorNaoBoletado.value),
+    secondaryLabel: 'Títulos não boletados',
+    secondaryValue: String(semBoleto.value.length),
   },
   {
     icon: BellRing,
-    title: 'Notificações de cessão',
-    tone: 'var(--warning-base)',
-    metrics: [
-      { label: 'Pendentes / falhas', value: String(notifsPendentes.value.length) },
-      {
-        label: 'Enviadas',
-        value: String(notifs.value.filter((n) => n.status === 'ENVIADA').length),
-      },
-    ],
+    title: 'Notificação',
+    tone: 'var(--gci-base)',
+    primaryLabel: 'Valor não notificado',
+    primaryValue: brl(valorNaoNotificado.value),
+    secondaryLabel: '% notificação geral',
+    secondaryValue: pct(pctNotificacao.value),
   },
 ]);
+
+const vencidosPorVeiculo = computed(() => getResumoPorVeiculo(titulos.value));
+const vencidosPorCliente = computed(() => getResumoPorCliente(titulos.value));
+const boletagemPorVeiculo = computed(() => getBoletagemPorVeiculo(titulos.value));
+const notifsPendentes = computed(() => getNotificacoesPendentesPorCliente(titulos.value));
+const confirmacoesPendentes = computed(() => getConfirmacoesPendentesPorCliente(titulos.value));
+
+const {
+  page: veiculoPage,
+  pageSize: veiculoPageSize,
+  total: veiculoTotal,
+  pageItems: veiculoPageItems,
+  setPage: setVeiculoPage,
+  setPageSize: setVeiculoPageSize,
+} = useTablePagination(() => vencidosPorVeiculo.value, { defaultPageSize: 10 });
+
+const {
+  page: clientePage,
+  pageSize: clientePageSize,
+  total: clienteTotal,
+  pageItems: clientePageItems,
+  setPage: setClientePage,
+  setPageSize: setClientePageSize,
+} = useTablePagination(() => vencidosPorCliente.value, { defaultPageSize: 10 });
+
+const {
+  page: boletaPage,
+  pageSize: boletaPageSize,
+  total: boletaTotal,
+  pageItems: boletaPageItems,
+  setPage: setBoletaPage,
+  setPageSize: setBoletaPageSize,
+} = useTablePagination(() => boletagemPorVeiculo.value, { defaultPageSize: 10 });
+
+const {
+  page: notifPage,
+  pageSize: notifPageSize,
+  total: notifTotal,
+  pageItems: notifPageItems,
+  setPage: setNotifPage,
+  setPageSize: setNotifPageSize,
+} = useTablePagination(() => notifsPendentes.value, { defaultPageSize: 10 });
+
+const {
+  page: confPage,
+  pageSize: confPageSize,
+  total: confTotal,
+  pageItems: confPageItems,
+  setPage: setConfPage,
+  setPageSize: setConfPageSize,
+} = useTablePagination(() => confirmacoesPendentes.value, { defaultPageSize: 10 });
 
 const searchResults = computed(() => {
   if (!query.value.trim()) return [];
@@ -159,46 +217,32 @@ function handleGerarBoleto(id: string) {
 
 function handleNotificarTitulo(id: string) {
   titulos.value = titulos.value.map((t) =>
-    t.id === id ? { ...t, ultimaNotificacaoEm: todayBR() } : t,
+    t.id === id
+      ? { ...t, ultimaNotificacaoEm: todayBR(), statusNotificacao: 'NOTIFICADO' }
+      : t,
   );
   showToast('Notificação enviada (mock)');
 }
 
+function handleConfirmar(id: string) {
+  titulos.value = titulos.value.map((t) =>
+    t.id === id ? { ...t, statusConfirmacao: 'CONFIRMADO' } : t,
+  );
+  showToast('Ativo confirmado (mock)');
+}
+
 function handleNegociar(id: string) {
   titulos.value = titulos.value.map((t) =>
-    t.id === id ? { ...t, status: 'EM_NEGOCIACAO' } : t,
+    t.id === id ? { ...t, emNegociacao: true } : t,
   );
-  showToast('Título marcado em negociação');
+  showToast('Negociação sinalizada');
 }
 
-function handleReenviar(id: string) {
-  notifs.value = notifs.value.map((n) =>
-    n.id === id
-      ? {
-          ...n,
-          status: 'ENVIADA',
-          dataEnvio: nowBR(),
-          tentativas: n.tentativas + 1,
-          comprovanteRef: n.comprovanteRef ?? `CMP-${id.toUpperCase()}`,
-        }
-      : n,
-  );
-  showToast('Notificação reenviada (mock)');
-}
-
-function handleCancelar(id: string) {
-  notifs.value = notifs.value.map((n) =>
-    n.id === id ? { ...n, status: 'CANCELADA' } : n,
-  );
-  showToast('Notificação cancelada');
-}
-
-const emNegociacao = computed(() =>
-  titulos.value.filter((t) => t.status === 'EM_NEGOCIACAO'),
-);
-
-const TITULO_GRID = 'minmax(120px, 1.3fr) minmax(130px, 1.4fr) minmax(90px, 1fr) minmax(70px, 0.8fr)';
-const NOTIF_GRID = 'minmax(110px, 1.2fr) minmax(110px, 1.2fr) minmax(80px, 0.9fr) minmax(90px, 1fr)';
+const VEICULO_GRID = 'minmax(140px, 1.6fr) minmax(100px, 1fr) minmax(100px, 1fr) minmax(80px, 0.8fr) minmax(70px, 0.7fr)';
+const CLIENTE_GRID = 'minmax(120px, 1.3fr) minmax(160px, 1.8fr) minmax(100px, 1fr) minmax(100px, 1fr) minmax(80px, 0.8fr)';
+const BOLETA_GRID = 'minmax(140px, 1.6fr) minmax(120px, 1.2fr) minmax(90px, 0.9fr) minmax(90px, 0.9fr)';
+const NOTIF_GRID = 'minmax(120px, 1.3fr) minmax(160px, 1.8fr) minmax(110px, 1.1fr) minmax(90px, 0.9fr)';
+const CONF_GRID = 'minmax(110px, 1.2fr) minmax(150px, 1.6fr) minmax(100px, 1fr) minmax(80px, 0.8fr) minmax(80px, 0.8fr)';
 </script>
 
 <template>
@@ -208,14 +252,8 @@ const NOTIF_GRID = 'minmax(110px, 1.2fr) minmax(110px, 1.2fr) minmax(80px, 0.9fr
     @back="route = { level: 'dashboard' }"
     @gerar-boleto="handleGerarBoleto"
     @notificar="handleNotificarTitulo"
+    @confirmar="handleConfirmar"
     @negociar="handleNegociar"
-  />
-  <NotificacaoCessaoDetailScreen
-    v-else-if="notifAtual"
-    :notificacao="notifAtual"
-    @back="route = { level: 'dashboard' }"
-    @reenviar="handleReenviar"
-    @cancelar="handleCancelar"
   />
 
   <div v-else class="flex flex-col" style="gap: 24px">
@@ -242,10 +280,10 @@ const NOTIF_GRID = 'minmax(110px, 1.2fr) minmax(110px, 1.2fr) minmax(80px, 0.9fr
             line-height: 1.15;
           "
         >
-          Dashboard de Atuação
+          Dashboard
         </h1>
         <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-          O que precisa ser resolvido hoje pela equipe de cobrança
+          Visão geral da carteira: inadimplência, boletagem e notificações
         </p>
       </div>
 
@@ -311,7 +349,7 @@ const NOTIF_GRID = 'minmax(110px, 1.2fr) minmax(110px, 1.2fr) minmax(80px, 0.9fr
       </div>
     </div>
 
-    <!-- KPIs -->
+    <!-- KPI cards com valor em destaque -->
     <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px">
       <div
         v-for="kpi in kpis"
@@ -320,298 +358,317 @@ const NOTIF_GRID = 'minmax(110px, 1.2fr) minmax(110px, 1.2fr) minmax(80px, 0.9fr
           border: 1px solid var(--border-default);
           border-radius: var(--radius-xl);
           background: var(--surface-card);
-          padding: 18px;
+          padding: 20px;
         "
       >
-        <div class="flex items-center" style="gap: 10px; margin-bottom: 14px">
+        <div class="flex items-center" style="gap: 10px; margin-bottom: 16px">
           <div
             class="flex items-center justify-center"
             :style="{
-              width: '36px',
-              height: '36px',
+              width: '40px',
+              height: '40px',
               borderRadius: 'var(--radius-lg)',
               background: `color-mix(in srgb, ${kpi.tone} 14%, transparent)`,
               color: kpi.tone,
               flexShrink: 0,
             }"
           >
-            <component :is="kpi.icon" :size="17" />
+            <component :is="kpi.icon" :size="18" />
           </div>
-          <div style="font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--text-muted)">
+          <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
             {{ kpi.title }}
           </div>
         </div>
-        <div class="flex flex-col" style="gap: 8px">
-          <div v-for="m in kpi.metrics" :key="m.label" class="flex items-center justify-between">
-            <span style="font-size: var(--text-xs); color: var(--text-muted)">{{ m.label }}</span>
-            <span
-              style="
-                font-size: var(--text-sm);
-                font-weight: var(--weight-bold);
-                color: var(--text-strong);
-                font-variant-numeric: tabular-nums;
-              "
-            >
-              {{ m.value }}
-            </span>
-          </div>
+        <div style="font-size: 11px; font-weight: var(--weight-bold); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px">
+          {{ kpi.primaryLabel }}
+        </div>
+        <div
+          :style="{
+            fontSize: '28px',
+            fontWeight: 'var(--weight-bold)',
+            letterSpacing: '-0.02em',
+            fontVariantNumeric: 'tabular-nums',
+            lineHeight: 1.1,
+            color: kpi.tone,
+            marginBottom: '14px',
+          }"
+        >
+          {{ kpi.primaryValue }}
+        </div>
+        <div class="flex items-center justify-between" style="padding-top: 12px; border-top: 1px solid var(--border-default)">
+          <span style="font-size: var(--text-xs); color: var(--text-muted)">{{ kpi.secondaryLabel }}</span>
+          <span style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
+            {{ kpi.secondaryValue }}
+          </span>
         </div>
       </div>
     </div>
 
-    <!-- Filas de atuação -->
-    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px; align-items: start">
-      <!-- Vencidos -->
-      <div
-        style="
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-xl);
-          background: var(--surface-card);
-          overflow: hidden;
-        "
-      >
-        <div
-          class="flex items-center justify-between"
-          style="gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border-default)"
-        >
+    <!-- Containers linha 1 -->
+    <div class="grid dash-two-col" style="grid-template-columns: 1fr 1fr; gap: 16px; align-items: start">
+      <!-- Vencidos por Veículo -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
           <div class="flex items-center" style="gap: 10px">
             <AlertTriangle :size="16" style="color: var(--danger-base)" />
             <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-              Títulos vencidos
+              Vencidos por Veículo
             </h3>
           </div>
-          <button
-            style="
-              background: none;
-              border: none;
-              cursor: pointer;
-              font-size: var(--text-xs);
-              font-weight: var(--weight-bold);
-              color: var(--accent);
-            "
-            @click="emit('navigate', 'cobranca-titulos')"
-          >
-            Ver todos
-          </button>
+          <button class="dash-link" @click="emit('navigate', 'cobranca-titulos')">Ver todos</button>
         </div>
-        <div
-          v-if="vencidos.length === 0"
-          style="padding: 24px 20px; font-size: var(--text-sm); color: var(--text-muted); text-align: center"
-        >
-          Nenhum título vencido.
-        </div>
+        <div v-if="vencidosPorVeiculo.length === 0" class="dash-empty">Nenhum veículo com vencidos.</div>
         <template v-else>
-          <div class="grid dash-table-header" :style="{ gridTemplateColumns: TITULO_GRID }">
-            <div>Título</div>
-            <div>Sacado</div>
-            <div style="text-align: right">Aberto</div>
-            <div style="text-align: right">Dias</div>
+          <div class="grid dash-table-header" :style="{ gridTemplateColumns: VEICULO_GRID }">
+            <div>Veículo</div>
+            <div style="text-align: right">Carteira</div>
+            <div style="text-align: right">Vencido</div>
+            <div style="text-align: right">Inadimp.</div>
+            <div style="text-align: right">PDD</div>
           </div>
-          <button
-            v-for="t in vencidos.slice(0, 6)"
-            :key="t.id"
+          <div
+            v-for="r in veiculoPageItems"
+            :key="r.veiculoId"
             class="grid items-center dash-queue-row"
-            :style="{ gridTemplateColumns: TITULO_GRID }"
-            @click="openTitulo(t.id)"
+            :style="{ gridTemplateColumns: VEICULO_GRID }"
           >
-            <div style="font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
-              #{{ t.numero }}
+            <div style="font-weight: var(--weight-semibold); color: var(--text-strong); overflow: hidden; text-overflow: ellipsis">
+              {{ r.veiculoNome }}
             </div>
-            <div style="color: var(--text-default); overflow: hidden; text-overflow: ellipsis">{{ t.sacado }}</div>
+            <div style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-default)">
+              {{ brl(r.valorCarteira, { compact: true }) }}
+            </div>
             <div style="text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--weight-bold); color: var(--danger-base)">
-              {{ brl(t.vrAberto, { compact: true }) }}
+              {{ brl(r.valorVencido, { compact: true }) }}
             </div>
-            <div style="text-align: right; font-variant-numeric: tabular-nums; color: var(--danger-base); font-weight: var(--weight-bold)">
-              {{ t.diasAtraso }}d
+            <div style="text-align: right; font-variant-numeric: tabular-nums; color: var(--danger-base)">
+              {{ pct(r.pctInadimplencia) }}
             </div>
-          </button>
+            <div style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted)">
+              {{ pct(r.pctPdd) }}
+            </div>
+          </div>
+          <TablePagination
+            :total="veiculoTotal"
+            :page="veiculoPage"
+            :page-size="veiculoPageSize"
+            @update:page="setVeiculoPage"
+            @update:page-size="setVeiculoPageSize"
+          />
         </template>
       </div>
 
-      <!-- Boletagem -->
-      <div
-        style="
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-xl);
-          background: var(--surface-card);
-          overflow: hidden;
-        "
-      >
-        <div
-          class="flex items-center justify-between"
-          style="gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border-default)"
-        >
+      <!-- Vencidos por Cliente -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
           <div class="flex items-center" style="gap: 10px">
-            <Receipt :size="16" style="color: var(--agro-base)" />
+            <AlertTriangle :size="16" style="color: var(--danger-base)" />
             <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-              Pendências de boletagem
+              Vencidos por Cliente
             </h3>
           </div>
-          <button
-            style="
-              background: none;
-              border: none;
-              cursor: pointer;
-              font-size: var(--text-xs);
-              font-weight: var(--weight-bold);
-              color: var(--accent);
-            "
-            @click="emit('navigate', 'cobranca-titulos')"
-          >
-            Ver todos
-          </button>
+          <button class="dash-link" @click="emit('navigate', 'cobranca-titulos')">Ver todos</button>
         </div>
-        <div
-          v-if="semBoleto.length === 0"
-          style="padding: 24px 20px; font-size: var(--text-sm); color: var(--text-muted); text-align: center"
-        >
-          Nenhuma pendência de boleto.
-        </div>
+        <div v-if="vencidosPorCliente.length === 0" class="dash-empty">Nenhum cliente inadimplente.</div>
         <template v-else>
-          <div class="grid dash-table-header" :style="{ gridTemplateColumns: TITULO_GRID }">
-            <div>Título</div>
+          <div class="grid dash-table-header" :style="{ gridTemplateColumns: CLIENTE_GRID }">
             <div>Veículo</div>
-            <div style="text-align: right">Aberto</div>
-            <div style="text-align: right">Status</div>
+            <div>Cliente</div>
+            <div style="text-align: right">Total</div>
+            <div style="text-align: right">Vencido</div>
+            <div style="text-align: right">Inadimp.</div>
           </div>
-          <button
-            v-for="t in semBoleto.slice(0, 6)"
-            :key="t.id"
+          <div
+            v-for="r in clientePageItems"
+            :key="r.key"
             class="grid items-center dash-queue-row"
-            :style="{ gridTemplateColumns: TITULO_GRID }"
-            @click="openTitulo(t.id)"
+            :style="{ gridTemplateColumns: CLIENTE_GRID }"
           >
-            <div style="font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
-              #{{ t.numero }}
+            <div style="color: var(--text-default); overflow: hidden; text-overflow: ellipsis">{{ r.veiculoNome }}</div>
+            <div>
+              <div style="font-weight: var(--weight-semibold); color: var(--text-strong); overflow: hidden; text-overflow: ellipsis">
+                {{ r.clienteNome }}
+              </div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums">
+                {{ r.clienteDocumento }}
+              </div>
             </div>
-            <div style="color: var(--text-default); overflow: hidden; text-overflow: ellipsis">{{ t.veiculoNome }}</div>
-            <div style="text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--weight-bold); color: var(--text-strong)">
-              {{ brl(t.vrAberto, { compact: true }) }}
+            <div style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-default)">
+              {{ brl(r.valorTotal, { compact: true }) }}
             </div>
-            <div style="text-align: right; font-size: var(--text-xs); color: var(--text-muted)">
-              {{ statusTituloLabel(t.status) }}
+            <div style="text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--weight-bold); color: var(--danger-base)">
+              {{ brl(r.valorVencido, { compact: true }) }}
             </div>
-          </button>
+            <div style="text-align: right; font-variant-numeric: tabular-nums; color: var(--danger-base)">
+              {{ pct(r.pctInadimplencia) }}
+            </div>
+          </div>
+          <TablePagination
+            :total="clienteTotal"
+            :page="clientePage"
+            :page-size="clientePageSize"
+            @update:page="setClientePage"
+            @update:page-size="setClientePageSize"
+          />
         </template>
       </div>
     </div>
 
-    <!-- Notificações + Em negociação -->
-    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px; align-items: start">
-      <div
-        style="
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-xl);
-          background: var(--surface-card);
-          overflow: hidden;
-        "
-      >
-        <div
-          class="flex items-center justify-between"
-          style="gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border-default)"
-        >
+    <!-- Containers linha 2 -->
+    <div class="grid dash-two-col" style="grid-template-columns: 1fr 1fr; gap: 16px; align-items: start">
+      <!-- Boletagem por Veículo -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
           <div class="flex items-center" style="gap: 10px">
-            <BellRing :size="16" style="color: var(--warning-base)" />
+            <Receipt :size="16" style="color: var(--agro-base)" />
             <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-              Notificações pendentes / falhas
+              Boletagem por Veículo
             </h3>
           </div>
-          <button
-            style="
-              background: none;
-              border: none;
-              cursor: pointer;
-              font-size: var(--text-xs);
-              font-weight: var(--weight-bold);
-              color: var(--accent);
-            "
-            @click="emit('navigate', 'cobranca-notif-cessao')"
-          >
-            Ver todos
-          </button>
+          <button class="dash-link" @click="emit('navigate', 'cobranca-titulos')">Ver todos</button>
         </div>
-        <div
-          v-if="notifsPendentes.length === 0"
-          style="padding: 24px 20px; font-size: var(--text-sm); color: var(--text-muted); text-align: center"
-        >
-          Nenhuma notificação pendente.
-        </div>
+        <div v-if="boletagemPorVeiculo.length === 0" class="dash-empty">Nenhuma pendência de boleto.</div>
         <template v-else>
-          <div class="grid dash-table-header" :style="{ gridTemplateColumns: NOTIF_GRID }">
-            <div>Protocolo</div>
-            <div>Título</div>
-            <div>Canal</div>
-            <div>Status</div>
+          <div class="grid dash-table-header" :style="{ gridTemplateColumns: BOLETA_GRID }">
+            <div>Veículo</div>
+            <div style="text-align: right">Não boletado</div>
+            <div style="text-align: right">Qtd</div>
+            <div style="text-align: right">Dias carteira</div>
           </div>
-          <button
-            v-for="n in notifsPendentes.slice(0, 6)"
-            :key="n.id"
+          <div
+            v-for="r in boletaPageItems"
+            :key="r.veiculoId"
             class="grid items-center dash-queue-row"
-            :style="{ gridTemplateColumns: NOTIF_GRID }"
-            @click="route = { level: 'notif', id: n.id }"
+            :style="{ gridTemplateColumns: BOLETA_GRID }"
           >
-            <div style="font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
-              {{ n.protocolo }}
+            <div style="font-weight: var(--weight-semibold); color: var(--text-strong); overflow: hidden; text-overflow: ellipsis">
+              {{ r.veiculoNome }}
             </div>
-            <div style="font-variant-numeric: tabular-nums; color: var(--text-default)">#{{ n.tituloNumero }}</div>
-            <div style="color: var(--text-muted); font-size: var(--text-xs)">{{ n.canal }}</div>
-            <div style="font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--warning-base)">
-              {{ statusCessaoLabel(n.status) }}
+            <div style="text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--weight-bold); color: var(--text-strong)">
+              {{ brl(r.valorNaoBoletado, { compact: true }) }}
             </div>
-          </button>
+            <div style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-default)">
+              {{ r.qtdNaoBoletado }}
+            </div>
+            <div style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted)">
+              {{ r.diasEmCarteira }}d
+            </div>
+          </div>
+          <TablePagination
+            :total="boletaTotal"
+            :page="boletaPage"
+            :page-size="boletaPageSize"
+            @update:page="setBoletaPage"
+            @update:page-size="setBoletaPageSize"
+          />
         </template>
       </div>
 
-      <div
-        style="
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-xl);
-          background: var(--surface-card);
-          overflow: hidden;
-        "
-      >
-        <div
-          class="flex items-center"
-          style="gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border-default)"
-        >
-          <Clock :size="16" style="color: var(--agro-base)" />
-          <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-            Em negociação
-          </h3>
+      <!-- Notificações Pendentes -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <div class="flex items-center" style="gap: 10px">
+            <BellRing :size="16" style="color: var(--warning-base)" />
+            <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+              Notificações Pendentes
+            </h3>
+          </div>
+          <button class="dash-link" @click="emit('navigate', 'cobranca-titulos')">Ver todos</button>
         </div>
-        <div
-          v-if="emNegociacao.length === 0"
-          style="padding: 24px 20px; font-size: var(--text-sm); color: var(--text-muted); text-align: center"
-        >
-          Nenhum título em negociação.
-        </div>
+        <div v-if="notifsPendentes.length === 0" class="dash-empty">Nenhuma notificação pendente.</div>
         <template v-else>
-          <div class="grid dash-table-header" :style="{ gridTemplateColumns: TITULO_GRID }">
-            <div>Título</div>
-            <div>Sacado</div>
-            <div style="text-align: right">Aberto</div>
+          <div class="grid dash-table-header" :style="{ gridTemplateColumns: NOTIF_GRID }">
+            <div>Veículo</div>
+            <div>Cliente</div>
+            <div style="text-align: right">Valor</div>
             <div style="text-align: right">Dias</div>
           </div>
-          <button
-            v-for="t in emNegociacao.slice(0, 6)"
-            :key="t.id"
+          <div
+            v-for="r in notifPageItems"
+            :key="r.key"
             class="grid items-center dash-queue-row"
-            :style="{ gridTemplateColumns: TITULO_GRID }"
-            @click="openTitulo(t.id)"
+            :style="{ gridTemplateColumns: NOTIF_GRID }"
           >
-            <div style="font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
-              #{{ t.numero }}
+            <div style="color: var(--text-default); overflow: hidden; text-overflow: ellipsis">{{ r.veiculoNome }}</div>
+            <div>
+              <div style="font-weight: var(--weight-semibold); color: var(--text-strong); overflow: hidden; text-overflow: ellipsis">
+                {{ r.clienteNome }}
+              </div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums">
+                {{ r.clienteDocumento }}
+              </div>
             </div>
-            <div style="color: var(--text-default); overflow: hidden; text-overflow: ellipsis">{{ t.sacado }}</div>
             <div style="text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--weight-bold); color: var(--text-strong)">
-              {{ brl(t.vrAberto, { compact: true }) }}
+              {{ brl(r.valorNotificacao, { compact: true }) }}
             </div>
             <div style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted)">
-              {{ t.diasAtraso }}d
+              {{ r.diasParaNotificacao }}d
             </div>
-          </button>
+          </div>
+          <TablePagination
+            :total="notifTotal"
+            :page="notifPage"
+            :page-size="notifPageSize"
+            @update:page="setNotifPage"
+            @update:page-size="setNotifPageSize"
+          />
         </template>
       </div>
+    </div>
+
+    <!-- Confirmações Pendentes (full width) -->
+    <div class="dash-panel">
+      <div class="dash-panel-header">
+        <div class="flex items-center" style="gap: 10px">
+          <BadgeCheck :size="16" style="color: var(--gci-base)" />
+          <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Confirmações Pendentes
+          </h3>
+        </div>
+        <button class="dash-link" @click="emit('navigate', 'cobranca-titulos')">Ver todos</button>
+      </div>
+      <div v-if="confirmacoesPendentes.length === 0" class="dash-empty">Nenhuma confirmação pendente.</div>
+      <template v-else>
+        <div class="grid dash-table-header" :style="{ gridTemplateColumns: CONF_GRID }">
+          <div>Veículo</div>
+          <div>Cliente</div>
+          <div style="text-align: right">Valor</div>
+          <div style="text-align: right">% Confirmado</div>
+          <div style="text-align: right">Dias</div>
+        </div>
+        <div
+          v-for="r in confPageItems"
+          :key="r.key"
+          class="grid items-center dash-queue-row"
+          :style="{ gridTemplateColumns: CONF_GRID }"
+        >
+          <div style="color: var(--text-default); overflow: hidden; text-overflow: ellipsis">{{ r.veiculoNome }}</div>
+          <div>
+            <div style="font-weight: var(--weight-semibold); color: var(--text-strong); overflow: hidden; text-overflow: ellipsis">
+              {{ r.clienteNome }}
+            </div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums">
+              {{ r.clienteDocumento }}
+            </div>
+          </div>
+          <div style="text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--weight-bold); color: var(--text-strong)">
+            {{ brl(r.valorConfirmacao, { compact: true }) }}
+          </div>
+          <div style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-default)">
+            {{ pct(r.pctConfirmado, 0) }}
+          </div>
+          <div style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted)">
+            {{ r.diasParaNotificacao }}d
+          </div>
+        </div>
+        <TablePagination
+          :total="confTotal"
+          :page="confPage"
+          :page-size="confPageSize"
+          @update:page="setConfPage"
+          @update:page-size="setConfPageSize"
+        />
+      </template>
     </div>
 
     <!-- Atalhos -->
@@ -712,6 +769,34 @@ const NOTIF_GRID = 'minmax(110px, 1.2fr) minmax(110px, 1.2fr) minmax(80px, 0.9fr
 </template>
 
 <style scoped>
+.dash-panel {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  background: var(--surface-card);
+  overflow: hidden;
+}
+.dash-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-default);
+}
+.dash-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--accent);
+}
+.dash-empty {
+  padding: 24px 20px;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  text-align: center;
+}
 .dash-table-header {
   column-gap: 12px;
   padding: 10px 20px;
@@ -729,18 +814,15 @@ const NOTIF_GRID = 'minmax(110px, 1.2fr) minmax(110px, 1.2fr) minmax(80px, 0.9fr
   border: none;
   border-top: 1px solid var(--border-default);
   background: transparent;
-  cursor: pointer;
   font-size: var(--text-sm);
   text-align: left;
-  transition: background var(--duration-fast);
 }
-.dash-queue-row:hover,
 .dash-search-item:hover,
 .dash-shortcut:hover {
   background: var(--surface-sunken) !important;
 }
 @media (max-width: 1100px) {
-  .grid[style*='1fr 1fr'] {
+  .dash-two-col {
     grid-template-columns: 1fr !important;
   }
 }

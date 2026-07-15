@@ -7,60 +7,81 @@ import {
   BellRing,
   Receipt,
   Handshake,
-  Building2,
-  User,
-  History,
+  BadgeCheck,
+  Paperclip,
+  CreditCard,
+  Activity,
+  ArrowLeftRight,
+  TrendingUp,
   CheckCircle2,
   Clock,
   AlertTriangle,
 } from 'lucide-vue-next';
 import {
   brl,
-  statusTituloColor,
-  statusTituloLabel,
+  statusPagamentoColor,
+  statusPagamentoLabel,
   type Titulo,
 } from '../data/titulosData';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
+import DetailsTab from './titulo-detail/DetailsTab.vue';
+import AnexosTab from './titulo-detail/AnexosTab.vue';
+import AccrualTab from './titulo-detail/AccrualTab.vue';
+import PagamentosTab from './titulo-detail/PagamentosTab.vue';
+import ConfirmacoesTab from './titulo-detail/ConfirmacoesTab.vue';
+import MovimentacoesTab from './titulo-detail/MovimentacoesTab.vue';
+import HistoricoTab from './titulo-detail/HistoricoTab.vue';
 
 const props = defineProps<{ titulo: Titulo }>();
 const emit = defineEmits<{
   back: [];
   gerarBoleto: [id: string];
   notificar: [id: string];
+  confirmar: [id: string];
   negociar: [id: string];
 }>();
 
-type Tab = 'detalhes' | 'cobranca';
+type Tab = 'detalhes' | 'anexos' | 'accrual' | 'pagamentos' | 'confirmacoes' | 'movimentacoes' | 'historico';
 
 const TABS = [
   { key: 'detalhes' as const, label: 'Detalhes', icon: FileText },
-  { key: 'cobranca' as const, label: 'Cobrança', icon: History },
+  { key: 'anexos' as const, label: 'Anexos', icon: Paperclip },
+  { key: 'accrual' as const, label: 'Accrual', icon: TrendingUp },
+  { key: 'pagamentos' as const, label: 'Pagamentos', icon: CreditCard },
+  { key: 'confirmacoes' as const, label: 'Confirmações', icon: BadgeCheck },
+  { key: 'movimentacoes' as const, label: 'Movimentações', icon: ArrowLeftRight },
+  { key: 'historico' as const, label: 'Histórico', icon: Activity },
 ];
 
 const tab = ref<Tab>('detalhes');
 const actionMenuOpen = ref(false);
 const actionMenuRef = ref<HTMLDivElement | null>(null);
-const statusColor = computed(() => statusTituloColor(props.titulo.status));
+const statusColor = computed(() => statusPagamentoColor(props.titulo.statusPagamento));
 
 const StatusIcon = computed<Component>(() => {
-  if (props.titulo.status === 'CONFIRMADO') return CheckCircle2;
-  if (props.titulo.status === 'VENCIDO') return AlertTriangle;
+  if (props.titulo.statusPagamento === 'LIQUIDADO') return CheckCircle2;
+  if (props.titulo.statusPagamento === 'VENCIDO') return AlertTriangle;
   return Clock;
 });
 
 const actions = [
   {
-    label: 'Gerar boleto',
+    label: 'Gerar Boleto',
     icon: Receipt,
     onClick: () => emit('gerarBoleto', props.titulo.id),
   },
   {
-    label: 'Notificar',
+    label: 'Confirmar Ativo',
+    icon: BadgeCheck,
+    onClick: () => emit('confirmar', props.titulo.id),
+  },
+  {
+    label: 'Notificar Ativo',
     icon: BellRing,
     onClick: () => emit('notificar', props.titulo.id),
   },
   {
-    label: 'Marcar em negociação',
+    label: 'Sinalizar Negociação',
     icon: Handshake,
     onClick: () => emit('negociar', props.titulo.id),
   },
@@ -130,6 +151,20 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
         >
           #{{ titulo.numero }}
           <span
+            style="
+              font-size: 10px;
+              font-weight: var(--weight-bold);
+              letter-spacing: 0.06em;
+              padding: 4px 9px;
+              border-radius: var(--radius-sm);
+              background: var(--gci-light);
+              color: var(--gci-base);
+              border: 1px solid color-mix(in srgb, var(--gci-base) 20%, transparent);
+            "
+          >
+            Lastro {{ titulo.lastro }}
+          </span>
+          <span
             class="flex items-center"
             :style="{
               gap: '6px',
@@ -143,12 +178,13 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
             }"
           >
             <span :style="{ width: '7px', height: '7px', borderRadius: '9999px', background: statusColor }" />
-            {{ statusTituloLabel(titulo.status).toUpperCase() }}
+            {{ statusPagamentoLabel(titulo.statusPagamento).toUpperCase() }}
           </span>
         </h2>
         <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
           {{ titulo.veiculoNome }} · {{ titulo.veiculoTipo }}
           <template v-if="titulo.classeOuOperacao"> · {{ titulo.classeOuOperacao }}</template>
+          · {{ titulo.gerente }}
         </p>
       </div>
 
@@ -308,304 +344,13 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
         padding: 24px;
       "
     >
-      <!-- Detalhes -->
-      <div v-if="tab === 'detalhes'" class="flex flex-col" style="gap: 28px">
-        <section>
-          <div
-            style="
-              font-size: 10px;
-              font-weight: 800;
-              letter-spacing: 0.14em;
-              color: var(--accent);
-              text-transform: uppercase;
-              margin-bottom: 14px;
-            "
-          >
-            Informações do Título
-          </div>
-          <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 20px">
-            <div>
-              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
-                Nº Título
-              </div>
-              <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">
-                #{{ titulo.numero }}
-              </div>
-            </div>
-            <div>
-              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
-                Tipo de Ativo
-              </div>
-              <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">
-                {{ titulo.tipo }}
-              </div>
-            </div>
-            <div>
-              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
-                Veículo
-              </div>
-              <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">
-                {{ titulo.veiculoNome }}
-              </div>
-            </div>
-            <div>
-              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
-                Classe / Operação
-              </div>
-              <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">
-                {{ titulo.classeOuOperacao ?? '—' }}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <div
-            style="
-              font-size: 10px;
-              font-weight: 800;
-              letter-spacing: 0.14em;
-              color: var(--accent);
-              text-transform: uppercase;
-              margin-bottom: 14px;
-            "
-          >
-            Valores
-          </div>
-          <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 20px">
-            <div>
-              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
-                Valor Nominal
-              </div>
-              <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
-                {{ brl(titulo.vrNominal) }}
-              </div>
-            </div>
-            <div>
-              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
-                Valor em Aberto
-              </div>
-              <div
-                :style="{
-                  fontSize: 'var(--text-sm)',
-                  fontWeight: 'var(--weight-bold)',
-                  color: titulo.diasAtraso > 0 ? 'var(--danger-base)' : 'var(--text-strong)',
-                  fontVariantNumeric: 'tabular-nums',
-                }"
-              >
-                {{ brl(titulo.vrAberto) }}
-              </div>
-            </div>
-            <div>
-              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
-                Valor Presente
-              </div>
-              <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">
-                {{ titulo.vrPresente != null ? brl(titulo.vrPresente) : '—' }}
-              </div>
-            </div>
-            <div>
-              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
-                Dias em atraso
-              </div>
-              <div
-                :style="{
-                  fontSize: 'var(--text-sm)',
-                  fontWeight: 'var(--weight-bold)',
-                  color: titulo.diasAtraso > 0 ? 'var(--danger-base)' : 'var(--text-strong)',
-                  fontVariantNumeric: 'tabular-nums',
-                }"
-              >
-                {{ titulo.diasAtraso }}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <div
-            style="
-              font-size: 10px;
-              font-weight: 800;
-              letter-spacing: 0.14em;
-              color: var(--accent);
-              text-transform: uppercase;
-              margin-bottom: 14px;
-            "
-          >
-            Datas
-          </div>
-          <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 20px">
-            <div>
-              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
-                Emissão
-              </div>
-              <div style="font-size: var(--text-sm); color: var(--text-strong); font-variant-numeric: tabular-nums">
-                {{ titulo.emissao }}
-              </div>
-            </div>
-            <div>
-              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
-                Vencimento
-              </div>
-              <div style="font-size: var(--text-sm); color: var(--text-strong); font-variant-numeric: tabular-nums">
-                {{ titulo.vencimento }}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <div
-            style="
-              font-size: 10px;
-              font-weight: 800;
-              letter-spacing: 0.14em;
-              color: var(--accent);
-              text-transform: uppercase;
-              margin-bottom: 14px;
-            "
-          >
-            Participantes
-          </div>
-          <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px">
-            <div
-              class="flex items-start"
-              style="
-                gap: 12px;
-                padding: 16px;
-                border-radius: var(--radius-lg);
-                border: 1px solid var(--border-default);
-                background: var(--surface-sunken);
-              "
-            >
-              <div
-                class="flex items-center justify-center"
-                style="
-                  width: 36px;
-                  height: 36px;
-                  border-radius: var(--radius-md);
-                  background: var(--gci-light);
-                  color: var(--gci-base);
-                  flex-shrink: 0;
-                "
-              >
-                <Building2 :size="16" />
-              </div>
-              <div>
-                <div style="font-size: 10px; font-weight: 800; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase">
-                  Cedente
-                </div>
-                <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); margin-top: 4px">
-                  {{ titulo.cedente }}
-                </div>
-                <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums">
-                  {{ titulo.cedenteCnpj }}
-                </div>
-              </div>
-            </div>
-            <div
-              class="flex items-start"
-              style="
-                gap: 12px;
-                padding: 16px;
-                border-radius: var(--radius-lg);
-                border: 1px solid var(--border-default);
-                background: var(--surface-sunken);
-              "
-            >
-              <div
-                class="flex items-center justify-center"
-                style="
-                  width: 36px;
-                  height: 36px;
-                  border-radius: var(--radius-md);
-                  background: var(--agro-light);
-                  color: var(--agro-base);
-                  flex-shrink: 0;
-                "
-              >
-                <User :size="16" />
-              </div>
-              <div>
-                <div style="font-size: 10px; font-weight: 800; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase">
-                  Sacado
-                </div>
-                <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); margin-top: 4px">
-                  {{ titulo.sacado }}
-                </div>
-                <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums">
-                  {{ titulo.sacadoCnpj }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <!-- Cobrança -->
-      <div v-else class="flex flex-col" style="gap: 16px">
-        <div
-          style="
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.14em;
-            color: var(--accent);
-            text-transform: uppercase;
-            margin-bottom: 4px;
-          "
-        >
-          Histórico de cobrança
-        </div>
-        <div
-          style="
-            padding: 16px 18px;
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-default);
-            background: var(--surface-sunken);
-          "
-        >
-          <div class="flex items-center" style="gap: 10px; margin-bottom: 6px">
-            <BellRing :size="15" style="color: var(--text-muted)" />
-            <div style="font-size: var(--text-xs); color: var(--text-muted)">Última notificação</div>
-          </div>
-          <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">
-            {{ titulo.ultimaNotificacaoEm ?? 'Nenhuma notificação enviada' }}
-          </div>
-        </div>
-        <div
-          style="
-            padding: 16px 18px;
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-default);
-            background: var(--surface-sunken);
-          "
-        >
-          <div class="flex items-center" style="gap: 10px; margin-bottom: 6px">
-            <Receipt :size="15" style="color: var(--text-muted)" />
-            <div style="font-size: var(--text-xs); color: var(--text-muted)">Boleto gerado em</div>
-          </div>
-          <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">
-            {{ titulo.boletoGeradoEm ?? 'Sem boleto gerado' }}
-          </div>
-        </div>
-        <div
-          style="
-            padding: 16px 18px;
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-default);
-            background: var(--surface-sunken);
-          "
-        >
-          <div class="flex items-center" style="gap: 10px; margin-bottom: 6px">
-            <Handshake :size="15" style="color: var(--text-muted)" />
-            <div style="font-size: var(--text-xs); color: var(--text-muted)">Status de atuação</div>
-          </div>
-          <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">
-            {{ statusTituloLabel(titulo.status) }}
-          </div>
-        </div>
-      </div>
+      <DetailsTab v-if="tab === 'detalhes'" :titulo="titulo" />
+      <AnexosTab v-else-if="tab === 'anexos'" :titulo="titulo" />
+      <AccrualTab v-else-if="tab === 'accrual'" :titulo="titulo" />
+      <PagamentosTab v-else-if="tab === 'pagamentos'" :titulo="titulo" />
+      <ConfirmacoesTab v-else-if="tab === 'confirmacoes'" :titulo="titulo" />
+      <MovimentacoesTab v-else-if="tab === 'movimentacoes'" :titulo="titulo" />
+      <HistoricoTab v-else-if="tab === 'historico'" :titulo="titulo" />
     </div>
   </div>
 </template>

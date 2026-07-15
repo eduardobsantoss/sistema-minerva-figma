@@ -18,6 +18,7 @@ import ConfigurarNotificacoesModal from '../components/modals/ConfigurarNotifica
 import HabilitarOperarModal from '../components/modals/HabilitarOperarModal.vue';
 import VincularAgrupamentoModal from '../components/modals/VincularAgrupamentoModal.vue';
 import Checkbox from '@/components/ui/Checkbox.vue';
+import Tooltip from '@/components/ui/Tooltip.vue';
 
 const emit = defineEmits<{ open: [id: string] }>();
 
@@ -357,7 +358,14 @@ function menuActions(g: GrupoEmpresarial) {
               <span :style="{ fontVariantNumeric: 'tabular-nums', color: g.vencimentoParecer ? 'var(--text-default)' : 'var(--text-muted)' }">
                 {{ g.vencimentoParecer ?? 'Não Informado' }}
               </span>
-              <component :is="PARECER_ICON[g.parecerCredito]" :size="15" :stroke-width="2.25" :style="{ color: parecerColor(g.parecerCredito), flexShrink: 0 }" :title="parecerLabel(g.parecerCredito)" />
+              <Tooltip :content="parecerLabel(g.parecerCredito)">
+                <component
+                  :is="PARECER_ICON[g.parecerCredito]"
+                  :size="15"
+                  :stroke-width="2.25"
+                  :style="{ color: parecerColor(g.parecerCredito), flexShrink: 0 }"
+                />
+              </Tooltip>
             </div>
             <div class="flex justify-end" style="position: relative">
               <button class="flex items-center justify-center" :style="{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', border: 'none', background: menuOpenId === g.id ? 'var(--surface-sunken)' : 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }" @click.stop="menuOpenId = menuOpenId === g.id ? null : g.id">

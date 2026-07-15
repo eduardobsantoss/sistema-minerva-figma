@@ -38,45 +38,52 @@ const clientesLimiteAVencer = GRUPOS_SEED.filter((g) => g.riscoTotal > 0 && isPr
 const clientesLimiteZerado = GRUPOS_SEED.filter((g) => g.limite === 0).length;
 const clientesLimiteSemRisco = GRUPOS_SEED.filter((g) => g.limite > 0 && g.riscoTotal === 0).length;
 
-interface KpiMetric { label: string; value: string }
-interface KpiCard { icon: Component; title: string; tone: string; metrics: KpiMetric[] }
+interface KpiHero {
+  icon: Component;
+  title: string;
+  tone: string;
+  primaryLabel: string;
+  primaryValue: string;
+  secondaryLabel: string;
+  secondaryValue: string;
+}
 
-const kpis = computed<KpiCard[]>(() => [
+const kpis = computed<KpiHero[]>(() => [
   {
     icon: AlertTriangle,
     title: 'Inadimplência Geral',
     tone: 'var(--danger-base)',
-    metrics: [
-      { label: 'Valor Vencido', value: brl(valorVencidoTotal, { compact: true }) },
-      { label: 'Percentual na carteira', value: fmtPct(pctVencido) },
-    ],
+    primaryLabel: 'Valor Vencido',
+    primaryValue: brl(valorVencidoTotal),
+    secondaryLabel: 'Percentual na carteira',
+    secondaryValue: fmtPct(pctVencido),
   },
   {
     icon: TrendingDown,
     title: 'Distribuição de Risco',
     tone: 'var(--agro-base)',
-    metrics: [
-      { label: 'Risco total aberto', value: brl(riscoTotalEmpresa, { compact: true }) },
-      { label: 'Risco acima do limite', value: String(clientesRiscoAcimaLimite) },
-    ],
+    primaryLabel: 'Risco total aberto',
+    primaryValue: brl(riscoTotalEmpresa),
+    secondaryLabel: 'Risco acima do limite',
+    secondaryValue: String(clientesRiscoAcimaLimite),
   },
   {
     icon: Clock,
     title: 'Risco Vencido',
     tone: 'var(--warning-base)',
-    metrics: [
-      { label: 'Risco vencido', value: String(clientesLimiteVencido) },
-      { label: 'Risco a vencer', value: String(clientesLimiteAVencer) },
-    ],
+    primaryLabel: 'Risco vencido',
+    primaryValue: String(clientesLimiteVencido),
+    secondaryLabel: 'Risco a vencer',
+    secondaryValue: String(clientesLimiteAVencer),
   },
   {
     icon: Users,
     title: 'Limite x Risco',
     tone: 'var(--gci-base)',
-    metrics: [
-      { label: 'Limite zerado', value: String(clientesLimiteZerado) },
-      { label: 'Limite s/ risco', value: String(clientesLimiteSemRisco) },
-    ],
+    primaryLabel: 'Limite zerado',
+    primaryValue: String(clientesLimiteZerado),
+    secondaryLabel: 'Limite s/ risco',
+    secondaryValue: String(clientesLimiteSemRisco),
   },
 ]);
 
@@ -308,20 +315,57 @@ function handleSearchSelect(id: string) {
       </div>
     </div>
 
-    <!-- KPI Cards -->
+    <!-- KPI Cards (mesmo visual do Dashboard de Cobrança) -->
     <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px">
-      <div v-for="kpi in kpis" :key="kpi.title" style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); padding: 18px">
-        <div class="flex items-center" style="gap: 10px; margin-bottom: 14px">
-          <div class="flex items-center justify-center" :style="{ width: '36px', height: '36px', borderRadius: 'var(--radius-lg)', background: `color-mix(in srgb, ${kpi.tone} 14%, transparent)`, color: kpi.tone, flexShrink: 0 }">
-            <component :is="kpi.icon" :size="17" />
+      <div
+        v-for="kpi in kpis"
+        :key="kpi.title"
+        style="
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-xl);
+          background: var(--surface-card);
+          padding: 20px;
+        "
+      >
+        <div class="flex items-center" style="gap: 10px; margin-bottom: 16px">
+          <div
+            class="flex items-center justify-center"
+            :style="{
+              width: '40px',
+              height: '40px',
+              borderRadius: 'var(--radius-lg)',
+              background: `color-mix(in srgb, ${kpi.tone} 14%, transparent)`,
+              color: kpi.tone,
+              flexShrink: 0,
+            }"
+          >
+            <component :is="kpi.icon" :size="18" />
           </div>
-          <div style="font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--text-muted)">{{ kpi.title }}</div>
+          <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+            {{ kpi.title }}
+          </div>
         </div>
-        <div class="flex flex-col" style="gap: 8px">
-          <div v-for="m in kpi.metrics" :key="m.label" class="flex items-center justify-between">
-            <span style="font-size: var(--text-xs); color: var(--text-muted)">{{ m.label }}</span>
-            <span style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">{{ m.value }}</span>
-          </div>
+        <div style="font-size: 11px; font-weight: var(--weight-bold); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px">
+          {{ kpi.primaryLabel }}
+        </div>
+        <div
+          :style="{
+            fontSize: '28px',
+            fontWeight: 'var(--weight-bold)',
+            letterSpacing: '-0.02em',
+            fontVariantNumeric: 'tabular-nums',
+            lineHeight: 1.1,
+            color: kpi.tone,
+            marginBottom: '14px',
+          }"
+        >
+          {{ kpi.primaryValue }}
+        </div>
+        <div class="flex items-center justify-between" style="padding-top: 12px; border-top: 1px solid var(--border-default)">
+          <span style="font-size: var(--text-xs); color: var(--text-muted)">{{ kpi.secondaryLabel }}</span>
+          <span style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
+            {{ kpi.secondaryValue }}
+          </span>
         </div>
       </div>
     </div>

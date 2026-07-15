@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, type Component } from 'vue';
+import { type Component } from 'vue';
 import {
   LayoutDashboard,
   Landmark,
@@ -25,6 +25,7 @@ import {
 } from 'lucide-vue-next';
 import gciLogoMark from '@/assets/gci-logo-mark.png';
 import gciLogoFull from '@/assets/gci-logo-full.png';
+import Tooltip from '@/components/ui/Tooltip.vue';
 
 interface SubItem {
   key: string;
@@ -49,8 +50,8 @@ const items: NavItem[] = [
     label: 'Cobrança',
     icon: Receipt,
     children: [
-      { key: 'cobranca-titulos', label: 'Títulos', icon: FileText },
       { key: 'cobranca-dashboard', label: 'Dashboard', icon: Gauge },
+      { key: 'cobranca-titulos', label: 'Títulos', icon: FileText },
       { key: 'cobranca-notif', label: 'Notificações de Cobrança', icon: BellRing },
       { key: 'cobranca-notif-cessao', label: 'Notificações de Cessão', icon: ScrollText },
       { key: 'cobranca-resultado-notif', label: 'Resultado de Notificações', icon: Layers },
@@ -90,8 +91,6 @@ const emit = defineEmits<{
   toggle: [];
   toggleMenu: [key: string];
 }>();
-
-const hoveredKey = ref<string | null>(null);
 
 function isAnyChildActive(it: NavItem) {
   return !!it.children?.length && it.children.some((c) => c.key === props.active);
@@ -190,90 +189,87 @@ function handleItemClick(it: NavItem) {
     <!-- Nav -->
     <nav class="sidebar-nav-scroll flex flex-col" style="gap: 4px; flex: 1; min-height: 0; overflow-y: auto">
       <div v-for="it in items" :key="it.key">
+        <Tooltip
+          v-if="collapsed"
+          :content="it.label"
+          variant="light"
+          side="right"
+          block
+        >
+          <button
+            class="sidebar-nav-btn relative flex items-center"
+            :class="{ 'sidebar-nav-btn--active': it.key === active || isAnyChildActive(it) }"
+            style="
+              gap: 16px;
+              padding: 12px 0;
+              width: 100%;
+              justify-content: center;
+              border-radius: var(--radius-xl);
+              font-size: var(--text-sm);
+              font-weight: var(--weight-medium);
+              border: none;
+              cursor: pointer;
+              text-align: left;
+              transition: background var(--duration-fast), color var(--duration-fast);
+            "
+            @click="handleItemClick(it)"
+          >
+            <span
+              v-if="it.key === active || isAnyChildActive(it)"
+              style="
+                position: absolute;
+                left: -12px;
+                top: 8px;
+                bottom: 8px;
+                width: 4px;
+                background: var(--agro-base);
+                border-radius: 0 4px 4px 0;
+              "
+            />
+            <component :is="it.icon" :size="18" style="flex-shrink: 0" />
+          </button>
+        </Tooltip>
         <button
+          v-else
           class="sidebar-nav-btn relative flex items-center"
           :class="{ 'sidebar-nav-btn--active': it.key === active || isAnyChildActive(it) }"
-          :style="{
-            gap: '16px',
-            padding: collapsed ? '12px 0' : '12px',
-            width: '100%',
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            borderRadius: 'var(--radius-xl)',
-            fontSize: 'var(--text-sm)',
-            fontWeight: 'var(--weight-medium)',
-            border: 'none',
-            cursor: 'pointer',
-            textAlign: 'left',
-            transition:
-              'background var(--duration-fast), color var(--duration-fast), padding var(--duration-slow)',
-          }"
+          style="
+            gap: 16px;
+            padding: 12px;
+            width: 100%;
+            justify-content: flex-start;
+            border-radius: var(--radius-xl);
+            font-size: var(--text-sm);
+            font-weight: var(--weight-medium);
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            transition: background var(--duration-fast), color var(--duration-fast), padding var(--duration-slow);
+          "
           @click="handleItemClick(it)"
-          @mouseenter="collapsed && (hoveredKey = it.key)"
-          @mouseleave="hoveredKey = null"
         >
-          <div
-            v-if="collapsed && hoveredKey === it.key"
-            class="flex items-center"
-            style="
-              position: absolute;
-              left: 100%;
-              top: 50%;
-              transform: translateY(-50%);
-              margin-left: 14px;
-              z-index: 100;
-              pointer-events: none;
-            "
-          >
-            <div
-              style="
-                width: 0;
-                height: 0;
-                border-top: 5px solid transparent;
-                border-bottom: 5px solid transparent;
-                border-right: 5px solid var(--surface-card);
-              "
-            />
-            <div
-              style="
-                background: var(--surface-card);
-                color: var(--text-strong);
-                font-size: var(--text-xs);
-                font-weight: var(--weight-semibold);
-                padding: 7px 12px;
-                border-radius: var(--radius-md);
-                white-space: nowrap;
-                box-shadow: var(--shadow-md);
-                border: 1px solid var(--border-default);
-              "
-            >
-              {{ it.label }}
-            </div>
-          </div>
           <span
             v-if="it.key === active || isAnyChildActive(it)"
-            :style="{
-              position: 'absolute',
-              left: collapsed ? '-12px' : '0',
-              top: '8px',
-              bottom: '8px',
-              width: '4px',
-              background: 'var(--agro-base)',
-              borderRadius: '0 4px 4px 0',
-              transition: 'left var(--duration-slow)',
-            }"
+            style="
+              position: absolute;
+              left: 0;
+              top: 8px;
+              bottom: 8px;
+              width: 4px;
+              background: var(--agro-base);
+              border-radius: 0 4px 4px 0;
+            "
           />
           <component :is="it.icon" :size="18" style="flex-shrink: 0" />
-          <template v-if="!collapsed">
-            <span style="flex: 1; white-space: nowrap">{{ it.label }}</span>
-            <ChevronDown
-              v-if="it.children?.length"
-              :size="16"
-              :style="{
-                transform: openMenu === it.key && !collapsed ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: 'transform var(--duration-base)',
-              }"
-            />
-          </template>
+          <span style="flex: 1; white-space: nowrap">{{ it.label }}</span>
+          <ChevronDown
+            v-if="it.children?.length"
+            :size="16"
+            :style="{
+              transform: openMenu === it.key ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform var(--duration-base)',
+            }"
+          />
         </button>
 
         <!-- Submenu -->
