@@ -5,7 +5,7 @@ import { UF_OPTIONS, PAISES_DDI } from '../../../data/operacaoData';
 import { BentoBox, StepGrid, FormField, SelectField } from '../adicionar-contrato';
 import {
   buscarClientePorDoc,
-  CREDORA_PADRAO_OPTS,
+  ENDOSSATARIO_PADRAO_OPTS,
   CREDORAS_PADRAO,
   emptyPessoaMinuta,
   ESTADO_CIVIL_OPTS,
@@ -14,18 +14,7 @@ import {
   type PessoaMinuta,
 } from '../../../data/minutaData';
 
-const props = withDefaults(
-  defineProps<{
-    padraoOptions?: string[];
-    legalRepFieldsOptional?: boolean;
-  }>(),
-  {
-    padraoOptions: () => CREDORA_PADRAO_OPTS,
-    legalRepFieldsOptional: false,
-  },
-);
-
-const credoraPadrao = defineModel<string>('credoraPadrao', { default: '' });
+const endossatarioPadrao = defineModel<string>('endossatarioPadrao', { default: '' });
 const form = defineModel<PessoaMinuta>('form', { required: true });
 const docBusca = defineModel<string>('docBusca', { default: '' });
 const contatoSel = defineModel<string>('contato', { default: '' });
@@ -36,12 +25,9 @@ const DDI_OPTS = PAISES_DDI.map((p) => p.ddi);
 const PAIS_OPTS = PAISES_DDI.map((p) => p.pais);
 const NATUREZA_OPTS = ['Pessoa Física', 'Pessoa Jurídica'];
 
-const modoCredoraPadrao = computed(() => !!credoraPadrao.value);
-const modoCliente = computed(() => !!docBusca.value && !credoraPadrao.value);
-const camposHabilitados = computed(() => modoCredoraPadrao.value || modoCliente.value);
-const repLabel = computed(() =>
-  props.legalRepFieldsOptional ? 'Representante Legal (opcional)' : 'Representante Legal',
-);
+const modoPadrao = computed(() => !!endossatarioPadrao.value);
+const modoCliente = computed(() => !!docBusca.value && !endossatarioPadrao.value);
+const camposHabilitados = computed(() => modoPadrao.value || modoCliente.value);
 
 const natureza = computed({
   get: () => (form.value.tipoPessoa === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica'),
@@ -55,13 +41,14 @@ const cidadeOpts = computed(() => cidadesDaUf(form.value.estado ?? ''));
 const DOC_OPTS = [
   '34.470.721/0001-87 - AVANTIAGRO COMERCIAL AGRÍCOLA LTDA',
   '56.025.302/0001-79 - CERES TRADING E INVESTIMENTOS S.A.',
+  '32.987.654/0001-10 - CERES SECURITIZADORA S.A.',
 ];
 
 const contatoOpts = computed(() => form.value.contatos ?? []);
 const enderecoOpts = computed(() => form.value.enderecos ?? []);
 const representanteOpts = computed(() => form.value.representantes ?? []);
 
-watch(credoraPadrao, (v) => {
+watch(endossatarioPadrao, (v) => {
   if (!v) return;
   const data = CREDORAS_PADRAO[v];
   if (!data) return;
@@ -82,7 +69,7 @@ watch(
 );
 
 function onDocSelect(v: string) {
-  if (credoraPadrao.value) return;
+  if (endossatarioPadrao.value) return;
   docBusca.value = v;
   const docPart = v.split(' - ')[0]?.trim() ?? v;
   const found = buscarClientePorDoc(docPart);
@@ -95,8 +82,8 @@ function onDocSelect(v: string) {
   }
 }
 
-function limparCredoraPadrao() {
-  credoraPadrao.value = '';
+function limparPadrao() {
+  endossatarioPadrao.value = '';
 }
 </script>
 
@@ -104,11 +91,11 @@ function limparCredoraPadrao() {
   <div class="flex flex-col" style="gap: 20px">
     <StepGrid>
       <SelectField
-        label="Selecione a credora padrão"
-        :options="padraoOptions"
+        label="Selecione o endossatário padrão"
+        :options="ENDOSSATARIO_PADRAO_OPTS"
         placeholder="Selecione"
         :span="4"
-        v-model="credoraPadrao"
+        v-model="endossatarioPadrao"
       />
       <SelectField
         label="Insira o doc. do cliente"
@@ -116,7 +103,7 @@ function limparCredoraPadrao() {
         placeholder="Selecione"
         :span="5"
         :model-value="docBusca"
-        :disabled="modoCredoraPadrao"
+        :disabled="modoPadrao"
         @update:model-value="onDocSelect"
       />
       <SelectField
@@ -128,7 +115,7 @@ function limparCredoraPadrao() {
         v-model="contatoSel"
       />
       <SelectField
-        v-else-if="modoCredoraPadrao"
+        v-else-if="modoPadrao"
         label="Natureza"
         :options="NATUREZA_OPTS"
         :span="3"
@@ -170,7 +157,7 @@ function limparCredoraPadrao() {
           <FormField label="Inscrição estadual" placeholder="—" :span="3" v-model="form.inscricaoEstadual!" />
         </StepGrid>
 
-        <BentoBox :title="repLabel" :icon="User">
+        <BentoBox title="Representante Legal" :icon="User">
           <StepGrid>
             <FormField label="CPF" placeholder="—" :span="3" v-model="form.representante!.cpf" />
             <FormField label="Nome" placeholder="—" :span="5" v-model="form.representante!.nome" />
@@ -206,7 +193,7 @@ function limparCredoraPadrao() {
     </template>
 
     <button
-      v-if="modoCredoraPadrao"
+      v-if="modoPadrao"
       type="button"
       style="
         align-self: flex-start;
@@ -218,9 +205,9 @@ function limparCredoraPadrao() {
         font-weight: var(--weight-semibold);
         text-decoration: underline;
       "
-      @click="limparCredoraPadrao"
+      @click="limparPadrao"
     >
-      Limpar credora padrão
+      Limpar endossatário padrão
     </button>
   </div>
 </template>

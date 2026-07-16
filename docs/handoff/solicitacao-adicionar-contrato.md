@@ -76,14 +76,14 @@ minutaHabilitada = isTipoMinutaDisponivel(form.tipo)
 showWizard       = form.gerarMinuta && minutaHabilitada
 ```
 
-Tipos com minuta nesta versão: **`Contrato CPR`** e **`Contrato CPRF`** (também aceita aliases `CPR` / `CPR-F` / `CPRF`).
+Tipos com minuta nesta versão: **`Contrato CPR`**, **`Contrato CPRF`**, **`Contrato NC`** e **`Contrato CCB`** (aliases `CPR` / `CPR-F` / `CPRF` / `NC` / `CCB`).
 
 | Condição | UI |
 |---|---|
 | Default (`gerarMinuta === false`) | **Modo padrão** — body + footer Cancelar / GERAR TÍTULO |
-| Tipo CPR/CPRF **e** “Gerar minuta” ON | **MinutaWizard** substitui body + footer |
-| Toggle ON mas tipo ≠ CPR/CPRF | Toggle **disabled** (`opacity: 0.55`) + helper |
-| Tipo sai de CPR/CPRF com toggle ON | `watch` força `gerarMinuta = false` → volta ao padrão |
+| `Tipo` is CPR/CPRF/NC/CCB **e** “Gerar minuta” ON | **MinutaWizard** substitui body + footer |
+| Toggle ON mas tipo ≠ elegível | Toggle **disabled** (`opacity: 0.55`) + helper |
+| Tipo sai dos elegíveis com toggle ON | `watch` força `gerarMinuta = false` → volta ao padrão |
 
 **Ordem de uso:** o usuário escolhe **Tipo** em Dados do Título (modo padrão) → o toggle habilita → ao ligar, o wizard abre com esse tipo. No step Título o tipo fica disabled como `CPR` / `CPRF`.
 
@@ -129,7 +129,7 @@ Mesmo recipe de overlay; `z-index: 500`; `max-width: 860px`; `height: 85vh`.
 | **StepGrid** | 12 colunas, gap `14px` (spans variáveis via prop `span`) |
 | **FieldLabel** | 10px, weight 700, tracking `0.14em`, uppercase, `margin-bottom: 6px`; erro → `danger-base` + `*` |
 | **FormField / SelectField** | input height **40px**; pad `0 14px` (select `0 36px 0 14px`); radius 8px; disabled bg `surface-sunken` |
-| **ToggleRow** | pad default `14px 18px` / compact `12px 16px` / spacious `20px 24px`; radius 8px; ON border/bg `success-base` / `success-light`; track `44×24` pill; knob `18×18`; disabled opacity `0.55`; compact `min-height: 64px` (alinhado ao bloco label+input) |
+| **ToggleRow** | pad default `14px 18px` / compact `12px 16px` / spacious `20px 24px`; radius 8px; ON border/bg `success-base` / `success-light`; track `44×24` pill; knob `18×18`; disabled opacity `0.55`; compact `min-height: 64px` (alinhado ao bloco label+input, so quando sem `hint`); prop opcional `hint` (mesmo padrao do toggle-com-descricao de Risco/Grupos Empresariais/Parametrizacoes/Garantia/Titulos cedidos em garantia necessitam de confirmacao) empilha uma descricao text-xs muted abaixo do label -- usado em Valor Informado e no simulador de sacado |
 | **AddButton** | height 40px; pad `0 18px`; bg `var(--gci-base)`; weight 700; `text-xs`; tracking `0.04em` |
 | **EmptyState** | pad `40px 24px`; gap 10; dashed border; ícone 28px @ 0.5 opacity; hint max-width 360px |
 | **MinutaStepper** | bg `surface-sunken`; item `min-width: 88px`; pad `14px 8px 11px`; gap 6; ícone 18; label 9px / weight 800 / tracking `0.20em`; ativo: underline `3px solid var(--agro-base)`; futuros opacity 0.6; **sem checkmarks** (padrão CRA/FIDC) |
@@ -171,11 +171,13 @@ Grid interno: coluna vertical gap `14px`; campos em `BentoGrid :cols="4"`.
 | Tipo de cálculo | `SelectField` | `[tipoCalculo]` | **Sempre disabled** |
 | Número | `FormField` | `—` | Obrigatório para submit |
 | Tipo | `SelectField` | `TIPO_OPERACAO_OPTS` | Obrigatório; libera minuta |
-| Tipo de valor: NOMINAL | `ToggleRow` compact | — | Local; **não vai no payload** |
+| Valor Informado: DESÁGIO / ÁGIO | `ToggleRow` compact + `hint` | — | Local; **não vai no payload**. Mesmo padrão de toggle-com-descrição de Risco/Grupos Empresariais/Parametrizações/Garantia/Títulos cedidos em garantia necessitam de confirmação |
 | Emissão | `FormField` | `dd/mm/aaaa` | `required` (UI) |
 | Vencimento | `FormField` | `dd/mm/aaaa` | `required` (UI) |
 | Chave da nota | `FormField` | `—` | Opcional; não no payload |
-| Doc. da cedente | `SelectField` | `DOC_CEDENTE_OPTS` | Opcional; não no payload |
+| CFOP | `SelectField` | `CFOP_OPTS` | Opcional; não no payload |
+| Cedente | `FormField` | `—` | Opcional; enviado como `cedenteNome` no payload se preenchido |
+| Método de Desconto | `SelectField` | `METODO_DESCONTO_OPTS` | Opcional; não no payload |
 | Gerar operação no módulo de garantias | `ToggleRow` compact | — | Local; não no payload |
 
 ```ts
@@ -183,54 +185,61 @@ TIPO_OPERACAO_OPTS = [
   'Desconto Duplicata', 'Contrato NC', 'Contrato NP',
   'Contrato CCB', 'Contrato CPR', 'Contrato CPRF', 'Contrato CDCA',
 ];
-DOC_CEDENTE_OPTS = [
-  'Contrato_Social_Cedente.pdf', 'Procuracao_2026.pdf', 'Cartao_CNPJ.pdf',
+CFOP_OPTS = [
+  '5117 - Transferência de título de crédito',
+  '5949 - Outra saída de mercadoria/prestação não especificada',
+  '6117 - Transferência de título de crédito (fora do Estado)',
+  '6949 - Outra saída não especificada (fora do Estado)',
 ];
+METODO_DESCONTO_OPTS = ['Desconto Comercial (Por Fora)', 'Desconto Racional (Por Dentro)'];
 ```
 
 ### 5.3 Parcelas (condicional)
 
+O antigo “Cronograma de Pagamentos” foi removido. O fluxo automático ficou como toggle interno de “Possui múltiplas parcelas”.
+
 | Controle | Notas |
 |---|---|
 | Possui múltiplas parcelas | `ToggleRow` → revela `BentoBox` “Parcelas” |
-| Linha de cadastro | grid `1fr 1fr 1fr auto`, gap `12px`, `items-end` |
-| Parcela | disabled `${n}ª Parcela` |
-| Valor | placeholder `R$ 0,00` |
-| Vencimento | `dd/mm/aaaa` required |
-| Adicionar parcela | `AddButton` — exige valor + vencimento |
+| Gerar parcelas | `ToggleRow` compact **dentro** do BentoBox, acima dos campos |
+| **Gerar parcelas OFF** | grid `1fr 1fr 1fr auto` — Parcela (disabled), Valor, Vencimento, “Adicionar parcela” |
+| **Gerar parcelas ON** | grid `1fr auto` — Fluxo de parcelas (`FLUXO_OPTS`) + botão “Gerar pagamentos” |
 | Empty | `EmptyState` Layers · “Nenhuma parcela adicionada” |
-| Tabela | colunas `1.4fr 1fr 1fr auto` · Parcela / Valor / Vencimento / trash |
+| Tabela | colunas `1.4fr 1fr 1fr auto` · Parcela / Valor / Vencimento / **Ações** |
+| Ações (por linha) | Botão `MoreVertical` → menu flutuante com **Copiar** (`Copy`) e **Deletar parcela** (`Trash2`) |
+| Copiar | Duplica a parcela **sem a data de vencimento**, mantendo o mesmo valor; lista é renumerada |
 | Rodapé | `Somatória das parcelas: …` |
 | Warning | Se soma ≠ `valorOperacao`: mensagem laranja + `AlertTriangle` |
-
-### 5.4 Cronograma (condicional)
-
-| Controle | Notas |
-|---|---|
-| Possui cronograma de pagamentos | `ToggleRow` |
-| Gerar pagamentos automaticamente | `ToggleRow` compact |
-| **Auto ON** | Fluxo Amortização + Fluxo juros (`FLUXO_OPTS`) + botão “Gerar pagamentos” |
-| **Auto OFF** | Amortização, Vencimento, toggle Pagar juros, Valor do juros (disabled se !pagarJuros), “Adicionar pagamento” |
-| Obs | Texto em vermelho sobre pré-fixado / juros R$ 0,00 |
-| Tabela | Parcela / Vencimento / Amortização / Juros / Pagar juros |
-| Rodapé | `Amortização: …` |
 
 ```ts
 FLUXO_OPTS = ['Única', 'Mensal', 'Bimestral', 'Trimestral', 'Quadrimestral', 'Semestral', 'Anual'];
 ```
 
-Mock “Gerar pagamentos”: 2 parcelas, cada uma `valorOperacao/2` (fallback `50000`), juros 2%, datas `30/07/2026` e `30/08/2026`.
+Mock “Gerar pagamentos”: substitui a lista por 2 parcelas, cada uma `valorOperacao/2` (fallback `50000`), datas `30/07/2026` e `30/08/2026`. **Sem colunas de juros / pagar juros**.
 
-**Precedência no submit:** se `possuiCronograma`, payload usa cronograma; senão, array de parcelas.
+**No submit:** payload sempre usa o array único `parcelas`.
 
-### 5.5 Dados do Sacado (`BentoBox`)
+### 5.4 Dados do Sacado (`BentoBox`)
 
-`StepGrid` 12 colunas, gap `14px`:
+Regra de busca automática por CPF/CNPJ: se o documento digitado é encontrado na base (mock), o formulário mostra **apenas** CPF/CNPJ + Nome (Nome vem preenchido e disabled) e um selo “Sacado encontrado na base”; os demais campos ficam ocultos. Se não encontra, todos os campos ficam disponíveis.
+
+Busca: `buscarSacadoCadastrado(documento)` em `data/operacaoData.ts` (compara só dígitos contra `SACADOS_CADASTRADOS_MOCK`).
+
+```ts
+SACADOS_CADASTRADOS_MOCK = [
+  { documento: '000.000.000-00', nome: 'LAURO FRANCISCO DIEL' },
+  { documento: '111.222.333-44', nome: 'CARLOS FORTUNA NETO E OUTRO' },
+  { documento: '12.345.678/0001-90', nome: 'REGIONAL AGRO INSUMOS LTDA' },
+];
+```
+
+Grid 12 colunas, gap `14px` — campos exibidos quando **não** encontrado:
 
 | Campo | Span | Opções |
 |---|---|---|
-| CPF/CNPJ | 4 | — |
-| Nome | 5 | — |
+| CPF/CNPJ | 4 | — (sempre visível) |
+| Nome | 5 | — (sempre visível; disabled quando encontrado) |
+| Selo “Sacado encontrado” | 3 | Só quando encontrado (substitui a linha de E-mail) |
 | E-mail | 3 | — |
 | DDI | 2 | `PAISES_DDI[].ddi` (default `+55`) |
 | Telefone | 4 | — |
@@ -444,13 +453,14 @@ Demais campos título: Valor total 3 · Tipo cálculo 3 · Número 3 · Emissão
   valorTotal: number;          // props.valorOperacao
   sacadoNome: string;
   sacadoDocumento: string;
-  parcelas: ParcelaAtivo[];    // cronograma se possuiCronograma, senão parcelas
+  parcelas: ParcelaAtivo[];    // array unico (sem distincao cronograma vs. parcelas)
+  cedenteNome?: string;         // form.cedente, so se preenchido
 }
 ```
 
-`ParcelaAtivo`: `{ parcela, vencimento, valor?, amortizacao?, juros?, pagarJuros? }`.
+`ParcelaAtivo`: `{ parcela, vencimento, valor?, amortizacao?, juros?, pagarJuros? }` (campos amortizacao/juros/pagarJuros seguem existindo no tipo por compatibilidade com o wizard/telas de detalhe, mas o modo padrao nao os preenche mais).
 
-**Não emitidos:** flags de minuta, endereço/contato extras do sacado, chaveNota, docCedente, tipoValorNominal, gerarOperacaoGarantias, selects de fluxo (exceto linhas geradas).
+**Nao emitidos:** flags de minuta, endereco/contato extras do sacado, chaveNota, cfop, metodoDesconto, valorInformado, gerarOperacaoGarantias, fluxoParcelas, simuladores de sacado.
 
 ### Modo minuta
 
@@ -548,7 +558,7 @@ PAISES_DDI = [
 │  │   ┌ Bento Dados do Título ─────────────────────────────┐ │ │
 │  │   │ upload · 4-col · toggles · datas · doc             │ │ │
 │  │   └────────────────────────────────────────────────────┘ │ │
-│  │   [Parcelas?] → Bento | [Cronograma?] → Bento            │ │
+│  │   [Gerar parcelas?] → Bento Parcelas (fluxo + acoes)            │ │
 │  │   ┌ Bento Sacado (12-col spans) ───────────────────────┐ │ │
 │  │   └────────────────────────────────────────────────────┘ │ │
 │  │ Footer 16×32          Cancelar        GERAR TÍTULO       │ │
@@ -566,7 +576,7 @@ PAISES_DDI = [
 ## 11. Regras de produto (QA)
 
 1. Toggle **Gerar minuta** fica **acima** de Dados do Título no modo padrão.
-2. Wizard só após toggle ON **e** tipo CPR/CPRF.
+2. Wizard só após toggle ON **e** tipo CPR / CPRF / **NC** / **CCB**.
 3. Reutilizar tokens/componentes do sistema (CRA/FIDC/Novo Pedido). **Não** copiar chrome de impressão (barra azul “INSERIR TÍTULO” etc.).
 4. Stepper = ícones + underline · **sem checkmarks**.
 5. Campos em grid 12-col com spans variáveis (não 3 colunas iguais rígidas).
@@ -574,8 +584,12 @@ PAISES_DDI = [
 7. Natureza = `SelectField` (não toggle Pessoa Física/Jurídica custom).
 8. Credora padrão preenche e desabilita doc; modo doc habilita selects de contato/endereço/rep.
 9. Avalistas a partir de partes tipo AVA; “cônjuge interveniente” só se `possuiConjuge`.
-10. Garantias nesta fase: só **AF. Estoque** e **Penhor de Estoque**.
+10. Garantias nesta fase: só **AF. Estoque** e **Penhor de Estoque** (mesmo para NC/CCB — catálogo expandido fora de escopo).
 11. Opções de dropdown vêm dos mocks aprovados — não inventar labels.
+12. NC: emissora **só PJ**, máximo **1**; templates habilitados (2 opções); **sem** “Gerar via não negociável”.
+13. NC + `unidadeNegocio === 'Ceres Trading'` → step **Boletim de Subscrição**.
+14. CCB: emissora múltipla PF/PJ; step **Endossatário**; step **CET** depois do Título; UF/cidade de emissão fixos `SP`/`São Paulo` (sem step Emissão).
+15. Credora padrão NC/CCB: `Ceres Trading`, `Ceres Securitizadora`, `BMP` (CPR mantém lista própria).
 
 ---
 
@@ -586,6 +600,10 @@ PAISES_DDI = [
 3. “Próximo” no wizard não valida o step — só o GERAR TÍTULO final emite.
 4. No modo padrão o toggle de minuta exige Tipo selecionado **antes** (fica acima do campo Tipo).
 5. Cidade do sacado no modo padrão ainda é texto livre (wizard já usa select).
+6. Catálogo de garantia expandido (instrumento particular, testemunhas, títulos vinculados) **não** implementado nesta fase.
+7. Contas bancárias mockadas (não vinculadas de verdade ao grupo empresarial).
+8. Busca de sacado por CPF/CNPJ é mock local (`SACADOS_CADASTRADOS_MOCK` em `operacaoData.ts`) — digite `000.000.000-00`, `111.222.333-44` ou `12.345.678/0001-90` para simular “encontrado”.
+9. “Gerar pagamentos” sempre cria as mesmas 2 parcelas mock, independente do Fluxo selecionado — não há cálculo real por frequência nesta fase.
 
 ---
 
@@ -594,12 +612,77 @@ PAISES_DDI = [
 | Arquivo | Papel |
 |---|---|
 | `AdicionarContratoModal.vue` | Chrome + modo padrão + switch wizard |
-| `minuta/MinutaWizard.vue` | Shell + estado + submit minuta |
-| `minuta/MinutaStepper.vue` | Tabs 7 etapas |
+| `minuta/MinutaWizard.vue` | Shell + estado + submit minuta (steps dinâmicos por categoria) |
+| `minuta/MinutaStepper.vue` | Tabs (n etapas) |
 | `minuta/*Step.vue` | Conteúdo por etapa |
+| `minuta/EscrituradorStep.vue` | Só NC |
+| `minuta/InformacaoPagamentoStep.vue` | Só NC |
+| `minuta/BoletimSubscricaoStep.vue` | Só NC + Ceres Trading |
+| `minuta/EndossatarioStep.vue` | Só CCB |
+| `minuta/CetStep.vue` | Só CCB (último step) |
 | `adicionar-contrato/*` | Primitivas de formulário |
-| `data/minutaData.ts` | Tipos, opções, fixtures |
+| `data/minutaData.ts` | Tipos, opções, fixtures, `categoriaMinuta` |
 | `data/operacaoData.ts` | `ContratoAtivo`, UF, DDI |
 | `data/ativoData.ts` | `enriquecerContratoAtivo` |
-| `SolicitacaoDetailScreen.vue` | Montagem + `handleAddContrato` |
+| `SolicitacaoDetailScreen.vue` | Montagem + `handleAddContrato` + `unidadeNegocio` |
 | `AtivosTab.vue` | Botão de abertura |
+
+---
+
+## 14. Extensão NC / CCB (Gerar minuta)
+
+> Fonte do mapeamento legado: `docs/mapeamento-legado/minuta-nc-ccb.md` (repo Minerva antigo).
+
+### Gate
+
+`isTipoMinutaDisponivel` aceita: `Contrato CPR`, `Contrato CPRF`, `Contrato NC`, `Contrato CCB` (+ aliases).  
+`categoriaMinuta(tipo)` → `'CPR' | 'NC' | 'CCB'`.
+
+Prop `unidadeNegocio` flui: `SolicitacaoDetailScreen` → `AdicionarContratoModal` → `MinutaWizard`.
+
+### Sequências
+
+```
+NC:  Emissora → Credora → Escriturador → Avalista → Emissão(+série/valores)
+     → Pagamento → Garantia → [Boletim se Ceres Trading] → Título
+
+CCB: Emissora → Credora → Avalista → Endossatário → Garantia → Título → CET
+
+CPR: Emitente → Credora → Avalista → Emissão → Produto → Garantia → Título  (inalterado)
+```
+
+### Templates
+
+| Categoria | Opções | Select |
+|---|---|---|
+| CPR / CPR-F | 1 (fixo) | disabled |
+| CCB | `CCB (Ceres Investimentos)` | disabled |
+| NC | `Nota Comercial (Trading)`, `Nota Comercial (Ceres Investimentos)` | **habilitado** |
+
+### Barra superior
+
+- NC: grid `1fr 1.5fr` — Gerar minuta + Template (**sem** toggle via não negociável).
+- CPR / CCB: grid `1fr 1.5fr 1fr` — + Gerar via não negociável.
+
+### Steps exclusivos (resumo)
+
+| Step | Tipo | Campos-chave |
+|---|---|---|
+| Escriturador | NC | Padrão Vortx/BMP · PJ · contato/endereço · **sem** representante legal |
+| Informação de Pagamento | NC | Conta bancária (mock) + adicionar conta inline |
+| Boletim de Subscrição | NC condicional | Toggle Ceres Securitizadora · subscritor · conta · qtd/preços · dias integração |
+| Endossatário | CCB | Padrão Ceres Trading / Ceres Securitizadora · mesmo padrão Credora |
+| CET | CCB | CET dia/mês/ano (conversão) · IOF · custo emissão · taxas A.D./A.M./A.A. · líquido/CCB/prazo readonly |
+| Emissão (extras NC) | NC | Número · Série · Valor nominal unitário · Quantidade · Valor total |
+
+### Restrições Emitente / Credora
+
+- NC Emitente: `apenasPessoaJuridica` + `maxEmitentes=1`.
+- CCB Credora: `legalRepFieldsOptional` (label “Representante Legal (opcional)”).
+- Credora `padraoOptions` via `credoraPadraoOptions(categoria)`.
+
+### Payload (`MinutaResumo` estendido)
+
+Campos opcionais: `escriturador`, `escrituradorPadrao`, `contaBancariaId`, `boletimSubscricao`, `endossatario`, `endossatarioPadrao`, `cet`.  
+`emissao` ganha `numero?`, `serie?`, `valorNominalUnitario?`, `quantidade?`, `valorTotal?`.  
+CCB força `emissao: { uf: 'SP', cidade: 'São Paulo' }` no `buildMinuta`.

@@ -131,7 +131,7 @@ export const PAISES_DDI: { pais: string; ddi: string }[] = [
   { pais: 'Estados Unidos', ddi: '+1' },
 ];
 
-/** Uma parcela do título (manual ou gerada automaticamente pelo cronograma). */
+/** Uma parcela do título (manual ou gerada automaticamente pelo fluxo de parcelas). */
 export interface ParcelaAtivo {
   parcela: string;
   vencimento: string;
@@ -139,6 +139,30 @@ export interface ParcelaAtivo {
   juros?: number;
   pagarJuros?: boolean;
   valor?: number;
+}
+
+/** Sacado já cadastrado na base (mock), usado na busca automática por CPF/CNPJ no Adicionar Contrato. */
+export interface SacadoCadastrado {
+  documento: string;
+  nome: string;
+}
+
+/**
+ * Base mock de sacados já cadastrados. Reaproveita documentos usados nos seeds de ativos
+ * (`ativoData.ts`) para permitir simular a busca digitando um CPF/CNPJ conhecido:
+ * 000.000.000-00, 111.222.333-44 ou 12.345.678/0001-90.
+ */
+export const SACADOS_CADASTRADOS_MOCK: SacadoCadastrado[] = [
+  { documento: '000.000.000-00', nome: 'LAURO FRANCISCO DIEL' },
+  { documento: '111.222.333-44', nome: 'CARLOS FORTUNA NETO E OUTRO' },
+  { documento: '12.345.678/0001-90', nome: 'REGIONAL AGRO INSUMOS LTDA' },
+];
+
+/** Busca um sacado cadastrado (mock) comparando apenas os dígitos do documento informado. */
+export function buscarSacadoCadastrado(documento: string): SacadoCadastrado | null {
+  const digits = documento.replace(/\D/g, '');
+  if (!digits) return null;
+  return SACADOS_CADASTRADOS_MOCK.find((s) => s.documento.replace(/\D/g, '') === digits) ?? null;
 }
 
 import type {

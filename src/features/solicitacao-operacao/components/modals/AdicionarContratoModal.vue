@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue';
-import { X, Tag, Paperclip, Trash2, FileText, AlertTriangle, Layers, CalendarClock } from 'lucide-vue-next';
-import { brl, UF_OPTIONS, PAISES_DDI, type ContratoAtivo, type ParcelaAtivo, type ParteRelacionada } from '../../data/operacaoData';
-import { isTipoMinutaDisponivel } from '../../data/minutaData';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { X, Tag, Paperclip, Trash2, FileText, AlertTriangle, Layers, MoreVertical, Copy, BadgeCheck } from 'lucide-vue-next';
+import {
+  brl, UF_OPTIONS, PAISES_DDI, buscarSacadoCadastrado,
+  type ContratoAtivo, type ParcelaAtivo, type ParteRelacionada,
+} from '../../data/operacaoData';
+import { isTipoMinutaDisponivel, categoriaMinuta } from '../../data/minutaData';
 import { BentoBox, BentoGrid, FormField, SelectField, EmptyState, ToggleRow, AddButton } from './adicionar-contrato';
 import { MinutaWizard } from './minuta';
 
@@ -10,6 +13,7 @@ const props = defineProps<{
   valorOperacao: number;
   tipoCalculo: string;
   partes?: ParteRelacionada[];
+  unidadeNegocio?: string;
 }>();
 const emit = defineEmits<{ close: []; create: [data: Omit<ContratoAtivo, 'id'> & Partial<Pick<ContratoAtivo, 'id'>>] }>();
 
@@ -22,7 +26,13 @@ const TIPO_OPERACAO_OPTS = [
   'Contrato CPRF',
   'Contrato CDCA',
 ];
-const DOC_CEDENTE_OPTS = ['Contrato_Social_Cedente.pdf', 'Procuracao_2026.pdf', 'Cartao_CNPJ.pdf'];
+const CFOP_OPTS = [
+  '5117 - Transferência de título de crédito',
+  '5949 - Outra saída de mercadoria/prestação não especificada',
+  '6117 - Transferência de título de crédito (fora do Estado)',
+  '6949 - Outra saída não especificada (fora do Estado)',
+];
+const METODO_DESCONTO_OPTS = ['Desconto Comercial (Por Fora)', 'Desconto Racional (Por Dentro)'];
 const FLUXO_OPTS = ['Única', 'Mensal', 'Bimestral', 'Trimestral', 'Quadrimestral', 'Semestral', 'Anual'];
 const PAIS_OPTS = PAISES_DDI.map((p) => p.pais);
 const DDI_OPTS = PAISES_DDI.map((p) => p.ddi);
@@ -30,19 +40,19 @@ const DDI_OPTS = PAISES_DDI.map((p) => p.ddi);
 interface FormState {
   gerarMinuta: boolean;
   documento: string;
-  tipoValorNominal: boolean;
+  valorInformado: 'DESAGIO' | 'AGIO';
   numero: string;
   tipo: string;
   emissao: string;
   vencimento: string;
   chaveNota: string;
-  docCedente: string;
+  cfop: string;
+  cedente: string;
+  metodoDesconto: string;
   gerarOperacaoGarantias: boolean;
   possuiParcelas: boolean;
-  possuiCronograma: boolean;
-  cronogramaAutomatico: boolean;
-  fluxoAmortizacao: string;
-  fluxoJuros: string;
+  gerarParcelas: boolean;
+  fluxoParcelas: string;
   sacadoDocumento: string;
   sacadoNome: string;
   sacadoEmail: string;
@@ -61,19 +71,19 @@ interface FormState {
 const form = reactive<FormState>({
   gerarMinuta: false,
   documento: '',
-  tipoValorNominal: false,
+  valorInformado: 'DESAGIO',
   numero: '',
   tipo: '',
   emissao: '',
   vencimento: '',
   chaveNota: '',
-  docCedente: '',
+  cfop: '',
+  cedente: '',
+  metodoDesconto: '',
   gerarOperacaoGarantias: false,
   possuiParcelas: false,
-  possuiCronograma: false,
-  cronogramaAutomatico: false,
-  fluxoAmortizacao: '',
-  fluxoJuros: '',
+  gerarParcelas: false,
+  fluxoParcelas: '',
   sacadoDocumento: '',
   sacadoNome: '',
   sacadoEmail: '',
@@ -91,11 +101,23 @@ const form = reactive<FormState>({
 
 const parcelas = reactive<ParcelaAtivo[]>([]);
 const parcelaForm = reactive({ valor: '', vencimento: '' });
-const cronograma = reactive<ParcelaAtivo[]>([]);
-const pagamentoForm = reactive({ amortizacao: '', vencimento: '', pagarJuros: false, valorJuros: '' });
+const openMenuIndex = ref<number | null>(null);
+
+const sacadoEncontrado = computed(() => !!buscarSacadoCadastrado(form.sacadoDocumento));
+
+watch(() => form.sacadoDocumento, (doc) => {
+  const found = buscarSacadoCadastrado(doc);
+  if (found) form.sacadoNome = found.nome;
+});
 
 const minutaHabilitada = computed(() => isTipoMinutaDisponivel(form.tipo));
 const showWizard = computed(() => form.gerarMinuta && minutaHabilitada.value);
+const wizardSubtitle = computed(() => {
+  const cat = categoriaMinuta(form.tipo);
+  if (cat === 'NC') return 'Geração de minuta Nota Comercial';
+  if (cat === 'CCB') return 'Geração de minuta CCB';
+  return 'Geração de minuta CPR / CPR-F';
+});
 
 watch(
   () => form.tipo,
@@ -107,7 +129,12 @@ watch(
 );
 
 const somatoriaParcelas = computed(() => parcelas.reduce((acc, p) => acc + (Number(p.valor) || 0), 0));
-const somatoriaAmortizacao = computed(() => cronograma.reduce((acc, c) => acc + (Number(c.amortizacao) || 0), 0));
+
+function renumerarParcelas() {
+  parcelas.forEach((p, idx) => {
+    p.parcela = `${idx + 1}ª Parcela`;
+  });
+}
 
 function addParcela() {
   if (!parcelaForm.valor || !parcelaForm.vencimento) return;
@@ -119,38 +146,45 @@ function addParcela() {
   parcelaForm.valor = '';
   parcelaForm.vencimento = '';
 }
+
+function gerarParcelasAutomaticas() {
+  if (!form.fluxoParcelas) return;
+  const base = props.valorOperacao > 0 ? props.valorOperacao / 2 : 50_000;
+  parcelas.splice(
+    0,
+    parcelas.length,
+    { parcela: '1ª Parcela', valor: Math.round(base), vencimento: '30/07/2026' },
+    { parcela: '2ª Parcela', valor: Math.round(base), vencimento: '30/08/2026' },
+  );
+  openMenuIndex.value = null;
+}
+
+function duplicarParcela(i: number) {
+  const original = parcelas[i];
+  parcelas.splice(i + 1, 0, { parcela: '', valor: original.valor, vencimento: '' });
+  renumerarParcelas();
+  openMenuIndex.value = null;
+}
+
 function removeParcela(i: number) {
   parcelas.splice(i, 1);
+  renumerarParcelas();
+  openMenuIndex.value = null;
 }
 
-function addPagamento() {
-  if (!pagamentoForm.vencimento) return;
-  cronograma.push({
-    parcela: `${cronograma.length + 1}ª Parcela`,
-    vencimento: pagamentoForm.vencimento,
-    amortizacao: Number(pagamentoForm.amortizacao) || 0,
-    juros: pagamentoForm.pagarJuros ? Number(pagamentoForm.valorJuros) || 0 : 0,
-    pagarJuros: pagamentoForm.pagarJuros,
-  });
-  pagamentoForm.amortizacao = '';
-  pagamentoForm.vencimento = '';
-  pagamentoForm.pagarJuros = false;
-  pagamentoForm.valorJuros = '';
-}
-function removePagamento(i: number) {
-  cronograma.splice(i, 1);
+function toggleMenu(i: number) {
+  openMenuIndex.value = openMenuIndex.value === i ? null : i;
 }
 
-function gerarPagamentosAutomaticos() {
-  if (!form.fluxoAmortizacao || !form.fluxoJuros) return;
-  const base = props.valorOperacao > 0 ? props.valorOperacao / 2 : 50_000;
-  cronograma.splice(
-    0,
-    cronograma.length,
-    { parcela: '1ª Parcela', vencimento: '30/07/2026', amortizacao: Math.round(base), juros: Math.round(base * 0.02), pagarJuros: true },
-    { parcela: '2ª Parcela', vencimento: '30/08/2026', amortizacao: Math.round(base), juros: Math.round(base * 0.02), pagarJuros: true },
-  );
+function handleClickOutsideParcela(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  if (!target.closest('[data-parcela-action-menu]')) {
+    openMenuIndex.value = null;
+  }
 }
+
+onMounted(() => document.addEventListener('mousedown', handleClickOutsideParcela));
+onUnmounted(() => document.removeEventListener('mousedown', handleClickOutsideParcela));
 
 const canSubmit = computed(() => form.numero.trim() !== '' && form.tipo.trim() !== '');
 
@@ -164,7 +198,8 @@ function handleSubmit() {
     valorTotal: props.valorOperacao,
     sacadoNome: form.sacadoNome,
     sacadoDocumento: form.sacadoDocumento,
-    parcelas: form.possuiCronograma ? [...cronograma] : [...parcelas],
+    parcelas: [...parcelas],
+    cedenteNome: form.cedente || undefined,
   } as Omit<ContratoAtivo, 'id'>);
 }
 
@@ -238,7 +273,7 @@ function toggleGerarMinuta() {
             Adicionar Contrato
           </h2>
           <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            {{ showWizard ? 'Geração de minuta CPR / CPR-F · 7 etapas' : 'Dados do título, parcelas/cronograma e dados do sacado' }}
+            {{ showWizard ? wizardSubtitle : 'Dados do título, parcelas e dados do sacado' }}
           </p>
         </div>
         <button
@@ -266,6 +301,7 @@ function toggleGerarMinuta() {
         :tipo-calculo="tipoCalculo"
         :tipo="form.tipo"
         :partes="partes ?? []"
+        :unidade-negocio="unidadeNegocio ?? ''"
         :gerar-minuta="form.gerarMinuta"
         @update:gerar-minuta="form.gerarMinuta = $event"
         @create="handleMinutaCreate"
@@ -285,13 +321,13 @@ function toggleGerarMinuta() {
               v-if="!minutaHabilitada && form.tipo"
               style="font-size: var(--text-xs); color: var(--text-muted); margin-top: -12px"
             >
-              Disponível apenas para Contrato CPR e Contrato CPRF nesta versão.
+              Disponível apenas para Contrato CPR, CPRF, NC e CCB nesta versão.
             </div>
             <div
               v-else-if="!form.tipo"
               style="font-size: var(--text-xs); color: var(--text-muted); margin-top: -12px"
             >
-              Selecione o tipo do título (CPR ou CPRF) em Dados do Título para habilitar a geração de minuta.
+              Selecione o tipo do título (CPR, CPRF, NC ou CCB) em Dados do Título para habilitar a geração de minuta.
             </div>
 
             <BentoBox title="Dados do Título" :icon="Tag">
@@ -320,17 +356,27 @@ function toggleGerarMinuta() {
                 </BentoGrid>
 
                 <ToggleRow
-                  label="Tipo de valor: NOMINAL"
-                  :on="form.tipoValorNominal"
+                  :label="`Valor Informado: ${form.valorInformado === 'AGIO' ? 'ÁGIO' : 'DESÁGIO'}`"
+                  hint="Deságio: valor líquido. Ágio: valor de face."
+                  :on="form.valorInformado === 'AGIO'"
                   compact
-                  @toggle="form.tipoValorNominal = !form.tipoValorNominal"
+                  @toggle="form.valorInformado = form.valorInformado === 'AGIO' ? 'DESAGIO' : 'AGIO'"
                 />
 
                 <BentoGrid :cols="4">
                   <FormField label="Emissão" placeholder="dd/mm/aaaa" v-model="form.emissao" required />
                   <FormField label="Vencimento" placeholder="dd/mm/aaaa" v-model="form.vencimento" required />
                   <FormField label="Chave da nota" placeholder="—" v-model="form.chaveNota" />
-                  <SelectField label="Doc. da cedente" :options="DOC_CEDENTE_OPTS" placeholder="Selecione" v-model="form.docCedente" />
+                  <SelectField label="CFOP" :options="CFOP_OPTS" placeholder="Selecione" v-model="form.cfop" />
+                </BentoGrid>
+
+                <BentoGrid :cols="4">
+                  <div style="grid-column: span 2">
+                    <FormField label="Cedente" placeholder="—" v-model="form.cedente" />
+                  </div>
+                  <div style="grid-column: span 2">
+                    <SelectField label="Método de Desconto" :options="METODO_DESCONTO_OPTS" placeholder="Selecione" v-model="form.metodoDesconto" />
+                  </div>
                 </BentoGrid>
 
                 <ToggleRow
@@ -345,7 +391,18 @@ function toggleGerarMinuta() {
             <ToggleRow label="Possui múltiplas parcelas" :on="form.possuiParcelas" @toggle="form.possuiParcelas = !form.possuiParcelas" />
             <BentoBox v-if="form.possuiParcelas" title="Parcelas" :icon="Tag">
               <div class="flex flex-col" style="gap: 14px">
-                <div class="grid items-end" style="grid-template-columns: 1fr 1fr 1fr auto; gap: 12px">
+                <ToggleRow
+                  label="Gerar parcelas"
+                  :on="form.gerarParcelas"
+                  compact
+                  @toggle="form.gerarParcelas = !form.gerarParcelas"
+                />
+
+                <div v-if="form.gerarParcelas" class="grid items-end" style="grid-template-columns: 1fr auto; gap: 12px">
+                  <SelectField label="Fluxo de parcelas" :options="FLUXO_OPTS" placeholder="Selecione" v-model="form.fluxoParcelas" />
+                  <AddButton @click="gerarParcelasAutomaticas">Gerar pagamentos</AddButton>
+                </div>
+                <div v-else class="grid items-end" style="grid-template-columns: 1fr 1fr 1fr auto; gap: 12px">
                   <FormField label="Parcela" :model-value="`${parcelas.length + 1}ª Parcela`" disabled />
                   <FormField label="Valor" placeholder="R$ 0,00" v-model="parcelaForm.valor" />
                   <FormField label="Vencimento" placeholder="dd/mm/aaaa" v-model="parcelaForm.vencimento" required />
@@ -375,7 +432,7 @@ function toggleGerarMinuta() {
                     <div>Parcela</div>
                     <div>Valor</div>
                     <div>Vencimento</div>
-                    <div />
+                    <div>Ações</div>
                   </div>
                   <div
                     v-for="(p, i) in parcelas"
@@ -390,15 +447,39 @@ function toggleGerarMinuta() {
                   >
                     <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ p.parcela }}</div>
                     <div style="font-variant-numeric: tabular-nums">{{ brl(p.valor ?? 0) }}</div>
-                    <div style="font-variant-numeric: tabular-nums">{{ p.vencimento }}</div>
-                    <button
-                      aria-label="Remover"
-                      class="flex items-center justify-center"
-                      style="width: 28px; height: 28px; border-radius: var(--radius-sm); background: none; border: none; cursor: pointer; color: var(--text-muted)"
-                      @click="removeParcela(i)"
-                    >
-                      <Trash2 :size="14" />
-                    </button>
+                    <div style="font-variant-numeric: tabular-nums">{{ p.vencimento || '—' }}</div>
+                    <div class="flex justify-end" style="position: relative" data-parcela-action-menu>
+                      <button
+                        aria-label="Ações"
+                        class="flex items-center justify-center"
+                        style="width: 28px; height: 28px; border: none; background: none; border-radius: var(--radius-sm); cursor: pointer; color: var(--text-muted)"
+                        @click="toggleMenu(i)"
+                      >
+                        <MoreVertical :size="14" />
+                      </button>
+                      <div
+                        v-if="openMenuIndex === i"
+                        class="flex flex-col"
+                        style="position: absolute; top: 30px; right: 0; z-index: 50; min-width: 150px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 6px"
+                      >
+                        <button
+                          class="flex items-center parcela-action-item"
+                          style="gap: 8px; padding: 8px 12px; background: none; border: none; cursor: pointer; border-radius: var(--radius-md); text-align: left; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-default); width: 100%"
+                          @click="duplicarParcela(i)"
+                        >
+                          <Copy :size="14" style="color: var(--text-muted)" />
+                          Copiar
+                        </button>
+                        <button
+                          class="flex items-center parcela-action-item"
+                          style="gap: 8px; padding: 8px 12px; background: none; border: none; cursor: pointer; border-radius: var(--radius-md); text-align: left; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--action-danger-text-only); width: 100%"
+                          @click="removeParcela(i)"
+                        >
+                          <Trash2 :size="14" />
+                          Deletar parcela
+                        </button>
+                      </div>
+                    </div>
                   </div>
                   <div
                     class="flex items-center justify-center"
@@ -417,143 +498,61 @@ function toggleGerarMinuta() {
               </div>
             </BentoBox>
 
-            <ToggleRow
-              label="Possui cronograma de pagamentos"
-              :on="form.possuiCronograma"
-              @toggle="form.possuiCronograma = !form.possuiCronograma"
-            />
-            <BentoBox v-if="form.possuiCronograma" title="Cronograma de Pagamentos" :icon="Tag">
-              <div class="flex flex-col" style="gap: 14px">
-                <ToggleRow
-                  label="Gerar pagamentos automaticamente"
-                  :on="form.cronogramaAutomatico"
-                  compact
-                  @toggle="form.cronogramaAutomatico = !form.cronogramaAutomatico"
-                />
-
-                <div v-if="form.cronogramaAutomatico" class="grid items-end" style="grid-template-columns: 1fr 1fr auto; gap: 12px">
-                  <SelectField label="Fluxo de Amortização" :options="FLUXO_OPTS" placeholder="Selecione" v-model="form.fluxoAmortizacao" />
-                  <SelectField label="Fluxo de pagamento de juros" :options="FLUXO_OPTS" placeholder="Selecione" v-model="form.fluxoJuros" />
-                  <AddButton @click="gerarPagamentosAutomaticos">Gerar pagamentos</AddButton>
-                </div>
-                <div v-else class="grid items-end" style="grid-template-columns: 1fr 1fr auto auto auto; gap: 12px">
-                  <FormField label="Amortização" placeholder="R$ 0,00" v-model="pagamentoForm.amortizacao" />
-                  <FormField label="Vencimento" placeholder="dd/mm/aaaa" v-model="pagamentoForm.vencimento" required />
-                  <ToggleRow label="Pagar juros" :on="pagamentoForm.pagarJuros" compact @toggle="pagamentoForm.pagarJuros = !pagamentoForm.pagarJuros" />
-                  <FormField label="Valor do juros" placeholder="R$ 0,00" v-model="pagamentoForm.valorJuros" :disabled="!pagamentoForm.pagarJuros" />
-                  <AddButton @click="addPagamento">Adicionar pagamento</AddButton>
-                </div>
-
-                <div style="font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--danger-base)">
-                  Obs: Em títulos pré-fixados, caso o cronograma mostre pagamento de juros com valor de R$ 0,00, será
-                  considerado o valor de juros projetado na simulação.
-                </div>
-
-                <EmptyState
-                  v-if="cronograma.length === 0"
-                  :icon="CalendarClock"
-                  title="Nenhum pagamento adicionado ao cronograma"
-                  hint="Use o formulário acima para adicionar pagamentos manualmente ou gere automaticamente pelo fluxo selecionado."
-                />
-                <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
-                  <div
-                    class="grid"
-                    style="
-                      grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto;
-                      padding: 10px 14px;
-                      background: var(--surface-card);
-                      font-size: 10px;
-                      font-weight: var(--weight-bold);
-                      letter-spacing: 0.12em;
-                      color: var(--text-muted);
-                      text-transform: uppercase;
-                    "
-                  >
-                    <div>Parcela</div>
-                    <div>Vencimento</div>
-                    <div>Amortização</div>
-                    <div>Juros</div>
-                    <div>Pagar juros</div>
-                    <div />
-                  </div>
-                  <div
-                    v-for="(c, i) in cronograma"
-                    :key="i"
-                    class="grid items-center"
-                    style="
-                      grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto;
-                      padding: 10px 14px;
-                      border-top: 1px solid var(--border-default);
-                      font-size: var(--text-sm);
-                    "
-                  >
-                    <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ c.parcela }}</div>
-                    <div style="font-variant-numeric: tabular-nums">{{ c.vencimento }}</div>
-                    <div style="font-variant-numeric: tabular-nums">{{ brl(c.amortizacao ?? 0) }}</div>
-                    <div style="font-variant-numeric: tabular-nums">{{ brl(c.juros ?? 0) }}</div>
-                    <div>{{ c.pagarJuros ? 'Sim' : 'Não' }}</div>
-                    <button
-                      aria-label="Remover"
-                      class="flex items-center justify-center"
-                      style="width: 28px; height: 28px; border-radius: var(--radius-sm); background: none; border: none; cursor: pointer; color: var(--text-muted)"
-                      @click="removePagamento(i)"
-                    >
-                      <Trash2 :size="14" />
-                    </button>
-                  </div>
-                  <div
-                    class="flex items-center justify-center"
-                    style="padding: 10px 14px; border-top: 1px solid var(--border-default); font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)"
-                  >
-                    Amortização: {{ brl(somatoriaAmortizacao) }}
-                  </div>
-                </div>
-              </div>
-            </BentoBox>
-
             <BentoBox title="Dados do Sacado" :icon="Tag">
-              <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 14px">
-                <div style="grid-column: span 4">
-                  <FormField label="CPF/CNPJ" placeholder="—" v-model="form.sacadoDocumento" />
-                </div>
-                <div style="grid-column: span 5">
-                  <FormField label="Nome" placeholder="—" v-model="form.sacadoNome" />
-                </div>
-                <div style="grid-column: span 3">
-                  <FormField label="E-mail" placeholder="—" v-model="form.sacadoEmail" />
-                </div>
+              <div class="flex flex-col" style="gap: 14px">
+                <div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 14px">
+                  <div style="grid-column: span 4">
+                    <FormField label="CPF/CNPJ" placeholder="—" v-model="form.sacadoDocumento" />
+                  </div>
+                  <div style="grid-column: span 5">
+                    <FormField label="Nome" placeholder="—" v-model="form.sacadoNome" :disabled="sacadoEncontrado" />
+                  </div>
+                  <div
+                    v-if="sacadoEncontrado"
+                    class="flex items-end"
+                    style="grid-column: span 3; padding-bottom: 11px; gap: 6px; font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--success-base)"
+                  >
+                    <BadgeCheck :size="14" /> Sacado encontrado na base
+                  </div>
 
-                <div style="grid-column: span 2">
-                  <SelectField label="DDI" :options="DDI_OPTS" v-model="form.ddi" />
-                </div>
-                <div style="grid-column: span 4">
-                  <FormField label="Telefone" placeholder="—" v-model="form.telefone" />
-                </div>
-                <div style="grid-column: span 3">
-                  <FormField label="CEP" placeholder="—" v-model="form.cep" />
-                </div>
-                <div style="grid-column: span 3">
-                  <FormField label="Número" placeholder="—" v-model="form.numeroEndereco" />
-                </div>
+                  <template v-if="!sacadoEncontrado">
+                    <div style="grid-column: span 3">
+                      <FormField label="E-mail" placeholder="—" v-model="form.sacadoEmail" />
+                    </div>
 
-                <div style="grid-column: span 6">
-                  <FormField label="Endereço" placeholder="—" v-model="form.endereco" />
-                </div>
-                <div style="grid-column: span 6">
-                  <FormField label="Complemento" placeholder="—" v-model="form.complemento" />
-                </div>
+                    <div style="grid-column: span 2">
+                      <SelectField label="DDI" :options="DDI_OPTS" v-model="form.ddi" />
+                    </div>
+                    <div style="grid-column: span 4">
+                      <FormField label="Telefone" placeholder="—" v-model="form.telefone" />
+                    </div>
+                    <div style="grid-column: span 3">
+                      <FormField label="CEP" placeholder="—" v-model="form.cep" />
+                    </div>
+                    <div style="grid-column: span 3">
+                      <FormField label="Número" placeholder="—" v-model="form.numeroEndereco" />
+                    </div>
 
-                <div style="grid-column: span 4">
-                  <FormField label="Bairro" placeholder="—" v-model="form.bairro" />
-                </div>
-                <div style="grid-column: span 4">
-                  <FormField label="Cidade" placeholder="—" v-model="form.cidade" />
-                </div>
-                <div style="grid-column: span 2">
-                  <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" v-model="form.estado" />
-                </div>
-                <div style="grid-column: span 2">
-                  <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" v-model="form.pais" />
+                    <div style="grid-column: span 6">
+                      <FormField label="Endereço" placeholder="—" v-model="form.endereco" />
+                    </div>
+                    <div style="grid-column: span 6">
+                      <FormField label="Complemento" placeholder="—" v-model="form.complemento" />
+                    </div>
+
+                    <div style="grid-column: span 4">
+                      <FormField label="Bairro" placeholder="—" v-model="form.bairro" />
+                    </div>
+                    <div style="grid-column: span 4">
+                      <FormField label="Cidade" placeholder="—" v-model="form.cidade" />
+                    </div>
+                    <div style="grid-column: span 2">
+                      <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" v-model="form.estado" />
+                    </div>
+                    <div style="grid-column: span 2">
+                      <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" v-model="form.pais" />
+                    </div>
+                  </template>
                 </div>
               </div>
             </BentoBox>
@@ -594,3 +593,9 @@ function toggleGerarMinuta() {
     </div>
   </div>
 </template>
+
+<style scoped>
+.parcela-action-item:hover {
+  background: var(--surface-sunken);
+}
+</style>

@@ -19,6 +19,11 @@ import {
   type PessoaMinuta,
 } from '../../../data/minutaData';
 
+const props = withDefaults(
+  defineProps<{ apenasPessoaJuridica?: boolean; maxEmitentes?: number }>(),
+  { apenasPessoaJuridica: false, maxEmitentes: undefined },
+);
+
 const emitentes = defineModel<PessoaMinuta[]>('emitentes', { default: () => [] });
 const form = defineModel<PessoaMinuta>('form', { required: true });
 const docBusca = defineModel<string>('docBusca', { default: '' });
@@ -27,18 +32,34 @@ const DDI_OPTS = PAISES_DDI.map((p) => p.ddi);
 const PAIS_OPTS = PAISES_DDI.map((p) => p.pais);
 const NATUREZA_OPTS = ['Pessoa Física', 'Pessoa Jurídica'];
 
+const atingiuLimite = computed(
+  () => props.maxEmitentes != null && emitentes.value.length >= props.maxEmitentes,
+);
+
 const natureza = computed({
   get: () => (form.value.tipoPessoa === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica'),
   set: (v: string) => {
+    if (props.apenasPessoaJuridica) return;
     form.value.tipoPessoa = v === 'Pessoa Física' ? 'FISICA' : 'JURIDICA';
   },
 });
 
 const cidadeOpts = computed(() => cidadesDaUf(form.value.estado ?? ''));
 
+watch(
+  () => props.apenasPessoaJuridica,
+  (v) => {
+    if (v && form.value.tipoPessoa !== 'JURIDICA') {
+      form.value = emptyPessoaMinuta('JURIDICA');
+    }
+  },
+  { immediate: true },
+);
+
 watch(docBusca, (v) => {
   const found = buscarClientePorDoc(v);
   if (!found) return;
+  if (props.apenasPessoaJuridica && found.tipoPessoa !== 'JURIDICA') return;
   Object.assign(form.value, JSON.parse(JSON.stringify(found)));
 });
 
@@ -76,23 +97,38 @@ function onDocSelect(v: string) {
   docBusca.value = v;
   const docPart = v.split(' - ')[0]?.trim() ?? v;
   const found = buscarClientePorDoc(docPart);
-  if (found) Object.assign(form.value, JSON.parse(JSON.stringify(found)));
+  if (!found) return;
+  if (props.apenasPessoaJuridica && found.tipoPessoa !== 'JURIDICA') return;
+  Object.assign(form.value, JSON.parse(JSON.stringify(found)));
 }
+
+const docOptsFiltrados = computed(() =>
+  props.apenasPessoaJuridica
+    ? DOC_OPTS.filter((o) => !o.includes('144.112.938-38'))
+    : DOC_OPTS,
+);
 </script>
 
 <template>
   <div class="flex flex-col" style="gap: 20px">
-    <StepGrid>
-      <SelectField
-        label="Insira o doc. do cliente"
-        :options="DOC_OPTS"
-        placeholder="Selecione"
-        :span="7"
-        :model-value="docBusca"
-        @update:model-value="onDocSelect"
-      />
-      <SelectField label="Natureza" :options="NATUREZA_OPTS" :span="5" v-model="natureza" />
-    </StepGrid>
+    <template v-if="!atingiuLimite">
+      <StepGrid>
+        <SelectField
+          label="Insira o doc. do cliente"
+          :options="docOptsFiltrados"
+          placeholder="Selecione"
+          :span="apenasPessoaJuridica ? 12 : 7"
+          :model-value="docBusca"
+          @update:model-value="onDocSelect"
+        />
+        <SelectField
+          v-if="!apenasPessoaJuridica"
+          label="Natureza"
+          :options="NATUREZA_OPTS"
+          :span="5"
+          v-model="natureza"
+        />
+      </StepGrid>
 
     <template v-if="form.tipoPessoa === 'FISICA'">
       <StepGrid>
@@ -164,6 +200,20 @@ function onDocSelect(v: string) {
 
     <div class="flex justify-end">
       <AddButton @click="addEmitente">Adicionar emitente</AddButton>
+    </div>
+    </template>
+
+    <div
+      v-if="atingiuLimite"
+      style="
+        padding: 12px 16px;
+        border-radius: var(--radius-lg);
+        background: var(--surface-sunken);
+        font-size: var(--text-sm);
+        color: var(--text-muted);
+      "
+    >
+      Limite de 1 emissora atingido para Nota Comercial. Remova a emissora atual para adicionar outra.
     </div>
 
     <EmptyState

@@ -274,6 +274,7 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
       :valor-operacao="solicitacao.valor"
       :tipo-calculo="solicitacao.tipoTaxa ?? 'Pré-fixado'"
       :partes="det.partes"
+      :unidade-negocio="solicitacao.unidadeNegocio ?? 'Ceres Investimentos'"
       @create="handleAddContrato"
     />
 

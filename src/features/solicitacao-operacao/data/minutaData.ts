@@ -1,17 +1,48 @@
 import type { TipoPessoa } from './operacaoData';
 
-export const TIPOS_MINUTA_DISPONIVEIS = ['Contrato CPR', 'Contrato CPRF'] as const;
+export type CategoriaMinuta = 'CPR' | 'NC' | 'CCB';
+
+export const TIPOS_MINUTA_DISPONIVEIS = [
+  'Contrato CPR',
+  'Contrato CPRF',
+  'Contrato NC',
+  'Contrato CCB',
+] as const;
+
+export function categoriaMinuta(tipo: string): CategoriaMinuta {
+  const t = tipo.toUpperCase().replace(/\s/g, '').replace(/-/g, '');
+  if (t.includes('CCB') || t.includes('CONTRATOCCB')) return 'CCB';
+  if (t.includes('NC') || t.includes('CONTRATONC') || t.includes('NOTACOMERCIAL')) return 'NC';
+  return 'CPR';
+}
 
 export function isTipoMinutaDisponivel(tipo: string): boolean {
-  return (TIPOS_MINUTA_DISPONIVEIS as readonly string[]).includes(tipo) || tipo === 'CPR' || tipo === 'CPR-F' || tipo === 'CPRF';
+  if ((TIPOS_MINUTA_DISPONIVEIS as readonly string[]).includes(tipo)) return true;
+  const t = tipo.toUpperCase().replace(/\s/g, '').replace(/-/g, '');
+  return (
+    t === 'CPR' ||
+    t === 'CPRF' ||
+    t === 'NC' ||
+    t === 'CCB' ||
+    t.includes('CONTRATOCPR') ||
+    t.includes('CONTRATONC') ||
+    t.includes('CONTRATOCCB')
+  );
+}
+
+export function templatesDisponiveis(tipo: string): string[] {
+  const cat = categoriaMinuta(tipo);
+  if (cat === 'CCB') return ['CCB (Ceres Investimentos)'];
+  if (cat === 'NC') return ['Nota Comercial (Trading)', 'Nota Comercial (Ceres Investimentos)'];
+  const t = tipo.toUpperCase().replace(/\s/g, '');
+  if (t.includes('CPRF') || t.includes('CPR-F') || t.includes('CONTRATOCPRF')) {
+    return ['CPR-F (Ceres Investimentos)'];
+  }
+  return ['CPR Física (Trading)'];
 }
 
 export function templateMinuta(tipo: string): string {
-  const t = tipo.toUpperCase().replace(/\s/g, '');
-  if (t.includes('CPRF') || t.includes('CPR-F') || t.includes('CONTRATOCPRF')) {
-    return 'CPR-F (Ceres Investimentos)';
-  }
-  return 'CPR Física (Trading)';
+  return templatesDisponiveis(tipo)[0] ?? 'CPR Física (Trading)';
 }
 
 export const CIDADES_POR_UF: Record<string, string[]> = {
@@ -37,8 +68,17 @@ export const TIPO_LOCACAO_OPTS = ['Arrendamento', 'Comodato', 'Parceria Agrícol
 export const PERIODICIDADE_RELATORIO_OPTS = ['Mensal', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'];
 export const TIPO_GARANTIA_MINUTA_OPTS = ['AF. Estoque', 'Penhor de Estoque'];
 export const CREDORA_PADRAO_OPTS = ['Ceres Trading', 'Ceres Confina', 'Ceres Investimentos'];
+export const CREDORA_PADRAO_OPTS_NC_CCB = ['Ceres Trading', 'Ceres Securitizadora', 'BMP'];
+export const ESCRITURADOR_PADRAO_OPTS = ['Vortx', 'BMP'];
+export const ENDOSSATARIO_PADRAO_OPTS = ['Ceres Trading', 'Ceres Securitizadora'];
+export const SERIE_EMISSAO_OPTS = ['ÚNICA', 'SÉRIE 1', 'SÉRIE 2'];
 export const NACIONALIDADE_OPTS = ['Brasileira', 'Estrangeira', 'BRASIL'];
 export const ESTADO_CIVIL_OPTS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável'];
+
+export function credoraPadraoOptions(categoria: CategoriaMinuta): string[] {
+  if (categoria === 'NC' || categoria === 'CCB') return CREDORA_PADRAO_OPTS_NC_CCB;
+  return CREDORA_PADRAO_OPTS;
+}
 
 export interface RepresentanteLegal {
   cpf: string;
@@ -198,6 +238,98 @@ export const CREDORAS_PADRAO: Record<string, PessoaMinuta> = {
       profissao: 'Administrador',
     },
   },
+  'Ceres Securitizadora': {
+    tipoPessoa: 'JURIDICA',
+    documento: '32.987.654/0001-10',
+    nome: 'CERES SECURITIZADORA S.A.',
+    cnpj: '32.987.654/0001-10',
+    razaoSocial: 'CERES SECURITIZADORA S.A.',
+    nomeFantasia: 'CERES SECURITIZADORA',
+    dataAbertura: '08/04/2019',
+    tipoEmpresa: 'MATRIZ',
+    porte: 'DEMAIS',
+    atividadePrincipal: 'Securitização de créditos',
+    naturezaJuridica: '205-4 - Sociedade Anônima Fechada',
+    email: 'contato@ceressecuritizadora.com.br',
+    ddi: '+55',
+    telefone: '1130452100',
+    cep: '04534-011',
+    localidade: 'Rua Joaquim Floriano',
+    numero: '413',
+    bairro: 'Itaim Bibi',
+    infoAdicionais: 'Andar 19',
+    cidade: 'São Paulo',
+    estado: 'SP',
+    pais: 'Brasil',
+    representante: {
+      cpf: '144.112.938-38',
+      nome: 'MARCELO TARTARO',
+      rg: '13.096.851-1',
+      inscricaoProdutorRural: '',
+      nacionalidade: 'BRASIL',
+      dataNascimento: '12/10/1972',
+      profissao: 'Administrador',
+    },
+  },
+  BMP: {
+    tipoPessoa: 'JURIDICA',
+    documento: '15.444.333/0001-22',
+    nome: 'BMP MONEY PLUS SOCIEDADE DE CRÉDITO DIRETO S.A.',
+    cnpj: '15.444.333/0001-22',
+    razaoSocial: 'BMP MONEY PLUS SOCIEDADE DE CRÉDITO DIRETO S.A.',
+    nomeFantasia: 'BMP',
+    dataAbertura: '12/09/2016',
+    tipoEmpresa: 'MATRIZ',
+    porte: 'DEMAIS',
+    atividadePrincipal: 'Sociedade de crédito direto',
+    naturezaJuridica: '205-4 - Sociedade Anônima Fechada',
+    email: 'contato@bmp.com.br',
+    ddi: '+55',
+    telefone: '1130004000',
+    cep: '01414-001',
+    localidade: 'Avenida Paulista',
+    numero: '1106',
+    bairro: 'Bela Vista',
+    cidade: 'São Paulo',
+    estado: 'SP',
+    pais: 'Brasil',
+    representante: {
+      cpf: '333.444.555-66',
+      nome: 'CARLOS HENRIQUE SOUZA',
+      rg: '33.444.555-6',
+      inscricaoProdutorRural: '',
+      nacionalidade: 'BRASIL',
+      dataNascimento: '18/02/1978',
+      profissao: 'Administrador',
+    },
+  },
+};
+
+export const ESCRITURADORES_PADRAO: Record<string, PessoaMinuta> = {
+  Vortx: {
+    tipoPessoa: 'JURIDICA',
+    documento: '22.610.500/0001-88',
+    nome: 'VÓRTX DISTRIBUIDORA DE TÍTULOS E VALORES MOBILIÁRIOS LTDA',
+    cnpj: '22.610.500/0001-88',
+    razaoSocial: 'VÓRTX DISTRIBUIDORA DE TÍTULOS E VALORES MOBILIÁRIOS LTDA',
+    nomeFantasia: 'VÓRTX',
+    dataAbertura: '05/02/2015',
+    tipoEmpresa: 'MATRIZ',
+    porte: 'DEMAIS',
+    atividadePrincipal: 'Distribuição de títulos e valores mobiliários',
+    naturezaJuridica: '206-2 - Sociedade Empresária Limitada',
+    email: 'escrituracao@vortx.com.br',
+    ddi: '+55',
+    telefone: '1130334000',
+    cep: '04547-130',
+    localidade: 'Rua Gomes de Carvalho',
+    numero: '1195',
+    bairro: 'Vila Olímpia',
+    cidade: 'São Paulo',
+    estado: 'SP',
+    pais: 'Brasil',
+  },
+  BMP: CREDORAS_PADRAO.BMP,
 };
 
 export const MOCK_CLIENTES_MINUTA: PessoaMinuta[] = [
@@ -467,9 +599,82 @@ export interface AvalistaMinutaRow {
   conjugeInterveniente: boolean;
 }
 
+export interface ContaBancaria {
+  id: string;
+  banco: string;
+  agencia: string;
+  conta: string;
+  titular: string;
+}
+
+export const CONTAS_BANCARIAS_MOCK: ContaBancaria[] = [
+  { id: 'cb-1', banco: '341 - Itaú', agencia: '1234', conta: '56789-0', titular: 'AVANTIAGRO COMERCIAL AGRÍCOLA LTDA' },
+  { id: 'cb-2', banco: '001 - Banco do Brasil', agencia: '4321', conta: '12345-6', titular: 'AVANTIAGRO COMERCIAL AGRÍCOLA LTDA' },
+  { id: 'cb-3', banco: '237 - Bradesco', agencia: '9876', conta: '54321-0', titular: 'CERES TRADING E INVESTIMENTOS S.A.' },
+];
+
+export function labelContaBancaria(c: ContaBancaria): string {
+  return `${c.banco} · Ag ${c.agencia} · Cc ${c.conta} · ${c.titular}`;
+}
+
+export interface BoletimSubscricao {
+  subscritorPadrao: boolean;
+  subscritor: PessoaMinuta;
+  contaBancariaId: string;
+  quantidade: string;
+  precoTotalUnitario: string;
+  precoSubscricao: string;
+  diasIntegracao: string;
+}
+
+export function emptyBoletimSubscricao(): BoletimSubscricao {
+  return {
+    subscritorPadrao: false,
+    subscritor: emptyPessoaMinuta('JURIDICA'),
+    contaBancariaId: '',
+    quantidade: '',
+    precoTotalUnitario: '',
+    precoSubscricao: '',
+    diasIntegracao: '',
+  };
+}
+
+export interface CetForm {
+  cetDia: string;
+  cetMes: string;
+  cetAno: string;
+  iofValor: string;
+  iofPercentual: string;
+  custoEmissaoValor: string;
+  custoEmissaoPercentual: string;
+  taxaAD: string;
+  taxaAM: string;
+  taxaAA: string;
+}
+
+export function emptyCetForm(): CetForm {
+  return {
+    cetDia: '',
+    cetMes: '',
+    cetAno: '',
+    iofValor: '',
+    iofPercentual: '',
+    custoEmissaoValor: '',
+    custoEmissaoPercentual: '',
+    taxaAD: '',
+    taxaAM: '',
+    taxaAA: '',
+  };
+}
+
 export interface EmissaoMinuta {
   uf: string;
   cidade: string;
+  numero?: string;
+  serie?: string;
+  valorNominalUnitario?: string;
+  quantidade?: string;
+  valorTotal?: string;
 }
 
 export interface TituloMinutaForm {
@@ -511,12 +716,21 @@ export interface MinutaResumo {
   emissao: EmissaoMinuta;
   produtos: ProdutoMinuta[];
   garantias: GarantiaMinuta[];
+  // NC
+  escriturador?: PessoaMinuta | null;
+  escrituradorPadrao?: string;
+  contaBancariaId?: string;
+  boletimSubscricao?: BoletimSubscricao | null;
+  // CCB
+  endossatario?: PessoaMinuta | null;
+  endossatarioPadrao?: string;
+  cet?: CetForm;
 }
 
 export function emptyMinutaResumo(tipo: string): MinutaResumo {
   return {
     template: templateMinuta(tipo),
-    gerarViaNaoNegociavel: true,
+    gerarViaNaoNegociavel: categoriaMinuta(tipo) !== 'NC',
     emitentes: [],
     credora: null,
     credoraPadrao: '',

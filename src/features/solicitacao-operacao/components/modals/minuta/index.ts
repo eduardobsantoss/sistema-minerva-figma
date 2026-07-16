@@ -7,3 +7,8 @@ export { default as EmissaoStep } from './EmissaoStep.vue';
 export { default as ProdutoStep } from './ProdutoStep.vue';
 export { default as GarantiaMinutaStep } from './GarantiaMinutaStep.vue';
 export { default as TituloMinutaStep } from './TituloMinutaStep.vue';
+export { default as EscrituradorStep } from './EscrituradorStep.vue';
+export { default as InformacaoPagamentoStep } from './InformacaoPagamentoStep.vue';
+export { default as BoletimSubscricaoStep } from './BoletimSubscricaoStep.vue';
+export { default as EndossatarioStep } from './EndossatarioStep.vue';
+export { default as CetStep } from './CetStep.vue';

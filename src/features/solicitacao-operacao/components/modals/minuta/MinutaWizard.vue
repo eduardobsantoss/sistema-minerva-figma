@@ -11,6 +11,11 @@ import {
   Package,
   Shield,
   Tag,
+  Landmark,
+  ScrollText,
+  BookOpen,
+  Forward,
+  Percent,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import type { ParteRelacionada, ParcelaAtivo } from '../../../data/operacaoData';
@@ -23,27 +28,45 @@ import EmissaoStep from './EmissaoStep.vue';
 import ProdutoStep from './ProdutoStep.vue';
 import GarantiaMinutaStep from './GarantiaMinutaStep.vue';
 import TituloMinutaStep from './TituloMinutaStep.vue';
+import EscrituradorStep from './EscrituradorStep.vue';
+import InformacaoPagamentoStep from './InformacaoPagamentoStep.vue';
+import BoletimSubscricaoStep from './BoletimSubscricaoStep.vue';
+import EndossatarioStep from './EndossatarioStep.vue';
+import CetStep from './CetStep.vue';
 import ParteRelacionadaModal from '../ParteRelacionadaModal.vue';
 import {
+  categoriaMinuta,
+  templatesDisponiveis,
   templateMinuta,
+  credoraPadraoOptions,
   emptyPessoaMinuta,
   emptyProdutoMinuta,
   emptyMinutaResumo,
+  emptyBoletimSubscricao,
+  emptyCetForm,
   type PessoaMinuta,
   type ProdutoMinuta,
   type AvalistaMinutaRow,
   type TituloMinutaForm,
   type MinutaResumo,
   type GarantiaMinuta,
+  type ContaBancaria,
+  type BoletimSubscricao,
+  type CetForm,
+  type EmissaoMinuta,
 } from '../../../data/minutaData';
 
-const props = defineProps<{
-  valorOperacao: number;
-  tipoCalculo: string;
-  tipo: string;
-  partes: ParteRelacionada[];
-  gerarMinuta: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    valorOperacao: number;
+    tipoCalculo: string;
+    tipo: string;
+    partes: ParteRelacionada[];
+    gerarMinuta: boolean;
+    unidadeNegocio?: string;
+  }>(),
+  { unidadeNegocio: '' },
+);
 
 const emit = defineEmits<{
   'update:gerarMinuta': [value: boolean];
@@ -62,21 +85,84 @@ const emit = defineEmits<{
   ];
 }>();
 
-const steps: { key: string; label: string; icon: Component }[] = [
-  { key: 'emitente', label: 'Emitente', icon: User },
-  { key: 'credora', label: 'Credora', icon: Building2 },
-  { key: 'avalista', label: 'Avalista', icon: Users },
-  { key: 'emissao', label: 'Emissão', icon: MapPin },
-  { key: 'produto', label: 'Produto', icon: Package },
-  { key: 'garantia', label: 'Garantia', icon: Shield },
-  { key: 'titulo', label: 'Título', icon: Tag },
-];
+const categoria = computed(() => categoriaMinuta(props.tipo));
+const showBoletim = computed(
+  () => categoria.value === 'NC' && props.unidadeNegocio === 'Ceres Trading',
+);
+
+type StepDef = { key: string; label: string; icon: Component };
+
+const steps = computed<StepDef[]>(() => {
+  if (categoria.value === 'NC') {
+    const list: StepDef[] = [
+      { key: 'emitente', label: 'Emissora', icon: User },
+      { key: 'credora', label: 'Credora', icon: Building2 },
+      { key: 'escriturador', label: 'Escriturador', icon: Landmark },
+      { key: 'avalista', label: 'Avalista', icon: Users },
+      { key: 'emissao', label: 'Emissão', icon: MapPin },
+      { key: 'pagamento', label: 'Pagamento', icon: ScrollText },
+      { key: 'garantia', label: 'Garantia', icon: Shield },
+    ];
+    if (showBoletim.value) {
+      list.push({ key: 'boletim', label: 'Boletim', icon: BookOpen });
+    }
+    list.push({ key: 'titulo', label: 'Título', icon: Tag });
+    return list;
+  }
+  if (categoria.value === 'CCB') {
+    return [
+      { key: 'emitente', label: 'Emissora', icon: User },
+      { key: 'credora', label: 'Credora', icon: Building2 },
+      { key: 'avalista', label: 'Avalista', icon: Users },
+      { key: 'endossatario', label: 'Endossatário', icon: Forward },
+      { key: 'garantia', label: 'Garantia', icon: Shield },
+      { key: 'titulo', label: 'Título', icon: Tag },
+      { key: 'cet', label: 'CET', icon: Percent },
+    ];
+  }
+  return [
+    { key: 'emitente', label: 'Emitente', icon: User },
+    { key: 'credora', label: 'Credora', icon: Building2 },
+    { key: 'avalista', label: 'Avalista', icon: Users },
+    { key: 'emissao', label: 'Emissão', icon: MapPin },
+    { key: 'produto', label: 'Produto', icon: Package },
+    { key: 'garantia', label: 'Garantia', icon: Shield },
+    { key: 'titulo', label: 'Título', icon: Tag },
+  ];
+});
 
 const stepIdx = ref(0);
-const gerarViaNaoNegociavel = ref(true);
-const template = computed(() => templateMinuta(props.tipo));
+const currentKey = computed(() => steps.value[stepIdx.value]?.key ?? 'emitente');
 
-const emitenteForm = ref<PessoaMinuta>(emptyPessoaMinuta('FISICA'));
+watch(steps, () => {
+  if (stepIdx.value >= steps.value.length) stepIdx.value = Math.max(0, steps.value.length - 1);
+});
+
+const templatesOpts = computed(() => templatesDisponiveis(props.tipo));
+const templateSel = ref(templateMinuta(props.tipo));
+const templateDisabled = computed(() => categoria.value !== 'NC');
+
+watch(
+  () => props.tipo,
+  () => {
+    templateSel.value = templateMinuta(props.tipo);
+    stepIdx.value = 0;
+  },
+);
+
+const gerarViaNaoNegociavel = ref(categoria.value !== 'NC');
+watch(categoria, (c) => {
+  if (c === 'NC') gerarViaNaoNegociavel.value = false;
+  else if (!gerarViaNaoNegociavel.value) gerarViaNaoNegociavel.value = true;
+});
+
+const topBarCols = computed(() =>
+  categoria.value === 'NC' ? '1fr 1.5fr' : '1fr 1.5fr 1fr',
+);
+
+const emitenteForm = ref<PessoaMinuta>(
+  emptyPessoaMinuta(categoria.value === 'NC' ? 'JURIDICA' : 'FISICA'),
+);
 const emitenteDocBusca = ref('');
 const emitentes = ref<PessoaMinuta[]>([]);
 
@@ -86,6 +172,25 @@ const credoraDocBusca = ref('');
 const credoraContato = ref('');
 const credoraEndereco = ref('');
 const credoraRepresentante = ref('');
+const credoraOpts = computed(() => credoraPadraoOptions(categoria.value));
+
+const escrituradorForm = ref<PessoaMinuta>(emptyPessoaMinuta('JURIDICA'));
+const escrituradorPadrao = ref('');
+const escrituradorDocBusca = ref('');
+
+const contaBancariaId = ref('');
+const contasExtras = ref<ContaBancaria[]>([]);
+
+const boletim = ref<BoletimSubscricao>(emptyBoletimSubscricao());
+
+const endossatarioForm = ref<PessoaMinuta>(emptyPessoaMinuta('JURIDICA'));
+const endossatarioPadrao = ref('');
+const endossatarioDocBusca = ref('');
+const endossatarioContato = ref('');
+const endossatarioEndereco = ref('');
+const endossatarioRepresentante = ref('');
+
+const cetForm = ref<CetForm>(emptyCetForm());
 
 const possuiAvalistas = ref(true);
 const avalistaRows = ref<AvalistaMinutaRow[]>(
@@ -101,13 +206,24 @@ const avalistaRows = ref<AvalistaMinutaRow[]>(
 );
 const showParteModal = ref(false);
 
-const emissao = reactive({ uf: '', cidade: '' });
+const emissao = reactive<EmissaoMinuta>({
+  uf: '',
+  cidade: '',
+  numero: '',
+  serie: '',
+  valorNominalUnitario: '',
+  quantidade: '',
+  valorTotal: '',
+});
 
 const produtoForm = ref(emptyProdutoMinuta());
 const produtos = ref<ProdutoMinuta[]>([]);
 const garantias = ref<GarantiaMinuta[]>([]);
 
 const tipoTituloLabel = computed(() => {
+  const cat = categoria.value;
+  if (cat === 'NC') return 'NC';
+  if (cat === 'CCB') return 'CCB';
   const t = props.tipo.toUpperCase();
   if (t.includes('CPRF') || t.includes('CPR-F')) return 'CPRF';
   if (t.includes('CPR')) return 'CPR';
@@ -151,7 +267,7 @@ watch(
 );
 
 const isFirst = computed(() => stepIdx.value === 0);
-const isLast = computed(() => stepIdx.value === steps.length - 1);
+const isLast = computed(() => stepIdx.value === steps.value.length - 1);
 
 function goNext() {
   if (isLast.value) {
@@ -196,19 +312,43 @@ function onAddParte(parte: ParteRelacionada) {
 
 function buildMinuta(): MinutaResumo {
   const base = emptyMinutaResumo(props.tipo);
-  return {
+  const cat = categoria.value;
+
+  const emissaoPayload: EmissaoMinuta =
+    cat === 'CCB'
+      ? { uf: 'SP', cidade: 'São Paulo' }
+      : { ...emissao };
+
+  const result: MinutaResumo = {
     ...base,
-    template: template.value,
-    gerarViaNaoNegociavel: gerarViaNaoNegociavel.value,
+    template: templateSel.value,
+    gerarViaNaoNegociavel: cat === 'NC' ? false : gerarViaNaoNegociavel.value,
     emitentes: [...emitentes.value],
     credora: credoraPadrao.value || credoraDocBusca.value ? { ...credoraForm.value } : null,
     credoraPadrao: credoraPadrao.value,
     avalistas: [...avalistaRows.value],
     possuiAvalistas: possuiAvalistas.value,
-    emissao: { ...emissao },
-    produtos: [...produtos.value],
+    emissao: emissaoPayload,
+    produtos: cat === 'CPR' ? [...produtos.value] : [],
     garantias: [...garantias.value],
   };
+
+  if (cat === 'NC') {
+    result.escriturador =
+      escrituradorPadrao.value || escrituradorDocBusca.value ? { ...escrituradorForm.value } : null;
+    result.escrituradorPadrao = escrituradorPadrao.value;
+    result.contaBancariaId = contaBancariaId.value;
+    result.boletimSubscricao = showBoletim.value ? { ...boletim.value, subscritor: { ...boletim.value.subscritor } } : null;
+  }
+
+  if (cat === 'CCB') {
+    result.endossatario =
+      endossatarioPadrao.value || endossatarioDocBusca.value ? { ...endossatarioForm.value } : null;
+    result.endossatarioPadrao = endossatarioPadrao.value;
+    result.cet = { ...cetForm.value };
+  }
+
+  return result;
 }
 
 function handleSubmit() {
@@ -224,20 +364,25 @@ function handleSubmit() {
     minuta: buildMinuta(),
   });
 }
+
+const subtitleByCat = computed(() => {
+  if (categoria.value === 'NC') return 'Geração de minuta Nota Comercial';
+  if (categoria.value === 'CCB') return 'Geração de minuta CCB';
+  return 'Geração de minuta CPR / CPR-F';
+});
 </script>
 
 <template>
   <div class="flex flex-col" style="flex: 1; min-height: 0">
-    <!-- Barra superior alinhada ao padrão do sistema -->
     <div
       class="grid"
-      style="
-        grid-template-columns: 1fr 1.5fr 1fr;
-        gap: 16px;
-        padding: 16px 32px;
-        border-bottom: 1px solid var(--border-default);
-        align-items: stretch;
-      "
+      :style="{
+        gridTemplateColumns: topBarCols,
+        gap: '16px',
+        padding: '16px 32px',
+        borderBottom: '1px solid var(--border-default)',
+        alignItems: 'stretch',
+      }"
     >
       <ToggleRow
         label="Gerar minuta"
@@ -245,8 +390,15 @@ function handleSubmit() {
         compact
         @toggle="emit('update:gerarMinuta', !gerarMinuta)"
       />
-      <SelectField label="Selecione o template" :options="[template]" :model-value="template" required disabled />
+      <SelectField
+        label="Selecione o template"
+        :options="templatesOpts"
+        v-model="templateSel"
+        required
+        :disabled="templateDisabled"
+      />
       <ToggleRow
+        v-if="categoria !== 'NC'"
         label="Gerar via não negociável"
         :on="gerarViaNaoNegociavel"
         compact
@@ -258,22 +410,32 @@ function handleSubmit() {
 
     <div style="flex: 1; overflow-y: auto; padding: 32px">
       <EmitenteStep
-        v-if="stepIdx === 0"
+        v-if="currentKey === 'emitente'"
         v-model:emitentes="emitentes"
         v-model:form="emitenteForm"
         v-model:doc-busca="emitenteDocBusca"
+        :apenas-pessoa-juridica="categoria === 'NC'"
+        :max-emitentes="categoria === 'NC' ? 1 : undefined"
       />
       <CredoraStep
-        v-else-if="stepIdx === 1"
+        v-else-if="currentKey === 'credora'"
         v-model:form="credoraForm"
         v-model:credora-padrao="credoraPadrao"
         v-model:doc-busca="credoraDocBusca"
         v-model:contato="credoraContato"
         v-model:endereco="credoraEndereco"
         v-model:representante="credoraRepresentante"
+        :padrao-options="credoraOpts"
+        :legal-rep-fields-optional="categoria === 'CCB'"
+      />
+      <EscrituradorStep
+        v-else-if="currentKey === 'escriturador'"
+        v-model:form="escrituradorForm"
+        v-model:escriturador-padrao="escrituradorPadrao"
+        v-model:doc-busca="escrituradorDocBusca"
       />
       <AvalistaStep
-        v-else-if="stepIdx === 2"
+        v-else-if="currentKey === 'avalista'"
         :possui-avalistas="possuiAvalistas"
         :rows="avalistaRows"
         @toggle-possui="possuiAvalistas = !possuiAvalistas"
@@ -281,19 +443,49 @@ function handleSubmit() {
         @toggle-conjuge="toggleConjuge"
         @add-avalista="showParteModal = true"
       />
-      <EmissaoStep v-else-if="stepIdx === 3" v-model="emissao" />
+      <EmissaoStep
+        v-else-if="currentKey === 'emissao'"
+        v-model="emissao"
+        :modo-nc="categoria === 'NC'"
+      />
+      <InformacaoPagamentoStep
+        v-else-if="currentKey === 'pagamento'"
+        v-model:conta-bancaria-id="contaBancariaId"
+        v-model:contas-extras="contasExtras"
+      />
       <ProdutoStep
-        v-else-if="stepIdx === 4"
+        v-else-if="currentKey === 'produto'"
         v-model:produtos="produtos"
         v-model:form="produtoForm"
       />
-      <GarantiaMinutaStep v-else-if="stepIdx === 5" v-model:garantias="garantias" />
+      <GarantiaMinutaStep v-else-if="currentKey === 'garantia'" v-model:garantias="garantias" />
+      <BoletimSubscricaoStep
+        v-else-if="currentKey === 'boletim'"
+        v-model="boletim"
+        v-model:contas-extras="contasExtras"
+      />
+      <EndossatarioStep
+        v-else-if="currentKey === 'endossatario'"
+        v-model:form="endossatarioForm"
+        v-model:endossatario-padrao="endossatarioPadrao"
+        v-model:doc-busca="endossatarioDocBusca"
+        v-model:contato="endossatarioContato"
+        v-model:endereco="endossatarioEndereco"
+        v-model:representante="endossatarioRepresentante"
+      />
       <TituloMinutaStep
-        v-else
+        v-else-if="currentKey === 'titulo'"
         :valor-operacao="valorOperacao"
         :tipo-calculo="tipoCalculo"
         v-model="tituloForm"
         v-model:cronograma="cronograma"
+      />
+      <CetStep
+        v-else-if="currentKey === 'cet'"
+        v-model="cetForm"
+        :valor-titulo="valorOperacao"
+        :data-emissao="tituloForm.emissao"
+        :data-vencimento="tituloForm.vencimento"
       />
     </div>
 
@@ -322,6 +514,7 @@ function handleSubmit() {
 
       <span style="font-size: var(--text-xs); color: var(--text-muted); font-weight: var(--weight-semibold)">
         {{ stepIdx + 1 }} / {{ steps.length }}
+        <span style="margin-left: 8px; font-weight: var(--weight-normal)">· {{ subtitleByCat }}</span>
       </span>
 
       <button
