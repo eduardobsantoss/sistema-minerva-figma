@@ -8,8 +8,6 @@ import SelectField from './create-cra-modal/SelectField.vue';
 
 export interface NewCraData {
   tipoOperacao: string;
-  tipoOperacaoCra: string;
-  numeroEmissao: string;
   nomeFantasia: string;
 }
 
@@ -29,8 +27,6 @@ const steps: Step[] = [
 const stepIdx = ref(0);
 const form = ref<NewCraData>({
   tipoOperacao: '',
-  tipoOperacaoCra: '',
-  numeroEmissao: '',
   nomeFantasia: '',
 });
 
@@ -130,23 +126,10 @@ function handleCreate() {
             :span="6"
             v-model="form.tipoOperacao"
           />
-          <SelectField
-            label="Tipo da Operação"
-            :options="['CRA Carteira', 'CRA Controle', 'CRA Terceiro']"
-            placeholder="Selecione"
-            :span="6"
-            v-model="form.tipoOperacaoCra"
-          />
-          <FormField
-            label="Número de Emissão"
-            placeholder="Ex: 4ª"
-            :span="4"
-            v-model="form.numeroEmissao"
-          />
           <FormField
             label="Nome do CRA"
             placeholder="Ex: CRA Semeagro"
-            :span="8"
+            :span="6"
             v-model="form.nomeFantasia"
           />
         </StepGrid>
