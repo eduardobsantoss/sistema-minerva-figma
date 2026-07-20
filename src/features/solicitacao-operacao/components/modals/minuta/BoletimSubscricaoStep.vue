@@ -8,12 +8,15 @@ import {
   CONTAS_BANCARIAS_MOCK,
   labelContaBancaria,
   emptyPessoaMinuta,
+  emptyConjugeMinuta,
   ESTADO_CIVIL_OPTS,
   NACIONALIDADE_OPTS,
+  estadoCivilExigeConjuge,
   cidadesDaUf,
   type BoletimSubscricao,
   type ContaBancaria,
 } from '../../../data/minutaData';
+import SpouseFields from './SpouseFields.vue';
 
 const boletim = defineModel<BoletimSubscricao>({ required: true });
 const contasExtras = defineModel<ContaBancaria[]>('contasExtras', { default: () => [] });
@@ -81,15 +84,22 @@ watch(
 
     <template v-if="form.tipoPessoa === 'FISICA'">
       <StepGrid>
-        <FormField label="CPF" placeholder="—" :span="3" :disabled="boletim.subscritorPadrao" v-model="form.cpf!" />
-        <FormField label="Nome" placeholder="—" :span="5" :disabled="boletim.subscritorPadrao" v-model="form.nome" />
-        <FormField label="RG" placeholder="—" :span="4" :disabled="boletim.subscritorPadrao" v-model="form.rg!" />
+        <FormField label="CPF" placeholder="—" required :span="3" :disabled="boletim.subscritorPadrao" v-model="form.cpf!" />
+        <FormField label="Nome completo" placeholder="—" required :span="5" :disabled="boletim.subscritorPadrao" v-model="form.nome" />
+        <FormField label="RG" placeholder="—" :span="2" :disabled="boletim.subscritorPadrao" v-model="form.rg!" />
+        <FormField label="Órgão emissor do RG" placeholder="SSP/SP" :span="2" :disabled="boletim.subscritorPadrao" v-model="form.orgaoEmissorRg!" />
         <FormField label="Inscrição do produtor rural" placeholder="—" :span="4" :disabled="boletim.subscritorPadrao" v-model="form.inscricaoProdutorRural!" />
-        <SelectField label="Nacionalidade" :options="NACIONALIDADE_OPTS" placeholder="Selecione" :span="4" :disabled="boletim.subscritorPadrao" v-model="form.nacionalidade!" />
-        <FormField label="Data de nascimento" placeholder="dd/mm/aaaa" :span="4" :disabled="boletim.subscritorPadrao" v-model="form.dataNascimento!" />
+        <SelectField label="Nacionalidade" :options="NACIONALIDADE_OPTS" placeholder="Selecione" required :span="4" :disabled="boletim.subscritorPadrao" v-model="form.nacionalidade!" />
+        <FormField label="Data de nascimento" placeholder="dd/mm/aaaa" required :span="4" :disabled="boletim.subscritorPadrao" v-model="form.dataNascimento!" />
         <FormField label="Profissão" placeholder="—" :span="4" :disabled="boletim.subscritorPadrao" v-model="form.profissao!" />
-        <SelectField label="Estado Civil" :options="ESTADO_CIVIL_OPTS" placeholder="Selecione" :span="4" :disabled="boletim.subscritorPadrao" v-model="form.estadoCivil!" />
+        <SelectField label="Estado Civil" :options="ESTADO_CIVIL_OPTS" placeholder="Selecione" required :span="4" :disabled="boletim.subscritorPadrao" v-model="form.estadoCivil!" />
       </StepGrid>
+      <SpouseFields
+        v-if="estadoCivilExigeConjuge(form.estadoCivil)"
+        :disabled="boletim.subscritorPadrao"
+        :model-value="form.conjuge ?? emptyConjugeMinuta()"
+        @update:model-value="form.conjuge = $event"
+      />
     </template>
     <template v-else>
       <StepGrid>

@@ -66,7 +66,18 @@ export const ZONA_OPTS = ['Rural', 'Urbana'];
 export const TIPO_IMOVEL_OPTS = ['Fazenda', 'Armazém', 'Galpão', 'Silo'];
 export const TIPO_LOCACAO_OPTS = ['Arrendamento', 'Comodato', 'Parceria Agrícola'];
 export const PERIODICIDADE_RELATORIO_OPTS = ['Mensal', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'];
-export const TIPO_GARANTIA_MINUTA_OPTS = ['AF. Estoque', 'Penhor de Estoque'];
+export const TIPO_GARANTIA_MINUTA_OPTS = [
+  'AF. Estoque',
+  'Penhor de Estoque',
+  'Alienação Fiduciária',
+  'Hipoteca',
+  'Penhor',
+  'Fiança',
+  'Cessão Fiduciária',
+  'Aval',
+  'Caução',
+];
+export const FORMA_PRODUTO_GARANTIA_OPTS = ['Física', 'Financeira', 'Mista'];
 export const CREDORA_PADRAO_OPTS = ['Ceres Trading', 'Ceres Confina', 'Ceres Investimentos'];
 export const CREDORA_PADRAO_OPTS_NC_CCB = ['Ceres Trading', 'Ceres Securitizadora', 'BMP'];
 export const ESCRITURADOR_PADRAO_OPTS = ['Vortx', 'BMP'];
@@ -74,10 +85,44 @@ export const ENDOSSATARIO_PADRAO_OPTS = ['Ceres Trading', 'Ceres Securitizadora'
 export const SERIE_EMISSAO_OPTS = ['ÚNICA', 'SÉRIE 1', 'SÉRIE 2'];
 export const NACIONALIDADE_OPTS = ['Brasileira', 'Estrangeira', 'BRASIL'];
 export const ESTADO_CIVIL_OPTS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável'];
+/** Estados civis que exigem dados do cônjuge (SpouseDetailsForm) */
+export const ESTADOS_CIVIS_COM_CONJUGE = ['Casado(a)', 'União Estável'];
+
+export function estadoCivilExigeConjuge(estadoCivil?: string): boolean {
+  return !!estadoCivil && ESTADOS_CIVIS_COM_CONJUGE.includes(estadoCivil);
+}
+
+export function isGarantiaEstoque(tipo: string): boolean {
+  return tipo === 'AF. Estoque' || tipo === 'Penhor de Estoque';
+}
+
+export function isGarantiaComFormaProduto(tipo: string): boolean {
+  return isGarantiaEstoque(tipo) || tipo.includes('Estoque');
+}
 
 export function credoraPadraoOptions(categoria: CategoriaMinuta): string[] {
   if (categoria === 'NC' || categoria === 'CCB') return CREDORA_PADRAO_OPTS_NC_CCB;
   return CREDORA_PADRAO_OPTS;
+}
+
+export interface ConjugeMinuta {
+  nome: string;
+  cpf: string;
+  rg: string;
+  dataNascimento: string;
+  nacionalidade: string;
+  profissao: string;
+}
+
+export function emptyConjugeMinuta(): ConjugeMinuta {
+  return {
+    nome: '',
+    cpf: '',
+    rg: '',
+    dataNascimento: '',
+    nacionalidade: '',
+    profissao: '',
+  };
 }
 
 export interface RepresentanteLegal {
@@ -98,11 +143,13 @@ export interface PessoaMinuta {
   // PF
   cpf?: string;
   rg?: string;
+  orgaoEmissorRg?: string;
   inscricaoProdutorRural?: string;
   nacionalidade?: string;
   dataNascimento?: string;
   profissao?: string;
   estadoCivil?: string;
+  conjuge?: ConjugeMinuta;
   // PJ
   cnpj?: string;
   razaoSocial?: string;
@@ -443,11 +490,13 @@ export function emptyPessoaMinuta(tipoPessoa: TipoPessoa = 'FISICA'): PessoaMinu
     nome: '',
     cpf: '',
     rg: '',
+    orgaoEmissorRg: '',
     inscricaoProdutorRural: '',
     nacionalidade: '',
     dataNascimento: '',
     profissao: '',
     estadoCivil: '',
+    conjuge: emptyConjugeMinuta(),
     cnpj: '',
     razaoSocial: '',
     nomeFantasia: '',
@@ -521,7 +570,17 @@ export interface EstoqueItem {
 export interface GarantiaMinuta {
   tipo: string;
   valor: string;
-  // Formação de estoque
+  descricao: string;
+  instrumentoParticular: boolean;
+  constituirGarantia: boolean;
+  numeroTestemunhas: string;
+  formaProduto: string;
+  obrigacaoGarantida: string;
+  // Constituição (quando constituirGarantia)
+  cartorioConstituicao: string;
+  dataPrevistaConstituicao: string;
+  observacoesConstituicao: string;
+  // Formação de estoque (tipos estoque)
   nomeImovel: string;
   matricula: string;
   zona: string;
@@ -560,6 +619,15 @@ export function emptyGarantiaMinuta(): GarantiaMinuta {
   return {
     tipo: '',
     valor: '',
+    descricao: '',
+    instrumentoParticular: false,
+    constituirGarantia: false,
+    numeroTestemunhas: '',
+    formaProduto: '',
+    obrigacaoGarantida: '',
+    cartorioConstituicao: '',
+    dataPrevistaConstituicao: '',
+    observacoesConstituicao: '',
     nomeImovel: '',
     matricula: '',
     zona: '',
@@ -603,18 +671,77 @@ export interface ContaBancaria {
   id: string;
   banco: string;
   agencia: string;
+  digitoAgencia: string;
   conta: string;
+  digitoConta: string;
+  tipoConta: string;
+  chavePix: string;
   titular: string;
 }
 
+export const TIPO_CONTA_OPTS = ['Corrente', 'Poupança'];
+export const BANCO_OPTS = [
+  '001 - Banco do Brasil',
+  '033 - Santander',
+  '104 - Caixa Econômica',
+  '237 - Bradesco',
+  '341 - Itaú',
+  '756 - Sicoob',
+];
+
 export const CONTAS_BANCARIAS_MOCK: ContaBancaria[] = [
-  { id: 'cb-1', banco: '341 - Itaú', agencia: '1234', conta: '56789-0', titular: 'AVANTIAGRO COMERCIAL AGRÍCOLA LTDA' },
-  { id: 'cb-2', banco: '001 - Banco do Brasil', agencia: '4321', conta: '12345-6', titular: 'AVANTIAGRO COMERCIAL AGRÍCOLA LTDA' },
-  { id: 'cb-3', banco: '237 - Bradesco', agencia: '9876', conta: '54321-0', titular: 'CERES TRADING E INVESTIMENTOS S.A.' },
+  {
+    id: 'cb-1',
+    banco: '341 - Itaú',
+    agencia: '1234',
+    digitoAgencia: '5',
+    conta: '56789',
+    digitoConta: '0',
+    tipoConta: 'Corrente',
+    chavePix: '34.470.721/0001-87',
+    titular: 'AVANTIAGRO COMERCIAL AGRÍCOLA LTDA',
+  },
+  {
+    id: 'cb-2',
+    banco: '001 - Banco do Brasil',
+    agencia: '4321',
+    digitoAgencia: '',
+    conta: '12345',
+    digitoConta: '6',
+    tipoConta: 'Corrente',
+    chavePix: '',
+    titular: 'AVANTIAGRO COMERCIAL AGRÍCOLA LTDA',
+  },
+  {
+    id: 'cb-3',
+    banco: '237 - Bradesco',
+    agencia: '9876',
+    digitoAgencia: '1',
+    conta: '54321',
+    digitoConta: '0',
+    tipoConta: 'Poupança',
+    chavePix: 'contato@cerestrading.com.br',
+    titular: 'CERES TRADING E INVESTIMENTOS S.A.',
+  },
 ];
 
 export function labelContaBancaria(c: ContaBancaria): string {
-  return `${c.banco} · Ag ${c.agencia} · Cc ${c.conta} · ${c.titular}`;
+  const ag = c.digitoAgencia ? `${c.agencia}-${c.digitoAgencia}` : c.agencia;
+  const cc = c.digitoConta ? `${c.conta}-${c.digitoConta}` : c.conta;
+  return `${c.banco} · Ag ${ag} · Cc ${cc} · ${c.tipoConta} · ${c.titular}`;
+}
+
+export function emptyContaBancariaDraft(): Omit<ContaBancaria, 'id'> {
+  return {
+    banco: '',
+    agencia: '',
+    digitoAgencia: '',
+    conta: '',
+    digitoConta: '',
+    tipoConta: 'Corrente',
+    chavePix: '',
+    titular: '',
+  };
 }
 
 export interface BoletimSubscricao {
@@ -677,6 +804,80 @@ export interface EmissaoMinuta {
   valorTotal?: string;
 }
 
+/** Dados da cessão — step Título (createByOperation = sempre true no Adicionar Contrato) */
+export interface CessaoForm {
+  nome: string;
+  dataDesembolso: string;
+  taxaCessao: string;
+  tipo: string;
+  parametrizacaoCalculo: string;
+  tipoCalculoCessao: string;
+  pctGarantiaRecebiveis: string;
+  pctGarantiaOutras: string;
+  descontoAdicional: string;
+  taxaMulta: string;
+  taxaMora: string;
+  usarCalculoUra: boolean;
+  frequenciaTaxa: string;
+  operador: string;
+  indicadorTaxa: string;
+  tipoCapitalizacao: string;
+  baseDias: string;
+  inicioContagemJuros: string;
+  dataAccrual: string;
+  usarCertificadorEmail: boolean;
+  conversaoIndice: boolean;
+}
+
+export const CESSAO_TIPO_OPTS = ['Desembolso', 'Desembolso Parcial', 'Integralização', 'Composição de Garantia'];
+export const CESSAO_PARAM_OPTS = [
+  'URA — Pré-fixado',
+  'URA — Pós-fixado',
+  'Mercado — Pré-fixado',
+  'Mercado — Pós-fixado',
+  'Personalizado',
+];
+export const CESSAO_TIPO_CALCULO_OPTS = [
+  'Deságio por valor nominal',
+  'Ágio por valor líquido',
+  'Sem cálculo por taxa',
+  'Deságio de juros',
+  'Deságio do CDCA',
+];
+export const CESSAO_FREQUENCIA_OPTS = ['Mensal', 'Anual', 'Diário'];
+export const CESSAO_OPERADOR_OPTS = ['Multiplicativo', 'Aditivo'];
+export const CESSAO_INDICADOR_OPTS = ['CDI', 'IPCA', 'Indefinido'];
+export const CESSAO_CAPITALIZACAO_OPTS = ['Simples', 'Composto'];
+export const CESSAO_BASE_DIAS_OPTS = ['252', '360', '365'];
+export const CESSAO_INICIO_JUROS_OPTS = ['D0', 'D+1'];
+export const CESSAO_DATA_ACCRUAL_OPTS = ['Data da emissão do título', 'Data da cessão/desembolso'];
+
+export function emptyCessaoForm(): CessaoForm {
+  return {
+    nome: '',
+    dataDesembolso: '',
+    taxaCessao: '',
+    tipo: '',
+    parametrizacaoCalculo: '',
+    tipoCalculoCessao: '',
+    pctGarantiaRecebiveis: '',
+    pctGarantiaOutras: '',
+    descontoAdicional: '0',
+    taxaMulta: '',
+    taxaMora: '',
+    usarCalculoUra: false,
+    frequenciaTaxa: '',
+    operador: '',
+    indicadorTaxa: '',
+    tipoCapitalizacao: '',
+    baseDias: '',
+    inicioContagemJuros: '',
+    dataAccrual: '',
+    usarCertificadorEmail: true,
+    conversaoIndice: false,
+  };
+}
+
 export interface TituloMinutaForm {
   tipoValorLiquido: boolean;
   numero: string;
@@ -690,6 +891,7 @@ export interface TituloMinutaForm {
   cronogramaAutomatico: boolean;
   fluxoAmortizacao: string;
   fluxoJuros: string;
+  cessao: CessaoForm;
   sacadoDocumento: string;
   sacadoNome: string;
   sacadoEmail: string;
@@ -716,6 +918,7 @@ export interface MinutaResumo {
   emissao: EmissaoMinuta;
   produtos: ProdutoMinuta[];
   garantias: GarantiaMinuta[];
+  cessao?: CessaoForm;
   // NC
   escriturador?: PessoaMinuta | null;
   escrituradorPadrao?: string;

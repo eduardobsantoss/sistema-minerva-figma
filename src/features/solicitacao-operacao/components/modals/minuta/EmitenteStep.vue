@@ -13,11 +13,14 @@ import {
 import {
   buscarClientePorDoc,
   emptyPessoaMinuta,
+  emptyConjugeMinuta,
   ESTADO_CIVIL_OPTS,
   NACIONALIDADE_OPTS,
+  estadoCivilExigeConjuge,
   cidadesDaUf,
   type PessoaMinuta,
 } from '../../../data/minutaData';
+import SpouseFields from './SpouseFields.vue';
 
 const props = withDefaults(
   defineProps<{ apenasPessoaJuridica?: boolean; maxEmitentes?: number }>(),
@@ -132,16 +135,22 @@ const docOptsFiltrados = computed(() =>
 
     <template v-if="form.tipoPessoa === 'FISICA'">
       <StepGrid>
-        <FormField label="CPF" placeholder="000.000.000-00" :span="3" v-model="form.cpf!" />
-        <FormField label="Nome" placeholder="—" :span="5" v-model="form.nome" />
-        <FormField label="RG" placeholder="—" :span="4" v-model="form.rg!" />
+        <FormField label="CPF" placeholder="000.000.000-00" required :span="3" v-model="form.cpf!" />
+        <FormField label="Nome completo" placeholder="—" required :span="5" v-model="form.nome" />
+        <FormField label="RG" placeholder="—" :span="2" v-model="form.rg!" />
+        <FormField label="Órgão emissor do RG" placeholder="SSP/SP" :span="2" v-model="form.orgaoEmissorRg!" />
         <FormField label="Inscrição do produtor rural" placeholder="—" :span="4" v-model="form.inscricaoProdutorRural!" />
-        <SelectField label="Nacionalidade" :options="NACIONALIDADE_OPTS" placeholder="Selecione" :span="4" v-model="form.nacionalidade!" />
-        <FormField label="Data de nascimento" placeholder="dd/mm/aaaa" :span="4" v-model="form.dataNascimento!" />
+        <SelectField label="Nacionalidade" :options="NACIONALIDADE_OPTS" placeholder="Selecione" required :span="4" v-model="form.nacionalidade!" />
+        <FormField label="Data de nascimento" placeholder="dd/mm/aaaa" required :span="4" v-model="form.dataNascimento!" />
         <FormField label="Profissão" placeholder="—" :span="4" v-model="form.profissao!" />
-        <SelectField label="Estado Civil" :options="ESTADO_CIVIL_OPTS" placeholder="Selecione" :span="4" v-model="form.estadoCivil!" />
+        <SelectField label="Estado Civil" :options="ESTADO_CIVIL_OPTS" placeholder="Selecione" required :span="4" v-model="form.estadoCivil!" />
         <FormField label="E-mail do representante" placeholder="—" :span="4" v-model="form.emailRepresentante!" />
       </StepGrid>
+      <SpouseFields
+        v-if="estadoCivilExigeConjuge(form.estadoCivil)"
+        :model-value="form.conjuge ?? emptyConjugeMinuta()"
+        @update:model-value="form.conjuge = $event"
+      />
     </template>
     <template v-else>
       <StepGrid>

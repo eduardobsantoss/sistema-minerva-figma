@@ -1,17 +1,24 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, type Component } from 'vue';
 import {
   ArrowLeft, Wallet, FileText, Search, Filter,
   ChevronUp, ChevronDown, Plus, Settings2, Clock,
-  CheckCircle2, XCircle, ScanLine,
+  CheckCircle2, XCircle, ScanLine, Briefcase, ArrowLeftRight, Users, Building2,
 } from 'lucide-vue-next';
-import { brl, num, type Cra, type CraTitulo } from '../data/craData';
-import CraHero from './cra-detail/CraHero.vue';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
+import { brl, num, type Cra, type CraTitulo, type Cessao, type Sacado, type CraSetup, type GrupoEmpresarialVinculo } from '../data/craData';
+import CraHero from './cra-detail/CraHero.vue';
+import TabBtn from './cra-detail/TabBtn.vue';
 import OperacoesTable from './cra-detail/OperacoesTable.vue';
 import TitulosTable from './cra-detail/TitulosTable.vue';
 import StatusKPI from './cra-detail/StatusKPI.vue';
 import ColPanel from './cra-detail/ColPanel.vue';
+import CessoesTab from './cra-detail-tabs/CessoesTab.vue';
+import SacadosTab from './cra-detail-tabs/SacadosTab.vue';
+import GruposEmpresariaisTab from './cra-detail-tabs/GruposEmpresariaisTab.vue';
+import SetupTab from './cra-detail-tabs/SetupTab.vue';
+import CessaoFormModal from '../components/modals/CessaoFormModal.vue';
+import SubirContratoMaeModal from '../components/modals/SubirContratoMaeModal.vue';
 
 const props = defineProps<{ cra: Cra }>();
 const emit = defineEmits<{
@@ -19,19 +26,36 @@ const emit = defineEmits<{
   createOperacao: [];
   openOperacao: [operacaoId: string];
   openTitulo: [operacaoId: string, tituloId: string];
+  openSacado: [sacadoId: string];
+  openGrupo: [grupoId: string];
+  updateCessoes: [cessoes: Cessao[]];
+  updateSacados: [sacados: Sacado[]];
+  updateGrupos: [grupos: GrupoEmpresarialVinculo[]];
+  updateSetup: [setup: CraSetup];
 }>();
 
-type Tab = 'operacoes' | 'titulos';
+type Section = 'operacoes' | 'cessoes' | 'sacados' | 'grupos' | 'setup';
+type ViewTab = 'operacoes' | 'titulos';
 
-const VIEW_TABS = [
-  { key: 'operacoes' as const, label: 'VISUALIZAR OPERAÇÕES' },
-  { key: 'titulos' as const, label: 'VISUALIZAR TÍTULOS' },
+const SECTION_TABS: { key: Section; label: string; icon: Component }[] = [
+  { key: 'operacoes', label: 'Operações', icon: Briefcase },
+  { key: 'cessoes', label: 'Cessões', icon: ArrowLeftRight },
+  { key: 'sacados', label: 'Sacados', icon: Users },
+  { key: 'grupos', label: 'Grupos Empresariais', icon: Building2 },
+  { key: 'setup', label: 'Setup', icon: Settings2 },
 ];
 
 const openCarteira = ref(true);
-const tab = ref<Tab>('operacoes');
+const section = ref<Section>('operacoes');
+const viewTab = ref<ViewTab>('operacoes');
 const q = ref('');
 const showColPanel = ref(false);
+
+const cessaoModalOpen = ref(false);
+const editingCessao = ref<Cessao | null>(null);
+
+const contratoModalOpen = ref(false);
+const uploadGrupo = ref<GrupoEmpresarialVinculo | null>(null);
 
 const allTitulos = computed<CraTitulo[]>(() => props.cra.operacoes.flatMap((o) => o.titulos));
 const filteredTitulos = computed(() =>
@@ -50,12 +74,6 @@ const totalCarteira = computed(() =>
     { valor: 0, titulos: 0 },
   ),
 );
-const totalVencido = computed(() =>
-  props.cra.operacoes.reduce(
-    (a, o) => ({ valor: a.valor + o.vencido.valor, titulos: a.titulos + o.vencido.titulos }),
-    { valor: 0, titulos: 0 },
-  ),
-);
 const totalEmissao = computed(() => props.cra.operacoes.reduce((a, o) => a + o.valorEmissao, 0));
 
 const operacaoClassMap = computed(() =>
@@ -65,11 +83,88 @@ const operacaoClassMap = computed(() =>
 function handleOpenTitulo(r: CraTitulo) {
   emit('openTitulo', r.operacaoId, r.id);
 }
+
+function openCreateCessao() {
+  editingCessao.value = null;
+  cessaoModalOpen.value = true;
+}
+
+function openEditCessao(c: Cessao) {
+  editingCessao.value = c;
+  cessaoModalOpen.value = true;
+}
+
+function closeCessaoModal() {
+  cessaoModalOpen.value = false;
+  editingCessao.value = null;
+}
+
+function saveCessao(c: Cessao) {
+  const list = [...props.cra.cessoes];
+  const idx = list.findIndex((x) => x.id === c.id);
+  if (idx >= 0) list[idx] = c;
+  else list.push(c);
+  emit('updateCessoes', list);
+  closeCessaoModal();
+}
+
+function deleteCessao(id: string) {
+  emit(
+    'updateCessoes',
+    props.cra.cessoes.filter((c) => c.id !== id),
+  );
+}
+
+function handleSacadoUpdate(s: Sacado) {
+  emit(
+    'updateSacados',
+    props.cra.sacados.map((x) => (x.id === s.id ? s : x)),
+  );
+}
+
+function handleToggleApto(id: string) {
+  emit(
+    'updateGrupos',
+    props.cra.grupos.map((g) => {
+      if (g.id !== id) return g;
+      if (!g.apto && !g.masterContractUrl) return g;
+      return { ...g, apto: !g.apto };
+    }),
+  );
+}
+
+function openUploadContrato(g: GrupoEmpresarialVinculo) {
+  uploadGrupo.value = g;
+  contratoModalOpen.value = true;
+}
+
+function closeContratoModal() {
+  contratoModalOpen.value = false;
+  uploadGrupo.value = null;
+}
+
+function saveContratoMae(payload: { date: string; fileName: string }) {
+  if (!uploadGrupo.value) return;
+  const updated = props.cra.grupos.map((g) =>
+    g.id === uploadGrupo.value!.id
+      ? {
+          ...g,
+          masterContractDate: payload.date,
+          masterContractUrl: `#${payload.fileName}`,
+        }
+      : g,
+  );
+  emit('updateGrupos', updated);
+  closeContratoModal();
+}
+
+function handleSetupUpdate(setup: CraSetup) {
+  emit('updateSetup', setup);
+}
 </script>
 
 <template>
   <div class="flex flex-col" style="gap: 24px">
-    <!-- Header -->
     <div class="flex items-center" style="gap: 16px">
       <button
         aria-label="Voltar"
@@ -89,10 +184,8 @@ function handleOpenTitulo(r: CraTitulo) {
       </div>
     </div>
 
-    <!-- Hero -->
     <CraHero :total-emissao="totalEmissao" :cra="cra" />
 
-    <!-- Carteira -->
     <div style="background: var(--surface-card); border-width: 1px; border-style: solid; border-color: var(--border-default); border-radius: var(--radius-xl); overflow: hidden">
       <button
         class="relative w-full flex items-center"
@@ -154,19 +247,27 @@ function handleOpenTitulo(r: CraTitulo) {
       </div>
     </div>
 
-    <!-- Operações / Títulos -->
-    <div style="background: var(--surface-card); border-width: 1px; border-style: solid; border-color: var(--border-default); border-radius: var(--radius-xl); overflow: hidden">
-      <!-- Panel header -->
-      <div class="flex items-center" style="gap: 16px; padding: 20px; border-bottom: 1px solid var(--border-default)">
+    <SegmentedToggle
+      :model-value="section"
+      :options="SECTION_TABS"
+      variant="brand"
+      @update:model-value="section = $event as Section"
+    />
+
+    <div
+      v-if="section === 'operacoes'"
+      style="background: var(--surface-card); border-width: 1px; border-style: solid; border-color: var(--border-default); border-radius: var(--radius-xl); overflow: hidden"
+    >
+      <div class="flex items-center flex-wrap" style="gap: 16px; padding: 20px; border-bottom: 1px solid var(--border-default)">
         <div class="flex items-center justify-center" style="width: 44px; height: 44px; border-radius: var(--radius-lg); background: var(--surface-sunken); color: var(--gci-base)">
           <FileText :size="20" />
         </div>
         <div style="flex: 1">
           <div style="font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.01em">
-            {{ tab === 'operacoes' ? 'Operações do CRA' : 'Títulos da Carteira' }}
+            {{ viewTab === 'operacoes' ? 'Operações do CRA' : 'Títulos da Carteira' }}
           </div>
           <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-top: 4px">
-            {{ tab === 'operacoes' ? `${cra.operacoes.length} operações cadastradas` : `${allTitulos.length} títulos na carteira` }}
+            {{ viewTab === 'operacoes' ? `${cra.operacoes.length} operações cadastradas` : `${allTitulos.length} títulos na carteira` }}
           </div>
         </div>
 
@@ -178,12 +279,10 @@ function handleOpenTitulo(r: CraTitulo) {
           <Plus :size="14" /> NOVA OPERAÇÃO
         </button>
 
-        <SegmentedToggle
-          :model-value="tab"
-          :options="VIEW_TABS"
-          variant="surface"
-          @update:model-value="tab = $event as Tab"
-        />
+        <div class="flex" style="padding: 4px; background: var(--surface-sunken); border-radius: var(--radius-lg)">
+          <TabBtn :active="viewTab === 'operacoes'" @click="viewTab = 'operacoes'">VISUALIZAR OPERAÇÕES</TabBtn>
+          <TabBtn :active="viewTab === 'titulos'" @click="viewTab = 'titulos'">VISUALIZAR TÍTULOS</TabBtn>
+        </div>
 
         <div class="flex items-center" style="gap: 6px; position: relative">
           <button
@@ -201,12 +300,11 @@ function handleOpenTitulo(r: CraTitulo) {
           >
             <Filter :size="16" />
           </button>
-          <ColPanel v-if="showColPanel" :tab="tab" @close="showColPanel = false" />
+          <ColPanel v-if="showColPanel" :tab="viewTab" @close="showColPanel = false" />
         </div>
       </div>
 
-      <!-- Search (only in títulos tab) -->
-      <div v-if="tab === 'titulos'" style="padding: 20px; border-bottom: 1px solid var(--border-default)">
+      <div v-if="viewTab === 'titulos'" style="padding: 20px; border-bottom: 1px solid var(--border-default)">
         <div class="relative" style="background: var(--surface-sunken); border-radius: var(--radius-lg)">
           <Search :size="16" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--neutral-400)" />
           <input
@@ -217,11 +315,9 @@ function handleOpenTitulo(r: CraTitulo) {
         </div>
       </div>
 
-      <!-- Content -->
-      <OperacoesTable v-if="tab === 'operacoes'" :rows="cra.operacoes" @open="emit('openOperacao', $event)" />
+      <OperacoesTable v-if="viewTab === 'operacoes'" :rows="cra.operacoes" @open="emit('openOperacao', $event)" />
       <TitulosTable v-else :rows="filteredTitulos" :class-map="operacaoClassMap" @open="handleOpenTitulo" />
 
-      <!-- Footer -->
       <div class="flex items-center justify-end" style="padding: 16px 20px; border-top: 1px solid var(--border-default)">
         <div class="flex items-center" style="gap: 12px">
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase">
@@ -233,5 +329,61 @@ function handleOpenTitulo(r: CraTitulo) {
         </div>
       </div>
     </div>
+
+    <div
+      v-else-if="section === 'cessoes'"
+      style="background: var(--surface-card); border-width: 1px; border-style: solid; border-color: var(--border-default); border-radius: var(--radius-xl); overflow: hidden"
+    >
+      <CessoesTab
+        :cessoes="cra.cessoes"
+        @create="openCreateCessao"
+        @edit="openEditCessao"
+        @delete="deleteCessao"
+      />
+    </div>
+
+    <div
+      v-else-if="section === 'sacados'"
+      style="background: var(--surface-card); border-width: 1px; border-style: solid; border-color: var(--border-default); border-radius: var(--radius-xl); overflow: hidden"
+    >
+      <SacadosTab
+        :sacados="cra.sacados"
+        @open="emit('openSacado', $event)"
+        @update="handleSacadoUpdate"
+      />
+    </div>
+
+    <div
+      v-else-if="section === 'grupos'"
+      style="background: var(--surface-card); border-width: 1px; border-style: solid; border-color: var(--border-default); border-radius: var(--radius-xl); overflow: hidden"
+    >
+      <GruposEmpresariaisTab
+        :grupos="cra.grupos"
+        @open="emit('openGrupo', $event)"
+        @upload="openUploadContrato"
+        @toggle-apto="handleToggleApto"
+      />
+    </div>
+
+    <div
+      v-else-if="section === 'setup'"
+      style="background: var(--surface-card); border-width: 1px; border-style: solid; border-color: var(--border-default); border-radius: var(--radius-xl); overflow: hidden"
+    >
+      <SetupTab :setup="cra.setup" @update="handleSetupUpdate" />
+    </div>
+
+    <CessaoFormModal
+      v-if="cessaoModalOpen"
+      :cessao="editingCessao"
+      @close="closeCessaoModal"
+      @save="saveCessao"
+    />
+
+    <SubirContratoMaeModal
+      v-if="contratoModalOpen && uploadGrupo"
+      :initial-date="uploadGrupo.masterContractDate"
+      @close="closeContratoModal"
+      @save="saveContratoMae"
+    />
   </div>
 </template>

@@ -4,8 +4,8 @@ import Sidebar from '@/components/layout/Sidebar.vue';
 import Topbar from '@/components/layout/Topbar.vue';
 import DashboardView from './DashboardView.vue';
 import Placeholder from './Placeholder.vue';
-import { FidcScreen } from '@/features/fidc';
-import { CraScreen } from '@/features/cra';
+import { FidcScreen, FidcSimuladorScreen, FidcRelatoriosScreen } from '@/features/fidc';
+import { CraScreen, CraSimuladorScreen, CraRelatoriosScreen } from '@/features/cra';
 import {
   CobrancaScreen,
   TitulosScreen,
@@ -14,7 +14,13 @@ import {
   ResultadoNotificacoesScreen,
   CobrancaRelatoriosScreen,
 } from '@/features/cobranca';
-import { SolicitacaoScreen } from '@/features/solicitacao-operacao';
+import {
+  SolicitacaoScreen,
+  FundoPadraoScreen,
+  RelatorioPedidosScreen,
+  TaxasVeiculosScreen,
+  ValidacoesConfigScreen,
+} from '@/features/solicitacao-operacao';
 import { PassivoScreen } from '@/features/passivo';
 import {
   RatingsScreen,
@@ -27,8 +33,16 @@ import {
 type View =
   | 'dashboard'
   | 'solicitacoes'
+  | 'solicitacoes-fundo-padrao'
+  | 'solicitacoes-relatorios'
+  | 'solicitacoes-taxas-veiculos'
+  | 'solicitacoes-validacoes'
   | 'fidcs'
+  | 'fidcs-simulador'
+  | 'fidcs-relatorios'
   | 'cras'
+  | 'cras-simulador'
+  | 'cras-relatorios'
   | 'cobranca'
   | 'cobranca-titulos'
   | 'cobranca-dashboard'
@@ -49,8 +63,16 @@ type View =
 const titleMap: Record<View, string> = {
   dashboard: 'Bem-vindo(a) ao Minerva Gestão',
   solicitacoes: 'Solicitação de Operação',
+  'solicitacoes-fundo-padrao': 'Fundo Padrão',
+  'solicitacoes-relatorios': 'Relatórios de Solicitações',
+  'solicitacoes-taxas-veiculos': 'Taxas dos Veículos',
+  'solicitacoes-validacoes': 'Validações',
   fidcs: "Gestão de FIDC's",
+  'fidcs-simulador': 'Simulador',
+  'fidcs-relatorios': 'Relatórios',
   cras: "Gestão de CRA's",
+  'cras-simulador': 'Simulador',
+  'cras-relatorios': 'Relatórios',
   cobranca: 'Cobrança',
   'cobranca-titulos': 'Títulos',
   'cobranca-dashboard': 'Dashboard de Cobrança',
@@ -70,7 +92,10 @@ const titleMap: Record<View, string> = {
 };
 
 const VALID_VIEWS = new Set<View>([
-  'dashboard', 'solicitacoes', 'fidcs', 'cras', 'cobranca', 'cobranca-titulos', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-notif-cessao', 'cobranca-resultado-notif', 'cobranca-rel',
+  'dashboard', 'solicitacoes', 'solicitacoes-fundo-padrao', 'solicitacoes-relatorios', 'solicitacoes-taxas-veiculos', 'solicitacoes-validacoes',
+  'fidcs', 'fidcs-simulador', 'fidcs-relatorios',
+  'cras', 'cras-simulador', 'cras-relatorios',
+  'cobranca', 'cobranca-titulos', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-notif-cessao', 'cobranca-resultado-notif', 'cobranca-rel',
   'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-agrupamentos', 'risco-rel',
   'passivo', 'colab', 'rel', 'conf',
 ]);
@@ -88,6 +113,9 @@ const openMenu = ref<string | null>((() => {
   const v = new URLSearchParams(window.location.search).get('view') ?? '';
   if (v.startsWith('cobranca')) return 'cobranca';
   if (v.startsWith('risco')) return 'risco';
+  if (v.startsWith('solicitacoes')) return 'solicitacoes';
+  if (v.startsWith('cras')) return 'cras';
+  if (v.startsWith('fidcs')) return 'fidcs';
   return null;
 })());
 const userToggledSidebar = ref(false);
@@ -128,10 +156,13 @@ function handleToggleSidebar() {
 function handleModuleClick(title: string) {
   if (title === 'Solicitação de Operação') {
     view.value = 'solicitacoes';
+    openMenu.value = 'solicitacoes';
   } else if (title === "FIDC's") {
     view.value = 'fidcs';
+    openMenu.value = 'fidcs';
   } else if (title === "CRA's") {
     view.value = 'cras';
+    openMenu.value = 'cras';
   } else if (title === 'Cobrança') {
     view.value = 'cobranca-dashboard';
     openMenu.value = 'cobranca';
@@ -165,8 +196,16 @@ function handleModuleClick(title: string) {
         <div style="max-width: 1456px; margin: 0 auto">
           <DashboardView v-if="view === 'dashboard'" @module-click="handleModuleClick" />
           <SolicitacaoScreen v-else-if="view === 'solicitacoes'" />
+          <FundoPadraoScreen v-else-if="view === 'solicitacoes-fundo-padrao'" />
+          <RelatorioPedidosScreen v-else-if="view === 'solicitacoes-relatorios'" />
+          <TaxasVeiculosScreen v-else-if="view === 'solicitacoes-taxas-veiculos'" />
+          <ValidacoesConfigScreen v-else-if="view === 'solicitacoes-validacoes'" />
           <FidcScreen v-else-if="view === 'fidcs'" />
+          <FidcSimuladorScreen v-else-if="view === 'fidcs-simulador'" />
+          <FidcRelatoriosScreen v-else-if="view === 'fidcs-relatorios'" />
           <CraScreen v-else-if="view === 'cras'" />
+          <CraSimuladorScreen v-else-if="view === 'cras-simulador'" />
+          <CraRelatoriosScreen v-else-if="view === 'cras-relatorios'" />
           <TitulosScreen v-else-if="view === 'cobranca-titulos'" />
           <CobrancaDashboardScreen
             v-else-if="view === 'cobranca-dashboard'"

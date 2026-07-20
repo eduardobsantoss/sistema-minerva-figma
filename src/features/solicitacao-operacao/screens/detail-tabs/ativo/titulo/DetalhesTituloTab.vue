@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { Building2, User } from 'lucide-vue-next';
 import { brl, type ContratoAtivo } from '../../../../data/operacaoData';
 import { Section, Field } from '../../shared';
+import Participant from './Participant.vue';
 
 defineProps<{ ativo: ContratoAtivo }>();
 </script>
@@ -32,11 +34,9 @@ defineProps<{ ativo: ContratoAtivo }>();
       </div>
     </Section>
     <Section title="Participantes">
-      <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 16px">
-        <Field label="Cedente">{{ ativo.cedenteNome }}</Field>
-        <Field label="Documento cedente">{{ ativo.cedenteDocumento }}</Field>
-        <Field label="Sacado">{{ ativo.sacadoNome }}</Field>
-        <Field label="Documento sacado">{{ ativo.sacadoDocumento }}</Field>
+      <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px">
+        <Participant role="Cedente" :name="ativo.cedenteNome" :cnpj="ativo.cedenteDocumento" :icon="Building2" />
+        <Participant role="Sacado" :name="ativo.sacadoNome" :cnpj="ativo.sacadoDocumento" :icon="User" />
       </div>
     </Section>
   </div>

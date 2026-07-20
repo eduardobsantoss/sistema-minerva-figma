@@ -2,6 +2,8 @@
 
 > Fonte de verdade complementar: `guidelines/Guidelines.md` (design tokens e padrão estrutural de telas de detalhe). Este documento cobre **todo o módulo** em `src/features/risco/` — navegação, dados mockados, telas, modais e convenções de UI.
 
+> **Pixel-perfect de Grupos Empresariais (listagem + detalhe + abas + modais):** ver [risco-grupos.md](./risco-grupos.md).
+
 ---
 
 ## 1. Onde fica e como o módulo é montado
@@ -44,7 +46,7 @@ src/features/risco/
 │       ├── GarantiaSubTab.vue
 │       ├── CedentesTab.vue
 │       ├── HistoricoTab.vue
-│       └── shared/                   → TabPill, TabCard, FormField, ToggleRow...
+│       └── shared/                   → TabCard, FormField, ToggleRow, Section…
 └── components/modals/
     ├── CedenteDetailModal.vue
     ├── VincularAgrupamentoModal.vue
@@ -190,20 +192,22 @@ flowchart TD
 
 ### Grupos Empresariais (`GruposScreen` → `GruposListScreen`)
 
+> Spec visual completa (tokens, grids, paddings, estados): **[risco-grupos.md](./risco-grupos.md)**.
+
 Listagem completa com:
 - Busca por nome, filtros avançados (gerente, tipo cliente, parecer, vencimento), quick filters de parecer (Vencido / Próximo a Vencer / Em Dia);
 - Colunas configuráveis (menu com `Checkbox` padrão `@/components/ui/Checkbox.vue`);
-- Paginação (10/25/50 por página);
+- Paginação (5/10/25/50; default 10);
 - Menu ⋮ por linha: Parametrizações, Vincular a um veículo, Transferir gerente, Configurar notificações, Habilitar para operar;
 - Clique na linha → `GrupoDetailScreen`.
 
 ### Detalhe do Grupo (`GrupoDetailScreen.vue`)
 
-Header padrão (voltar 48×48, eyebrow "Risco · Grupo Empresarial", badge de status, menu ⋮: Vincular a um veículo, Transferir gerente, Configurar notificações, Habilitar para operar) + **4 abas TabPill**:
+Header padrão (voltar 48×48, eyebrow "Risco · Grupo Empresarial", badge de status, menu ⋮: Vincular a um veículo, Transferir gerente, Configurar notificações, Habilitar para operar) + **4 abas `SegmentedToggle` `variant="brand"`** (não TabPill):
 
 | Aba | Componente | Conteúdo |
 |---|---|---|
-| Detalhes | `DetalhesTab.vue` | Partes relacionadas, Parecer de Crédito, Rating, Gerente, Limites por produto |
+| Detalhes | `DetalhesTab.vue` | Partes relacionadas, Parecer de Crédito, Rating, Gerente |
 | Parametrizações | `ParametrizacoesTab.vue` | Sub-abas underline: Limite · Autoatendimento · Geral · Garantia |
 | Cedentes | `CedentesTab.vue` | Tabela paginada → `CedenteDetailModal` |
 | Histórico | `HistoricoTab.vue` | Timeline de eventos |
@@ -257,7 +261,7 @@ Salvar em cada sub-aba emite `@save` → `ParametrizacoesTab` propaga `@change` 
 `CedenteDetailModal.vue` abre ao clicar numa linha em `CedentesTab`:
 
 - Header com KPIs (`KpiCard`: títulos em aberto, risco tomado, data abertura);
-- Abas TabPill: **Contatos** · **Endereços** · **Documentos**;
+- Abas `SegmentedToggle` `variant="brand"`: **Contatos** · **Endereços** · **Documentos**;
 - Painéis em `components/modals/cedente-detail/` (`ContatosPanel`, `EnderecosPanel`, `DocumentosPanel`);
 - Botão editar → `EditarCadastroCedenteModal` (formulário PF/PJ completo);
 - Emite `@update` → `CedentesTab` → `GrupoDetailScreen` substitui o cedente no array `det.cedentes`.
@@ -289,8 +293,8 @@ Reaproveitar em novas telas do módulo — **não** repetir estilos inline de la
 
 | Componente | Papel |
 |---|---|
-| `TabPill.vue` | Abas externas (Detalhes / Parametrizações / Cedentes / Histórico) |
 | `TabCard.vue` | Card branco com ícone, título, slot de conteúdo e botão Salvar opcional (`has-save`) |
+| *(abas nível 1)* | Usar `@/components/ui/SegmentedToggle.vue` `variant="brand"` — **não** há `TabPill` |
 | `Section.vue` | Título uppercase laranja + conteúdo (usado em Relatórios) |
 | `FieldLabel.vue` | Label de formulário com estado de erro |
 | `FormField.vue` | Input texto com label |

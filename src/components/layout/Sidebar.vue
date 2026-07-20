@@ -22,6 +22,9 @@ import {
   Gauge,
   ScrollText,
   Layers,
+  Wallet,
+  Percent,
+  ShieldCheck,
 } from 'lucide-vue-next';
 import gciLogoMark from '@/assets/gci-logo-mark.png';
 import gciLogoFull from '@/assets/gci-logo-full.png';
@@ -42,9 +45,38 @@ interface NavItem {
 
 const items: NavItem[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { key: 'solicitacoes', label: 'Solicitação de Operação', icon: ClipboardList },
-  { key: 'fidcs', label: "FIDC's", icon: Landmark },
-  { key: 'cras', label: "CRA's", icon: Briefcase },
+  {
+    key: 'solicitacoes',
+    label: 'Solicitação de Operação',
+    icon: ClipboardList,
+    children: [
+      { key: 'solicitacoes', label: 'Solicitações', icon: ClipboardList },
+      { key: 'solicitacoes-fundo-padrao', label: 'Fundo Padrão', icon: Wallet },
+      { key: 'solicitacoes-relatorios', label: 'Relatórios', icon: BarChart3 },
+      { key: 'solicitacoes-taxas-veiculos', label: 'Taxas dos Veículos', icon: Percent },
+      { key: 'solicitacoes-validacoes', label: 'Validações', icon: ShieldCheck },
+    ],
+  },
+  {
+    key: 'fidcs',
+    label: "FIDC's",
+    icon: Landmark,
+    children: [
+      { key: 'fidcs', label: 'Gestão', icon: Landmark },
+      { key: 'fidcs-simulador', label: 'Simulador', icon: Gauge },
+      { key: 'fidcs-relatorios', label: 'Relatórios', icon: BarChart3 },
+    ],
+  },
+  {
+    key: 'cras',
+    label: "CRA's",
+    icon: Briefcase,
+    children: [
+      { key: 'cras', label: 'Gestão', icon: Briefcase },
+      { key: 'cras-simulador', label: 'Simulador', icon: Gauge },
+      { key: 'cras-relatorios', label: 'Relatórios', icon: BarChart3 },
+    ],
+  },
   {
     key: 'cobranca',
     label: 'Cobrança',

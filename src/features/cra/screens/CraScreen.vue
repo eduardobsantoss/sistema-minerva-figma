@@ -4,25 +4,70 @@ import CraListScreen from './CraListScreen.vue';
 import CraDetailScreen from './CraDetailScreen.vue';
 import CraOperacaoDetailScreen from './CraOperacaoDetailScreen.vue';
 import CraTitleDetailScreen from './CraTitleDetailScreen.vue';
+import SacadoDetailScreen from './SacadoDetailScreen.vue';
+import GrupoEmpresarialDetailScreen from './GrupoEmpresarialDetailScreen.vue';
 import CreateCraModal, { type NewCraData } from '../components/CreateCraModal.vue';
 import CreateCraOperacaoModal, { type NewCraOperacaoData } from '../components/CreateCraOperacaoModal.vue';
-import { cras as initialCras, type Cra, type CraOperacao } from '../data/craData';
+import { cras as initialCras, type Cra, type CraOperacao, type Cessao, type Sacado, type CraSetup, type GrupoEmpresarialVinculo } from '../data/craData';
 
 type Route =
   | { level: 'list' }
   | { level: 'cra'; craId: string }
   | { level: 'operacao'; craId: string; operacaoId: string }
-  | { level: 'titulo'; craId: string; operacaoId: string; tituloId: string };
+  | { level: 'titulo'; craId: string; operacaoId: string; tituloId: string }
+  | { level: 'sacado'; craId: string; sacadoId: string }
+  | { level: 'grupo'; craId: string; grupoId: string };
+
+function defaultSetup(nome: string): CraSetup {
+  return {
+    nome,
+    custodiante: '',
+    cessionaria: '—',
+    prestadorServico: '',
+    beneficiarioFinal: '—',
+    grupoOperacao: '',
+    tipoCalculoElegibilidade: 'Valor presente',
+    accrual: false,
+    exigirIe: false,
+    topSacados: false,
+    topCedentes: false,
+    tiposTituloAtivos: false,
+    entregaFutura: false,
+    limiteConcentracaoPct: '',
+    limiteVencimentoMin: '',
+    limiteVencimentoMax: '',
+    bondTypes: [],
+    carteiraNome: '',
+    carteiraBanco: '',
+    carteiraSlug: '',
+    carteiraCnab: '',
+    carteiraConta: '',
+    carteiraAgencia: '',
+    vencimentoFimSemana: false,
+    beneficiarioNome: '',
+    beneficiarioCep: '',
+    beneficiarioCidade: '',
+    beneficiarioUf: '',
+    jurosBoleto: '',
+    multaBoleto: '',
+    eligibilityTops: [],
+  };
+}
 
 function buildCraFromForm(data: NewCraData): Cra {
+  const nome = data.nomeFantasia || 'NOVO CRA';
   return {
     id: `cra-${Date.now()}`,
-    nome: data.nomeFantasia || 'NOVO CRA',
+    nome,
     cnpj: '—',
     cessionaria: '—',
     status: 'EM ANDAMENTO',
     tipo: data.tipoOperacao === 'Mono CRA' ? 'MONO CRA' : 'MULTI CRA',
     operacoes: [],
+    cessoes: [],
+    sacados: [],
+    grupos: [],
+    setup: defaultSetup(nome),
   };
 }
 
@@ -69,6 +114,44 @@ function handleCreateOperacao(data: NewCraOperacaoData) {
   creatingOperacao.value = false;
 }
 
+function updateCessoes(craId: string, cessoes: Cessao[]) {
+  craList.value = craList.value.map((c) => (c.id === craId ? { ...c, cessoes } : c));
+}
+
+function updateSacados(craId: string, sacados: Sacado[]) {
+  craList.value = craList.value.map((c) => (c.id === craId ? { ...c, sacados } : c));
+}
+
+function updateGrupos(craId: string, grupos: GrupoEmpresarialVinculo[]) {
+  craList.value = craList.value.map((c) => (c.id === craId ? { ...c, grupos } : c));
+}
+
+function updateSetup(craId: string, setup: CraSetup) {
+  craList.value = craList.value.map((c) => (c.id === craId ? { ...c, setup } : c));
+}
+
+function handleSacadoUpdate(s: Sacado) {
+  const r = route.value;
+  if (r.level !== 'sacado') return;
+  const current = craList.value.find((c) => c.id === r.craId);
+  if (!current) return;
+  updateSacados(
+    r.craId,
+    current.sacados.map((x) => (x.id === s.id ? s : x)),
+  );
+}
+
+function handleGrupoUpdate(g: GrupoEmpresarialVinculo) {
+  const r = route.value;
+  if (r.level !== 'grupo') return;
+  const current = craList.value.find((c) => c.id === r.craId);
+  if (!current) return;
+  updateGrupos(
+    r.craId,
+    current.grupos.map((x) => (x.id === g.id ? g : x)),
+  );
+}
+
 const cra = computed(() => {
   const r = route.value;
   if (r.level === 'list') return undefined;
@@ -86,10 +169,21 @@ const titulo = computed(() => {
   if (r.level !== 'titulo') return undefined;
   return operacao.value?.titulos.find((t) => t.id === r.tituloId);
 });
+
+const sacado = computed(() => {
+  const r = route.value;
+  if (r.level !== 'sacado') return undefined;
+  return cra.value?.sacados.find((s) => s.id === r.sacadoId);
+});
+
+const grupo = computed(() => {
+  const r = route.value;
+  if (r.level !== 'grupo') return undefined;
+  return cra.value?.grupos.find((g) => g.id === r.grupoId);
+});
 </script>
 
 <template>
-  <!-- ── List ──────────────────────────────────────────────────────── -->
   <template v-if="route.level === 'list'">
     <CraListScreen
       :cras="craList"
@@ -99,7 +193,6 @@ const titulo = computed(() => {
     <CreateCraModal v-if="creating" @close="creating = false" @create="handleCreateCra" />
   </template>
 
-  <!-- ── CRA detail ────────────────────────────────────────────────── -->
   <template v-else-if="route.level === 'cra' && cra">
     <CraDetailScreen
       :cra="cra"
@@ -107,6 +200,12 @@ const titulo = computed(() => {
       @create-operacao="creatingOperacao = true"
       @open-operacao="(operacaoId) => (route = { level: 'operacao', craId: cra!.id, operacaoId })"
       @open-titulo="(operacaoId, tituloId) => (route = { level: 'titulo', craId: cra!.id, operacaoId, tituloId })"
+      @open-sacado="(sacadoId) => (route = { level: 'sacado', craId: cra!.id, sacadoId })"
+      @open-grupo="(grupoId) => (route = { level: 'grupo', craId: cra!.id, grupoId })"
+      @update-cessoes="(cessoes) => updateCessoes(cra!.id, cessoes)"
+      @update-sacados="(sacados) => updateSacados(cra!.id, sacados)"
+      @update-grupos="(grupos) => updateGrupos(cra!.id, grupos)"
+      @update-setup="(setup) => updateSetup(cra!.id, setup)"
     />
     <CreateCraOperacaoModal
       v-if="creatingOperacao"
@@ -115,7 +214,22 @@ const titulo = computed(() => {
     />
   </template>
 
-  <!-- ── Operação detail ───────────────────────────────────────────── -->
+  <SacadoDetailScreen
+    v-else-if="route.level === 'sacado' && cra && sacado"
+    :cra="cra"
+    :sacado="sacado"
+    @back="route = { level: 'cra', craId: cra.id }"
+    @update="handleSacadoUpdate"
+  />
+
+  <GrupoEmpresarialDetailScreen
+    v-else-if="route.level === 'grupo' && cra && grupo"
+    :cra="cra"
+    :grupo="grupo"
+    @back="route = { level: 'cra', craId: cra.id }"
+    @update="handleGrupoUpdate"
+  />
+
   <CraOperacaoDetailScreen
     v-else-if="route.level === 'operacao' && cra && operacao"
     :cra="cra"
@@ -124,7 +238,6 @@ const titulo = computed(() => {
     @open-titulo="(tituloId) => (route = { level: 'titulo', craId: cra!.id, operacaoId: operacao!.id, tituloId })"
   />
 
-  <!-- ── Título detail ─────────────────────────────────────────────── -->
   <CraTitleDetailScreen
     v-else-if="route.level === 'titulo' && cra && operacao && titulo"
     :cra="cra"

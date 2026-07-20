@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
-import { Tag, CalendarClock, Trash2 } from 'lucide-vue-next';
+import { Tag, CalendarClock, Trash2, Handshake } from 'lucide-vue-next';
 import { brl, UF_OPTIONS, PAISES_DDI, type ParcelaAtivo } from '../../../data/operacaoData';
 import {
   BentoBox,
@@ -11,7 +11,21 @@ import {
   AddButton,
   EmptyState,
 } from '../adicionar-contrato';
-import { MOCK_CLIENTES_MINUTA, cidadesDaUf, type TituloMinutaForm } from '../../../data/minutaData';
+import {
+  MOCK_CLIENTES_MINUTA,
+  cidadesDaUf,
+  CESSAO_TIPO_OPTS,
+  CESSAO_PARAM_OPTS,
+  CESSAO_TIPO_CALCULO_OPTS,
+  CESSAO_FREQUENCIA_OPTS,
+  CESSAO_OPERADOR_OPTS,
+  CESSAO_INDICADOR_OPTS,
+  CESSAO_CAPITALIZACAO_OPTS,
+  CESSAO_BASE_DIAS_OPTS,
+  CESSAO_INICIO_JUROS_OPTS,
+  CESSAO_DATA_ACCRUAL_OPTS,
+  type TituloMinutaForm,
+} from '../../../data/minutaData';
 
 const props = defineProps<{
   valorOperacao: number;
@@ -30,12 +44,58 @@ const cidadeOpts = computed(() => cidadesDaUf(form.value.estado));
 const pagamentoForm = reactive({ amortizacao: '', vencimento: '', pagarJuros: false, valorJuros: '' });
 const somatoriaAmortizacao = computed(() => cronograma.value.reduce((acc, c) => acc + (Number(c.amortizacao) || 0), 0));
 
+const isPosFixado = computed(() => {
+  const t = (props.tipoCalculo || '').toLowerCase();
+  return t.includes('pós') || t.includes('pos');
+});
+
+const isPersonalizado = computed(() => form.value.cessao.parametrizacaoCalculo === 'Personalizado');
+
+const conversaoLabel = computed(() =>
+  form.value.cessao.conversaoIndice
+    ? 'Conversão de índice: forçar base 360'
+    : 'Conversão de índice: usar última taxa disponível',
+);
+
 watch(
   () => form.value.estado,
   () => {
     if (form.value.cidade && !cidadeOpts.value.includes(form.value.cidade)) {
       form.value.cidade = '';
     }
+  },
+);
+
+/** Watchers do legado: pré/pós-fixado afetam cronograma */
+watch(
+  isPosFixado,
+  (pos) => {
+    if (pos) {
+      form.value.possuiCronograma = true;
+      form.value.cessao.indicadorTaxa = '';
+      form.value.cessao.operador = '';
+    } else {
+      form.value.possuiCronograma = false;
+      form.value.cessao.indicadorTaxa = 'Indefinido';
+    }
+  },
+  { immediate: true },
+);
+
+/** Preset de parametrização sobrescreve campos; Personalizado libera edição */
+watch(
+  () => form.value.cessao.parametrizacaoCalculo,
+  (param) => {
+    if (!param || param === 'Personalizado') return;
+    const pos = param.toLowerCase().includes('pós') || param.toLowerCase().includes('pos');
+    form.value.cessao.frequenciaTaxa = pos ? 'Diário' : 'Mensal';
+    form.value.cessao.tipoCapitalizacao = pos ? 'Composto' : 'Simples';
+    form.value.cessao.baseDias = pos ? '252' : '360';
+    form.value.cessao.inicioContagemJuros = 'D0';
+    form.value.cessao.dataAccrual = 'Data da cessão/desembolso';
+    form.value.cessao.usarCalculoUra = param.startsWith('URA');
+    form.value.cessao.indicadorTaxa = pos ? 'CDI' : 'Indefinido';
+    form.value.cessao.operador = pos ? 'Multiplicativo' : '';
   },
 );
 
@@ -111,10 +171,122 @@ function gerarPagamentosAutomaticos() {
       </div>
     </BentoBox>
 
+    <BentoBox title="Dados da cessão" :icon="Handshake">
+      <div class="flex flex-col" style="gap: 14px">
+        <StepGrid>
+          <FormField label="Nome" placeholder="—" required :span="5" v-model="form.cessao.nome" />
+          <FormField label="Data do desembolso" placeholder="dd/mm/aaaa" required :span="4" v-model="form.cessao.dataDesembolso" />
+          <FormField label="Taxa da cessão (%)" placeholder="0,00" required :span="3" v-model="form.cessao.taxaCessao" />
+          <SelectField label="Tipo" :options="CESSAO_TIPO_OPTS" placeholder="Selecione" required :span="4" v-model="form.cessao.tipo" />
+          <SelectField
+            label="Parametrização de cálculo"
+            :options="CESSAO_PARAM_OPTS"
+            placeholder="Selecione"
+            required
+            :span="5"
+            v-model="form.cessao.parametrizacaoCalculo"
+          />
+          <SelectField
+            label="Tipo de cálculo"
+            :options="CESSAO_TIPO_CALCULO_OPTS"
+            placeholder="Selecione"
+            required
+            :span="3"
+            v-model="form.cessao.tipoCalculoCessao"
+          />
+          <FormField label="% em garantia de recebíveis" placeholder="0,00" :span="4" v-model="form.cessao.pctGarantiaRecebiveis" />
+          <FormField label="% em garantia de outras garantias" placeholder="0,00" :span="4" v-model="form.cessao.pctGarantiaOutras" />
+          <FormField label="Desconto adicional (%)" placeholder="0" :span="4" v-model="form.cessao.descontoAdicional" />
+          <FormField label="Taxa de multa (%)" placeholder="0,00" required :span="6" v-model="form.cessao.taxaMulta" />
+          <FormField label="Taxa de mora (%)" placeholder="0,00" required :span="6" v-model="form.cessao.taxaMora" />
+        </StepGrid>
+
+        <ToggleRow
+          label="Usar cálculo URA / de mercado"
+          :on="form.cessao.usarCalculoUra"
+          :disabled="!isPersonalizado && !!form.cessao.parametrizacaoCalculo"
+          @toggle="form.cessao.usarCalculoUra = !form.cessao.usarCalculoUra"
+        />
+
+        <StepGrid v-if="isPersonalizado || form.cessao.parametrizacaoCalculo">
+          <SelectField
+            label="Frequência da taxa"
+            :options="CESSAO_FREQUENCIA_OPTS"
+            placeholder="Selecione"
+            :span="4"
+            :disabled="!isPersonalizado"
+            v-model="form.cessao.frequenciaTaxa"
+          />
+          <SelectField
+            label="Operador"
+            :options="CESSAO_OPERADOR_OPTS"
+            placeholder="Selecione"
+            :span="4"
+            :disabled="!isPersonalizado || !isPosFixado"
+            v-model="form.cessao.operador"
+          />
+          <SelectField
+            label="Indicador da taxa"
+            :options="CESSAO_INDICADOR_OPTS"
+            placeholder="Selecione"
+            :span="4"
+            :disabled="!isPersonalizado"
+            v-model="form.cessao.indicadorTaxa"
+          />
+          <SelectField
+            label="Tipo de capitalização"
+            :options="CESSAO_CAPITALIZACAO_OPTS"
+            placeholder="Selecione"
+            :span="4"
+            :disabled="!isPersonalizado"
+            v-model="form.cessao.tipoCapitalizacao"
+          />
+          <SelectField
+            label="Base de dias"
+            :options="CESSAO_BASE_DIAS_OPTS"
+            placeholder="Selecione"
+            :span="4"
+            :disabled="!isPersonalizado"
+            v-model="form.cessao.baseDias"
+          />
+          <SelectField
+            label="Início da contagem de juros"
+            :options="CESSAO_INICIO_JUROS_OPTS"
+            placeholder="Selecione"
+            :span="4"
+            :disabled="!isPersonalizado"
+            v-model="form.cessao.inicioContagemJuros"
+          />
+          <SelectField
+            label="Data usada para Accrual"
+            :options="CESSAO_DATA_ACCRUAL_OPTS"
+            placeholder="Selecione"
+            :span="6"
+            :disabled="!isPersonalizado"
+            v-model="form.cessao.dataAccrual"
+          />
+        </StepGrid>
+
+        <template v-if="isPersonalizado || form.cessao.parametrizacaoCalculo">
+          <ToggleRow
+            label="Usar certificador de e-mail"
+            :on="form.cessao.usarCertificadorEmail"
+            @toggle="form.cessao.usarCertificadorEmail = !form.cessao.usarCertificadorEmail"
+          />
+          <ToggleRow
+            :label="conversaoLabel"
+            :on="form.cessao.conversaoIndice"
+            @toggle="form.cessao.conversaoIndice = !form.cessao.conversaoIndice"
+          />
+        </template>
+      </div>
+    </BentoBox>
+
     <ToggleRow
       label="Possui cronograma de pagamentos"
       :on="form.possuiCronograma"
-      @toggle="form.possuiCronograma = !form.possuiCronograma"
+      :disabled="isPosFixado"
+      @toggle="!isPosFixado && (form.possuiCronograma = !form.possuiCronograma)"
     />
 
     <BentoBox v-if="form.possuiCronograma" title="Cronograma de Pagamentos" :icon="Tag">
@@ -135,7 +307,12 @@ function gerarPagamentosAutomaticos() {
           <FormField label="Amortização" placeholder="R$ 0,00" v-model="pagamentoForm.amortizacao" />
           <FormField label="Vencimento" placeholder="dd/mm/aaaa" required v-model="pagamentoForm.vencimento" />
           <ToggleRow label="Pagar juros" :on="pagamentoForm.pagarJuros" compact @toggle="pagamentoForm.pagarJuros = !pagamentoForm.pagarJuros" />
-          <FormField label="Valor do juros" placeholder="R$ 0,00" v-model="pagamentoForm.valorJuros" :disabled="!pagamentoForm.pagarJuros" />
+          <FormField
+            label="Valor do juros"
+            placeholder="R$ 0,00"
+            v-model="pagamentoForm.valorJuros"
+            :disabled="!pagamentoForm.pagarJuros || isPosFixado"
+          />
           <AddButton @click="addPagamento">Adicionar pagamento</AddButton>
         </div>
 

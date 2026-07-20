@@ -44,6 +44,7 @@ import {
   emptyMinutaResumo,
   emptyBoletimSubscricao,
   emptyCetForm,
+  emptyCessaoForm,
   type PessoaMinuta,
   type ProdutoMinuta,
   type AvalistaMinutaRow,
@@ -243,6 +244,7 @@ const tituloForm = ref<TituloMinutaForm>({
   cronogramaAutomatico: false,
   fluxoAmortizacao: '',
   fluxoJuros: '',
+  cessao: emptyCessaoForm(),
   sacadoDocumento: '',
   sacadoNome: '',
   sacadoEmail: '',
@@ -331,6 +333,7 @@ function buildMinuta(): MinutaResumo {
     emissao: emissaoPayload,
     produtos: cat === 'CPR' ? [...produtos.value] : [],
     garantias: [...garantias.value],
+    cessao: { ...tituloForm.value.cessao },
   };
 
   if (cat === 'NC') {

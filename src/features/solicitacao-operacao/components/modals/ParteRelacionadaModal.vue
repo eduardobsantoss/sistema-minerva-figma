@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import { X, Tag, User, Building2, Phone } from 'lucide-vue-next';
 import { UF_OPTIONS, PAISES_DDI, enriquecerParteRelacionada, type ParteTipo, type ParteRelacionada } from '../../data/operacaoData';
 import { BentoBox, BentoGrid, FormField, SelectField } from './parte-relacionada';
 import { ToggleRow } from './adicionar-contrato';
 import Checkbox from '@/components/ui/Checkbox.vue';
+import { estadoCivilExigeConjuge, emptyConjugeMinuta, NACIONALIDADE_OPTS as NAC_OPTS, type ConjugeMinuta } from '../../data/minutaData';
+import SpouseFields from './minuta/SpouseFields.vue';
 
 const emit = defineEmits<{ close: []; create: [data: ParteRelacionada] }>();
 
@@ -42,9 +44,10 @@ export interface NewParteRelacionadaData {
   telefone: string;
   tipos: string[];
   possuiConjuge: boolean;
+  orgaoEmissorRg: string;
 }
 
-const NACIONALIDADE_OPTS = ['Brasileira', 'Estrangeira'];
+const NACIONALIDADE_OPTS = NAC_OPTS;
 const ESTADO_CIVIL_OPTS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável'];
 const PAIS_OPTS = PAISES_DDI.map((p) => p.pais);
 const DDI_OPTS = PAISES_DDI.map((p) => p.ddi);
@@ -92,7 +95,17 @@ const form = reactive<NewParteRelacionadaData>({
   telefone: '',
   tipos: [],
   possuiConjuge: false,
+  orgaoEmissorRg: '',
 });
+
+const conjuge = reactive<ConjugeMinuta>(emptyConjugeMinuta());
+
+watch(
+  () => form.estadoCivil,
+  (ec) => {
+    form.possuiConjuge = estadoCivilExigeConjuge(ec);
+  },
+);
 
 const tipoPessoaLabel = computed({
   get: () => (form.tipoPessoa === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica'),
@@ -226,16 +239,23 @@ function handleSubmit() {
                 <SelectField label="Natureza" :options="['Pessoa Física', 'Pessoa Jurídica']" v-model="tipoPessoaLabel" />
               </div>
 
-              <BentoGrid v-if="form.tipoPessoa === 'FISICA'" :cols="3">
-                <FormField label="CPF" placeholder="000.000.000-00" v-model="form.cpf" />
-                <FormField label="Nome" placeholder="Nome completo" v-model="form.nomeFisica" />
-                <FormField label="RG" placeholder="0000000" v-model="form.rg" />
-                <FormField label="Inscrição do produtor rural" placeholder="—" v-model="form.inscricaoProdutorRural" />
-                <SelectField label="Nacionalidade" :options="NACIONALIDADE_OPTS" placeholder="Selecione" v-model="form.nacionalidade" />
-                <FormField label="Data de nascimento" placeholder="dd/mm/aaaa" v-model="form.dataNascimento" />
-                <FormField label="Profissão" placeholder="—" v-model="form.profissao" />
-                <SelectField label="Estado Civil" :options="ESTADO_CIVIL_OPTS" placeholder="Selecione" v-model="form.estadoCivil" />
-              </BentoGrid>
+              <template v-if="form.tipoPessoa === 'FISICA'">
+                <BentoGrid :cols="3">
+                  <FormField label="CPF" placeholder="000.000.000-00" v-model="form.cpf" />
+                  <FormField label="Nome completo" placeholder="Nome completo" v-model="form.nomeFisica" />
+                  <FormField label="RG" placeholder="0000000" v-model="form.rg" />
+                  <FormField label="Órgão emissor do RG" placeholder="SSP/SP" v-model="form.orgaoEmissorRg" />
+                  <FormField label="Inscrição do produtor rural" placeholder="—" v-model="form.inscricaoProdutorRural" />
+                  <SelectField label="Nacionalidade" :options="NACIONALIDADE_OPTS" placeholder="Selecione" v-model="form.nacionalidade" />
+                  <FormField label="Data de nascimento" placeholder="dd/mm/aaaa" v-model="form.dataNascimento" />
+                  <FormField label="Profissão" placeholder="—" v-model="form.profissao" />
+                  <SelectField label="Estado Civil" :options="ESTADO_CIVIL_OPTS" placeholder="Selecione" v-model="form.estadoCivil" />
+                </BentoGrid>
+                <SpouseFields
+                  v-if="estadoCivilExigeConjuge(form.estadoCivil)"
+                  v-model="conjuge"
+                />
+              </template>
               <BentoGrid v-else :cols="3">
                 <FormField label="CNPJ" placeholder="00.000.000/0000-00" v-model="form.cnpj" />
                 <FormField label="Razão Social" placeholder="—" v-model="form.razaoSocial" />

@@ -584,7 +584,7 @@ PAISES_DDI = [
 7. Natureza = `SelectField` (não toggle Pessoa Física/Jurídica custom).
 8. Credora padrão preenche e desabilita doc; modo doc habilita selects de contato/endereço/rep.
 9. Avalistas a partir de partes tipo AVA; “cônjuge interveniente” só se `possuiConjuge`.
-10. Garantias nesta fase: só **AF. Estoque** e **Penhor de Estoque** (mesmo para NC/CCB — catálogo expandido fora de escopo).
+10. Garantias: catálogo expandido (AF. Estoque, Penhor de Estoque, Alienação Fiduciária, Hipoteca, Penhor, Fiança, Cessão Fiduciária, Aval, Caução) + instrumento particular, constituição, testemunhas, obrigação garantida; detalhes de estoque só para tipos de estoque.
 11. Opções de dropdown vêm dos mocks aprovados — não inventar labels.
 12. NC: emissora **só PJ**, máximo **1**; templates habilitados (2 opções); **sem** “Gerar via não negociável”.
 13. NC + `unidadeNegocio === 'Ceres Trading'` → step **Boletim de Subscrição**.
@@ -669,11 +669,12 @@ CPR: Emitente → Credora → Avalista → Emissão → Produto → Garantia →
 | Step | Tipo | Campos-chave |
 |---|---|---|
 | Escriturador | NC | Padrão Vortx/BMP · PJ · contato/endereço · **sem** representante legal |
-| Informação de Pagamento | NC | Conta bancária (mock) + adicionar conta inline |
+| Informação de Pagamento | NC | Conta bancária + form completo (banco, agência+dígito, conta+dígito, tipo Corrente/Poupança, PIX, titular) |
 | Boletim de Subscrição | NC condicional | Toggle Ceres Securitizadora · subscritor · conta · qtd/preços · dias integração |
 | Endossatário | CCB | Padrão Ceres Trading / Ceres Securitizadora · mesmo padrão Credora |
 | CET | CCB | CET dia/mês/ano (conversão) · IOF · custo emissão · taxas A.D./A.M./A.A. · líquido/CCB/prazo readonly |
 | Emissão (extras NC) | NC | Número · Série · Valor nominal unitário · Quantidade · Valor total |
+| Título — Dados da cessão | Todos | Nome · desembolso · taxa · tipo · parametrização · tipo cálculo · % garantias · multa/mora · URA · campos Personalizado · certificador · conversão índice; watchers pré/pós-fixado |
 
 ### Restrições Emitente / Credora
 
@@ -683,6 +684,6 @@ CPR: Emitente → Credora → Avalista → Emissão → Produto → Garantia →
 
 ### Payload (`MinutaResumo` estendido)
 
-Campos opcionais: `escriturador`, `escrituradorPadrao`, `contaBancariaId`, `boletimSubscricao`, `endossatario`, `endossatarioPadrao`, `cet`.  
+Campos opcionais: `escriturador`, `escrituradorPadrao`, `contaBancariaId`, `boletimSubscricao`, `endossatario`, `endossatarioPadrao`, `cet`, `cessao`.  
 `emissao` ganha `numero?`, `serie?`, `valorNominalUnitario?`, `quantidade?`, `valorTotal?`.  
 CCB força `emissao: { uf: 'SP', cidade: 'São Paulo' }` no `buildMinuta`.

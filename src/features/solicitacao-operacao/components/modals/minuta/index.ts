@@ -12,3 +12,4 @@ export { default as InformacaoPagamentoStep } from './InformacaoPagamentoStep.vu
 export { default as BoletimSubscricaoStep } from './BoletimSubscricaoStep.vue';
 export { default as EndossatarioStep } from './EndossatarioStep.vue';
 export { default as CetStep } from './CetStep.vue';
+export { default as SpouseFields } from './SpouseFields.vue';

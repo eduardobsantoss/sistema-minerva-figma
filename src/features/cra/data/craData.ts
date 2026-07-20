@@ -4,6 +4,102 @@ export type TituloStatus = 'CONFIRMADO' | 'PENDENTE' | 'VENCIDO';
 
 export type CessaoStatus = 'LIQUIDADO' | 'PENDENTE' | 'PARCIAL';
 
+/** Status da cessão (Round) na listagem do veículo */
+export type RoundStatus = 'ABERTA' | 'FECHADA' | 'CANCELADA' | 'EM ANDAMENTO';
+
+export type CessaoTipo =
+  | 'COMPOSIÇÃO DE GARANTIA'
+  | 'DESEMBOLSO'
+  | 'DESEMBOLSO PARCIAL'
+  | 'INTEGRALIZAÇÃO';
+
+export const CESSAO_TIPOS: CessaoTipo[] = [
+  'COMPOSIÇÃO DE GARANTIA',
+  'DESEMBOLSO',
+  'DESEMBOLSO PARCIAL',
+  'INTEGRALIZAÇÃO',
+];
+
+export const ROUND_STATUSES: RoundStatus[] = ['ABERTA', 'FECHADA', 'CANCELADA', 'EM ANDAMENTO'];
+
+export interface Cessao {
+  id: string;
+  nome: string;
+  data: string;
+  tipo: CessaoTipo;
+  valorAberto: number;
+  status: RoundStatus;
+  taxaCessao?: number;
+  valorPresente?: number;
+  valorTotal?: number;
+  temTermo?: boolean;
+  cedente?: string;
+  descontoAdicional?: string;
+  parametrizacao?: string;
+  tipoCalculo?: string;
+  usoArtesanal?: boolean;
+  indicadorTaxa?: string;
+  operadorTaxa?: string;
+  frequenciaTaxa?: string;
+  baseCalculo?: string;
+  capitalizacao?: string;
+  inicioContagem?: string;
+  inicioCalculo?: string;
+  coobrigacao?: boolean;
+  obrigacaoRecompra?: boolean;
+  certificadorEmail?: boolean;
+}
+
+export interface SacadoContato {
+  id: string;
+  nome: string;
+  email: string;
+  ddi: string;
+  telefone: string;
+  principal?: boolean;
+}
+
+export interface SacadoEndereco {
+  id: string;
+  cep: string;
+  localidade: string;
+  numero: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  pais: string;
+  adicional?: string;
+}
+
+export interface SacadoHistorico {
+  id: string;
+  datetime: string;
+  message: string;
+  createdBy?: string;
+}
+
+export interface Sacado {
+  id: string;
+  documento: string;
+  nome: string;
+  tipo: string;
+  limite: number;
+  especial: boolean;
+  parteRelacionada: boolean;
+  grupoEconomico: string;
+  notificacao: boolean;
+  pessoaFisica: boolean;
+  nomeFantasia?: string;
+  inscricaoEstadual?: string;
+  inscricaoMunicipal?: string;
+  inscricaoProdutorRural?: string;
+  atividadePrincipal?: string;
+  metodoNotificacao?: string;
+  contatos: SacadoContato[];
+  enderecos: SacadoEndereco[];
+  historico: SacadoHistorico[];
+}
+
 export interface CraTitulo {
   id: string;
   numero: string;
@@ -55,6 +151,139 @@ export interface CraOperacao {
   titulos: CraTitulo[];
 }
 
+export type GrupoStatusOperacao = 'EM ANÁLISE' | 'APROVADO' | 'REJEITADO' | 'PENDENTE';
+
+export const GRUPO_STATUS_OPERACAO: GrupoStatusOperacao[] = [
+  'EM ANÁLISE',
+  'APROVADO',
+  'REJEITADO',
+  'PENDENTE',
+];
+
+export interface GrupoCedente {
+  id: string;
+  documento: string;
+  nome: string;
+  email?: string;
+  cidadeUf?: string;
+  tipo: 'PF' | 'PJ';
+}
+
+export interface GrupoParteRelacionada {
+  id: string;
+  documento: string;
+  nome: string;
+  tipos: string;
+}
+
+export interface GrupoDocumento {
+  id: string;
+  nome: string;
+  tipo: string;
+  data: string;
+}
+
+export interface GrupoContaBancaria {
+  id: string;
+  banco: string;
+  agencia: string;
+  conta: string;
+  principal?: boolean;
+}
+
+export interface GrupoFaturamento {
+  id: string;
+  ano: number;
+  valor: number;
+}
+
+export interface GrupoGarantia {
+  id: string;
+  tipo: string;
+  dataInicio: string;
+  dataFim: string;
+  valor: number;
+  cobertura: string;
+  status: string;
+}
+
+export interface GrupoHistoricoEvento {
+  id: string;
+  datetime: string;
+  message: string;
+  createdBy?: string;
+}
+
+/** Vínculo fund-scoped de grupo empresarial na operação */
+export interface GrupoEmpresarialVinculo {
+  id: string;
+  nome: string;
+  statusOperacao: GrupoStatusOperacao;
+  apto: boolean;
+  masterContractDate?: string;
+  masterContractUrl?: string;
+  limite: number;
+  riscoTomado: number;
+  faturamento: number;
+  dataCadastro: string;
+  gerente?: string;
+  cedentes: GrupoCedente[];
+  partesRelacionadas: GrupoParteRelacionada[];
+  documentos: GrupoDocumento[];
+  contas: GrupoContaBancaria[];
+  faturamentos: GrupoFaturamento[];
+  garantias: GrupoGarantia[];
+  historico: GrupoHistoricoEvento[];
+}
+
+export interface SetupBondType {
+  id: string;
+  abreviacao: string;
+  descricao: string;
+  ativo: boolean;
+}
+
+export interface SetupEligibilityTop {
+  id: string;
+  tipo: 'CEDENTE' | 'SACADO';
+  quantidade: number;
+  concentracaoPct: number;
+}
+
+export interface CraSetup {
+  nome: string;
+  custodiante: string;
+  cessionaria: string;
+  prestadorServico: string;
+  beneficiarioFinal: string;
+  grupoOperacao: string;
+  tipoCalculoElegibilidade: string;
+  accrual: boolean;
+  exigirIe: boolean;
+  topSacados: boolean;
+  topCedentes: boolean;
+  tiposTituloAtivos: boolean;
+  entregaFutura: boolean;
+  limiteConcentracaoPct: string;
+  limiteVencimentoMin: string;
+  limiteVencimentoMax: string;
+  bondTypes: SetupBondType[];
+  carteiraNome: string;
+  carteiraBanco: string;
+  carteiraSlug: string;
+  carteiraCnab: string;
+  carteiraConta: string;
+  carteiraAgencia: string;
+  vencimentoFimSemana: boolean;
+  beneficiarioNome: string;
+  beneficiarioCep: string;
+  beneficiarioCidade: string;
+  beneficiarioUf: string;
+  jurosBoleto: string;
+  multaBoleto: string;
+  eligibilityTops: SetupEligibilityTop[];
+}
+
 export interface Cra {
   id: string;
   nome: string;
@@ -63,6 +292,10 @@ export interface Cra {
   status: CraStatus;
   tipo?: CraTipo;
   operacoes: CraOperacao[];
+  cessoes: Cessao[];
+  sacados: Sacado[];
+  grupos: GrupoEmpresarialVinculo[];
+  setup: CraSetup;
 }
 
 export function brl(n: number, compact = false): string {
@@ -139,6 +372,300 @@ function makeTitulos(prefix: string, operacaoId: string): CraTitulo[] {
   ];
 }
 
+function makeCessoes(prefix: string): Cessao[] {
+  return [
+    {
+      id: `${prefix}-ces-1`,
+      nome: `Cessão ${prefix} — Desembolso Inicial`,
+      data: '2024-01-15',
+      tipo: 'DESEMBOLSO',
+      valorAberto: 1_250_000,
+      status: 'ABERTA',
+      taxaCessao: 1.85,
+      valorPresente: 1_180_000,
+      valorTotal: 1_300_000,
+      temTermo: true,
+      cedente: 'Fazenda São João',
+      certificadorEmail: true,
+      indicadorTaxa: 'CDI',
+      operadorTaxa: 'Percentual',
+      frequenciaTaxa: 'Mensal',
+      capitalizacao: 'Composto',
+    },
+    {
+      id: `${prefix}-ces-2`,
+      nome: `Cessão ${prefix} — Composição de Garantia`,
+      data: '2024-03-20',
+      tipo: 'COMPOSIÇÃO DE GARANTIA',
+      valorAberto: 0,
+      status: 'FECHADA',
+      taxaCessao: 2.1,
+      valorPresente: 890_000,
+      valorTotal: 920_000,
+      temTermo: true,
+      cedente: 'Agropecuária Bela Vista',
+      certificadorEmail: true,
+    },
+    {
+      id: `${prefix}-ces-3`,
+      nome: `Cessão ${prefix} — Desembolso Parcial`,
+      data: '2024-06-10',
+      tipo: 'DESEMBOLSO PARCIAL',
+      valorAberto: 450_000,
+      status: 'EM ANDAMENTO',
+      taxaCessao: 1.5,
+      valorPresente: 420_000,
+      valorTotal: 480_000,
+      temTermo: false,
+      cedente: 'Grupo Agroville',
+      certificadorEmail: false,
+    },
+  ];
+}
+
+function makeSacados(prefix: string): Sacado[] {
+  return [
+    {
+      id: `${prefix}-sac-1`,
+      documento: '98.765.432/0001-10',
+      nome: 'Exportações Agro LTDA',
+      tipo: 'Standard',
+      limite: 5_000_000,
+      especial: false,
+      parteRelacionada: false,
+      grupoEconomico: 'Grupo Ceres',
+      notificacao: true,
+      pessoaFisica: false,
+      nomeFantasia: 'Exportações Agro',
+      inscricaoEstadual: '172.16.1.3',
+      atividadePrincipal: 'Comércio atacadista de cereais',
+      metodoNotificacao: 'E-mail',
+      contatos: [
+        { id: 'c1', nome: 'Ana Silva', email: 'ana@exportacoesagro.com.br', ddi: '+55', telefone: '(11) 98765-4321', principal: true },
+        { id: 'c2', nome: 'Carlos Mendes', email: 'carlos@exportacoesagro.com.br', ddi: '+55', telefone: '(11) 91234-5678' },
+      ],
+      enderecos: [
+        { id: 'e1', cep: '01310-100', localidade: 'Av. Paulista', numero: '1000', bairro: 'Bela Vista', cidade: 'São Paulo', uf: 'SP', pais: 'Brasil' },
+      ],
+      historico: [
+        { id: 'h1', datetime: '15/01/2024 10:32', message: 'Sacado cadastrado no veículo', createdBy: 'sistema' },
+        { id: 'h2', datetime: '20/02/2024 14:15', message: 'Limite atualizado para R$ 5.000.000', createdBy: 'eduardo.santos' },
+      ],
+    },
+    {
+      id: `${prefix}-sac-2`,
+      documento: '55.666.777/0001-88',
+      nome: 'Coop. Agroindustrial Sul',
+      tipo: 'Elegível',
+      limite: 2_500_000,
+      especial: true,
+      parteRelacionada: false,
+      grupoEconomico: 'Semeagro',
+      notificacao: true,
+      pessoaFisica: false,
+      nomeFantasia: 'Coopagro Sul',
+      metodoNotificacao: 'WhatsApp',
+      contatos: [
+        { id: 'c1', nome: 'Maria Souza', email: 'maria@coopagro.com.br', ddi: '+55', telefone: '(41) 99999-1111', principal: true },
+      ],
+      enderecos: [
+        { id: 'e1', cep: '80010-000', localidade: 'Rua XV de Novembro', numero: '500', bairro: 'Centro', cidade: 'Curitiba', uf: 'PR', pais: 'Brasil' },
+      ],
+      historico: [
+        { id: 'h1', datetime: '01/02/2024 09:00', message: 'Sacado marcado como especial', createdBy: 'eduardo.santos' },
+      ],
+    },
+    {
+      id: `${prefix}-sac-3`,
+      documento: '123.456.789-00',
+      nome: 'José da Silva Produtor',
+      tipo: 'Novo',
+      limite: 300_000,
+      especial: false,
+      parteRelacionada: true,
+      grupoEconomico: 'Semeagro',
+      notificacao: false,
+      pessoaFisica: true,
+      inscricaoProdutorRural: 'PR-123456',
+      metodoNotificacao: 'Telefone',
+      contatos: [
+        { id: 'c1', nome: 'José da Silva', email: 'jose.silva@email.com', ddi: '+55', telefone: '(44) 98888-2222', principal: true },
+      ],
+      enderecos: [
+        { id: 'e1', cep: '87020-000', localidade: 'Estrada Rural Km 12', numero: 's/n', bairro: 'Zona Rural', cidade: 'Maringá', uf: 'PR', pais: 'Brasil' },
+      ],
+      historico: [
+        { id: 'h1', datetime: '10/03/2024 16:45', message: 'Sacado cadastrado como parte relacionada', createdBy: 'sistema' },
+      ],
+    },
+    {
+      id: `${prefix}-sac-4`,
+      documento: '22.333.444/0001-55',
+      nome: 'Cerealista Norte LTDA',
+      tipo: 'Standard',
+      limite: 1_800_000,
+      especial: false,
+      parteRelacionada: false,
+      grupoEconomico: 'Grupo Ceres',
+      notificacao: true,
+      pessoaFisica: false,
+      nomeFantasia: 'Cerealista Norte',
+      metodoNotificacao: 'E-mail',
+      contatos: [],
+      enderecos: [
+        { id: 'e1', cep: '78000-000', localidade: 'Av. do CPA', numero: '200', bairro: 'Centro-Norte', cidade: 'Cuiabá', uf: 'MT', pais: 'Brasil' },
+      ],
+      historico: [],
+    },
+  ];
+}
+
+function makeGrupos(prefix: string): GrupoEmpresarialVinculo[] {
+  return [
+    {
+      id: `${prefix}-grp-1`,
+      nome: 'Grupo Ceres',
+      statusOperacao: 'APROVADO',
+      apto: true,
+      masterContractDate: '2024-01-15',
+      masterContractUrl: '#contrato-mae-ceres.pdf',
+      limite: 50_000_000,
+      riscoTomado: 12_450_000,
+      faturamento: 180_000_000,
+      dataCadastro: '2023-05-10',
+      gerente: 'Ana Paula',
+      cedentes: [
+        { id: 'ced-1', documento: '04.851.443/0001-10', nome: 'Ceres Agronegócios S.A.', email: 'contato@ceres.com.br', cidadeUf: 'São Paulo-SP', tipo: 'PJ' },
+        { id: 'ced-2', documento: '12.345.678/0001-90', nome: 'Ceres Logística LTDA', email: 'log@ceres.com.br', cidadeUf: 'Campinas-SP', tipo: 'PJ' },
+        { id: 'ced-3', documento: '987.654.321-00', nome: 'João Produtor Rural', email: 'joao@email.com', cidadeUf: 'Ribeirão Preto-SP', tipo: 'PF' },
+      ],
+      partesRelacionadas: [
+        { id: 'pr-1', documento: '11.222.333/0001-44', nome: 'Ceres Participações', tipos: 'Controladora' },
+      ],
+      documentos: [
+        { id: 'doc-1', nome: 'Contrato Social', tipo: 'Societário', data: '10/05/2023' },
+        { id: 'doc-2', nome: 'Contrato Mãe', tipo: 'Operacional', data: '15/01/2024' },
+      ],
+      contas: [
+        { id: 'cta-1', banco: '341 — Itaú', agencia: '1234', conta: '56789-0', principal: true },
+        { id: 'cta-2', banco: '001 — BB', agencia: '0456', conta: '112233-4' },
+      ],
+      faturamentos: [
+        { id: 'fat-1', ano: 2024, valor: 180_000_000 },
+        { id: 'fat-2', ano: 2023, valor: 155_000_000 },
+      ],
+      garantias: [
+        { id: 'gar-1', tipo: 'Alienação fiduciária', dataInicio: '01/01/2024', dataFim: '31/12/2026', valor: 20_000_000, cobertura: '40%', status: 'Ativa' },
+      ],
+      historico: [
+        { id: 'gh-1', datetime: '10/05/2023 09:00', message: 'Grupo vinculado à operação', createdBy: 'sistema' },
+        { id: 'gh-2', datetime: '15/01/2024 11:20', message: 'Contrato mãe anexado', createdBy: 'eduardo.santos' },
+        { id: 'gh-3', datetime: '15/01/2024 11:25', message: 'Status alterado para Apto', createdBy: 'eduardo.santos' },
+      ],
+    },
+    {
+      id: `${prefix}-grp-2`,
+      nome: 'Semeagro',
+      statusOperacao: 'EM ANÁLISE',
+      apto: false,
+      masterContractDate: undefined,
+      masterContractUrl: undefined,
+      limite: 25_000_000,
+      riscoTomado: 4_987_000,
+      faturamento: 92_000_000,
+      dataCadastro: '2024-02-01',
+      gerente: 'Carlos Lima',
+      cedentes: [
+        { id: 'ced-1', documento: '12.345.678/0001-01', nome: 'Semeagro S.A.', cidadeUf: 'Curitiba-PR', tipo: 'PJ' },
+      ],
+      partesRelacionadas: [],
+      documentos: [
+        { id: 'doc-1', nome: 'Cartão CNPJ', tipo: 'Cadastral', data: '01/02/2024' },
+      ],
+      contas: [
+        { id: 'cta-1', banco: '237 — Bradesco', agencia: '9876', conta: '1122-3', principal: true },
+      ],
+      faturamentos: [
+        { id: 'fat-1', ano: 2024, valor: 92_000_000 },
+      ],
+      garantias: [],
+      historico: [
+        { id: 'gh-1', datetime: '01/02/2024 14:00', message: 'Grupo vinculado — aguardando contrato mãe', createdBy: 'sistema' },
+      ],
+    },
+    {
+      id: `${prefix}-grp-3`,
+      nome: 'Raízen',
+      statusOperacao: 'PENDENTE',
+      apto: false,
+      masterContractDate: '2023-11-20',
+      masterContractUrl: '#contrato-mae-raizen.pdf',
+      limite: 80_000_000,
+      riscoTomado: 0,
+      faturamento: 420_000_000,
+      dataCadastro: '2023-11-01',
+      gerente: 'Marina Costa',
+      cedentes: [
+        { id: 'ced-1', documento: '08.070.508/0001-78', nome: 'Raízen Energia S.A.', cidadeUf: 'Piracicaba-SP', tipo: 'PJ' },
+      ],
+      partesRelacionadas: [],
+      documentos: [],
+      contas: [],
+      faturamentos: [
+        { id: 'fat-1', ano: 2024, valor: 420_000_000 },
+      ],
+      garantias: [],
+      historico: [
+        { id: 'gh-1', datetime: '01/11/2023 10:00', message: 'Grupo cadastrado', createdBy: 'sistema' },
+      ],
+    },
+  ];
+}
+
+function makeSetup(nome: string, cessionaria: string): CraSetup {
+  return {
+    nome,
+    custodiante: 'B3',
+    cessionaria,
+    prestadorServico: 'Oliveira Trust',
+    beneficiarioFinal: cessionaria,
+    grupoOperacao: 'Agro padrão',
+    tipoCalculoElegibilidade: 'Valor presente',
+    accrual: true,
+    exigirIe: false,
+    topSacados: true,
+    topCedentes: true,
+    tiposTituloAtivos: true,
+    entregaFutura: false,
+    limiteConcentracaoPct: '25',
+    limiteVencimentoMin: '30',
+    limiteVencimentoMax: '360',
+    bondTypes: [
+      { id: 'bt-1', abreviacao: 'NFE', descricao: 'Nota Fiscal Eletrônica', ativo: true },
+      { id: 'bt-2', abreviacao: 'CPR-F', descricao: 'CPR Financeira', ativo: true },
+      { id: 'bt-3', abreviacao: 'DM', descricao: 'Duplicata Mercantil', ativo: false },
+      { id: 'bt-4', abreviacao: 'NC', descricao: 'Nota Comercial', ativo: true },
+    ],
+    carteiraNome: `Carteira ${nome}`,
+    carteiraBanco: '341 — Itaú',
+    carteiraSlug: 'kobana-cra',
+    carteiraCnab: 'CNAB 400',
+    carteiraConta: '12345-6',
+    carteiraAgencia: '0001',
+    vencimentoFimSemana: true,
+    beneficiarioNome: cessionaria,
+    beneficiarioCep: '01310-100',
+    beneficiarioCidade: 'São Paulo',
+    beneficiarioUf: 'SP',
+    jurosBoleto: '1,00',
+    multaBoleto: '2,00',
+    eligibilityTops: [
+      { id: 'top-1', tipo: 'CEDENTE', quantidade: 10, concentracaoPct: 25 },
+      { id: 'top-2', tipo: 'SACADO', quantidade: 15, concentracaoPct: 20 },
+    ],
+  };
+}
+
 export const cras: Cra[] = [
   {
     id: 'cra-semeagro',
@@ -186,6 +713,10 @@ export const cras: Cra[] = [
         titulos: makeTitulos('SEA5', 'sea-op-5'),
       },
     ],
+    cessoes: makeCessoes('SEA'),
+    sacados: makeSacados('SEA'),
+    grupos: makeGrupos('SEA'),
+    setup: makeSetup('CRA Semeagro', 'CERES SECURIZADORA S/A'),
   },
   {
     id: 'cra-ceres-agro',
@@ -214,6 +745,10 @@ export const cras: Cra[] = [
         titulos: makeTitulos('CA7', 'ca-op-7'),
       },
     ],
+    cessoes: makeCessoes('CA'),
+    sacados: makeSacados('CA'),
+    grupos: makeGrupos('CA'),
+    setup: makeSetup('CRA Ceres Agro', 'CERES SECURIZADORA S/A'),
   },
   {
     id: 'cra-btg-agro',
@@ -242,6 +777,10 @@ export const cras: Cra[] = [
         titulos: makeTitulos('BTG2', 'btg-op-2'),
       },
     ],
+    cessoes: makeCessoes('BTG'),
+    sacados: makeSacados('BTG'),
+    grupos: makeGrupos('BTG'),
+    setup: makeSetup('CRA BTG Agro', 'BTG SECURIZADORA S/A'),
   },
 ];
 

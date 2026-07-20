@@ -1,6 +1,12 @@
 # Handoff — Tela inicial de Solicitação de Operação (Listagem)
 
 > Fonte de verdade complementar: `guidelines/Guidelines.md` (design tokens) e `src/styles/theme.css`. Este documento cobre **a tela de listagem/workflow** — header, filtros, esteiras, toggle de visualização e as três views (Kanban, Cards, Tabela). Para o drill-down, ver `solicitacao-detalhes.md` e `solicitacao-ativos.md`.
+>
+> Telas admin do módulo (submenu):
+> - [solicitacao-fundo-padrao.md](./solicitacao-fundo-padrao.md)
+> - [solicitacao-relatorio-pedidos.md](./solicitacao-relatorio-pedidos.md)
+> - [solicitacao-taxas-veiculos.md](./solicitacao-taxas-veiculos.md)
+> - [solicitacao-validacoes-config.md](./solicitacao-validacoes-config.md)
 
 ---
 
