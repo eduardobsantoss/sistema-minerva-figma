@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{ label: string; on: boolean }>();
+defineProps<{ label: string; on: boolean; hint?: string }>();
 const emit = defineEmits<{ toggle: [] }>();
 </script>
 
@@ -15,19 +15,24 @@ const emit = defineEmits<{ toggle: [] }>();
       background: on ? 'var(--success-light)' : 'var(--surface-card)',
       transition: 'all var(--duration-base)',
       cursor: 'pointer',
+      gap: '12px',
     }"
     @click="emit('toggle')"
   >
-    <span
-      :style="{
-        fontSize: 'var(--text-sm)',
-        color: on ? 'var(--success-dark)' : 'var(--text-default)',
-        fontWeight: on ? 'var(--weight-semibold)' : 'var(--weight-regular)',
-        userSelect: 'none',
-      }"
-    >
-      {{ label }}
-    </span>
+    <div style="min-width: 0">
+      <div
+        :style="{
+          fontSize: 'var(--text-sm)',
+          color: on ? 'var(--success-dark)' : 'var(--text-default)',
+          fontWeight: on ? 'var(--weight-semibold)' : 'var(--weight-regular)',
+          userSelect: 'none',
+          lineHeight: '1.4',
+        }"
+      >
+        {{ label }}
+      </div>
+      <div v-if="hint" style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">{{ hint }}</div>
+    </div>
     <div
       style="width: 44px; height: 24px; border-radius: 9999px; position: relative; flex-shrink: 0"
       :style="{ background: on ? 'var(--success-base)' : 'var(--border-default)', transition: 'background var(--duration-base)' }"

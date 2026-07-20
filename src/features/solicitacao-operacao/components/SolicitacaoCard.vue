@@ -8,7 +8,6 @@ import {
   Building2,
   ChevronDown,
   ChevronUp,
-  Bookmark,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import { brl, fmtDuracao, slaRatio, type Solicitacao } from '../data/operacaoData';
@@ -65,7 +64,6 @@ function toggleExpanded(e: MouseEvent) {
   <div
     class="flex flex-col"
     :style="{
-      position: 'relative',
       background: 'var(--surface-card)',
       borderWidth: '1px',
       borderStyle: 'solid',
@@ -83,18 +81,6 @@ function toggleExpanded(e: MouseEvent) {
     @mouseleave="hover = false"
     @click="handleClick"
   >
-    <Bookmark
-      v-if="isCliente"
-      :size="18"
-      :style="{
-        position: 'absolute',
-        top: compact ? '8px' : '10px',
-        right: compact ? '8px' : '10px',
-        color: 'var(--agro-base)',
-        fill: 'var(--agro-base)',
-        pointerEvents: 'none',
-      }"
-    />
     <!-- Badges: tipo de contrato + validação -->
     <div class="flex items-center justify-between" style="gap: 8px">
       <span
@@ -133,6 +119,23 @@ function toggleExpanded(e: MouseEvent) {
         <XCircle v-else :size="10" :stroke-width="2.5" />
         {{ valido ? 'VÁLIDO' : 'INVÁLIDO' }}
       </span>
+    </div>
+
+    <div
+      v-if="isCliente"
+      class="flex items-center justify-center"
+      :style="{
+        padding: '8px 12px',
+        borderRadius: 'var(--radius-md)',
+        background: 'color-mix(in srgb, var(--agro-base) 14%, #fff)',
+        fontSize: '11px',
+        fontWeight: 'var(--weight-bold)',
+        letterSpacing: '0.06em',
+        color: 'var(--agro-base)',
+        textTransform: 'uppercase',
+      }"
+    >
+      Esteira Automática
     </div>
 
     <!-- Cedente + ID -->

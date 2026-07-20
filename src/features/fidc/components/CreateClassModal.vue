@@ -33,7 +33,7 @@ import FormField from './create-class/FormField.vue';
 import SelectField from './create-class/SelectField.vue';
 import RadioPill from './create-class/RadioPill.vue';
 import SectionHelp from './create-class/SectionHelp.vue';
-import Checkbox from '@/components/ui/Checkbox.vue';
+import ToggleRow from './modals/ToggleRow.vue';
 import ParticipantBlock from './create-class/ParticipantBlock.vue';
 import SectionGroup from './create-class/SectionGroup.vue';
 import AddButton from './create-class/AddButton.vue';
@@ -128,6 +128,9 @@ interface NewClassData {
   campoExtra1: string;
   boletoInstrucoes: string;
   permiteFimDeSemana: boolean;
+  cadastrarNovoBeneficiario: boolean;
+  benefSelecionado: string;
+  benefDesde: string;
   benefCnpj: string;
   benefNome: string;
   benefCep: string;
@@ -139,6 +142,16 @@ interface NewClassData {
   benefEstado: string;
 }
 
+const BENEFICIARIO_OPTS = [
+  'CERES SECURIZADORA S/A',
+  'BTG SECURIZADORA S/A',
+  'ISEC SECURIZADORA S/A',
+  'RB CAPITAL',
+  'Oliveira Trust',
+  'Vórtx',
+  'BRL Trust',
+];
+
 const form = ref<NewClassData>({
   cnpjVeiculo: '', identificacaoVeiculo: '', tipoEmpresa: '',
   razaoSocial: '', nomeFantasia: '', naturezaLegal: '', atividadePrincipal: '', codigoSingulare: '',
@@ -147,6 +160,8 @@ const form = ref<NewClassData>({
   cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', pais: '',
   nomeCarteira: '', banco: '', carteiraSelecionada: '', cnab: '', codigoEmpresa: '',
   numeroConta: '', numeroAgencia: '', campoExtra1: '', boletoInstrucoes: '', permiteFimDeSemana: true,
+  cadastrarNovoBeneficiario: false,
+  benefSelecionado: '', benefDesde: '',
   benefCnpj: '', benefNome: '', benefCep: '', benefEndereco: '', benefNumero: '',
   benefComplemento: '', benefBairro: '', benefCidade: '', benefEstado: '',
 });
@@ -688,39 +703,65 @@ function stepDimmed(i: number) {
               <FormField label="Número da Agência" placeholder="0000-0" :span="4" v-model="form.numeroAgencia" />
               <FormField label="Campo Extra 1" placeholder="—" :span="4" v-model="form.campoExtra1" />
               <FormField label="Configuração de dados padrões para Boleto" placeholder="Texto de instrução para impressão" :span="12" v-model="form.boletoInstrucoes" />
-              <div
-                class="flex items-center"
-                style="gap: 12px; padding: 14px; background: var(--surface-sunken); border-radius: var(--radius-lg); grid-column: span 12; cursor: pointer"
-                @click="form.permiteFimDeSemana = !form.permiteFimDeSemana"
-              >
-                <div @click.stop>
-                  <Checkbox :checked="form.permiteFimDeSemana" @change="form.permiteFimDeSemana = !form.permiteFimDeSemana" />
-                </div>
-                <div>
-                  <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-                    Permitir Vencimento em Finais de Semana e Feriado
-                  </div>
-                  <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">
-                    Se ativo, parcelas podem ser liquidadas sem prorrogação para o próximo dia útil.
-                  </div>
-                </div>
-              </div>
             </StepGrid>
+            <div style="margin-top: 16px">
+              <ToggleRow
+                label="Permite vencimento em finais de semana e feriado"
+                hint="Se ativo, parcelas podem ser liquidadas sem prorrogação para o próximo dia útil."
+                :on="form.permiteFimDeSemana"
+                @toggle="form.permiteFimDeSemana = !form.permiteFimDeSemana"
+              />
+            </div>
           </div>
 
           <div>
-            <SectionTitle :icon="UserCheck">Dados do Beneficiário</SectionTitle>
-            <StepGrid>
-              <FormField label="CNPJ" placeholder="00.000.000/0000-00" :span="4" v-model="form.benefCnpj" />
-              <FormField label="Nome" placeholder="Razão social do beneficiário" :span="8" v-model="form.benefNome" />
-              <FormField label="CEP" placeholder="00000-000" :span="3" v-model="form.benefCep" />
-              <FormField label="Endereço" placeholder="Rua / Avenida" :span="7" v-model="form.benefEndereco" />
-              <FormField label="Número" placeholder="—" :span="2" v-model="form.benefNumero" />
-              <FormField label="Complemento" placeholder="Sala / Andar" :span="4" v-model="form.benefComplemento" />
-              <FormField label="Bairro" placeholder="—" :span="4" v-model="form.benefBairro" />
-              <FormField label="Cidade" placeholder="—" :span="4" v-model="form.benefCidade" />
-              <SelectField label="Estado" :options="['SP', 'RJ', 'MG', 'RS', 'PR', 'SC', 'BA', 'GO', 'MT', 'MS', 'DF']" placeholder="UF" :span="12" v-model="form.benefEstado" />
-            </StepGrid>
+            <SectionTitle :icon="UserCheck">Identificação de Beneficiário Final</SectionTitle>
+            <div class="flex flex-col" style="gap: 16px">
+              <ToggleRow
+                label="Cadastrar novo beneficiário final"
+                hint="Se ativo, preencha o formulário de cadastro. Se inativo, selecione um beneficiário já existente."
+                :on="form.cadastrarNovoBeneficiario"
+                @toggle="form.cadastrarNovoBeneficiario = !form.cadastrarNovoBeneficiario"
+              />
+              <StepGrid v-if="!form.cadastrarNovoBeneficiario">
+                <SelectField
+                  label="Beneficiário final"
+                  :options="BENEFICIARIO_OPTS"
+                  placeholder="Selecione"
+                  :span="8"
+                  v-model="form.benefSelecionado"
+                />
+                <FormField
+                  label="Beneficiário Final do fundo desde"
+                  placeholder="dd/mm/aaaa"
+                  :span="4"
+                  v-model="form.benefDesde"
+                />
+              </StepGrid>
+              <StepGrid v-else>
+                <FormField label="CNPJ" placeholder="00.000.000/0000-00" :span="4" v-model="form.benefCnpj" />
+                <FormField label="Nome" placeholder="Razão social do beneficiário" :span="5" v-model="form.benefNome" />
+                <FormField
+                  label="Beneficiário Final do fundo desde"
+                  placeholder="dd/mm/aaaa"
+                  :span="3"
+                  v-model="form.benefDesde"
+                />
+                <FormField label="CEP" placeholder="00000-000" :span="3" v-model="form.benefCep" />
+                <FormField label="Endereço" placeholder="Rua / Avenida" :span="7" v-model="form.benefEndereco" />
+                <FormField label="Número" placeholder="—" :span="2" v-model="form.benefNumero" />
+                <FormField label="Complemento" placeholder="Sala / Andar" :span="3" v-model="form.benefComplemento" />
+                <FormField label="Bairro" placeholder="—" :span="3" v-model="form.benefBairro" />
+                <FormField label="Cidade" placeholder="—" :span="4" v-model="form.benefCidade" />
+                <SelectField
+                  label="Estado"
+                  :options="['SP', 'RJ', 'MG', 'RS', 'PR', 'SC', 'BA', 'GO', 'MT', 'MS', 'DF']"
+                  placeholder="UF"
+                  :span="2"
+                  v-model="form.benefEstado"
+                />
+              </StepGrid>
+            </div>
           </div>
         </div>
 
@@ -873,8 +914,15 @@ function stepDimmed(i: number) {
               <SummaryItem label="Carteira" :value="form.carteiraSelecionada" />
               <SummaryItem label="CNAB" :value="form.cnab" />
               <SummaryItem label="Fim de Semana" :value="form.permiteFimDeSemana ? 'Permitido' : 'Não permitido'" />
-              <SummaryItem label="Beneficiário" :value="form.benefNome" />
-              <SummaryItem label="CNPJ do Beneficiário" :value="form.benefCnpj" />
+              <SummaryItem
+                label="Beneficiário"
+                :value="form.cadastrarNovoBeneficiario ? form.benefNome : form.benefSelecionado"
+              />
+              <SummaryItem
+                label="CNPJ do Beneficiário"
+                :value="form.cadastrarNovoBeneficiario ? form.benefCnpj : '—'"
+              />
+              <SummaryItem label="Beneficiário desde" :value="form.benefDesde" />
             </div>
           </SectionGroup>
 

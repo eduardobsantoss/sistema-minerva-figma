@@ -3,7 +3,7 @@ import { ref, computed } from 'vue';
 import {
   X, Info, SlidersHorizontal, Network, Settings, Percent,
   Wallet, FileText, AlertTriangle, ClipboardCheck,
-  Check, ChevronRight, Search, Layers,
+  Check, ChevronRight, Search, Layers, UserCheck,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import { gruposEmpresariais } from '../data/craData';
@@ -15,6 +15,7 @@ import SelectField from './create-cra-operacao-modal/SelectField.vue';
 import SectionHelp from './create-cra-operacao-modal/SectionHelp.vue';
 import ToggleRow from './create-cra-operacao-modal/ToggleRow.vue';
 import SectionGroup from './create-cra-operacao-modal/SectionGroup.vue';
+import SectionTitle from './create-cra-operacao-modal/SectionTitle.vue';
 import AddButton from './create-cra-operacao-modal/AddButton.vue';
 import DataTable from './create-cra-operacao-modal/DataTable.vue';
 import LimiteRow from './create-cra-operacao-modal/LimiteRow.vue';
@@ -63,6 +64,18 @@ export interface NewCraOperacaoData {
   taxaJurosPadrao: string;
   taxaMultaPadrao: string;
   permiteFimDeSemana: boolean;
+  cadastrarNovoBeneficiario: boolean;
+  benefSelecionado: string;
+  benefDesde: string;
+  benefCnpj: string;
+  benefNome: string;
+  benefCep: string;
+  benefEndereco: string;
+  benefNumero: string;
+  benefComplemento: string;
+  benefBairro: string;
+  benefCidade: string;
+  benefEstado: string;
   titularConta: string;
   // Carteira de registro
   registradora: string;
@@ -139,7 +152,12 @@ const form = ref<NewCraOperacaoData>({
   metodoNotificacao: '',
   carteiraNome: '', banco: '', carteira: '', tipoCnab: '', conta: '',
   agencia: '', codigoEmpresa: '', taxaJurosPadrao: '', taxaMultaPadrao: '',
-  permiteFimDeSemana: false, titularConta: '',
+  permiteFimDeSemana: false,
+  cadastrarNovoBeneficiario: false,
+  benefSelecionado: '', benefDesde: '',
+  benefCnpj: '', benefNome: '', benefCep: '', benefEndereco: '',
+  benefNumero: '', benefComplemento: '', benefBairro: '', benefCidade: '', benefEstado: '',
+  titularConta: '',
   registradora: '', idCarteira: '', apiToken: '', apiSecret: '',
 });
 const grupoQ = ref('');
@@ -241,7 +259,14 @@ const step = computed(() => steps[stepIdx.value]);
 const isFirst = computed(() => stepIdx.value === 0);
 const isLast = computed(() => stepIdx.value === steps.length - 1);
 
+const beneficiarioFinalLabel = computed(() =>
+  form.value.cadastrarNovoBeneficiario
+    ? form.value.benefNome
+    : form.value.benefSelecionado,
+);
+
 function handleCreate() {
+  form.value.beneficiarioFinal = beneficiarioFinalLabel.value;
   emit('create', form.value);
 }
 </script>
@@ -330,10 +355,9 @@ function handleCreate() {
           <SelectField label="Tipo de Cliente" :options="['Monocedente', 'Multicedente']" placeholder="Selecione" :span="6" v-model="form.tipoCliente" />
           <FormField label="Número de Emissão" placeholder="Ex: 4ª" :span="3" v-model="form.numeroEmissao" />
           <FormField label="Nome da Operação" placeholder="Ex: 4ª Emissão CRA Semeagro" :span="9" v-model="form.nome" />
-          <SelectField label="Cessionária" :options="['CERES SECURIZADORA S/A', 'BTG SECURIZADORA S/A', 'ISEC SECURIZADORA S/A', 'RB CAPITAL']" placeholder="Selecione" :span="3" v-model="form.cessionaria" />
-          <SelectField label="Prestador de Serviço" :options="['Oliveira Trust', 'Vórtx', 'Singulare', 'Daycoval', 'BRL Trust']" placeholder="Selecione" :span="3" v-model="form.prestadorServico" />
-          <SelectField label="Custodiante" :options="['B3', 'Cetip', 'Daycoval', 'Singulare', 'Oliveira Trust']" placeholder="Selecione" :span="3" v-model="form.custodiante" />
-          <SelectField label="Beneficiário Final" :options="BENEFICIARIO_OPTS" placeholder="Selecione" :span="3" v-model="form.beneficiarioFinal" />
+          <SelectField label="Cessionária" :options="['CERES SECURIZADORA S/A', 'BTG SECURIZADORA S/A', 'ISEC SECURIZADORA S/A', 'RB CAPITAL']" placeholder="Selecione" :span="4" v-model="form.cessionaria" />
+          <SelectField label="Prestador de Serviço" :options="['Oliveira Trust', 'Vórtx', 'Singulare', 'Daycoval', 'BRL Trust']" placeholder="Selecione" :span="4" v-model="form.prestadorServico" />
+          <SelectField label="Custodiante" :options="['B3', 'Cetip', 'Daycoval', 'Singulare', 'Oliveira Trust']" placeholder="Selecione" :span="4" v-model="form.custodiante" />
         </StepGrid>
 
         <!-- Step 2 — Configurações do veículo (toggles) -->
@@ -561,17 +585,68 @@ function handleCreate() {
             <FormField label="Taxa de Desconto Padrão" placeholder="0,0000%" :span="4" v-model="form.taxaDescontoPadrao" />
             <div style="grid-column: span 12">
               <FieldLabel>Titular da Conta</FieldLabel>
-              <Input disabled :model-value="form.beneficiarioFinal || '—'" style="color: var(--text-muted)" />
+              <Input disabled :model-value="beneficiarioFinalLabel || '—'" style="color: var(--text-muted)" />
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px">
-                Preenchido automaticamente conforme o Beneficiário Final da Etapa 1.
+                Preenchido automaticamente conforme a Identificação de Beneficiário Final.
               </div>
             </div>
           </StepGrid>
           <ToggleRow
             label="Permite vencimento em finais de semana e feriado"
+            hint="Se ativo, parcelas podem ser liquidadas sem prorrogação para o próximo dia útil."
             :on="form.permiteFimDeSemana"
             @toggle="form.permiteFimDeSemana = !form.permiteFimDeSemana"
           />
+
+          <div>
+            <SectionTitle :icon="UserCheck">Identificação de Beneficiário Final</SectionTitle>
+            <div class="flex flex-col" style="gap: 16px">
+              <ToggleRow
+                label="Cadastrar novo beneficiário final"
+                hint="Se ativo, preencha o formulário de cadastro. Se inativo, selecione um beneficiário já existente."
+                :on="form.cadastrarNovoBeneficiario"
+                @toggle="form.cadastrarNovoBeneficiario = !form.cadastrarNovoBeneficiario"
+              />
+              <StepGrid v-if="!form.cadastrarNovoBeneficiario">
+                <SelectField
+                  label="Beneficiário final"
+                  :options="BENEFICIARIO_OPTS"
+                  placeholder="Selecione"
+                  :span="8"
+                  v-model="form.benefSelecionado"
+                />
+                <FormField
+                  label="Beneficiário Final do fundo desde"
+                  placeholder="dd/mm/aaaa"
+                  :span="4"
+                  v-model="form.benefDesde"
+                />
+              </StepGrid>
+              <StepGrid v-else>
+                <FormField label="CNPJ" placeholder="00.000.000/0000-00" :span="4" v-model="form.benefCnpj" />
+                <FormField label="Nome" placeholder="Razão social do beneficiário" :span="5" v-model="form.benefNome" />
+                <FormField
+                  label="Beneficiário Final do fundo desde"
+                  placeholder="dd/mm/aaaa"
+                  :span="3"
+                  v-model="form.benefDesde"
+                />
+                <FormField label="CEP" placeholder="00000-000" :span="3" v-model="form.benefCep" />
+                <FormField label="Endereço" placeholder="Rua / Avenida" :span="7" v-model="form.benefEndereco" />
+                <FormField label="Número" placeholder="—" :span="2" v-model="form.benefNumero" />
+                <FormField label="Complemento" placeholder="Sala / Andar" :span="3" v-model="form.benefComplemento" />
+                <FormField label="Bairro" placeholder="—" :span="3" v-model="form.benefBairro" />
+                <FormField label="Cidade" placeholder="—" :span="4" v-model="form.benefCidade" />
+                <SelectField
+                  label="Estado"
+                  :options="['SP', 'RJ', 'MG', 'RS', 'PR', 'SC', 'BA', 'GO', 'MT', 'MS', 'DF']"
+                  placeholder="UF"
+                  :span="2"
+                  v-model="form.benefEstado"
+                />
+              </StepGrid>
+            </div>
+          </div>
         </div>
 
         <!-- Step 6 — Carteira de registro -->
@@ -684,7 +759,6 @@ function handleCreate() {
               <SummaryItem label="Cessionária" :value="form.cessionaria" />
               <SummaryItem label="Prestador de Serviço" :value="form.prestadorServico" />
               <SummaryItem label="Custodiante" :value="form.custodiante" />
-              <SummaryItem label="Beneficiário Final" :value="form.beneficiarioFinal" />
             </div>
           </SectionGroup>
 
@@ -730,6 +804,10 @@ function handleCreate() {
               <SummaryItem label="Taxa de Juros Padrão" :value="form.taxaJurosPadrao" />
               <SummaryItem label="Taxa de Multa Padrão" :value="form.taxaMultaPadrao" />
               <SummaryItem label="Fim de Semana" :value="form.permiteFimDeSemana ? 'Permitido' : 'Não permitido'" />
+              <SummaryItem
+                label="Beneficiário Final (Cobrança)"
+                :value="beneficiarioFinalLabel || '—'"
+              />
             </div>
           </SectionGroup>
 
