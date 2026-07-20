@@ -1,6 +1,8 @@
 export type Etapa =
   | 'RASCUNHO'
   | 'PENDENTE'
+  | 'ATUALIZACAO_SACADO'
+  | 'SELECAO_PARCELAS'
   | 'COMERCIAL'
   | 'CREDITO'
   | 'CADASTRO'
@@ -14,6 +16,9 @@ export type Etapa =
   | 'DESEMBOLSO_CLIENTE'
   | 'SOLUCIONADA'
   | 'REJEITADA';
+
+/** Etapas exclusivas da esteira Cliente (visíveis no kanban só em Todas / Cliente). */
+export const ETAPAS_CLIENTE: Etapa[] = ['ATUALIZACAO_SACADO', 'SELECAO_PARCELAS'];
 
 export type Esteira =
   | 'CRA_MONOCEDENTE'
@@ -441,6 +446,8 @@ export function detalheSolicitacao(s: Solicitacao): DetalheSolicitacao {
 export const ETAPAS: { key: Etapa; label: string; cor: string }[] = [
   { key: 'RASCUNHO',           label: 'Rascunho',             cor: 'var(--neutral-400)' },
   { key: 'PENDENTE',           label: 'Pendente',             cor: '#D97706' },
+  { key: 'ATUALIZACAO_SACADO', label: 'Atualização de sacado', cor: '#EA580C' },
+  { key: 'SELECAO_PARCELAS',   label: 'Seleção de Parcelas',  cor: '#C2410C' },
   { key: 'COMERCIAL',          label: 'Comercial',            cor: 'var(--gci-base)' },
   { key: 'CREDITO',            label: 'Crédito',              cor: '#CA8A04' },
   { key: 'CADASTRO',           label: 'Cadastro',             cor: '#0891B2' },
@@ -537,7 +544,7 @@ export const solicitacoes: Solicitacao[] = [
   },
   {
     id: '#1388', cedente: 'Cultura Agronegócios LTDA', tipoContrato: 'NC', validacao: 'INVALIDO',
-    valor: 11_377_082.43, vinculo: '', veiculo: 'Ceres Investimentos', etapa: 'COMERCIAL',
+    valor: 11_377_082.43, vinculo: '', veiculo: 'Ceres Investimentos', etapa: 'ATUALIZACAO_SACADO',
     esteira: 'CLIENTE', tipoOperacao: 'Aquisição', grupoEmpresarial: 'Raízen',
     abertura: '2026-06-08', tempoTotalHoras: 426, tempoEtapaHoras: 408, slaEtapaHoras: 120,
     taxa: 2.31, gerente: 'Leynin Marcell Valério', atendente: 'Eduardo Resende Mota',
@@ -572,7 +579,7 @@ export const solicitacoes: Solicitacao[] = [
   },
   {
     id: '#1393', cedente: '3 Porteiras Agrícola Pecuária', tipoContrato: 'CDCA', validacao: 'INVALIDO',
-    valor: 12_500_000, vinculo: '', veiculo: 'Ceres Investimentos', etapa: 'ANALISE',
+    valor: 12_500_000, vinculo: '', veiculo: 'Ceres Investimentos', etapa: 'SELECAO_PARCELAS',
     esteira: 'CLIENTE', tipoOperacao: 'Desconto', grupoEmpresarial: 'Vittia',
     abertura: '2026-05-25', tempoTotalHoras: 1177, tempoEtapaHoras: 692, slaEtapaHoras: 240,
     taxa: 2.18, gerente: 'Roberto Alves', atendente: 'Juliana Prado',

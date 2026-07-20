@@ -295,7 +295,12 @@ const selected = computed(() => (selectedId.value ? lista.find((s) => s.id === s
     </div>
 
     <!-- Conteúdo -->
-    <SolicitacaoKanban v-if="viewMode === 'kanban'" :solicitacoes="filtered" @open="selectedId = $event" />
+    <SolicitacaoKanban
+      v-if="viewMode === 'kanban'"
+      :solicitacoes="filtered"
+      :esteira-filter="esteira"
+      @open="selectedId = $event"
+    />
 
     <template v-if="viewMode === 'cards'">
       <div

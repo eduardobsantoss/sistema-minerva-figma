@@ -3,14 +3,33 @@ import { computed, ref } from 'vue';
 import { FolderOpen } from 'lucide-vue-next';
 import SolicitacaoCard from './SolicitacaoCard.vue';
 import MoverEtapaModal from './MoverEtapaModal.vue';
-import { ETAPAS, etapaLabel, groupByEtapa, type Etapa, type Solicitacao } from '../data/operacaoData';
+import {
+  ETAPAS,
+  ETAPAS_CLIENTE,
+  etapaLabel,
+  groupByEtapa,
+  type Etapa,
+  type Esteira,
+  type Solicitacao,
+} from '../data/operacaoData';
 
-const props = defineProps<{
-  solicitacoes: Solicitacao[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    solicitacoes: Solicitacao[];
+    /** Filtro de esteira da listagem — controla colunas exclusivas da esteira Cliente. */
+    esteiraFilter?: Esteira | 'TODAS';
+  }>(),
+  { esteiraFilter: 'TODAS' },
+);
 const emit = defineEmits<{ open: [id: string]; move: [id: string, etapa: Etapa] }>();
 
 const grupos = computed(() => groupByEtapa(props.solicitacoes));
+
+const colunas = computed(() => {
+  const showCliente = props.esteiraFilter === 'TODAS' || props.esteiraFilter === 'CLIENTE';
+  if (showCliente) return ETAPAS;
+  return ETAPAS.filter((e) => !ETAPAS_CLIENTE.includes(e.key));
+});
 
 const draggingId = ref<string | null>(null);
 const dragOverEtapa = ref<Etapa | null>(null);
@@ -89,7 +108,7 @@ function handleOpen(id: string) {
 <template>
   <div style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 12px">
     <div
-      v-for="etapa in ETAPAS"
+      v-for="etapa in colunas"
       :key="etapa.key"
       class="flex flex-col"
       :style="{
