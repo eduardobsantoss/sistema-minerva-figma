@@ -94,8 +94,16 @@ Toda a navegação do shell é controlada em `ModulesScreen.vue` — **não há 
 |---|---|---|
 | `dashboard` | Bem-vindo(a) ao Minerva Gestão | `DashboardView` |
 | `solicitacoes` | Solicitação de Operação | `SolicitacaoScreen` |
+| `solicitacoes-fundo-padrao` | Fundo Padrão | `FundoPadraoScreen` |
+| `solicitacoes-relatorios` | Relatórios de Pedidos | `RelatorioPedidosScreen` |
+| `solicitacoes-taxas-veiculos` | Taxas dos Veículos | `TaxasVeiculosScreen` |
+| `solicitacoes-validacoes` | Validações | `ValidacoesConfigScreen` |
 | `fidcs` | Gestão de FIDC's | `FidcScreen` |
+| `fidcs-simulador` | Simulador FIDC | `FidcSimuladorScreen` |
+| `fidcs-relatorios` | Relatórios FIDC | `FidcRelatoriosScreen` |
 | `cras` | Gestão de CRA's | `CraScreen` |
+| `cras-simulador` | Simulador | `CraSimuladorScreen` |
+| `cras-relatorios` | Relatórios | `CraRelatoriosScreen` |
 | `cobranca` | Cobrança | `Placeholder` |
 | `cobranca-notif` | Notificações de Cobrança | `CobrancaScreen` |
 | `risco-dashboard` | Risco | `RiscoDashboardScreen` |
@@ -119,12 +127,12 @@ Toda a navegação do shell é controlada em `ModulesScreen.vue` — **não há 
 | Estado | Tipo | Comportamento |
 |---|---|---|
 | `collapsed` | `boolean` | `true` = 80px de largura; `false` = `var(--sidebar-width-expanded)` |
-| `openMenu` | `string \| null` | Chave do item pai com submenu aberto (`'cobranca'` ou `'risco'`) |
+| `openMenu` | `string \| null` | Chave do item pai com submenu aberto (`'cobranca'`, `'risco'`, `'cras'`, `'fidcs'`, `'solicitacoes'`, …) |
 | `userToggledSidebar` | `boolean` | Após toggle manual, o resize automático deixa de sobrescrever `collapsed` |
 
 **Colapso automático:** em `resize`, se `innerWidth <= 1366` (`LAPTOP_BREAKPOINT`), a sidebar colapsa — a menos que o usuário já tenha clicado no botão de colapsar/expandir.
 
-**Submenu na carga:** se `?view=` começa com `cobranca` ou `risco`, `openMenu` já inicia aberto para o grupo correspondente.
+**Submenu na carga:** se `?view=` começa com `cobranca`, `risco`, `cras`, `fidcs` ou `solicitacoes`, `openMenu` já inicia aberto para o grupo correspondente.
 
 ### Eventos Sidebar → ModulesScreen
 
@@ -380,6 +388,8 @@ No **dashboard**, vários cards existem só como vitrine (Admin, Gerencial, Ativ
 | `src/features/dashboard/data/modulesData.ts` | Lista e tons dos cards |
 | `src/features/dashboard/components/ModuleCard.vue` | Card interativo do dashboard (altura uniforme por linha) |
 | `src/styles/theme.css` | Tokens de layout shell, media queries, `html overflow-y` |
-| `docs/handoff/risco.md` | Handoff do módulo Risco (submenu da sidebar) |
-| `docs/handoff/solicitacao-listagem.md` | Handoff da listagem de Solicitação de Operação |
-| `docs/handoff/solicitacao-detalhes.md` | Handoff do detalhe de Solicitação de Operação |
+| `docs/handoff/risco/risco.md` | Handoff do módulo Risco (submenu da sidebar) |
+| `docs/handoff/solicitacao/listagem.md` | Handoff da listagem de Solicitação de Operação |
+| `docs/handoff/solicitacao/detalhes.md` | Handoff do detalhe de Solicitação de Operação |
+| `docs/handoff/cra/gestao.md` | Handoff pixel-perfect da Gestão de CRA's |
+| `docs/handoff/README.md` | Índice de todos os handoffs por módulo |

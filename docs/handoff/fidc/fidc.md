@@ -264,10 +264,10 @@ Referência para replicar em CRA ou Solicitação/Ativos.
 
 | key | Conteúdo |
 |---|---|
-| `info` | CNPJ, razão social, fantasia, constituição, CVM... |
+| `info` | Tipo de Fundo (MULTICLASSE/MONOCLASSE), CNPJ do Veículo, Tipo de Empresa, Razão Social, Nome Fantasia, Data de Constituição, Natureza Legal, Atividade Principal, Categoria CVM |
 | `contato` | Email, telefone, endereço, UF |
 
-Emite `create: [NewFidcData]` → `FidcScreen` monta o fundo.
+Emite `create: [NewFidcData]` → `FidcScreen.buildFidcFromForm()` monta o fundo (`category` a partir de `tipoFundo`).
 
 ### `CreateClassModal` — 10 etapas
 
@@ -371,4 +371,4 @@ Números: `brl()` + `tabular-nums`. Datas nos seeds em `dd/mm/aaaa` (atenção a
 | `src/features/fidc/components/CreateClassModal.vue` | Wizard nova classe |
 | `src/features/fidc/components/PLHero.vue` | Painel PL |
 | `docs/handoff/layout-shell.md` | Sidebar, topbar, dashboard |
-| `docs/handoff/cra.md` | Módulo irmão (estrutura paralela) |
+| `docs/handoff/cra/gestao.md` | Módulo irmão (estrutura paralela) |

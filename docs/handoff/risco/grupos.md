@@ -1,7 +1,7 @@
 # Handoff — Risco / Grupos Empresariais (pixel-perfect)
 
 > Fonte de verdade: código em `src/features/risco/` + tokens em `src/styles/theme.css` + `guidelines/Guidelines.md`.  
-> Este documento cobre **somente** listagem + detalhe de Grupos Empresariais (incluindo abas, sub-abas, shared e modais disparados daqui). Para o módulo inteiro (Dashboard, Ratings, Agrupamentos, Relatórios), ver [risco.md](./risco.md).
+> Este documento cobre **somente** listagem + detalhe de Grupos Empresariais (incluindo abas, sub-abas, shared e modais disparados daqui). Para o módulo inteiro (Dashboard, Ratings, Agrupamentos, Relatórios), ver [risco.md](./risco.md). Índice geral: [../README.md](../README.md).
 
 **Objetivo:** permitir reimplementação pixel-perfect em outro Cursor sem abrir o Figma — copiar medidas, tokens, grids e estados exatamente como estão no Vue.
 

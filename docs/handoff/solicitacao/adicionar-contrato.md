@@ -1,6 +1,6 @@
 # Handoff — Adicionar Contrato (Solicitação de Operação)
 
-> Fonte de verdade complementar: `guidelines/Guidelines.md` (design tokens), `docs/handoff/solicitacao-ativos.md` (contexto da aba Ativos) e `docs/handoff/solicitacao-detalhes.md` (tela de detalhe). Este documento cobre **somente o modal Adicionar Contrato** e o **wizard Gerar minuta CPR / CPR-F** em `src/features/solicitacao-operacao/`.
+> Fonte de verdade complementar: `guidelines/Guidelines.md` (design tokens), [ativos.md](./ativos.md) (contexto da aba Ativos) e [detalhes.md](./detalhes.md) (tela de detalhe). Este documento cobre **somente o modal Adicionar Contrato** e o **wizard Gerar minuta CPR / CPR-F** em `src/features/solicitacao-operacao/`.
 
 ---
 

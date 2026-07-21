@@ -1,6 +1,6 @@
 # Handoff — Ativos (Solicitação de Operação)
 
-> Fonte de verdade complementar: `guidelines/Guidelines.md` (design tokens e padrão estrutural de telas de detalhe) e `docs/handoff/solicitacao-detalhes.md` (contexto geral da tela de detalhe). Este documento cobre **somente a aba Ativos** e o **drill-down de detalhe do ativo** em `src/features/solicitacao-operacao/`.
+> Fonte de verdade complementar: `guidelines/Guidelines.md` (design tokens e padrão estrutural de telas de detalhe) e [detalhes.md](./detalhes.md) (contexto geral da tela de detalhe). Este documento cobre **somente a aba Ativos** e o **drill-down de detalhe do ativo** em `src/features/solicitacao-operacao/`.
 
 ---
 
@@ -304,7 +304,7 @@ REGISTRAR_PAGAMENTO_FIELDS: PagamentoFormFieldDef[]
 
 `ToggleRow` do modal `adicionar-contrato` com prop `spacious` para padding maior no toggle.
 
-> Para evoluir: portar modais de estorno/edição de parcelas do FIDC (`docs/handoff/fidc.md`) se necessário.
+> Para evoluir: portar modais de estorno/edição de parcelas do FIDC (`docs/handoff/fidc/fidc.md`) se necessário.
 
 ---
 
@@ -319,7 +319,7 @@ REGISTRAR_PAGAMENTO_FIELDS: PagamentoFormFieldDef[]
 
 Todos usam primitives de `components/modals/adicionar-contrato/` (`FormField`, `SelectField`, `ToggleRow`, `AddButton`).
 
-`AdicionarContratoModal` recebe `:valor-operacao`, `:tipo-calculo` e `:partes` da solicitação. Detalhamento pixel-perfect (campos, spans, tokens, 7 etapas da minuta): **`docs/handoff/solicitacao-adicionar-contrato.md`**.
+`AdicionarContratoModal` recebe `:valor-operacao`, `:tipo-calculo` e `:partes` da solicitação. Detalhamento pixel-perfect (campos, spans, tokens, 7 etapas da minuta): **[adicionar-contrato.md](./adicionar-contrato.md)**.
 
 Upload de evidência/carta de correção nos modais Confirmar e Prorrogar é **somente visual**.
 
@@ -409,5 +409,5 @@ Badges: fundo semântico light + texto dark (mapas `TONE_*`).
 | `data/operacaoData.ts` | `ContratoAtivo`, `detalheSolicitacao` |
 | `components/modals/VincularAtivosModal.vue` | vincular títulos existentes |
 | `components/modals/AdicionarContratoModal.vue` | criar contrato manual |
-| `docs/handoff/solicitacao-detalhes.md` | handoff geral da solicitação |
-| `docs/handoff/fidc.md` | referência para pagamentos avançados (estorno, parcelas) |
+| `docs/handoff/solicitacao/detalhes.md` | handoff geral da solicitação |
+| `docs/handoff/fidc/fidc.md` | referência para pagamentos avançados (estorno, parcelas) |

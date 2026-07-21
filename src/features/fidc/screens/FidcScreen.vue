@@ -29,11 +29,12 @@ type Route =
 
 function buildFidcFromForm(data: NewFidcData): Fidc {
   const name = data.razaoSocial || data.nomeFantasia || 'NOVO FIDC';
+  const category = data.tipoFundo === 'MONOCLASSE' ? 'MONOCLASSE' : 'MULTICLASSE';
   return {
     id: `fidc-${Date.now()}`,
     name,
     cnpj: data.cnpj || '—',
-    category: 'MULTICLASSE',
+    category,
     status: 'EM ANDAMENTO',
     carteira: { valor: 0, titulos: 0 },
     vencido: { valor: 0, titulos: 0 },

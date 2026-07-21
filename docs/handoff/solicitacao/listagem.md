@@ -1,12 +1,13 @@
 # Handoff — Tela inicial de Solicitação de Operação (Listagem)
 
-> Fonte de verdade complementar: `guidelines/Guidelines.md` (design tokens) e `src/styles/theme.css`. Este documento cobre **a tela de listagem/workflow** — header, filtros, esteiras, toggle de visualização e as três views (Kanban, Cards, Tabela). Para o drill-down, ver `solicitacao-detalhes.md` e `solicitacao-ativos.md`.
+> Fonte de verdade complementar: `guidelines/Guidelines.md` (design tokens) e `src/styles/theme.css`. Este documento cobre **a tela de listagem/workflow** — header, filtros, esteiras, toggle de visualização e as três views (Kanban, Cards, Tabela). Para o drill-down, ver [detalhes.md](./detalhes.md) e [ativos.md](./ativos.md).
 >
 > Telas admin do módulo (submenu):
-> - [solicitacao-fundo-padrao.md](./solicitacao-fundo-padrao.md)
-> - [solicitacao-relatorio-pedidos.md](./solicitacao-relatorio-pedidos.md)
-> - [solicitacao-taxas-veiculos.md](./solicitacao-taxas-veiculos.md)
-> - [solicitacao-validacoes-config.md](./solicitacao-validacoes-config.md)
+> - [fundo-padrao.md](./fundo-padrao.md)
+> - [relatorio-pedidos.md](./relatorio-pedidos.md)
+> - [taxas-veiculos.md](./taxas-veiculos.md)
+> - [validacoes-config.md](./validacoes-config.md)
+> - [novo-pedido.md](./novo-pedido.md) — wizard Novo Pedido (pixel-perfect)
 
 ---
 
@@ -433,7 +434,9 @@ Qualquer view emite `@open` com o `id` string. O objeto passado ao detalhe é **
 
 ---
 
-## 11. Novo pedido (resumo)
+## 11. Novo pedido
+
+> Spec visual completa (shell, 3 etapas, tokens, anexos): **[novo-pedido.md](./novo-pedido.md)**.
 
 `NovoPedidoModal` → `buildFromForm()`:
 
@@ -508,7 +511,8 @@ Insere no topo da lista (`unshift`).
 | `screens/solicitacao-screen/SolicitacaoFiltersPanel.vue` | Popover filtros |
 | `data/operacaoData.ts` | Seeds, ETAPAS, ESTEIRAS, helpers |
 | `components/NovoPedidoModal.vue` | Criar solicitação |
+| [novo-pedido.md](./novo-pedido.md) | Spec pixel-perfect do wizard |
 | `screens/SolicitacaoDetailScreen.vue` | Destino do clique |
-| `docs/handoff/solicitacao-detalhes.md` | Detalhe da solicitação |
-| `docs/handoff/solicitacao-ativos.md` | Aba Ativos no detalhe |
+| `docs/handoff/solicitacao/detalhes.md` | Detalhe da solicitação |
+| `docs/handoff/solicitacao/ativos.md` | Aba Ativos no detalhe |
 | `docs/handoff/layout-shell.md` | Shell (topbar, sidebar) |

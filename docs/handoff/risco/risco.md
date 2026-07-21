@@ -2,7 +2,7 @@
 
 > Fonte de verdade complementar: `guidelines/Guidelines.md` (design tokens e padrão estrutural de telas de detalhe). Este documento cobre **todo o módulo** em `src/features/risco/` — navegação, dados mockados, telas, modais e convenções de UI.
 
-> **Pixel-perfect de Grupos Empresariais (listagem + detalhe + abas + modais):** ver [risco-grupos.md](./risco-grupos.md).
+> **Pixel-perfect de Grupos Empresariais (listagem + detalhe + abas + modais):** ver [grupos.md](./grupos.md).
 
 ---
 
@@ -192,7 +192,7 @@ flowchart TD
 
 ### Grupos Empresariais (`GruposScreen` → `GruposListScreen`)
 
-> Spec visual completa (tokens, grids, paddings, estados): **[risco-grupos.md](./risco-grupos.md)**.
+> Spec visual completa (tokens, grids, paddings, estados): **[grupos.md](./grupos.md)**.
 
 Listagem completa com:
 - Busca por nome, filtros avançados (gerente, tipo cliente, parecer, vencimento), quick filters de parecer (Vencido / Próximo a Vencer / Em Dia);
@@ -227,6 +227,8 @@ Tabela com contagem de CRAs/FIDCs vinculados. Ações:
 - **Clique na linha** → `VincularAgrupamentoModal` (busca + grade de cards CRA/FIDC).
 
 ### Relatórios (`RelatoriosScreen.vue`)
+
+> Spec visual completa (catálogo + detalhe Parecer de Crédito + CSV): **[relatorios.md](./relatorios.md)**.
 
 Catálogo de relatórios (hoje só **Parecer de Crédito**). Fluxo: selecionar → filtros (nome, status grupo, gerente, status parecer) → Gerar → tabela + exportar CSV (mock, gera blob no browser).
 

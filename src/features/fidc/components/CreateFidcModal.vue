@@ -8,15 +8,14 @@ import FormField from './create-fidc/FormField.vue';
 import SelectField from './create-fidc/SelectField.vue';
 
 export interface NewFidcData {
+  tipoFundo: string;
   cnpj: string;
-  identificacao: string;
+  tipoEmpresa: string;
   razaoSocial: string;
   nomeFantasia: string;
   dataConstituicao: string;
   naturezaLegal: string;
   atividadePrincipal: string;
-  tipoEmpresa: string;
-  tipoFundo: string;
   categoriaCvm: string;
   email: string;
   ddi: string;
@@ -55,15 +54,14 @@ const UF_OPTIONS = [
 const stepIdx = ref(0);
 const hoverIdx = ref<number | null>(null);
 const form = ref<NewFidcData>({
+  tipoFundo: '',
   cnpj: '',
-  identificacao: '',
+  tipoEmpresa: '',
   razaoSocial: '',
   nomeFantasia: '',
   dataConstituicao: '',
   naturezaLegal: '',
   atividadePrincipal: '',
-  tipoEmpresa: '',
-  tipoFundo: '',
   categoriaCvm: '',
   email: '',
   ddi: '+55',
@@ -174,19 +172,18 @@ function stepDimmed(i: number) {
       <div style="flex: 1; overflow-y: auto; padding: 40px">
         <!-- Etapa 1 — Informações -->
         <StepGrid v-if="step.key === 'info'">
-          <FormField label="CNPJ do Veículo" placeholder="00.000.000/0000-00" :span="4" v-model="form.cnpj" />
-          <FormField label="Identificação do Veículo" placeholder="Ex: CERES AGRO I" :span="5" v-model="form.identificacao" />
+          <SelectField label="Tipo de Fundo" :options="['MULTICLASSE', 'MONOCLASSE']" placeholder="Selecione" :span="4" v-model="form.tipoFundo" />
+          <FormField label="CNPJ do Veículo" placeholder="00.000.000/0000-00" :span="5" v-model="form.cnpj" />
           <SelectField label="Tipo de Empresa" :options="['Fundo', 'Companhia', 'Sociedade Limitada']" placeholder="Selecione" :span="3" v-model="form.tipoEmpresa" />
 
           <FormField label="Razão Social" placeholder="Razão social completa" :span="8" v-model="form.razaoSocial" />
           <FormField label="Nome Fantasia" placeholder="Ex: Ceres Agro I" :span="4" v-model="form.nomeFantasia" />
 
+          <SelectField label="Natureza Legal" :options="['Condomínio Fechado', 'Condomínio Aberto', 'Sociedade Anônima']" placeholder="Selecione" :span="4" v-model="form.naturezaLegal" />
+          <FormField label="Atividade Principal" placeholder="Direitos Creditórios" :span="5" v-model="form.atividadePrincipal" />
           <FormField label="Data de Constituição" type="date" :span="3" v-model="form.dataConstituicao" />
-          <SelectField label="Natureza Legal" :options="['Condomínio Fechado', 'Condomínio Aberto', 'Sociedade Anônima']" placeholder="Selecione" :span="3" v-model="form.naturezaLegal" />
-          <FormField label="Atividade Principal" placeholder="Direitos Creditórios" :span="6" v-model="form.atividadePrincipal" />
 
-          <SelectField label="Tipo do Fundo" :options="['ABERTO', 'FECHADO']" placeholder="Selecione" :span="6" v-model="form.tipoFundo" />
-          <SelectField label="Categoria CVM" :options="['FIDC', 'FIDC-NP', 'FIDC Agro']" placeholder="Selecione" :span="6" v-model="form.categoriaCvm" />
+          <SelectField label="Categoria CVM" :options="['FIDC', 'FIDC-NP', 'FIDC Agro']" placeholder="Selecione" :span="12" v-model="form.categoriaCvm" />
         </StepGrid>
 
         <!-- Etapa 2 — Contato & Endereço -->
