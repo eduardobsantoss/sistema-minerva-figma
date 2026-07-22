@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { Plus } from 'lucide-vue-next';
 import { ESTEIRAS } from '../../data/operacaoData';
 import type { NewPedidoData } from './types';
@@ -8,8 +9,9 @@ import FieldLabel from './FieldLabel.vue';
 import FormField from './FormField.vue';
 import SelectField from './SelectField.vue';
 import ToggleRow from './ToggleRow.vue';
+import NovaContaBancariaModal from '../modals/NovaContaBancariaModal.vue';
 
-defineProps<{ form: NewPedidoData }>();
+const props = defineProps<{ form: NewPedidoData }>();
 
 const TIPO_OPERACAO_OPTS = [
   'Desconto Duplicata',
@@ -25,13 +27,20 @@ const UNIDADE_OPTS = ['Ceres Trading', 'Ceres Confina', 'Ceres Investimentos'];
 const GERENTE_OPTS = ['Ana Martins', 'Carlos Eduardo', 'Fernanda Lima', 'Roberto Alves'];
 const FUNDO_OPTS = ['CRA Semeagro', 'CRA Ceres Agro', 'CRA BTG Agro', 'FIDC Boa Safra'];
 const GRUPO_OPTS = ['Grupo Ceres', 'Semeagro', 'BTG Agro', 'Raízen', 'Cargill Brasil', 'Coamo', 'Castrolanda'];
-const CONTA_OPTS = ['001 - BB · Ag 1234 · CC 56789-0', '341 - Itaú · Ag 4567 · CC 12345-6'];
+const contaOpts = ref(['001 - BB · Ag 1234 · CC 56789-0', '341 - Itaú · Ag 4567 · CC 12345-6']);
+const showNovaConta = ref(false);
 const TIPO_TAXA_OPTS = ['Pré-fixado', 'Pós-fixado', 'Híbrido'];
 
 const AGRUPAMENTO_ROWS = [
   { agrupamento: 'Confina', limite: 'R$ 1.000.000', risco: 'R$ 500.000', riscoSolic: 'R$ 540.000' },
   { agrupamento: 'Multicedentes', limite: 'R$ 4.000.000', risco: 'R$ 0', riscoSolic: 'R$ 40.000' },
 ];
+
+function onNovaConta(label: string) {
+  contaOpts.value.push(label);
+  props.form.contaBancaria = label;
+  showNovaConta.value = false;
+}
 </script>
 
 <template>
@@ -59,7 +68,7 @@ const AGRUPAMENTO_ROWS = [
           <FieldLabel>Conta bancária</FieldLabel>
           <div class="flex items-center" style="gap: 8px">
             <div style="flex: 1">
-              <SelectField :options="CONTA_OPTS" placeholder="Selecione" v-model="form.contaBancaria" />
+              <SelectField :options="contaOpts" placeholder="Selecione" v-model="form.contaBancaria" />
             </div>
             <button
               aria-label="Adicionar conta"
@@ -74,6 +83,7 @@ const AGRUPAMENTO_ROWS = [
                 color: var(--gci-base);
                 cursor: pointer;
               "
+              @click="showNovaConta = true"
             >
               <Plus :size="16" />
             </button>
@@ -151,5 +161,11 @@ const AGRUPAMENTO_ROWS = [
         </div>
       </div>
     </BentoBox>
+
+    <NovaContaBancariaModal
+      v-if="showNovaConta"
+      @close="showNovaConta = false"
+      @create="onNovaConta"
+    />
   </div>
 </template>

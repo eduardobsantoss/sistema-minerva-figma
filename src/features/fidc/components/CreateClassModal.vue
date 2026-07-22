@@ -41,7 +41,63 @@ import DataTable from './create-class/DataTable.vue';
 import DynamicConcentration from './create-class/DynamicConcentration.vue';
 import SummaryItem from './create-class/SummaryItem.vue';
 
-defineEmits<{ close: [] }>();
+export interface NewClassData {
+  cnpjVeiculo: string;
+  identificacaoVeiculo: string;
+  tipoEmpresa: string;
+  razaoSocial: string;
+  nomeFantasia: string;
+  naturezaLegal: string;
+  atividadePrincipal: string;
+  codigoSingulare: string;
+  dataConstituicao: string;
+  dataFimPrazo: string;
+  email: string;
+  ddi: string;
+  ddd: string;
+  telefone: string;
+  cep: string;
+  endereco: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  pais: string;
+  nomeCarteira: string;
+  banco: string;
+  carteiraSelecionada: string;
+  cnab: string;
+  codigoEmpresa: string;
+  numeroConta: string;
+  numeroAgencia: string;
+  campoExtra1: string;
+  boletoInstrucoes: string;
+  permiteFimDeSemana: boolean;
+  cadastrarNovoBeneficiario: boolean;
+  benefSelecionado: string;
+  benefDesde: string;
+  benefCnpj: string;
+  benefNome: string;
+  benefCep: string;
+  benefEndereco: string;
+  benefNumero: string;
+  benefComplemento: string;
+  benefBairro: string;
+  benefCidade: string;
+  benefEstado: string;
+}
+
+const props = withDefaults(
+  defineProps<{
+    /** Sem overlay — usado dentro do Novo FIDC (Mono). */
+    naked?: boolean;
+    title?: string;
+  }>(),
+  { naked: false, title: 'Nova Classe de Fundo' },
+);
+
+const emit = defineEmits<{ close: []; back: []; create: [data: NewClassData] }>();
 
 interface Step {
   key: string;
@@ -95,52 +151,6 @@ const partOpcionais: { key: string; label: string; toggleLabel: string }[] = [
   { key: 'benef', label: 'Beneficiário Final', toggleLabel: 'Fundo tem Beneficiário Final' },
 ];
 
-interface NewClassData {
-  cnpjVeiculo: string;
-  identificacaoVeiculo: string;
-  tipoEmpresa: string;
-  razaoSocial: string;
-  nomeFantasia: string;
-  naturezaLegal: string;
-  atividadePrincipal: string;
-  codigoSingulare: string;
-  dataConstituicao: string;
-  dataFimPrazo: string;
-  email: string;
-  ddi: string;
-  ddd: string;
-  telefone: string;
-  cep: string;
-  endereco: string;
-  numero: string;
-  complemento: string;
-  bairro: string;
-  cidade: string;
-  estado: string;
-  pais: string;
-  nomeCarteira: string;
-  banco: string;
-  carteiraSelecionada: string;
-  cnab: string;
-  codigoEmpresa: string;
-  numeroConta: string;
-  numeroAgencia: string;
-  campoExtra1: string;
-  boletoInstrucoes: string;
-  permiteFimDeSemana: boolean;
-  cadastrarNovoBeneficiario: boolean;
-  benefSelecionado: string;
-  benefDesde: string;
-  benefCnpj: string;
-  benefNome: string;
-  benefCep: string;
-  benefEndereco: string;
-  benefNumero: string;
-  benefComplemento: string;
-  benefBairro: string;
-  benefCidade: string;
-  benefEstado: string;
-}
 
 const BENEFICIARIO_OPTS = [
   'CERES SECURIZADORA S/A',
@@ -292,21 +302,39 @@ function stepDimmed(i: number) {
   const current = i === stepIdx.value;
   return !current && !done && hoverIdx.value !== i ? 0.55 : 1;
 }
+
+function handleBack() {
+  if (stepIdx.value === 0) {
+    if (props.naked) emit('back');
+    else emit('close');
+    return;
+  }
+  stepIdx.value = Math.max(0, stepIdx.value - 1);
+}
+
+function handleNext() {
+  if (isLast.value) emit('create', { ...form.value });
+  else stepIdx.value++;
+}
 </script>
 
 <template>
   <div
-    style="
-      position: fixed;
-      inset: 0;
-      background: rgba(8, 60, 74, 0.55);
-      backdrop-filter: blur(8px);
-      z-index: 400;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 32px;
-      animation: fadeIn 0.2s ease-out;
+    :style="
+      naked
+        ? { width: '100%', maxWidth: '1280px', animation: 'fadeIn 0.2s ease-out' }
+        : {
+            position: 'fixed',
+            inset: '0',
+            background: 'rgba(8, 60, 74, 0.55)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 400,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '32px',
+            animation: 'fadeIn 0.2s ease-out',
+          }
     "
   >
     <div
@@ -327,13 +355,13 @@ function stepDimmed(i: number) {
       <div class="flex items-start justify-between" style="padding: 24px 32px; border-bottom: 1px solid var(--border-default)">
         <div>
           <h2 style="font-size: var(--text-2xl); font-weight: 900; color: var(--text-strong); letter-spacing: -0.025em; line-height: 1.2; margin-bottom: 4px">
-            Nova Classe de Fundo
+            {{ title }}
           </h2>
           <p style="font-size: var(--text-sm); color: var(--text-muted)">
             {{ step.hint }} · Etapa {{ stepIdx + 1 }} de {{ steps.length }}
           </p>
         </div>
-        <button aria-label="Fechar" class="flex items-center justify-center" style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0" @click="$emit('close')">
+        <button aria-label="Fechar" class="flex items-center justify-center" style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0" @click="emit('close')">
           <X :size="18" />
         </button>
       </div>
@@ -940,9 +968,9 @@ function stepDimmed(i: number) {
       <div class="flex items-center justify-between" style="padding: 16px 32px; border-top: 1px solid var(--border-default); background: var(--surface-card)">
         <button
           style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: 600; font-size: var(--text-sm); padding: 10px 4px"
-          @click="stepIdx === 0 ? $emit('close') : (stepIdx = Math.max(0, stepIdx - 1))"
+          @click="handleBack"
         >
-          {{ stepIdx === 0 ? 'Cancelar' : '← Voltar' }}
+          {{ stepIdx === 0 ? (naked ? '← Voltar ao fundo' : 'Cancelar') : '← Voltar' }}
         </button>
         <span style="font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums">
           {{ stepIdx + 1 }} / {{ steps.length }}
@@ -962,7 +990,7 @@ function stepDimmed(i: number) {
             letterSpacing: '0.04em',
             boxShadow: isLast ? '0 8px 20px -8px rgba(5,150,105,0.40)' : '0 8px 20px -8px rgba(8,60,74,0.30)',
           }"
-          @click="isLast ? $emit('close') : stepIdx++"
+          @click="handleNext"
         >
           {{ isLast ? 'Finalizar Cadastro' : 'Próxima Etapa' }}
           <Check v-if="isLast" :size="15" />

@@ -7,7 +7,7 @@ import {
 } from 'lucide-vue-next';
 import {
   etapaCor, etapaLabel, esteiraLabel, detalheSolicitacao,
-  type Solicitacao, type ParteRelacionada, type ContratoAtivo, type Esteira,
+  type Solicitacao, type ParteRelacionada, type ContratoAtivo, type Esteira, type ItemValidacao,
 } from '../data/operacaoData';
 import { enriquecerContratoAtivo } from '../data/ativoData';
 import { CopyButton } from './detail-tabs/shared';
@@ -24,6 +24,12 @@ import AdicionarContratoModal from '../components/modals/AdicionarContratoModal.
 import VincularAtivosModal from '../components/modals/VincularAtivosModal.vue';
 import ConfirmarTituloModal from '../components/modals/ConfirmarTituloModal.vue';
 import ProrrogarVencimentoModal from '../components/modals/ProrrogarVencimentoModal.vue';
+import AtualizarCessaoModal from '../components/modals/AtualizarCessaoModal.vue';
+import GerarTermoCessaoModal from '../components/modals/GerarTermoCessaoModal.vue';
+import GerarCnabModal from '../components/modals/GerarCnabModal.vue';
+import InserirEvidenciaModal from '../components/modals/InserirEvidenciaModal.vue';
+import DetalheEvidenciaModal from '../components/modals/DetalheEvidenciaModal.vue';
+import DetalheValidacaoModal from '../components/modals/DetalheValidacaoModal.vue';
 import { ActionMenu, RejectModal } from './solicitacao-detail';
 import { ParteRelacionadaDetailView } from './detail-tabs/parte-relacionada';
 import { AtivoDetailView } from './detail-tabs/ativo';
@@ -53,10 +59,63 @@ const showContratoModal = ref(false);
 const showVincularModal = ref(false);
 const showConfirmarModal = ref(false);
 const showProrrogarModal = ref(false);
+const showAtualizarCessao = ref(false);
+const showGerarTermo = ref(false);
+const showGerarCnab = ref(false);
+const showInserirEvidencia = ref(false);
+const showDetalheEvidencia = ref(false);
+const showDetalheValidacao = ref(false);
+const validacaoEvidenciaCtx = ref<ItemValidacao | null>(null);
+const validacaoDetalheCtx = ref<ItemValidacao | null>(null);
 const selectedParte = ref<ParteRelacionada | null>(null);
 const selectedAtivo = ref<ContratoAtivo | null>(null);
 const ativosAcao = ref<ContratoAtivo[]>([]);
 const cor = computed(() => etapaCor(props.solicitacao.etapa));
+
+function findValidacao(titulo: string) {
+  return det.validacoes.find((v) => v.titulo === titulo);
+}
+
+function openInserirEvidencia(v: ItemValidacao) {
+  validacaoEvidenciaCtx.value = v;
+  showInserirEvidencia.value = true;
+}
+
+function openVerEvidencia(v: ItemValidacao) {
+  validacaoEvidenciaCtx.value = v;
+  showDetalheEvidencia.value = true;
+}
+
+function openVerDetalhes(v: ItemValidacao) {
+  validacaoDetalheCtx.value = v;
+  showDetalheValidacao.value = true;
+}
+
+function handleAutorizar(v: ItemValidacao) {
+  const item = findValidacao(v.titulo);
+  if (!item) return;
+  if (item.evidencia) {
+    item.status = 'OK';
+    return;
+  }
+  openInserirEvidencia(item);
+}
+
+function onInserirEvidencia(data: { arquivo: string; descricao: string }) {
+  const item = validacaoEvidenciaCtx.value ? findValidacao(validacaoEvidenciaCtx.value.titulo) : null;
+  if (item) {
+    const now = new Date();
+    const dataStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    item.evidencia = {
+      arquivo: data.arquivo,
+      descricao: data.descricao,
+      autor: 'Usuário atual',
+      data: dataStr,
+    };
+  }
+  showInserirEvidencia.value = false;
+  validacaoEvidenciaCtx.value = null;
+}
 
 function handleAddParte(parte: ParteRelacionada) {
   det.partes.push(parte);
@@ -157,6 +216,10 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
     :det="det"
     :solicitacao-id="solicitacao.id"
     @back="subView = null"
+    @inserir-evidencia="openInserirEvidencia"
+    @ver-evidencia="openVerEvidencia"
+    @autorizar="handleAutorizar"
+    @ver-detalhes="openVerDetalhes"
   />
   <ParteRelacionadaDetailView
     v-else-if="subView === 'parte-detalhe' && selectedParte"
@@ -219,7 +282,12 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
           ANÁLISE OPERAÇÕES
           <ChevronRight :size="16" />
         </button>
-        <ActionMenu @reject="confirmReject = true" />
+        <ActionMenu
+          @reject="confirmReject = true"
+          @atualizar-cessao="showAtualizarCessao = true"
+          @gerar-termo-cessao="showGerarTermo = true"
+          @gerar-cnab="showGerarCnab = true"
+        />
       </div>
     </div>
 
@@ -254,7 +322,15 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
         @confirmar="handleConfirmar"
       />
       <GarantiasTab v-else-if="tab === 'garantias'" :det="det" />
-      <ValidacoesTab v-else-if="tab === 'validacoes'" :det="det" @open-full-view="subView = 'validacoes-detalhe'" />
+      <ValidacoesTab
+        v-else-if="tab === 'validacoes'"
+        :det="det"
+        @open-full-view="subView = 'validacoes-detalhe'"
+        @inserir-evidencia="openInserirEvidencia"
+        @ver-evidencia="openVerEvidencia"
+        @autorizar="handleAutorizar"
+        @ver-detalhes="openVerDetalhes"
+      />
       <AnexosTab v-else-if="tab === 'anexos'" :det="det" />
       <AtaTab v-else-if="tab === 'ata'" />
       <HistoricoTab v-else-if="tab === 'historico'" :det="det" />
@@ -296,6 +372,41 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
       :ativos="ativosAcao"
       @close="showProrrogarModal = false"
       @confirm="onProrrogarVencimento"
+    />
+
+    <AtualizarCessaoModal
+      v-if="showAtualizarCessao"
+      @close="showAtualizarCessao = false"
+    />
+
+    <GerarTermoCessaoModal
+      v-if="showGerarTermo"
+      @close="showGerarTermo = false"
+    />
+
+    <GerarCnabModal
+      v-if="showGerarCnab"
+      @close="showGerarCnab = false"
+    />
+
+    <InserirEvidenciaModal
+      v-if="showInserirEvidencia && validacaoEvidenciaCtx"
+      :titulo-validacao="validacaoEvidenciaCtx.titulo"
+      @close="showInserirEvidencia = false; validacaoEvidenciaCtx = null"
+      @confirm="onInserirEvidencia"
+    />
+
+    <DetalheEvidenciaModal
+      v-if="showDetalheEvidencia && validacaoEvidenciaCtx?.evidencia"
+      :titulo-validacao="validacaoEvidenciaCtx.titulo"
+      :evidencia="validacaoEvidenciaCtx.evidencia"
+      @close="showDetalheEvidencia = false; validacaoEvidenciaCtx = null"
+    />
+
+    <DetalheValidacaoModal
+      v-if="showDetalheValidacao && validacaoDetalheCtx"
+      :v="validacaoDetalheCtx"
+      @close="showDetalheValidacao = false; validacaoDetalheCtx = null"
     />
   </div>
 </template>

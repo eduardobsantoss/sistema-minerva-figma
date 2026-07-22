@@ -1,15 +1,38 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
-import { MoreVertical, ArrowRightLeft, RefreshCw, Layers, Wallet, XCircle } from 'lucide-vue-next';
+import {
+  MoreVertical,
+  ArrowRightLeft,
+  RefreshCw,
+  Layers,
+  Wallet,
+  XCircle,
+  FileText,
+  FileCode,
+} from 'lucide-vue-next';
+import type { Component } from 'vue';
 
-const emit = defineEmits<{ reject: [] }>();
+const emit = defineEmits<{
+  reject: [];
+  atualizarCessao: [];
+  gerarTermoCessao: [];
+  gerarCnab: [];
+}>();
 
 const open = ref(false);
 const rootRef = ref<HTMLDivElement | null>(null);
 
-const secondary = [
+type ActionItem = {
+  label: string;
+  icon: Component;
+  action?: 'atualizarCessao' | 'gerarTermoCessao' | 'gerarCnab';
+};
+
+const secondary: ActionItem[] = [
   { label: 'Transferir solicitação', icon: ArrowRightLeft },
-  { label: 'Atualizar cessão', icon: RefreshCw },
+  { label: 'Atualizar cessão', icon: RefreshCw, action: 'atualizarCessao' },
+  { label: 'Gerar Termo de Cessão', icon: FileText, action: 'gerarTermoCessao' },
+  { label: 'Gerar CNAB', icon: FileCode, action: 'gerarCnab' },
   { label: 'Mesclar ativos entre pedidos', icon: Layers },
   { label: 'Transferir conta bancária', icon: Wallet },
 ];
@@ -20,6 +43,13 @@ function handleDocClick(e: MouseEvent) {
 
 onMounted(() => document.addEventListener('mousedown', handleDocClick));
 onUnmounted(() => document.removeEventListener('mousedown', handleDocClick));
+
+function handleItem(a: ActionItem) {
+  open.value = false;
+  if (a.action === 'atualizarCessao') emit('atualizarCessao');
+  else if (a.action === 'gerarTermoCessao') emit('gerarTermoCessao');
+  else if (a.action === 'gerarCnab') emit('gerarCnab');
+}
 
 function handleReject() {
   open.value = false;
@@ -79,7 +109,7 @@ function handleReject() {
           width: 100%;
           transition: background var(--duration-fast);
         "
-        @click="open = false"
+        @click="handleItem(a)"
       >
         <component :is="a.icon" :size="16" style="color: var(--text-muted)" />
         {{ a.label }}

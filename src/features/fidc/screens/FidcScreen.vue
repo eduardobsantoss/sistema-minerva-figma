@@ -7,12 +7,14 @@ import TitleDetailScreen from './TitleDetailScreen.vue';
 import SacadoDetailScreen from './SacadoDetailScreen.vue';
 import GrupoEmpresarialDetailScreen from './GrupoEmpresarialDetailScreen.vue';
 import CreateClassModal from '../components/CreateClassModal.vue';
+import type { NewClassData } from '../components/CreateClassModal.vue';
 import CreateFidcModal from '../components/CreateFidcModal.vue';
 import type { NewFidcData } from '../components/CreateFidcModal.vue';
 import {
   fidcs as initialFidcs,
   defaultFidcSetup,
   type Fidc,
+  type FidcClass,
   type Cessao,
   type Sacado,
   type GrupoEmpresarialVinculo,
@@ -27,9 +29,25 @@ type Route =
   | { level: 'sacado'; fidcId: string; sacadoId: string }
   | { level: 'grupo'; fidcId: string; grupoId: string };
 
+function buildClassFromForm(data: NewClassData): FidcClass {
+  return {
+    id: `class-${Date.now()}`,
+    name: data.nomeFantasia || data.identificacaoVeiculo || data.razaoSocial || 'NOVA CLASSE',
+    cnpj: data.cnpjVeiculo || '—',
+    status: 'EM ANDAMENTO',
+    vrNominal: 0,
+    vrAberto: 0,
+    vrPresente: 0,
+    vrVencido: 0,
+    titulos: [],
+  };
+}
+
 function buildFidcFromForm(data: NewFidcData): Fidc {
   const name = data.razaoSocial || data.nomeFantasia || 'NOVO FIDC';
   const category = data.tipoFundo === 'MONOCLASSE' ? 'MONOCLASSE' : 'MULTICLASSE';
+  const classes =
+    category === 'MONOCLASSE' && data.classData ? [buildClassFromForm(data.classData)] : [];
   return {
     id: `fidc-${Date.now()}`,
     name,
@@ -45,7 +63,7 @@ function buildFidcFromForm(data: NewFidcData): Fidc {
     plRef: 'R$ 0',
     plRefAgo: 'R$ 0',
     carteiraSummaryTitles: 0,
-    classes: [],
+    classes,
     cessoes: [],
     sacados: [],
     grupos: [],
@@ -61,6 +79,16 @@ const fidcList = ref<Fidc[]>(initialFidcs);
 function handleCreateFidc(data: NewFidcData) {
   fidcList.value = [...fidcList.value, buildFidcFromForm(data)];
   creatingFidc.value = false;
+}
+
+function handleCreateClass(data: NewClassData) {
+  if (route.value.level !== 'fidc') return;
+  const fidcId = route.value.fidcId;
+  const klass = buildClassFromForm(data);
+  fidcList.value = fidcList.value.map((f) =>
+    f.id === fidcId ? { ...f, classes: [...f.classes, klass] } : f,
+  );
+  creating.value = false;
 }
 
 function updateCessoes(fidcId: string, cessoes: Cessao[]) {
@@ -141,7 +169,7 @@ const currentGrupo = computed(() => {
       @update-grupos="(grupos) => updateGrupos(currentFidc!.id, grupos)"
       @update-setup="(setup) => updateSetup(currentFidc!.id, setup)"
     />
-    <CreateClassModal v-if="creating" @close="creating = false" />
+    <CreateClassModal v-if="creating" @close="creating = false" @create="handleCreateClass" />
   </template>
 
   <SacadoDetailScreen

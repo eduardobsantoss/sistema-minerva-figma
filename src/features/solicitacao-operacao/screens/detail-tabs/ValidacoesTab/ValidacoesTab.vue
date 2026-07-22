@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { AlertCircle, CheckCircle2, RefreshCw } from 'lucide-vue-next';
-import { detalheSolicitacao } from '../../../data/operacaoData';
+import { detalheSolicitacao, type ItemValidacao } from '../../../data/operacaoData';
 import { Section, GhostButton } from '../shared';
 import ValidacaoRow from './ValidacaoRow.vue';
 
 const props = defineProps<{
   det: ReturnType<typeof detalheSolicitacao>;
 }>();
-const emit = defineEmits<{ openFullView: [] }>();
+const emit = defineEmits<{
+  openFullView: [];
+  inserirEvidencia: [v: ItemValidacao];
+  verEvidencia: [v: ItemValidacao];
+  autorizar: [v: ItemValidacao];
+  verDetalhes: [v: ItemValidacao];
+}>();
 
 const pendentes = computed(() => props.det.validacoes.filter((v) => v.status !== 'OK'));
 const ok = computed(() => props.det.validacoes.filter((v) => v.status === 'OK'));
@@ -47,12 +53,28 @@ const ok = computed(() => props.det.validacoes.filter((v) => v.status === 'OK'))
 
     <Section v-if="pendentes.length > 0" :title="`Pendentes (${pendentes.length})`">
       <div class="flex flex-col" style="gap: 10px">
-        <ValidacaoRow v-for="v in pendentes" :key="v.titulo" :v="v" />
+        <ValidacaoRow
+          v-for="v in pendentes"
+          :key="v.titulo"
+          :v="v"
+          @inserir-evidencia="emit('inserirEvidencia', $event)"
+          @ver-evidencia="emit('verEvidencia', $event)"
+          @autorizar="emit('autorizar', $event)"
+          @ver-detalhes="emit('verDetalhes', $event)"
+        />
       </div>
     </Section>
     <Section v-if="ok.length > 0" :title="`Aprovadas (${ok.length})`">
       <div class="flex flex-col" style="gap: 10px">
-        <ValidacaoRow v-for="v in ok" :key="v.titulo" :v="v" />
+        <ValidacaoRow
+          v-for="v in ok"
+          :key="v.titulo"
+          :v="v"
+          @inserir-evidencia="emit('inserirEvidencia', $event)"
+          @ver-evidencia="emit('verEvidencia', $event)"
+          @autorizar="emit('autorizar', $event)"
+          @ver-detalhes="emit('verDetalhes', $event)"
+        />
       </div>
     </Section>
   </div>

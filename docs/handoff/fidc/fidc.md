@@ -165,7 +165,7 @@ type Route =
 | Ação | Modal | Resultado |
 |---|---|---|
 | Novo FIDC | `CreateFidcModal` | `buildFidcFromForm()` → append em `fidcList` |
-| Nova Classe | `CreateClassModal` | **só fecha** no último passo — **não** adiciona classe à lista |
+| Nova Classe | `CreateClassModal` | `buildClassFromForm()` → append em `fidc.classes` |
 
 Novos FIDCs entram com `classes: []`, métricas zeradas, `category: 'MULTICLASSE'`.
 
@@ -260,14 +260,17 @@ Referência para replicar em CRA ou Solicitação/Ativos.
 
 ## 6. Modais de cadastro
 
-### `CreateFidcModal` — 2 etapas
+### `CreateFidcModal` — 2 etapas (+ classe se Mono)
 
 | key | Conteúdo |
 |---|---|
 | `info` | Tipo de Fundo (MULTICLASSE/MONOCLASSE), CNPJ do Veículo, Tipo de Empresa, Razão Social, Nome Fantasia, Data de Constituição, Natureza Legal, Atividade Principal, Categoria CVM |
 | `contato` | Email, telefone, endereço, UF |
 
-Emite `create: [NewFidcData]` → `FidcScreen.buildFidcFromForm()` monta o fundo (`category` a partir de `tipoFundo`).
+- **MULTICLASSE:** finaliza após `contato` → só cria o fundo (`classes: []`).
+- **MONOCLASSE:** após `contato`, embute `CreateClassModal` (`naked`) no mesmo overlay → ao finalizar, emite `NewFidcData` com `classData` → `buildFidcFromForm` monta o fundo já com **1 classe**.
+
+Emite `create: [NewFidcData]` → `FidcScreen.buildFidcFromForm()` (`category` a partir de `tipoFundo`; classe via `buildClassFromForm` quando Mono).
 
 ### `CreateClassModal` — 10 etapas
 
@@ -285,7 +288,7 @@ Emite `create: [NewFidcData]` → `FidcScreen.buildFidcFromForm()` monta o fundo
 
 > Etapa **Ativos** comentada (mesmo padrão do CRA).
 
-Último passo emite apenas `close` — **não persiste** classe no `fidcList`.
+Props: `naked` (sem overlay, para embutir no Novo FIDC Mono), `title`. Emite `create: [NewClassData]` (também no fluxo standalone “Nova Classe” no detalhe).
 
 ---
 
@@ -338,7 +341,6 @@ Números: `brl()` + `tabular-nums`. Datas nos seeds em `dd/mm/aaaa` (atenção a
 
 - Nenhuma chamada HTTP;
 - KPIs da listagem FIDC hardcoded;
-- `CreateClassModal` não grava classe;
 - Filtros sem lógica;
 - Anexos, accrual, confirmações, movimentações e histórico são visuais;
 - `detalhePagamentos` gera cronograma sintético (5 parcelas) — não reflete API real;
@@ -351,7 +353,7 @@ Números: `brl()` + `tabular-nums`. Datas nos seeds em `dd/mm/aaaa` (atenção a
 1. **Tipos primeiro** — `fidcsData.ts` antes de novos campos.
 2. **Listagem vs. detalhe** — métricas do card vêm do `Fidc`; títulos aninhados em `classes`.
 3. **Pagamentos** — manter `det` separado via `detalhePagamentos()`; aba já usa `v-model:det`.
-4. **Nova classe** — implementar `buildClassFromForm` + append em `fidc.classes` (espelhar CRA operação).
+4. **Nova classe** — já grava via `buildClassFromForm` (standalone e Mono no Novo FIDC).
 5. **KPIs listagem** — calcular a partir de `fidcList` (como CRA faz).
 6. **Replicar Pagamentos** — usar este módulo como referência para CRA/Solicitação.
 7. **API futura** — substituir seeds; manter props `fidc`, `klass`, `title`, `det`.

@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
-import { X, Tag, User, Building2, Phone } from 'lucide-vue-next';
+import { X, User, Building2, Phone, MapPin } from 'lucide-vue-next';
 import { UF_OPTIONS, PAISES_DDI, enriquecerParteRelacionada, type ParteTipo, type ParteRelacionada } from '../../data/operacaoData';
-import { BentoBox, BentoGrid, FormField, SelectField } from './parte-relacionada';
-import { ToggleRow } from './adicionar-contrato';
+import { BentoBox } from './parte-relacionada';
+import { ToggleRow, StepGrid, FormField, SelectField } from './adicionar-contrato';
 import Checkbox from '@/components/ui/Checkbox.vue';
-import { estadoCivilExigeConjuge, emptyConjugeMinuta, NACIONALIDADE_OPTS as NAC_OPTS, type ConjugeMinuta } from '../../data/minutaData';
+import {
+  estadoCivilExigeConjuge,
+  emptyConjugeMinuta,
+  emptyPessoaMinuta,
+  NACIONALIDADE_OPTS as NAC_OPTS,
+  type ConjugeMinuta,
+  type RepresentanteLegal,
+} from '../../data/minutaData';
 import SpouseFields from './minuta/SpouseFields.vue';
 
 const emit = defineEmits<{ close: []; create: [data: ParteRelacionada] }>();
@@ -99,11 +106,12 @@ const form = reactive<NewParteRelacionadaData>({
 });
 
 const conjuge = reactive<ConjugeMinuta>(emptyConjugeMinuta());
+const representante = reactive<RepresentanteLegal>({ ...emptyPessoaMinuta('JURIDICA').representante! });
 
 watch(
   () => form.estadoCivil,
   (ec) => {
-    form.possuiConjuge = estadoCivilExigeConjuge(ec);
+    if (estadoCivilExigeConjuge(ec)) form.possuiConjuge = true;
   },
 );
 
@@ -167,7 +175,9 @@ function handleSubmit() {
     pais: form.pais,
     nomeContato: form.nomeContato,
     ddi: form.ddi,
-    possuiConjuge: form.possuiConjuge,
+    possuiConjuge: form.tipoPessoa === 'FISICA' ? form.possuiConjuge : false,
+    conjuge: form.tipoPessoa === 'FISICA' && form.possuiConjuge ? { ...conjuge } : undefined,
+    representante: form.tipoPessoa === 'JURIDICA' ? { ...representante } : undefined,
     contatosRelacionados: [],
   }));
 }
@@ -193,7 +203,7 @@ function handleSubmit() {
         background: var(--surface-card);
         border-radius: var(--radius-xl);
         width: 100%;
-        max-width: 860px;
+        max-width: 960px;
         height: 85vh;
         display: flex;
         flex-direction: column;
@@ -235,85 +245,107 @@ function handleSubmit() {
         <div class="flex flex-col" style="gap: 24px">
           <BentoBox title="Identificação">
             <div class="flex flex-col" style="gap: 14px">
-              <div style="max-width: 280px">
-                <SelectField label="Natureza" :options="['Pessoa Física', 'Pessoa Jurídica']" v-model="tipoPessoaLabel" />
-              </div>
+              <StepGrid>
+                <SelectField
+                  label="Natureza"
+                  :options="['Pessoa Física', 'Pessoa Jurídica']"
+                  :span="4"
+                  v-model="tipoPessoaLabel"
+                />
+              </StepGrid>
 
               <template v-if="form.tipoPessoa === 'FISICA'">
-                <BentoGrid :cols="3">
-                  <FormField label="CPF" placeholder="000.000.000-00" v-model="form.cpf" />
-                  <FormField label="Nome completo" placeholder="Nome completo" v-model="form.nomeFisica" />
-                  <FormField label="RG" placeholder="0000000" v-model="form.rg" />
-                  <FormField label="Órgão emissor do RG" placeholder="SSP/SP" v-model="form.orgaoEmissorRg" />
-                  <FormField label="Inscrição do produtor rural" placeholder="—" v-model="form.inscricaoProdutorRural" />
-                  <SelectField label="Nacionalidade" :options="NACIONALIDADE_OPTS" placeholder="Selecione" v-model="form.nacionalidade" />
-                  <FormField label="Data de nascimento" placeholder="dd/mm/aaaa" v-model="form.dataNascimento" />
-                  <FormField label="Profissão" placeholder="—" v-model="form.profissao" />
-                  <SelectField label="Estado Civil" :options="ESTADO_CIVIL_OPTS" placeholder="Selecione" v-model="form.estadoCivil" />
-                </BentoGrid>
+                <StepGrid>
+                  <FormField label="CPF" placeholder="000.000.000-00" :span="3" v-model="form.cpf" />
+                  <FormField label="Nome completo" placeholder="Nome completo" :span="6" v-model="form.nomeFisica" />
+                  <FormField label="RG" placeholder="0000000" :span="3" v-model="form.rg" />
+                  <FormField label="Órgão emissor do RG" placeholder="SSP/SP" :span="4" v-model="form.orgaoEmissorRg" />
+                  <FormField label="Inscrição do produtor rural" placeholder="—" :span="4" v-model="form.inscricaoProdutorRural" />
+                  <SelectField label="Nacionalidade" :options="NACIONALIDADE_OPTS" placeholder="Selecione" :span="4" v-model="form.nacionalidade" />
+                  <FormField label="Data de nascimento" placeholder="dd/mm/aaaa" :span="4" v-model="form.dataNascimento" />
+                  <FormField label="Profissão" placeholder="—" :span="4" v-model="form.profissao" />
+                  <SelectField label="Estado Civil" :options="ESTADO_CIVIL_OPTS" placeholder="Selecione" :span="4" v-model="form.estadoCivil" />
+                </StepGrid>
+                <ToggleRow
+                  label="Possui cônjuge"
+                  :on="form.possuiConjuge"
+                  compact
+                  @toggle="form.possuiConjuge = !form.possuiConjuge"
+                />
                 <SpouseFields
-                  v-if="estadoCivilExigeConjuge(form.estadoCivil)"
+                  v-if="form.possuiConjuge"
                   v-model="conjuge"
                 />
               </template>
-              <BentoGrid v-else :cols="3">
-                <FormField label="CNPJ" placeholder="00.000.000/0000-00" v-model="form.cnpj" />
-                <FormField label="Razão Social" placeholder="—" v-model="form.razaoSocial" />
-                <FormField label="Nome Fantasia" placeholder="—" v-model="form.nomeFantasia" />
-                <FormField label="Data de abertura" placeholder="dd/mm/aaaa" v-model="form.dataAbertura" />
-                <FormField label="Tipo" placeholder="—" v-model="form.tipoEmpresa" />
-                <FormField label="Porte" placeholder="—" v-model="form.porte" />
-                <FormField label="Atividade principal" placeholder="—" v-model="form.atividadePrincipal" />
-                <FormField label="Natureza Jurídica" placeholder="—" v-model="form.naturezaJuridica" />
-                <FormField label="Inscrição municipal" placeholder="—" v-model="form.inscricaoMunicipal" />
-                <FormField label="Inscrição estadual" placeholder="—" v-model="form.inscricaoEstadual" />
-              </BentoGrid>
+              <template v-else>
+                <StepGrid>
+                  <FormField label="CNPJ" placeholder="00.000.000/0000-00" :span="4" v-model="form.cnpj" />
+                  <FormField label="Razão Social" placeholder="—" :span="5" v-model="form.razaoSocial" />
+                  <FormField label="Nome Fantasia" placeholder="—" :span="3" v-model="form.nomeFantasia" />
+                  <FormField label="Data de abertura" placeholder="dd/mm/aaaa" :span="3" v-model="form.dataAbertura" />
+                  <FormField label="Tipo" placeholder="—" :span="3" v-model="form.tipoEmpresa" />
+                  <FormField label="Porte" placeholder="—" :span="3" v-model="form.porte" />
+                  <FormField label="Atividade principal" placeholder="—" :span="3" v-model="form.atividadePrincipal" />
+                  <FormField label="Natureza Jurídica" placeholder="—" :span="6" v-model="form.naturezaJuridica" />
+                  <FormField label="Inscrição municipal" placeholder="—" :span="3" v-model="form.inscricaoMunicipal" />
+                  <FormField label="Inscrição estadual" placeholder="—" :span="3" v-model="form.inscricaoEstadual" />
+                </StepGrid>
+
+                <BentoBox title="Representante Legal" :icon="User">
+                  <StepGrid>
+                    <FormField label="CPF" placeholder="000.000.000-00" :span="3" v-model="representante.cpf" />
+                    <FormField label="Nome" placeholder="—" :span="5" v-model="representante.nome" />
+                    <FormField label="RG" placeholder="—" :span="4" v-model="representante.rg" />
+                    <FormField label="Inscrição do produtor rural" placeholder="—" :span="4" v-model="representante.inscricaoProdutorRural" />
+                    <SelectField label="Nacionalidade" :options="NACIONALIDADE_OPTS" placeholder="Selecione" :span="4" v-model="representante.nacionalidade" />
+                    <FormField label="Data de nascimento" placeholder="dd/mm/aaaa" :span="4" v-model="representante.dataNascimento" />
+                    <FormField label="Profissão" placeholder="—" :span="4" v-model="representante.profissao" />
+                  </StepGrid>
+                </BentoBox>
+              </template>
             </div>
           </BentoBox>
 
-          <BentoBox title="Endereço" :icon="Tag">
-            <BentoGrid :cols="2">
-              <FormField label="CEP" placeholder="00000-000" v-model="form.cep" />
-              <FormField label="Localidade" placeholder="—" v-model="form.localidade" />
-              <FormField label="Número" placeholder="—" v-model="form.numero" />
-              <FormField label="Bairro" placeholder="—" v-model="form.bairro" />
-              <div style="grid-column: span 2">
-                <FormField label="Informações adicionais" placeholder="—" v-model="form.infoAdicionais" />
-              </div>
-              <FormField label="Cidade" placeholder="—" v-model="form.cidade" />
-              <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" v-model="form.estado" />
-              <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :model-value="form.pais" @update:model-value="onPaisChange" />
-            </BentoGrid>
+          <BentoBox title="Endereço" :icon="MapPin">
+            <StepGrid>
+              <FormField label="CEP" placeholder="00000-000" :span="3" v-model="form.cep" />
+              <FormField label="Localidade" placeholder="—" :span="6" v-model="form.localidade" />
+              <FormField label="Número" placeholder="—" :span="3" v-model="form.numero" />
+              <FormField label="Bairro" placeholder="—" :span="4" v-model="form.bairro" />
+              <FormField label="Informações adicionais" placeholder="—" :span="8" v-model="form.infoAdicionais" />
+              <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="3" v-model="form.estado" />
+              <FormField label="Cidade" placeholder="—" :span="5" v-model="form.cidade" />
+              <SelectField
+                label="País"
+                :options="PAIS_OPTS"
+                placeholder="Selecione"
+                :span="4"
+                :model-value="form.pais"
+                @update:model-value="onPaisChange"
+              />
+            </StepGrid>
           </BentoBox>
 
           <BentoBox title="Contato" :icon="Phone">
-            <BentoGrid :cols="2">
-              <FormField label="Nome" placeholder="—" v-model="form.nomeContato" />
-              <FormField label="E-mail" placeholder="contato@email.com" v-model="form.email" />
-              <SelectField label="DDI" :options="DDI_OPTS" v-model="form.ddi" />
-              <FormField label="Telefone" placeholder="(00) 00000-0000" v-model="form.telefone" />
-            </BentoGrid>
+            <StepGrid>
+              <FormField label="Nome" placeholder="—" :span="4" v-model="form.nomeContato" />
+              <FormField label="E-mail" placeholder="contato@email.com" :span="4" v-model="form.email" />
+              <SelectField label="DDI" :options="DDI_OPTS" :span="2" v-model="form.ddi" />
+              <FormField label="Telefone" placeholder="(00) 00000-0000" :span="2" v-model="form.telefone" />
+            </StepGrid>
           </BentoBox>
 
           <BentoBox title="Tipos" :icon="User">
-            <div class="flex flex-col" style="gap: 14px">
-              <ToggleRow
-                label="Possui cônjuge"
-                :on="form.possuiConjuge"
-                compact
-                @toggle="form.possuiConjuge = !form.possuiConjuge"
-              />
-              <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px">
-                <label
-                  v-for="t in TIPOS_OPTS"
-                  :key="t.label"
-                  class="flex items-center"
-                  style="gap: 10px; cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)"
-                >
-                  <Checkbox :checked="form.tipos.includes(t.label)" @change="toggleTipo(t.label)" />
-                  {{ t.label }}
-                </label>
-              </div>
+            <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px">
+              <label
+                v-for="t in TIPOS_OPTS"
+                :key="t.label"
+                class="flex items-center"
+                style="gap: 10px; cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)"
+              >
+                <Checkbox :checked="form.tipos.includes(t.label)" @change="toggleTipo(t.label)" />
+                {{ t.label }}
+              </label>
             </div>
           </BentoBox>
         </div>

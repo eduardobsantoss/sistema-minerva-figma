@@ -114,8 +114,12 @@ export interface ParteRelacionada {
   // Anexo 3 — Contato
   nomeContato?: string;
   ddi?: string;
-  /** Usado na minuta CPR/CPR-F (etapa Avalista). */
+  /** Usado na minuta CPR/CPR-F (etapa Avalista) e no cadastro de parte. */
   possuiConjuge?: boolean;
+  /** Dados do cônjuge quando `possuiConjuge` (mesmo shape da minuta). */
+  conjuge?: import('./minutaData').ConjugeMinuta;
+  /** Representante legal quando PJ (mesmo shape da minuta). */
+  representante?: import('./minutaData').RepresentanteLegal;
 }
 
 /** UFs usadas nos campos de Estado (mesma lista de CreateFidcModal.tsx). */
@@ -220,14 +224,33 @@ export interface ContratoAtivo {
   minuta?: import('./minutaData').MinutaResumo;
 }
 
-export type ValidacaoStatus = 'OK' | 'ALERTA' | 'ERRO';
+export type ValidacaoStatus = 'PENDENTE' | 'PROCESSANDO' | 'OK' | 'NAO_OK' | 'EXCECAO';
+
+export const VALIDACAO_STATUS_LABEL: Record<ValidacaoStatus, string> = {
+  PENDENTE: 'Pendente',
+  PROCESSANDO: 'Processando',
+  OK: 'Ok',
+  NAO_OK: 'Não ok',
+  EXCECAO: 'Exceção',
+};
+
+export interface ValidacaoEvidencia {
+  arquivo: string;
+  descricao: string;
+  autor: string;
+  data: string;
+}
+
 export interface ItemValidacao {
   titulo: string;
   descricao: string;
   area: string;
   status: ValidacaoStatus;
-  /** quando true, o item crítico expõe ações de autorização */
+  /** quando true, o item crítico expõe ações de autorização / evidência */
   exigeAutorizacao?: boolean;
+  evidencia?: ValidacaoEvidencia;
+  /** mensagens de erro/detalhe retornadas pela regra */
+  erros?: string[];
 }
 
 export interface AnexoDoc {
@@ -423,9 +446,38 @@ const PARTES_BASE: ParteRelacionada[] = [
  */
 export function detalheSolicitacao(s: Solicitacao): DetalheSolicitacao {
   const validacoes: ItemValidacao[] = [
-    { titulo: 'Contato Válido do Sacado (E-mail e Telefone)', descricao: 'Verifica se o(s) Sacado(s) possuem contato válido cadastrado.', area: 'Comercial', status: 'ALERTA' },
-    { titulo: 'Endereço Válido do Sacado',                    descricao: 'Verifica se o(s) Sacado(s) possuem endereço válido cadastrado.', area: 'Comercial', status: 'ALERTA' },
-    { titulo: 'Taxa da Operação',                             descricao: 'Verifica se esta operação está em conformidade com a taxa previamente aprovada.', area: 'Comercial', status: s.validacao === 'INVALIDO' ? 'ERRO' : 'OK', exigeAutorizacao: s.validacao === 'INVALIDO' },
+    { titulo: 'Contato Válido do Sacado (E-mail e Telefone)', descricao: 'Verifica se o(s) Sacado(s) possuem contato válido cadastrado.', area: 'Comercial', status: 'PENDENTE' },
+    { titulo: 'Endereço Válido do Sacado',                    descricao: 'Verifica se o(s) Sacado(s) possuem endereço válido cadastrado.', area: 'Comercial', status: 'PROCESSANDO' },
+    {
+      titulo: 'Taxa da Operação',
+      descricao: 'Verifica se esta operação está em conformidade com a taxa previamente aprovada.',
+      area: 'Comercial',
+      status: s.validacao === 'INVALIDO' ? 'NAO_OK' : 'OK',
+      exigeAutorizacao: s.validacao === 'INVALIDO',
+      erros: s.validacao === 'INVALIDO'
+        ? ['Taxa da operação (1,85% a.m.) acima da taxa máxima aprovada no parecer de crédito (1,70% a.m.).']
+        : undefined,
+    },
+    {
+      titulo: 'Data de Vencimento - Mínimo e Máximo',
+      descricao: 'Validação se a data de vencimento de um ativo está de acordo com a configuração de data mínima e máxima aceita pelo veículo.',
+      area: 'Operação',
+      status: 'NAO_OK',
+      exigeAutorizacao: true,
+      erros: [
+        "data de vencimento: '7/16/2027 12:00:00 AM' do título '486254' ultrapassa o vencimento limite do fundo/cra: '7/11/2027 12:00:00 AM'",
+      ],
+    },
+    {
+      titulo: 'Conferência VADU Serasa Sacado',
+      descricao: 'Consulta cadastral do sacado junto às bureaus de crédito.',
+      area: 'Crédito',
+      status: 'EXCECAO',
+      exigeAutorizacao: true,
+      erros: [
+        'Consulta Serasa retornou restrição cadastral para o sacado. Requer análise e autorização de crédito.',
+      ],
+    },
   ];
   return {
     partes: PARTES_BASE,

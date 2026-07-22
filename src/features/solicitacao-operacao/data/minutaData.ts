@@ -827,6 +827,10 @@ export interface CessaoForm {
   dataAccrual: string;
   usarCertificadorEmail: boolean;
   conversaoIndice: boolean;
+  usarCalculoMercado: boolean;
+  usarUltimaTaxaDisponivel: boolean;
+  comCoobrigacao: boolean;
+  obrigacaoRecompra: boolean;
 }
 
 export const CESSAO_TIPO_OPTS = ['Desembolso', 'Desembolso Parcial', 'Integralização', 'Composição de Garantia'];
@@ -845,36 +849,43 @@ export const CESSAO_TIPO_CALCULO_OPTS = [
   'Deságio do CDCA',
 ];
 export const CESSAO_FREQUENCIA_OPTS = ['Mensal', 'Anual', 'Diário'];
-export const CESSAO_OPERADOR_OPTS = ['Multiplicativo', 'Aditivo'];
+export const CESSAO_OPERADOR_OPTS = ['Multiplicativo', 'Aditivo', 'Indefinido'];
 export const CESSAO_INDICADOR_OPTS = ['CDI', 'IPCA', 'Indefinido'];
 export const CESSAO_CAPITALIZACAO_OPTS = ['Simples', 'Composto'];
-export const CESSAO_BASE_DIAS_OPTS = ['252', '360', '365'];
-export const CESSAO_INICIO_JUROS_OPTS = ['D0', 'D+1'];
+export const CESSAO_BASE_DIAS_OPTS = ['21', '252', '360', '365'];
+export const CESSAO_INICIO_JUROS_OPTS = [
+  'D0 — Começa na data inicial',
+  'D+1 — Começa no dia seguinte',
+];
 export const CESSAO_DATA_ACCRUAL_OPTS = ['Data da emissão do título', 'Data da cessão/desembolso'];
 
 export function emptyCessaoForm(): CessaoForm {
   return {
     nome: '',
     dataDesembolso: '',
-    taxaCessao: '',
+    taxaCessao: '1.7',
     tipo: '',
     parametrizacaoCalculo: '',
-    tipoCalculoCessao: '',
-    pctGarantiaRecebiveis: '',
-    pctGarantiaOutras: '',
+    tipoCalculoCessao: 'Deságio por valor nominal',
+    pctGarantiaRecebiveis: '0',
+    pctGarantiaOutras: '0',
     descontoAdicional: '0',
     taxaMulta: '',
     taxaMora: '',
     usarCalculoUra: false,
-    frequenciaTaxa: '',
-    operador: '',
-    indicadorTaxa: '',
-    tipoCapitalizacao: '',
-    baseDias: '',
-    inicioContagemJuros: '',
-    dataAccrual: '',
+    frequenciaTaxa: 'Mensal',
+    operador: 'Indefinido',
+    indicadorTaxa: 'Indefinido',
+    tipoCapitalizacao: 'Composto',
+    baseDias: '252',
+    inicioContagemJuros: 'D0 — Começa na data inicial',
+    dataAccrual: 'Data da cessão/desembolso',
     usarCertificadorEmail: true,
     conversaoIndice: false,
+    usarCalculoMercado: false,
+    usarUltimaTaxaDisponivel: false,
+    comCoobrigacao: true,
+    obrigacaoRecompra: true,
   };
 }
 

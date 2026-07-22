@@ -22,6 +22,7 @@ import {
   ValidacoesConfigScreen,
 } from '@/features/solicitacao-operacao';
 import { PassivoScreen } from '@/features/passivo';
+import { AtivosScreen } from '@/features/ativos';
 import {
   RatingsScreen,
   AgrupamentosScreen,
@@ -37,6 +38,7 @@ type View =
   | 'solicitacoes-relatorios'
   | 'solicitacoes-taxas-veiculos'
   | 'solicitacoes-validacoes'
+  | 'ativos'
   | 'fidcs'
   | 'fidcs-simulador'
   | 'fidcs-relatorios'
@@ -67,6 +69,7 @@ const titleMap: Record<View, string> = {
   'solicitacoes-relatorios': 'Relatórios de Solicitações',
   'solicitacoes-taxas-veiculos': 'Taxas dos Veículos',
   'solicitacoes-validacoes': 'Validações',
+  ativos: 'Ativos',
   fidcs: "Gestão de FIDC's",
   'fidcs-simulador': 'Simulador',
   'fidcs-relatorios': 'Relatórios',
@@ -93,6 +96,7 @@ const titleMap: Record<View, string> = {
 
 const VALID_VIEWS = new Set<View>([
   'dashboard', 'solicitacoes', 'solicitacoes-fundo-padrao', 'solicitacoes-relatorios', 'solicitacoes-taxas-veiculos', 'solicitacoes-validacoes',
+  'ativos',
   'fidcs', 'fidcs-simulador', 'fidcs-relatorios',
   'cras', 'cras-simulador', 'cras-relatorios',
   'cobranca', 'cobranca-titulos', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-notif-cessao', 'cobranca-resultado-notif', 'cobranca-rel',
@@ -157,6 +161,8 @@ function handleModuleClick(title: string) {
   if (title === 'Solicitação de Operação') {
     view.value = 'solicitacoes';
     openMenu.value = 'solicitacoes';
+  } else if (title === 'Ativos') {
+    view.value = 'ativos';
   } else if (title === "FIDC's") {
     view.value = 'fidcs';
     openMenu.value = 'fidcs';
@@ -200,6 +206,7 @@ function handleModuleClick(title: string) {
           <RelatorioPedidosScreen v-else-if="view === 'solicitacoes-relatorios'" />
           <TaxasVeiculosScreen v-else-if="view === 'solicitacoes-taxas-veiculos'" />
           <ValidacoesConfigScreen v-else-if="view === 'solicitacoes-validacoes'" />
+          <AtivosScreen v-else-if="view === 'ativos'" />
           <FidcScreen v-else-if="view === 'fidcs'" />
           <FidcSimuladorScreen v-else-if="view === 'fidcs-simulador'" />
           <FidcRelatoriosScreen v-else-if="view === 'fidcs-relatorios'" />

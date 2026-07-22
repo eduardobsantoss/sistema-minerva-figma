@@ -25,6 +25,7 @@ import {
   Wallet,
   Percent,
   ShieldCheck,
+  Package,
 } from 'lucide-vue-next';
 import gciLogoMark from '@/assets/gci-logo-mark.png';
 import gciLogoFull from '@/assets/gci-logo-full.png';
@@ -57,6 +58,7 @@ const items: NavItem[] = [
       { key: 'solicitacoes-validacoes', label: 'Validações', icon: ShieldCheck },
     ],
   },
+  { key: 'ativos', label: 'Ativos', icon: Package },
   {
     key: 'fidcs',
     label: "FIDC's",
