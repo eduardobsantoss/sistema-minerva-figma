@@ -317,6 +317,8 @@ export const TITULOS_DISPONIVEIS: TituloDisponivel[] = [
   { id: 'td-1', lastro: '117239', numero: '48327-1', tipoOperacao: 'PRÉ', situacao: 'REJEITADO', confirmacao: 'PENDENTE', dataCriacao: '19/01/2024', dataEmissao: '25/05/2023', valorNominal: 89_990.4, cedente: 'NATIVA AGRONEGOCIOS LTDA', sacado: 'CARLOS FORTUNA NETO E OUTRO', vencimento: '30/01/2024', entrega: 'PER' },
   { id: 'td-2', lastro: '117240', numero: '48328-1', tipoOperacao: 'PRÉ', situacao: 'REJEITADO', confirmacao: 'PENDENTE', dataCriacao: '19/01/2024', dataEmissao: '25/05/2023', valorNominal: 76_500, cedente: 'NATIVA AGRONEGOCIOS LTDA', sacado: 'SILVIO VALDIR KAFER E OUTROS', vencimento: '30/01/2024', entrega: 'PER' },
   { id: 'td-3', lastro: '117241', numero: '48329-1', tipoOperacao: 'PRÉ', situacao: 'PENDENTE', confirmacao: 'PENDENTE', dataCriacao: '20/01/2024', dataEmissao: '26/05/2023', valorNominal: 120_000, cedente: 'NATIVA AGRONEGOCIOS LTDA', sacado: 'JOÃO DA SILVA', vencimento: '15/02/2024', entrega: 'FUT' },
+  { id: 'td-4', lastro: '117242', numero: '48330-1', tipoOperacao: 'PRÉ', situacao: 'PENDENTE', confirmacao: 'PENDENTE', dataCriacao: '21/01/2024', dataEmissao: '27/05/2023', valorNominal: 45_800, cedente: 'VIA AGRICOLA LTDA', sacado: 'ALEX MUSSI E OUTROS', vencimento: '20/04/2026', entrega: 'PER' },
+  { id: 'td-5', lastro: '117243', numero: '48331-1', tipoOperacao: 'PRÉ', situacao: 'PENDENTE', confirmacao: 'CONFIRMADO', dataCriacao: '22/01/2024', dataEmissao: '28/05/2023', valorNominal: 98_200, cedente: 'VIA AGRICOLA LTDA', sacado: 'MARIA APARECIDA', vencimento: '15/05/2026', entrega: 'FUT' },
 ];
 
 export function tituloDisponivelParaContrato(t: TituloDisponivel): ContratoAtivo {

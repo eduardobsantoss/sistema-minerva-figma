@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import {
   X,
   ChevronRight,
@@ -8,31 +8,36 @@ import {
   FileText,
   ShieldCheck,
   Paperclip,
+  Boxes,
   AlertTriangle,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import {
   DadosGeraisStep,
   GarantiaStep,
+  AtivosDuplicataStep,
   AnexosStep,
   type NewPedidoData,
   type GarantiaItem,
 } from './novo-pedido';
+import VincularAtivosModal from './modals/VincularAtivosModal.vue';
+import type { ContratoAtivo } from '../data/operacaoData';
+import {
+  DOCS_DESCONTO_DUPLICATA,
+  mockAddXmlFile,
+  mockTitulosExtraidos,
+  type TituloExtraidoDuplicata,
+  type XmlUploadItem,
+} from '../data/novoPedidoDuplicataData';
 
 const emit = defineEmits<{ close: []; create: [data: NewPedidoData] }>();
 
 interface Step {
-  key: 'dados' | 'garantia' | 'anexos';
+  key: 'dados' | 'garantia' | 'ativos' | 'anexos';
   label: string;
   icon: Component;
   hint: string;
 }
-
-const steps: Step[] = [
-  { key: 'dados', label: 'Dados Gerais', icon: FileText, hint: 'Parâmetros comerciais e financeiros da operação' },
-  { key: 'garantia', label: 'Garantia', icon: ShieldCheck, hint: 'Garantias vinculadas à operação' },
-  { key: 'anexos', label: 'Anexos', icon: Paperclip, hint: 'Documentação comprobatória' },
-];
 
 const DOCS_GERAIS: { id: string; nome: string; obrigatorio: boolean }[] = [
   { id: 'contrato-social', nome: 'Contrato Social', obrigatorio: true },
@@ -63,10 +68,67 @@ const form = reactive<NewPedidoData>({
   requerGarantia: false,
 });
 
+const isDescontoDuplicata = computed(() => form.tipoOperacao === 'Desconto Duplicata');
+
+const steps = computed<Step[]>(() => {
+  if (isDescontoDuplicata.value) {
+    return [
+      { key: 'dados', label: 'Dados Gerais', icon: FileText, hint: 'Parâmetros comerciais e financeiros da operação' },
+      { key: 'ativos', label: 'Ativos', icon: Boxes, hint: 'Upload de XML ou vínculo de títulos pendentes' },
+      { key: 'anexos', label: 'Anexos', icon: Paperclip, hint: 'Documentação comprobatória da operação' },
+    ];
+  }
+  return [
+    { key: 'dados', label: 'Dados Gerais', icon: FileText, hint: 'Parâmetros comerciais e financeiros da operação' },
+    { key: 'garantia', label: 'Garantia', icon: ShieldCheck, hint: 'Garantias vinculadas à operação' },
+    { key: 'anexos', label: 'Anexos', icon: Paperclip, hint: 'Documentação comprobatória' },
+  ];
+});
+
 const garantiaItens = reactive<GarantiaItem[]>([]);
 const garantiaForm = reactive<GarantiaItem>({ tipo: '', nome: '', valor: '' });
 
 const docFiles = reactive<Record<string, boolean>>({});
+
+const duplicataPhase = ref<'upload' | 'extracted'>('upload');
+const xmlFiles = ref<XmlUploadItem[]>([]);
+const titulosExtraidos = ref<TituloExtraidoDuplicata[]>([]);
+const ativosVinculados = ref<ContratoAtivo[]>([]);
+const showVincular = ref(false);
+
+function resetDuplicataState() {
+  duplicataPhase.value = 'upload';
+  xmlFiles.value = [];
+  titulosExtraidos.value = [];
+  ativosVinculados.value = [];
+}
+
+function resetGarantiaState() {
+  garantiaItens.splice(0, garantiaItens.length);
+  garantiaForm.tipo = '';
+  garantiaForm.nome = '';
+  garantiaForm.valor = '';
+  form.requerGarantia = false;
+}
+
+function clearDocFiles() {
+  for (const k of Object.keys(docFiles)) delete docFiles[k];
+}
+
+watch(
+  () => form.tipoOperacao,
+  (next, prev) => {
+    if (prev === undefined || next === prev) return;
+    stepIdx.value = 0;
+    clearDocFiles();
+    if (next === 'Desconto Duplicata') {
+      resetGarantiaState();
+      resetDuplicataState();
+    } else {
+      resetDuplicataState();
+    }
+  },
+);
 
 function addGarantia() {
   if (!garantiaForm.tipo || !garantiaForm.nome) return;
@@ -80,7 +142,6 @@ function removeGarantia(i: number) {
   garantiaItens.splice(i, 1);
 }
 
-// Documentos por garantia adicionada
 const docsGarantia = computed(() =>
   garantiaItens.map((g, i) => ({
     id: `garantia-${i}`,
@@ -89,7 +150,17 @@ const docsGarantia = computed(() =>
   })),
 );
 
-const requiredDocs = computed(() => [...DOCS_GERAIS, ...docsGarantia.value].filter((d) => d.obrigatorio));
+const docsAnexos = computed(() =>
+  isDescontoDuplicata.value ? DOCS_DESCONTO_DUPLICATA : DOCS_GERAIS,
+);
+
+const requiredDocs = computed(() => {
+  if (isDescontoDuplicata.value) {
+    return DOCS_DESCONTO_DUPLICATA.filter((d) => d.obrigatorio);
+  }
+  return [...DOCS_GERAIS, ...docsGarantia.value].filter((d) => d.obrigatorio);
+});
+
 const pendingRequired = computed(() => requiredDocs.value.filter((d) => !docFiles[d.id]).length);
 const canConfirm = computed(() => pendingRequired.value === 0);
 
@@ -97,11 +168,47 @@ function toggleDoc(id: string) {
   docFiles[id] = !docFiles[id];
 }
 
-const step = computed(() => steps[stepIdx.value]);
+const step = computed(() => steps.value[stepIdx.value]);
 const isFirst = computed(() => stepIdx.value === 0);
-const isLast = computed(() => stepIdx.value === steps.length - 1);
+const isLast = computed(() => stepIdx.value === steps.value.length - 1);
+const isAtivosStep = computed(() => step.value?.key === 'ativos');
+
+const canExtract = computed(
+  () => isAtivosStep.value && duplicataPhase.value === 'upload' && xmlFiles.value.length > 0,
+);
+
+const canContinueAtivos = computed(
+  () => duplicataPhase.value === 'extracted' || ativosVinculados.value.length > 0,
+);
+
+function addXml() {
+  xmlFiles.value = [...xmlFiles.value, mockAddXmlFile()];
+}
+
+function removeXml(id: string) {
+  xmlFiles.value = xmlFiles.value.filter((f) => f.id !== id);
+  if (xmlFiles.value.length === 0 && duplicataPhase.value === 'extracted') {
+    duplicataPhase.value = 'upload';
+    titulosExtraidos.value = [];
+  }
+}
+
+function extrairDados() {
+  if (!canExtract.value) return;
+  titulosExtraidos.value = mockTitulosExtraidos(xmlFiles.value);
+  duplicataPhase.value = 'extracted';
+}
+
+function onVincular(ativos: ContratoAtivo[]) {
+  const existing = new Set(ativosVinculados.value.map((a) => a.id));
+  for (const a of ativos) {
+    if (!existing.has(a.id)) ativosVinculados.value.push(a);
+  }
+  showVincular.value = false;
+}
 
 function goNext() {
+  if (isAtivosStep.value && !canContinueAtivos.value) return;
   if (isLast.value) {
     if (canConfirm.value) emit('create', { ...form });
   } else {
@@ -139,7 +246,6 @@ function goNext() {
       "
       @click.stop
     >
-      <!-- Header -->
       <div
         class="flex items-start justify-between"
         style="padding: 24px 32px; border-bottom: 1px solid var(--border-default)"
@@ -170,7 +276,6 @@ function goNext() {
         </button>
       </div>
 
-      <!-- Stepper (informativo, não clicável) -->
       <div class="flex" style="background: var(--surface-sunken); border-bottom: 1px solid var(--border-default)">
         <div
           v-for="(s, i) in steps"
@@ -193,7 +298,6 @@ function goNext() {
         </div>
       </div>
 
-      <!-- Body -->
       <div style="flex: 1; overflow-y: auto; padding: 32px">
         <DadosGeraisStep v-if="step.key === 'dados'" :form="form" />
 
@@ -207,16 +311,28 @@ function goNext() {
           @remove="removeGarantia"
         />
 
+        <AtivosDuplicataStep
+          v-else-if="step.key === 'ativos'"
+          :phase="duplicataPhase"
+          :xml-files="xmlFiles"
+          :titulos-extraidos="titulosExtraidos"
+          :ativos-vinculados="ativosVinculados"
+          @add-xml="addXml"
+          @remove-xml="removeXml"
+          @open-vincular="showVincular = true"
+        />
+
         <AnexosStep
           v-else-if="step.key === 'anexos'"
-          :docs-gerais="DOCS_GERAIS"
+          :docs-gerais="docsAnexos"
           :docs-garantia="docsGarantia"
           :doc-files="docFiles"
+          :hide-garantia-docs="isDescontoDuplicata"
+          :gerais-title="isDescontoDuplicata ? 'Documentos da operação' : 'Documentos gerais'"
           @toggle-doc="toggleDoc"
         />
       </div>
 
-      <!-- Footer -->
       <div
         class="flex items-center justify-between"
         style="padding: 16px 32px; border-top: 1px solid var(--border-default); background: var(--surface-card)"
@@ -239,7 +355,7 @@ function goNext() {
           <template v-else><ChevronLeft :size="15" /> Voltar</template>
         </button>
 
-        <div class="flex items-center" style="gap: 16px">
+        <div class="flex items-center" style="gap: 12px">
           <span
             v-if="isLast && !canConfirm"
             class="flex items-center"
@@ -248,8 +364,55 @@ function goNext() {
             <AlertTriangle :size="14" />
             {{ pendingRequired }} {{ pendingRequired === 1 ? 'documento obrigatório pendente' : 'documentos obrigatórios pendentes' }}
           </span>
+
+          <template v-if="isAtivosStep && duplicataPhase === 'upload'">
+            <button
+              type="button"
+              :disabled="!canExtract"
+              class="flex items-center"
+              :style="{
+                gap: '8px',
+                height: '44px',
+                padding: '0 20px',
+                border: 'none',
+                borderRadius: 'var(--radius-lg)',
+                cursor: canExtract ? 'pointer' : 'not-allowed',
+                fontWeight: 'var(--weight-bold)',
+                fontSize: 'var(--text-xs)',
+                letterSpacing: '0.08em',
+                background: canExtract ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
+                color: canExtract ? '#fff' : 'var(--text-disabled)',
+              }"
+              @click="extrairDados"
+            >
+              Extrair dados
+            </button>
+            <button
+              type="button"
+              :disabled="!canContinueAtivos"
+              class="flex items-center"
+              :style="{
+                gap: '8px',
+                height: '44px',
+                padding: '0 22px',
+                border: 'none',
+                borderRadius: 'var(--radius-lg)',
+                cursor: canContinueAtivos ? 'pointer' : 'not-allowed',
+                fontWeight: 'var(--weight-bold)',
+                fontSize: 'var(--text-xs)',
+                letterSpacing: '0.08em',
+                background: canContinueAtivos ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
+                color: canContinueAtivos ? '#fff' : 'var(--text-disabled)',
+              }"
+              @click="goNext"
+            >
+              Continuar <ChevronRight :size="15" />
+            </button>
+          </template>
+
           <button
-            :disabled="isLast && !canConfirm"
+            v-else
+            :disabled="(isLast && !canConfirm) || (isAtivosStep && !canContinueAtivos)"
             class="flex items-center"
             :style="{
               gap: '8px',
@@ -257,21 +420,35 @@ function goNext() {
               padding: '0 22px',
               border: 'none',
               borderRadius: 'var(--radius-lg)',
-              cursor: isLast && !canConfirm ? 'not-allowed' : 'pointer',
+              cursor: (isLast && !canConfirm) || (isAtivosStep && !canContinueAtivos) ? 'not-allowed' : 'pointer',
               fontWeight: 'var(--weight-bold)',
               fontSize: 'var(--text-xs)',
               letterSpacing: '0.08em',
-              background: isLast ? (canConfirm ? 'var(--success-base)' : 'var(--neutral-200)') : 'var(--action-primary-bg)',
-              color: isLast && !canConfirm ? 'var(--text-disabled)' : '#fff',
+              background: isLast
+                ? canConfirm
+                  ? 'var(--success-base)'
+                  : 'var(--neutral-200)'
+                : isAtivosStep && !canContinueAtivos
+                  ? 'var(--neutral-200)'
+                  : 'var(--action-primary-bg)',
+              color:
+                (isLast && !canConfirm) || (isAtivosStep && !canContinueAtivos) ? 'var(--text-disabled)' : '#fff',
               transition: 'background var(--duration-base)',
             }"
             @click="goNext"
           >
             <template v-if="isLast">Confirmar solicitação <Check :size="15" /></template>
+            <template v-else-if="isAtivosStep">Continuar <ChevronRight :size="15" /></template>
             <template v-else>Próxima etapa <ChevronRight :size="15" /></template>
           </button>
         </div>
       </div>
     </div>
+
+    <VincularAtivosModal
+      v-if="showVincular"
+      @close="showVincular = false"
+      @vincular="onVincular"
+    />
   </div>
 </template>

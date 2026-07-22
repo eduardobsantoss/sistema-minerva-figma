@@ -12,5 +12,6 @@ export { default as DataTable } from './DataTable.vue';
 export { default as DocGroup } from './DocGroup.vue';
 export { default as DadosGeraisStep } from './DadosGeraisStep.vue';
 export { default as GarantiaStep } from './GarantiaStep.vue';
+export { default as AtivosDuplicataStep } from './AtivosDuplicataStep.vue';
 export { default as AnexosStep } from './AnexosStep.vue';
 export type { NewPedidoData, GarantiaItem } from './types';

@@ -27,6 +27,7 @@ const titulos = computed(() => {
   const n = filtroNumeros.value.trim().toLowerCase();
   const s = filtroSacado.value.trim().toLowerCase();
   return TITULOS_DISPONIVEIS.filter((t) => {
+    if (t.situacao !== 'PENDENTE') return false;
     if (l && !t.lastro.toLowerCase().includes(l)) return false;
     if (n && !t.numero.toLowerCase().includes(n)) return false;
     if (s && !t.sacado.toLowerCase().includes(s)) return false;
@@ -82,7 +83,7 @@ function confirmar() {
     style="
       position: fixed;
       inset: 0;
-      z-index: 100;
+      z-index: 500;
       background: rgba(8, 60, 74, 0.45);
       display: flex;
       align-items: center;
@@ -151,6 +152,12 @@ function confirmar() {
                 <div>Sacado</div>
                 <div>Vencimento</div>
                 <div>Entrega</div>
+              </div>
+              <div
+                v-if="titulos.length === 0"
+                style="padding: 28px 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted); border-top: 1px solid var(--border-default)"
+              >
+                Não foi encontrado nenhum título pendente.
               </div>
               <div
                 v-for="t in pageItems"
