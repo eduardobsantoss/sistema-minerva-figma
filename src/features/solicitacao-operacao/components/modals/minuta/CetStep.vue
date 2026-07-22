@@ -212,9 +212,9 @@ const valorLiquidoPct = computed(() => {
         </StepGrid>
 
         <StepGrid>
-          <FormField label="IOF (Valor)" placeholder="R$ 0,00" required :span="3" v-model="form.iofValor" />
+          <FormField label="IOF (Valor)" placeholder="R$ 0,00" required currency :span="3" v-model="form.iofValor" />
           <FormField label="IOF (%)" placeholder="0,00" required :span="3" v-model="form.iofPercentual" />
-          <FormField label="Custo emissão (Valor)" placeholder="R$ 0,00" required :span="3" v-model="form.custoEmissaoValor" />
+          <FormField label="Custo emissão (Valor)" placeholder="R$ 0,00" required currency :span="3" v-model="form.custoEmissaoValor" />
           <FormField label="Custo emissão (%)" placeholder="0,00" required :span="3" v-model="form.custoEmissaoPercentual" />
         </StepGrid>
 

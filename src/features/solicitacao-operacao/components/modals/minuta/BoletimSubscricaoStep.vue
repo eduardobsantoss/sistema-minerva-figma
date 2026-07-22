@@ -171,8 +171,8 @@ watch(
     <BentoBox title="Notas subscritas">
       <StepGrid>
         <FormField label="Quantidade" placeholder="—" required :span="3" v-model="boletim.quantidade" />
-        <FormField label="Preço total unitário" placeholder="R$ 0,00" required :span="3" v-model="boletim.precoTotalUnitario" />
-        <FormField label="Preço de subscrição" placeholder="R$ 0,00" required :span="3" v-model="boletim.precoSubscricao" />
+        <FormField label="Preço total unitário" placeholder="R$ 0,00" required currency :span="3" v-model="boletim.precoTotalUnitario" />
+        <FormField label="Preço de subscrição" placeholder="R$ 0,00" required currency :span="3" v-model="boletim.precoSubscricao" />
         <FormField label="Dias de integração" placeholder="—" :span="3" v-model="boletim.diasIntegracao" />
       </StepGrid>
     </BentoBox>

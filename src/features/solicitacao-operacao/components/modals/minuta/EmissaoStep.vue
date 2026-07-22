@@ -44,9 +44,9 @@ watch(
       <StepGrid>
         <FormField label="Número de emissão" placeholder="—" required :span="3" v-model="form.numero!" />
         <SelectField label="Série" :options="SERIE_EMISSAO_OPTS" placeholder="Selecione" required :span="3" v-model="form.serie!" />
-        <FormField label="Valor nominal unitário" placeholder="R$ 0,00" required :span="3" v-model="form.valorNominalUnitario!" />
+        <FormField label="Valor nominal unitário" placeholder="R$ 0,00" required currency :span="3" v-model="form.valorNominalUnitario!" />
         <FormField label="Quantidade" placeholder="—" required :span="3" v-model="form.quantidade!" />
-        <FormField label="Valor total" placeholder="R$ 0,00" required :span="4" v-model="form.valorTotal!" />
+        <FormField label="Valor total" placeholder="R$ 0,00" required currency :span="4" v-model="form.valorTotal!" />
       </StepGrid>
     </BentoBox>
   </div>

@@ -304,12 +304,13 @@ function gerarPagamentosAutomaticos() {
           <AddButton @click="gerarPagamentosAutomaticos">Gerar pagamentos</AddButton>
         </div>
         <div v-else class="grid items-end" style="grid-template-columns: 1fr 1fr auto auto auto; gap: 12px">
-          <FormField label="Amortização" placeholder="R$ 0,00" v-model="pagamentoForm.amortizacao" />
+          <FormField label="Amortização" placeholder="R$ 0,00" currency v-model="pagamentoForm.amortizacao" />
           <FormField label="Vencimento" placeholder="dd/mm/aaaa" required v-model="pagamentoForm.vencimento" />
           <ToggleRow label="Pagar juros" :on="pagamentoForm.pagarJuros" compact @toggle="pagamentoForm.pagarJuros = !pagamentoForm.pagarJuros" />
           <FormField
             label="Valor do juros"
             placeholder="R$ 0,00"
+            currency
             v-model="pagamentoForm.valorJuros"
             :disabled="!pagamentoForm.pagarJuros || isPosFixado"
           />

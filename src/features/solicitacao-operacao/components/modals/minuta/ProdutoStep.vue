@@ -56,7 +56,7 @@ function fmtValor(v: string) {
     <StepGrid>
       <SelectField label="Tipo" :options="PRODUTO_TIPO_OPTS" placeholder="Selecione" :span="3" v-model="form.tipo" />
       <SelectField label="Unidade de medida" :options="UNIDADE_MEDIDA_OPTS" placeholder="Selecione" :span="3" v-model="form.unidadeMedida" />
-      <FormField label="Valor unitário" placeholder="R$ 0,00" :span="3" v-model="form.valorUnitario" />
+      <FormField label="Valor unitário" placeholder="R$ 0,00" currency :span="3" v-model="form.valorUnitario" />
       <FormField label="Quantidade" placeholder="—" :span="3" v-model="form.quantidade" />
       <FormField label="Safra" placeholder="2025/2026" :span="3" v-model="form.safra" />
       <FormField label="Local de produção" placeholder="—" :span="3" v-model="form.localProducao" />

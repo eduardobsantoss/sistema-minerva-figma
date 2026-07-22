@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Shield, ShieldCheck } from 'lucide-vue-next';
 import type { GarantiaItem } from './types';
+import { formatCurrencyInput } from '../../utils/currencyMask';
 import FieldLabel from './FieldLabel.vue';
 import SelectField from './SelectField.vue';
 import AddButton from './AddButton.vue';
@@ -101,8 +102,9 @@ const cols: { key: keyof GarantiaItem; label: string; width: string }[] = [
           <div>
             <FieldLabel>Valor da garantia</FieldLabel>
             <input
-              v-model="gForm.valor"
+              :value="gForm.valor"
               placeholder="R$ 0,00"
+              inputmode="numeric"
               style="
                 width: 100%;
                 height: 40px;
@@ -113,7 +115,9 @@ const cols: { key: keyof GarantiaItem; label: string; width: string }[] = [
                 outline: none;
                 font-size: var(--text-sm);
                 color: var(--text-strong);
+                font-variant-numeric: tabular-nums;
               "
+              @input="gForm.valor = formatCurrencyInput(($event.target as HTMLInputElement).value)"
             />
           </div>
           <AddButton @click="emit('add')" />

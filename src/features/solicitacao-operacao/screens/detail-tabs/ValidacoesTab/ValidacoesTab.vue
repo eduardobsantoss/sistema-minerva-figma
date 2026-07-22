@@ -16,8 +16,13 @@ const emit = defineEmits<{
   verDetalhes: [v: ItemValidacao];
 }>();
 
-const pendentes = computed(() => props.det.validacoes.filter((v) => v.status !== 'OK'));
-const ok = computed(() => props.det.validacoes.filter((v) => v.status === 'OK'));
+const naoAprovadas = computed(() => props.det.validacoes.filter((v) => v.status === 'NAO_OK'));
+const pendentes = computed(() =>
+  props.det.validacoes.filter((v) => v.status === 'PENDENTE' || v.status === 'PROCESSANDO'),
+);
+const aprovadas = computed(() =>
+  props.det.validacoes.filter((v) => v.status === 'OK' || v.status === 'EXCECAO'),
+);
 </script>
 
 <template>
@@ -51,6 +56,19 @@ const ok = computed(() => props.det.validacoes.filter((v) => v.status === 'OK'))
       </div>
     </div>
 
+    <Section v-if="naoAprovadas.length > 0" :title="`Não Aprovadas (${naoAprovadas.length})`">
+      <div class="flex flex-col" style="gap: 10px">
+        <ValidacaoRow
+          v-for="v in naoAprovadas"
+          :key="v.titulo"
+          :v="v"
+          @inserir-evidencia="emit('inserirEvidencia', $event)"
+          @ver-evidencia="emit('verEvidencia', $event)"
+          @autorizar="emit('autorizar', $event)"
+          @ver-detalhes="emit('verDetalhes', $event)"
+        />
+      </div>
+    </Section>
     <Section v-if="pendentes.length > 0" :title="`Pendentes (${pendentes.length})`">
       <div class="flex flex-col" style="gap: 10px">
         <ValidacaoRow
@@ -64,10 +82,10 @@ const ok = computed(() => props.det.validacoes.filter((v) => v.status === 'OK'))
         />
       </div>
     </Section>
-    <Section v-if="ok.length > 0" :title="`Aprovadas (${ok.length})`">
+    <Section v-if="aprovadas.length > 0" :title="`Aprovadas (${aprovadas.length})`">
       <div class="flex flex-col" style="gap: 10px">
         <ValidacaoRow
-          v-for="v in ok"
+          v-for="v in aprovadas"
           :key="v.titulo"
           :v="v"
           @inserir-evidencia="emit('inserirEvidencia', $event)"

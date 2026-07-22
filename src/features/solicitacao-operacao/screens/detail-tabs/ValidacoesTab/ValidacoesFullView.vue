@@ -18,16 +18,19 @@ const emit = defineEmits<{
   verDetalhes: [v: ItemValidacao];
 }>();
 
+const naoAprovadas = computed(() => props.det.validacoes.filter((v) => v.status === 'NAO_OK'));
 const pendentes = computed(() => props.det.validacoes.filter((v) => v.status === 'PENDENTE'));
 const processando = computed(() => props.det.validacoes.filter((v) => v.status === 'PROCESSANDO'));
-const naoOk = computed(() => props.det.validacoes.filter((v) => v.status === 'NAO_OK'));
+const aprovadas = computed(() =>
+  props.det.validacoes.filter((v) => v.status === 'OK' || v.status === 'EXCECAO'),
+);
 const excecoes = computed(() => props.det.validacoes.filter((v) => v.status === 'EXCECAO'));
 const ok = computed(() => props.det.validacoes.filter((v) => v.status === 'OK'));
 
 const kpis = computed(() => [
+  { label: 'Não Aprovadas', count: naoAprovadas.value.length, bg: 'var(--status-danger-bg)', fg: 'var(--status-danger-text)', icon: XCircle as Component },
   { label: 'Pendentes', count: pendentes.value.length, bg: 'var(--surface-sunken)', fg: 'var(--text-muted)', icon: Clock as Component },
   { label: 'Processando', count: processando.value.length, bg: 'var(--status-active-bg)', fg: 'var(--gci-base)', icon: Loader2 as Component },
-  { label: 'Não ok', count: naoOk.value.length, bg: 'var(--status-danger-bg)', fg: 'var(--status-danger-text)', icon: XCircle as Component },
   { label: 'Exceção', count: excecoes.value.length, bg: 'var(--status-warning-bg)', fg: 'var(--status-warning-text)', icon: AlertCircle as Component },
   { label: 'Ok', count: ok.value.length, bg: 'var(--status-success-bg)', fg: 'var(--status-success-text)', icon: CheckCircle2 as Component },
 ]);
@@ -147,6 +150,19 @@ const kpis = computed(() => [
       "
     >
       <div class="flex flex-col" style="gap: 32px">
+        <Section v-if="naoAprovadas.length > 0" :title="`Não Aprovadas (${naoAprovadas.length})`">
+          <div class="flex flex-col" style="gap: 10px">
+            <ValidacaoRow
+              v-for="v in naoAprovadas"
+              :key="v.titulo"
+              :v="v"
+              @inserir-evidencia="emit('inserirEvidencia', $event)"
+              @ver-evidencia="emit('verEvidencia', $event)"
+              @autorizar="emit('autorizar', $event)"
+              @ver-detalhes="emit('verDetalhes', $event)"
+            />
+          </div>
+        </Section>
         <Section v-if="pendentes.length > 0" :title="`Pendentes (${pendentes.length})`">
           <div class="flex flex-col" style="gap: 10px">
             <ValidacaoRow
@@ -173,36 +189,10 @@ const kpis = computed(() => [
             />
           </div>
         </Section>
-        <Section v-if="naoOk.length > 0" :title="`Não ok (${naoOk.length})`">
+        <Section v-if="aprovadas.length > 0" :title="`Aprovadas (${aprovadas.length})`">
           <div class="flex flex-col" style="gap: 10px">
             <ValidacaoRow
-              v-for="v in naoOk"
-              :key="v.titulo"
-              :v="v"
-              @inserir-evidencia="emit('inserirEvidencia', $event)"
-              @ver-evidencia="emit('verEvidencia', $event)"
-              @autorizar="emit('autorizar', $event)"
-              @ver-detalhes="emit('verDetalhes', $event)"
-            />
-          </div>
-        </Section>
-        <Section v-if="excecoes.length > 0" :title="`Exceção (${excecoes.length})`">
-          <div class="flex flex-col" style="gap: 10px">
-            <ValidacaoRow
-              v-for="v in excecoes"
-              :key="v.titulo"
-              :v="v"
-              @inserir-evidencia="emit('inserirEvidencia', $event)"
-              @ver-evidencia="emit('verEvidencia', $event)"
-              @autorizar="emit('autorizar', $event)"
-              @ver-detalhes="emit('verDetalhes', $event)"
-            />
-          </div>
-        </Section>
-        <Section v-if="ok.length > 0" :title="`Ok (${ok.length})`">
-          <div class="flex flex-col" style="gap: 10px">
-            <ValidacaoRow
-              v-for="v in ok"
+              v-for="v in aprovadas"
               :key="v.titulo"
               :v="v"
               @inserir-evidencia="emit('inserirEvidencia', $event)"

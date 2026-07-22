@@ -404,7 +404,7 @@ function toggleGerarMinuta() {
                 </div>
                 <div v-else class="grid items-end" style="grid-template-columns: 1fr 1fr 1fr auto; gap: 12px">
                   <FormField label="Parcela" :model-value="`${parcelas.length + 1}ª Parcela`" disabled />
-                  <FormField label="Valor" placeholder="R$ 0,00" v-model="parcelaForm.valor" />
+                  <FormField label="Valor" placeholder="R$ 0,00" currency v-model="parcelaForm.valor" />
                   <FormField label="Vencimento" placeholder="dd/mm/aaaa" v-model="parcelaForm.vencimento" required />
                   <AddButton @click="addParcela">Adicionar parcela</AddButton>
                 </div>

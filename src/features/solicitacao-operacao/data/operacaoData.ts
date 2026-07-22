@@ -260,6 +260,62 @@ export interface AnexoDoc {
   enviado: boolean;
 }
 
+export interface GarantiaAnexo {
+  id: string;
+  nome: string;
+  obrigatorio: boolean;
+  enviado: boolean;
+}
+
+export interface GarantiaOperacao {
+  id: string;
+  tipo: string;
+  nome: string;
+  valor: string;
+  anexos: GarantiaAnexo[];
+}
+
+/** Catálogo fixo de anexos do cadastro de garantia (Solicitação). Obrigatórios primeiro. */
+export const GARANTIA_ANEXO_TEMPLATES: Omit<GarantiaAnexo, 'enviado'>[] = [
+  { id: 'certidao-matricula', nome: 'Certidão da Matrícula', obrigatorio: true },
+  { id: 'contrato-arrendamento', nome: 'Contrato de Arrendamento', obrigatorio: false },
+  { id: 'contrato-comodato', nome: 'Contrato de Comodato', obrigatorio: false },
+  { id: 'contrato-parceria', nome: 'Contrato de Parceria', obrigatorio: false },
+  { id: 'contrato-locacao', nome: 'Contrato de Locação', obrigatorio: false },
+  { id: 'relacao-estoque', nome: 'Relação do Estoque Detalhado', obrigatorio: false },
+  { id: 'contrato-servicos', nome: 'Contrato de Prestação de Serviços', obrigatorio: false },
+];
+
+export const TIPO_GARANTIA_OPERACAO_OPTS = [
+  'AF. Estoque',
+  'Penhor de Estoque',
+  'Alienação Fiduciária',
+  'Hipoteca',
+  'Penhor',
+  'Fiança',
+  'Cessão Fiduciária',
+  'Aval',
+  'Caução',
+];
+
+export function emptyGarantiaAnexos(): GarantiaAnexo[] {
+  return GARANTIA_ANEXO_TEMPLATES.map((d) => ({ ...d, enviado: false }));
+}
+
+/** Garante obrigatórios antes dos opcionais (ex.: dados legados fora de ordem). */
+export function sortGarantiaAnexos(anexos: GarantiaAnexo[]): GarantiaAnexo[] {
+  return [...anexos].sort((a, b) => Number(b.obrigatorio) - Number(a.obrigatorio));
+}
+
+export function formatValorGarantia(valor: string): string {
+  if (!valor.trim()) return '—';
+  // reusa máscara de centavos (já normaliza R$ + milhares)
+  const digits = valor.replace(/\D/g, '');
+  if (!digits) return '—';
+  const cents = parseInt(digits, 10);
+  return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
 export interface EventoHistorico {
   data: string;
   autor: string;
@@ -270,7 +326,7 @@ export interface DetalheSolicitacao {
   partes: ParteRelacionada[];
   limites: { agrupamento: string; limite: string; risco: string; riscoSolic: string }[];
   ativos: ContratoAtivo[];
-  garantias: { tipo: string; nome: string; valor: number }[];
+  garantias: GarantiaOperacao[];
   validacoes: ItemValidacao[];
   anexos: AnexoDoc[];
   historico: EventoHistorico[];

@@ -269,7 +269,7 @@ function globalIndex(pageIdx: number) {
               <div class="flex flex-col" style="gap: 14px">
                 <StepGrid>
                   <SelectField label="Tipo de garantia" :options="TIPO_GARANTIA_MINUTA_OPTS" placeholder="Selecione" required :span="5" v-model="form.tipo" />
-                  <FormField label="Valor da garantia" placeholder="R$ 0,00" required :span="3" v-model="form.valor" />
+                  <FormField label="Valor da garantia" placeholder="R$ 0,00" required currency :span="3" v-model="form.valor" />
                   <FormField label="Nº de testemunhas" placeholder="—" :span="4" v-model="form.numeroTestemunhas" />
                   <FormField label="Descrição" placeholder="—" :span="12" v-model="form.descricao" />
                   <FormField label="Obrigação garantida / vínculo com o título" placeholder="—" required :span="8" v-model="form.obrigacaoGarantida" />
