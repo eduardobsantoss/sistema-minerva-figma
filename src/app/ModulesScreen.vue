@@ -23,6 +23,8 @@ import {
 } from '@/features/solicitacao-operacao';
 import { PassivoScreen } from '@/features/passivo';
 import { AtivosScreen } from '@/features/ativos';
+import { ConfiguracoesScreen } from '@/features/configuracoes';
+
 import {
   RatingsScreen,
   AgrupamentosScreen,
@@ -228,6 +230,7 @@ function handleModuleClick(title: string) {
           <RelatoriosScreen v-else-if="view === 'risco-rel'" />
           <RiscoDashboardScreen v-else-if="view === 'risco-dashboard'" />
           <PassivoScreen v-else-if="view === 'passivo'" />
+          <ConfiguracoesScreen v-else-if="view === 'conf'" />
           <Placeholder v-else :name="titleMap[view]" />
         </div>
       </main>
