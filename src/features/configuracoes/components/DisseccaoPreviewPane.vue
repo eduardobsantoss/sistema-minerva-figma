@@ -5,25 +5,28 @@ import {
   frameStyle,
   isModalPath,
   resolvePreview,
-} from '../data/solicitacaoPreviewProps';
+} from '../data/previewResolve';
 
 const props = defineProps<{
+  feature: string;
   componentPath: string;
   componentName: string;
 }>();
 
-const loaders = import.meta.glob('@/features/solicitacao-operacao/**/*.vue');
+const loaders = import.meta.glob('@/features/**/*.vue');
 
 const Comp = shallowRef<Component | null>(null);
 const loadError = ref<string | null>(null);
 const runtimeError = ref<string | null>(null);
 const loading = ref(false);
-const modalVisible = ref(true);
-/** Incrementa a cada troca / reopen para forçar remount limpo. */
+/** Overlays (modal/ColPanel): após close, some e permite reabrir. */
+const overlayVisible = ref(true);
 const mountKey = ref(0);
 
-const isModal = computed(() => isModalPath(props.componentPath));
-const config = computed(() => resolvePreview(props.componentPath, props.componentName));
+const isOverlay = computed(() => isModalPath(props.componentPath));
+const config = computed(() =>
+  resolvePreview(props.feature, props.componentPath, props.componentName),
+);
 const previewProps = computed(() => ({ ...(config.value.props ?? {}) }));
 
 const emit = defineEmits<{ 'update:example': [example: string] }>();
@@ -41,17 +44,17 @@ async function load() {
   loadError.value = null;
   runtimeError.value = null;
   Comp.value = null;
-  modalVisible.value = true;
+  overlayVisible.value = true;
   mountKey.value += 1;
 
-  const needle = `/solicitacao-operacao/${props.componentPath}`.replace(/\\/g, '/');
+  const needle = `/features/${props.feature}/${props.componentPath}`.replace(/\\/g, '/');
   const entry = Object.entries(loaders).find(([key]) => {
     const n = key.replace(/\\/g, '/');
-    return n.endsWith(needle) || n.endsWith(props.componentPath);
+    return n.endsWith(needle) || n.endsWith(`/${props.feature}/${props.componentPath}`);
   });
 
   if (!entry) {
-    loadError.value = `Não encontrado: ${props.componentPath}`;
+    loadError.value = `Não encontrado: ${props.feature}/${props.componentPath}`;
     loading.value = false;
     return;
   }
@@ -66,18 +69,18 @@ async function load() {
   }
 }
 
-function onModalDismiss() {
-  modalVisible.value = false;
+function onOverlayDismiss() {
+  overlayVisible.value = false;
 }
 
-function reopenModal() {
+function reopenOverlay() {
   runtimeError.value = null;
-  modalVisible.value = true;
+  overlayVisible.value = true;
   mountKey.value += 1;
 }
 
 watch(
-  () => props.componentPath,
+  () => [props.feature, props.componentPath] as const,
   () => {
     void load();
   },
@@ -86,7 +89,6 @@ watch(
 
 onErrorCaptured((err) => {
   runtimeError.value = err instanceof Error ? err.message : String(err);
-  // Não desmonta o host — só para de renderizar o Comp (ver v-if abaixo)
   return false;
 });
 
@@ -140,18 +142,37 @@ const showLivePreview = computed(
         "
       >
         <AlertTriangle :size="16" style="flex-shrink: 0; margin-top: 1px" />
-        <div>
-          Falha ao montar o preview. O exemplo mínimo abaixo e o MD copiado continuam válidos.
+        <div style="flex: 1; min-width: 0">
+          Falha ao montar o preview. O exemplo mínimo e o MD copiado continuam válidos.
           <div style="margin-top: 4px; opacity: 0.85">{{ runtimeError }}</div>
+          <button
+            type="button"
+            class="btn-animated"
+            style="
+              margin-top: 10px;
+              height: 32px;
+              padding: 0 12px;
+              border-radius: var(--radius-md);
+              border: 1px solid var(--border-default);
+              background: var(--surface-card);
+              color: var(--text-strong);
+              font-size: var(--text-xs);
+              font-weight: var(--weight-bold);
+              cursor: pointer;
+            "
+            @click="load"
+          >
+            Tentar novamente
+          </button>
         </div>
       </div>
 
-      <!-- Só monta o componente se NÃO houver erro — evita travar o viewer -->
       <template v-if="showLivePreview">
-        <template v-if="isModal">
-          <div v-if="!modalVisible" style="padding: 28px; text-align: center">
+        <!-- Overlay (Modal / ColPanel / etc.): sandbox + close -->
+        <template v-if="isOverlay">
+          <div v-if="!overlayVisible" style="padding: 28px; text-align: center">
             <p style="font-size: var(--text-sm); color: var(--text-muted); margin-bottom: 14px">
-              Modal fechado no preview.
+              Overlay fechado no preview.
             </p>
             <button
               type="button"
@@ -167,35 +188,41 @@ const showLivePreview = computed(
                 font-weight: var(--weight-bold);
                 cursor: pointer;
               "
-              @click="reopenModal"
+              @click="reopenOverlay"
             >
-              Mostrar visual do modal
+              Mostrar visual
             </button>
           </div>
           <div
             v-else
-            class="disseccao-modal-sandbox"
+            class="disseccao-preview-sandbox"
             :style="frameStyle('modal')"
           >
             <component
               :is="Comp"
               :key="mountKey"
               v-bind="previewProps"
-              @close="onModalDismiss"
-              @cancel="onModalDismiss"
-              @dismiss="onModalDismiss"
+              @close="onOverlayDismiss"
+              @cancel="onOverlayDismiss"
+              @dismiss="onOverlayDismiss"
             >
               {{ config.slotText }}
             </component>
           </div>
         </template>
 
+        <!-- Demais: ainda assim em sandbox (contem qualquer fixed interno) -->
         <div
           v-else
           :key="mountKey"
-          :style="frameStyle(config.frame)"
+          class="disseccao-preview-sandbox"
+          :style="frameStyle(config.frame === 'modal' ? 'wide' : config.frame)"
         >
-          <component :is="Comp" v-bind="previewProps">
+          <component
+            :is="Comp"
+            v-bind="previewProps"
+            @close="onOverlayDismiss"
+          >
             {{ config.slotText }}
           </component>
         </div>
@@ -236,8 +263,15 @@ const showLivePreview = computed(
 </template>
 
 <style scoped>
-.disseccao-modal-sandbox :deep(div[style*='position: fixed']),
-.disseccao-modal-sandbox :deep(div[style*='position:fixed']) {
+/* Contém qualquer overlay fixed (Modal, ColPanel, backdrop) dentro do preview */
+.disseccao-preview-sandbox {
+  position: relative;
+  transform: translateZ(0);
+  isolation: isolate;
+  overflow: auto;
+}
+.disseccao-preview-sandbox :deep(div[style*='position: fixed']),
+.disseccao-preview-sandbox :deep(div[style*='position:fixed']) {
   position: absolute !important;
   z-index: 1 !important;
 }

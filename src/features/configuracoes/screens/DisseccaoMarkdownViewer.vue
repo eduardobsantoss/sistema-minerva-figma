@@ -2,8 +2,10 @@
 import { computed, ref } from 'vue';
 import { ArrowLeft, Check, Copy } from 'lucide-vue-next';
 import { copyText, componentMarkdown } from '../utils/copyText';
-import { resolvePreview } from '../data/solicitacaoPreviewProps';
+import { resolvePreview } from '../data/previewResolve';
 import DisseccaoPreviewPane from '../components/DisseccaoPreviewPane.vue';
+import designTokensJson from '../disseccoes/minerva-design-tokens.json';
+import type { TokenMap } from '../utils/usedTokens';
 
 export interface DisseccaoComponent {
   id: string;
@@ -19,6 +21,7 @@ export interface DisseccaoSection {
 
 export interface DisseccaoCatalog {
   title: string;
+  feature: string;
   sections: DisseccaoSection[];
 }
 
@@ -50,8 +53,8 @@ function selectComponent(id: string) {
 async function copySelected() {
   if (!selected.value) return;
   const { name, path, source } = selected.value.component;
-  const { example } = resolvePreview(path, name);
-  const md = componentMarkdown(name, source, example);
+  const { example } = resolvePreview(props.catalog.feature, path, name);
+  const md = componentMarkdown(name, source, example, designTokensJson as TokenMap);
   const ok = await copyText(md);
   if (ok) {
     copied.value = true;
@@ -132,9 +135,21 @@ async function copySelected() {
       >
         <Check v-if="copied" :size="16" />
         <Copy v-else :size="16" />
-        {{ copied ? 'Copiado' : copyError ? 'Falha ao copiar' : 'Copiar MD' }}
+        {{ copied ? 'Copiado' : copyError ? 'Falha ao copiar' : 'Copiar MD + tokens' }}
       </button>
     </div>
+
+    <p
+      style="
+        margin: -8px 0 0;
+        font-size: var(--text-xs);
+        color: var(--text-muted);
+        line-height: 1.45;
+      "
+    >
+      O clipboard inclui só os tokens usados neste componente (com valor resolvido) + exemplo mínimo + SFC.
+      O pacote completo fica em Telas → Copiar design tokens.
+    </p>
 
     <div class="flex" style="gap: 16px; align-items: stretch; min-height: 0">
       <nav
@@ -264,6 +279,7 @@ async function copySelected() {
           <DisseccaoPreviewPane
             v-if="selected"
             :key="selected.component.id"
+            :feature="catalog.feature"
             :component-path="selected.component.path"
             :component-name="selected.component.name"
           />

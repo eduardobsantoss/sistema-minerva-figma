@@ -5,9 +5,15 @@ declare module '*.md?raw' {
   export default content;
 }
 
+declare module '*minerva-design-tokens.json' {
+  const content: Record<string, { declaration: string; resolved: string }>;
+  export default content;
+}
+
 declare module '*.catalog.json' {
   const content: {
     title: string;
+    feature: string;
     sections: {
       title: string;
       components: { id: string; name: string; path: string; source: string }[];

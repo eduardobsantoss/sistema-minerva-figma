@@ -1,22 +1,39 @@
 <script setup lang="ts">
-import { computed, ref, type Component } from 'vue';
-import { ArrowLeft, ChevronRight, ClipboardList } from 'lucide-vue-next';
-import { TELAS_DISSECCOES, type TelaDisseccaoKey } from '../data/telasCatalog';
-import DisseccaoMarkdownViewer from './DisseccaoMarkdownViewer.vue';
+import { computed, ref } from 'vue';
+import { ArrowLeft, Check, ChevronRight, Copy } from 'lucide-vue-next';
+import {
+  TELAS_DISSECCOES,
+  TELA_ICONS,
+  type TelaDisseccaoKey,
+} from '../data/telasCatalog';
+import DisseccaoMarkdownViewer, {
+  type DisseccaoCatalog,
+} from './DisseccaoMarkdownViewer.vue';
+import { copyText } from '../utils/copyText';
+import designTokensMd from '../disseccoes/minerva-design-tokens.md?raw';
 import solicitacaoCatalog from '../disseccoes/solicitacao-operacao.catalog.json';
+import fidcCatalog from '../disseccoes/fidc.catalog.json';
+import craCatalog from '../disseccoes/cra.catalog.json';
+import cobrancaCatalog from '../disseccoes/cobranca.catalog.json';
+import riscoCatalog from '../disseccoes/risco.catalog.json';
+import ativosCatalog from '../disseccoes/ativos.catalog.json';
+import passivoCatalog from '../disseccoes/passivo.catalog.json';
 
 const emit = defineEmits<{ back: [] }>();
 
-const CARD_ICONS: Record<TelaDisseccaoKey, Component> = {
-  'solicitacao-operacao': ClipboardList,
-};
-
-const CATALOGS: Record<TelaDisseccaoKey, typeof solicitacaoCatalog> = {
-  'solicitacao-operacao': solicitacaoCatalog,
+const CATALOGS: Record<TelaDisseccaoKey, DisseccaoCatalog> = {
+  'solicitacao-operacao': solicitacaoCatalog as DisseccaoCatalog,
+  fidc: fidcCatalog as DisseccaoCatalog,
+  cra: craCatalog as DisseccaoCatalog,
+  cobranca: cobrancaCatalog as DisseccaoCatalog,
+  risco: riscoCatalog as DisseccaoCatalog,
+  ativos: ativosCatalog as DisseccaoCatalog,
+  passivo: passivoCatalog as DisseccaoCatalog,
 };
 
 const selected = ref<TelaDisseccaoKey | null>(null);
 const hoveredKey = ref<TelaDisseccaoKey | null>(null);
+const tokensCopied = ref(false);
 
 const selectedMeta = computed(
   () => TELAS_DISSECCOES.find((t) => t.key === selected.value) ?? null,
@@ -32,6 +49,15 @@ function goBack() {
     return;
   }
   emit('back');
+}
+
+async function copyTokensOnly() {
+  const ok = await copyText(designTokensMd);
+  if (!ok) return;
+  tokensCopied.value = true;
+  window.setTimeout(() => {
+    tokensCopied.value = false;
+  }, 1800);
 }
 </script>
 
@@ -61,7 +87,7 @@ function goBack() {
       >
         <ArrowLeft :size="20" />
       </button>
-      <div>
+      <div style="flex: 1; min-width: 0">
         <div
           style="
             font-size: 11px;
@@ -87,9 +113,30 @@ function goBack() {
           Telas
         </h1>
         <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-          Dissecção visual por componente — copie o MD de cada um.
+          Dissecção visual por módulo — copie o MD de cada componente (já inclui tokens).
         </p>
       </div>
+      <button
+        class="btn-animated flex items-center"
+        :style="{
+          gap: '8px',
+          height: '38px',
+          padding: '0 16px',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--border-strong)',
+          cursor: 'pointer',
+          background: tokensCopied ? 'var(--success-base)' : 'var(--surface-card)',
+          color: tokensCopied ? 'var(--text-on-brand)' : 'var(--text-default)',
+          fontSize: 'var(--text-sm)',
+          fontWeight: 'var(--weight-bold)',
+          flexShrink: 0,
+        }"
+        @click="copyTokensOnly"
+      >
+        <Check v-if="tokensCopied" :size="16" />
+        <Copy v-else :size="16" />
+        {{ tokensCopied ? 'Tokens copiados' : 'Copiar design tokens' }}
+      </button>
     </div>
 
     <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px">
@@ -124,7 +171,7 @@ function goBack() {
             color: var(--accent);
           "
         >
-          <component :is="CARD_ICONS[tela.key]" :size="20" />
+          <component :is="TELA_ICONS[tela.key]" :size="20" />
         </div>
         <div>
           <div

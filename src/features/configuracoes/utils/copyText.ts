@@ -1,3 +1,5 @@
+import { usedTokensMarkdown, type TokenMap } from './usedTokens';
+
 /** Copia texto com fallback quando Clipboard API falha (permissão / contexto). */
 export async function copyText(text: string): Promise<boolean> {
   try {
@@ -27,18 +29,39 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
-/** Markdown para a outra IA: nome + exemplo mínimo + SFC completo. */
-export function componentMarkdown(name: string, source: string, example: string): string {
+/**
+ * Markdown para a outra IA:
+ * 1) Só os design tokens usados no SFC (com valores resolvidos)
+ * 2) Exemplo mínimo
+ * 3) SFC completo
+ */
+export function componentMarkdown(
+  name: string,
+  source: string,
+  example: string,
+  tokenMap: TokenMap,
+): string {
+  const tokensSection = usedTokensMarkdown(source, example, tokenMap);
+
   return [
-    `### ${name}`,
+    `# Minerva — pacote de implementação: ${name}`,
     '',
-    '#### Exemplo mínimo',
+    '> **Obrigatório:** aplique os Design Tokens abaixo (apenas os usados neste componente).',
+    '> Não substitua `var(--*)` por cores/fontes inventadas.',
+    '',
+    tokensSection.trim(),
+    '',
+    '---',
+    '',
+    `## Componente: ${name}`,
+    '',
+    '### Exemplo mínimo',
     '',
     '```vue',
     example.trim(),
     '```',
     '',
-    '#### Componente',
+    '### Componente (SFC)',
     '',
     '```vue',
     source.trim(),

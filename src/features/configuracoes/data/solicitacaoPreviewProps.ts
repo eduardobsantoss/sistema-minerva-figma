@@ -1,11 +1,26 @@
-import { FileText, Plus, User } from 'lucide-vue-next';
+import { FileText, Plus, User, Building2 } from 'lucide-vue-next';
 import {
   detalheSolicitacao,
   solicitacoes,
+  type ParteRelacionada,
 } from '@/features/solicitacao-operacao/data/operacaoData';
 import { seedAtivos } from '@/features/solicitacao-operacao/data/ativoData';
 import type { NewPedidoData } from '@/features/solicitacao-operacao/components/novo-pedido/types';
 import { IDENTIFICACAO_FIELDS } from '@/features/solicitacao-operacao/data/parteRelacionadaFields';
+import {
+  emptyBoletimSubscricao,
+  emptyCessaoForm,
+  emptyCetForm,
+  emptyConjugeMinuta,
+  emptyPessoaMinuta,
+  emptyProdutoMinuta,
+  MOCK_CLIENTES_MINUTA,
+  type AvalistaMinutaRow,
+  type TituloMinutaForm,
+} from '@/features/solicitacao-operacao/data/minutaData';
+import { RANK_ATIVO_SEED } from '@/features/solicitacao-operacao/data/fundoPadraoData';
+import { VEICULOS_FIDC_SEED } from '@/features/solicitacao-operacao/data/taxasVeiculosData';
+import { VALIDACOES_SEED } from '@/features/solicitacao-operacao/data/validacoesConfigData';
 
 export type PreviewConfig = {
   props?: Record<string, unknown>;
@@ -16,7 +31,15 @@ export type PreviewConfig = {
 
 export function isModalPath(relPath: string): boolean {
   const p = relPath.replace(/\\/g, '/');
-  return /Modal\.vue$/i.test(p) || p.includes('NovoPedidoModal');
+  const base = p.split('/').pop() ?? '';
+  return (
+    /Modal\.vue$/i.test(base) ||
+    /ColPanel\.vue$/i.test(base) ||
+    /Popover\.vue$/i.test(base) ||
+    /Dropdown\.vue$/i.test(base) ||
+    base === 'ActionMenu.vue' ||
+    p.includes('NovoPedidoModal')
+  );
 }
 
 /** Preferir solicitação que já tem ativos no seed (#1383 não tem). */
@@ -34,14 +57,84 @@ if (!sampleDet.ativos.length && sampleAtivo) {
   sampleDet.ativos = [sampleAtivo];
 }
 
-const sampleParte = sampleDet.partes[0];
-const sampleValidacao = sampleDet.validacoes[0];
+const sampleParteFallback: ParteRelacionada = {
+  tipos: ['AVA'],
+  tipoPessoa: 'JURIDICA',
+  nome: 'Parte Demo LTDA',
+  documento: '12.345.678/0001-90',
+  email: 'contato@demo.com',
+  telefone: '(11) 99999-0000',
+};
+const sampleParte = sampleDet.partes[0] ?? sampleParteFallback;
+const sampleValidacao = sampleDet.validacoes[0] ?? {
+  titulo: 'Validação KYC',
+  descricao: 'Documento de exemplo',
+  area: 'Compliance',
+  status: 'PENDENTE' as const,
+};
 const sampleGarantia = sampleDet.garantias[0] ?? {
   id: 'g-demo',
   tipo: 'Imóvel',
   nome: 'Cessão fiduciária',
   valor: 'R$ 100.000,00',
   anexos: [],
+};
+
+const samplePessoaAtivo = sampleAtivo.cedente ?? {
+  nome: 'NATIVA AGRONEGOCIOS LTDA',
+  documento: '00.000.000/0001-00',
+  contatos: [],
+  enderecos: [],
+};
+const samplePessoaMinuta = MOCK_CLIENTES_MINUTA[0] ?? emptyPessoaMinuta('FISICA');
+const sampleAvalistaRows: AvalistaMinutaRow[] = (sampleDet.partes.length
+  ? sampleDet.partes.filter((p) => p.tipos.includes('AVA'))
+  : [sampleParte]
+).map((p) => ({
+  documento: p.documento,
+  nome: p.nome,
+  possuiConjuge: !!p.possuiConjuge,
+  selecionadoAssinatura: false,
+  conjugeInterveniente: false,
+}));
+
+const sampleTituloMinutaForm: TituloMinutaForm = {
+  tipoValorLiquido: true,
+  numero: '001',
+  tipo: 'CPR',
+  emissao: '01/01/2026',
+  vencimento: '01/07/2026',
+  chaveNota: '',
+  docCedente: samplePessoaMinuta.documento ?? '',
+  gerarOperacaoGarantias: false,
+  possuiCronograma: true,
+  cronogramaAutomatico: false,
+  fluxoAmortizacao: '',
+  fluxoJuros: '',
+  cessao: emptyCessaoForm(),
+  sacadoDocumento: '',
+  sacadoNome: '',
+  sacadoEmail: '',
+  ddi: '+55',
+  telefone: '',
+  cep: '',
+  endereco: '',
+  numeroEndereco: '',
+  complemento: '',
+  bairro: '',
+  cidade: '',
+  estado: '',
+  pais: 'Brasil',
+};
+
+const sampleEmissaoMinuta = {
+  uf: 'MG',
+  cidade: 'Uberaba',
+  numero: '1',
+  serie: 'ÚNICA',
+  valorNominalUnitario: '100000',
+  quantidade: '1',
+  valorTotal: '100000',
 };
 
 const emptyFilters = {
@@ -308,9 +401,9 @@ export function resolvePreview(relPath: string, name: string): PreviewConfig {
   if (path.endsWith('PessoaDetailTabs.vue') || path.endsWith('DadosSubTab.vue')) {
     return {
       props: {
-        pessoa: sampleAtivo.cedente,
+        pessoa: samplePessoaAtivo,
         titulo: 'Cedente',
-        historico: sampleAtivo.historicoTitulo,
+        historico: sampleAtivo.historicoTitulo ?? [],
       },
       frame: 'wide',
       example: exampleBlock(
@@ -321,7 +414,7 @@ export function resolvePreview(relPath: string, name: string): PreviewConfig {
   }
   if (path.endsWith('ContatosSubTab.vue') || path.endsWith('EnderecosSubTab.vue')) {
     return {
-      props: { pessoa: sampleAtivo.cedente },
+      props: { pessoa: samplePessoaAtivo },
       frame: 'wide',
       example: exampleBlock(
         `import ${name} from './${name}.vue';\nimport { solicitacoes, detalheSolicitacao } from '../../../data/operacaoData';\nconst pessoa = detalheSolicitacao(solicitacoes[0]).ativos[0].cedente;`,
@@ -654,6 +747,227 @@ export function resolvePreview(relPath: string, name: string): PreviewConfig {
       ),
     };
   }
+  if (path.endsWith('AdicionarContratoModal.vue')) {
+    return {
+      props: {
+        valorOperacao: sampleSolicitacao.valor,
+        tipoCalculo: sampleSolicitacao.tipoTaxa ?? 'Pré-fixado',
+        partes: sampleDet.partes,
+        unidadeNegocio: sampleSolicitacao.unidadeNegocio ?? 'Agro',
+      },
+      frame: 'modal',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nimport { solicitacoes, detalheSolicitacao } from '../../data/operacaoData';\nconst open = ref(true);\nconst s = solicitacoes[0];\nconst det = detalheSolicitacao(s);`,
+        `  <${name} v-if="open" :valor-operacao="s.valor" tipo-calculo="Pré-fixado" :partes="det.partes" @close="open = false" />`,
+      ),
+    };
+  }
+
+  // ── Minuta (defineModel + props obrigatórias) ──────────────────────────
+  if (path.endsWith('SpouseFields.vue')) {
+    return {
+      props: { modelValue: emptyConjugeMinuta() },
+      frame: 'wide',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nimport { emptyConjugeMinuta } from '../../../data/minutaData';\nconst conjuge = ref(emptyConjugeMinuta());`,
+        `  <${name} v-model="conjuge" />`,
+      ),
+    };
+  }
+  if (
+    path.endsWith('EmitenteStep.vue') ||
+    path.endsWith('CredoraStep.vue') ||
+    path.endsWith('EndossatarioStep.vue') ||
+    path.endsWith('EscrituradorStep.vue')
+  ) {
+    const form =
+      path.endsWith('EmitenteStep.vue')
+        ? { ...samplePessoaMinuta }
+        : emptyPessoaMinuta('JURIDICA');
+    return {
+      props: { form, docBusca: '' },
+      frame: 'wide',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nimport { emptyPessoaMinuta } from '../../../data/minutaData';\nconst form = ref(emptyPessoaMinuta('JURIDICA'));`,
+        `  <${name} v-model:form="form" />`,
+      ),
+    };
+  }
+  if (path.endsWith('AvalistaStep.vue')) {
+    return {
+      props: {
+        possuiAvalistas: true,
+        rows: sampleAvalistaRows.length
+          ? sampleAvalistaRows
+          : [
+              {
+                documento: '105.746.818-50',
+                nome: 'Avalista Demo',
+                possuiConjuge: false,
+                selecionadoAssinatura: false,
+                conjugeInterveniente: false,
+              },
+            ],
+      },
+      frame: 'wide',
+      example: exampleBlock(
+        `import ${name} from './${name}.vue';\nconst rows = [{ documento: '105.746.818-50', nome: 'Avalista Demo', possuiConjuge: false, selecionadoAssinatura: false, conjugeInterveniente: false }];`,
+        `  <${name} :possui-avalistas="true" :rows="rows" />`,
+      ),
+    };
+  }
+  if (path.endsWith('EmissaoStep.vue')) {
+    return {
+      props: { modelValue: { ...sampleEmissaoMinuta } },
+      frame: 'wide',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nconst form = ref({ uf: 'MG', cidade: 'Uberaba' });`,
+        `  <${name} v-model="form" />`,
+      ),
+    };
+  }
+  if (path.endsWith('ProdutoStep.vue')) {
+    return {
+      props: { form: emptyProdutoMinuta(), produtos: [] },
+      frame: 'wide',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nimport { emptyProdutoMinuta } from '../../../data/minutaData';\nconst form = ref(emptyProdutoMinuta());`,
+        `  <${name} v-model:form="form" />`,
+      ),
+    };
+  }
+  if (path.endsWith('TituloMinutaStep.vue')) {
+    return {
+      props: {
+        modelValue: { ...sampleTituloMinutaForm, cessao: emptyCessaoForm() },
+        valorOperacao: sampleSolicitacao.valor,
+        tipoCalculo: sampleSolicitacao.tipoTaxa ?? 'Pré-fixado',
+      },
+      frame: 'wide',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nimport { emptyCessaoForm } from '../../../data/minutaData';\nconst form = ref({ tipoValorLiquido: true, numero: '', tipo: 'CPR', emissao: '', vencimento: '', chaveNota: '', docCedente: '', gerarOperacaoGarantias: false, possuiCronograma: true, cronogramaAutomatico: false, fluxoAmortizacao: '', fluxoJuros: '', cessao: emptyCessaoForm(), sacadoDocumento: '', sacadoNome: '', sacadoEmail: '', ddi: '+55', telefone: '', cep: '', endereco: '', numeroEndereco: '', complemento: '', bairro: '', cidade: '', estado: '', pais: 'Brasil' });`,
+        `  <${name} v-model="form" :valor-operacao="1250000" tipo-calculo="Pré-fixado" />`,
+      ),
+    };
+  }
+  if (path.endsWith('BoletimSubscricaoStep.vue')) {
+    return {
+      props: { modelValue: emptyBoletimSubscricao() },
+      frame: 'wide',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nimport { emptyBoletimSubscricao } from '../../../data/minutaData';\nconst boletim = ref(emptyBoletimSubscricao());`,
+        `  <${name} v-model="boletim" />`,
+      ),
+    };
+  }
+  if (path.endsWith('CetStep.vue')) {
+    return {
+      props: {
+        modelValue: emptyCetForm(),
+        valorTitulo: sampleSolicitacao.valor,
+        dataEmissao: '01/01/2026',
+        dataVencimento: '01/07/2026',
+      },
+      frame: 'wide',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nimport { emptyCetForm } from '../../../data/minutaData';\nconst form = ref(emptyCetForm());`,
+        `  <${name} v-model="form" :valor-titulo="1250000" data-emissao="01/01/2026" data-vencimento="01/07/2026" />`,
+      ),
+    };
+  }
+  if (path.endsWith('MinutaStepper.vue')) {
+    return {
+      props: {
+        current: 0,
+        steps: [
+          { key: 'emitente', label: 'Emitente', icon: User },
+          { key: 'credora', label: 'Credora', icon: Building2 },
+        ],
+      },
+      frame: 'wide',
+      example: exampleBlock(
+        `import ${name} from './${name}.vue';\nimport { User, Building2 } from 'lucide-vue-next';\nconst steps = [{ key: 'emitente', label: 'Emitente', icon: User }, { key: 'credora', label: 'Credora', icon: Building2 }];`,
+        `  <${name} :steps="steps" :current="0" />`,
+      ),
+    };
+  }
+  if (path.endsWith('MinutaWizard.vue')) {
+    return {
+      props: {
+        valorOperacao: sampleSolicitacao.valor,
+        tipoCalculo: sampleSolicitacao.tipoTaxa ?? 'Pré-fixado',
+        tipo: 'Contrato CPR',
+        partes: sampleDet.partes,
+        gerarMinuta: true,
+        unidadeNegocio: sampleSolicitacao.unidadeNegocio ?? 'Agro',
+      },
+      frame: 'wide',
+      example: exampleBlock(
+        `import ${name} from './${name}.vue';\nimport { solicitacoes, detalheSolicitacao } from '../../../data/operacaoData';\nconst s = solicitacoes[0];\nconst det = detalheSolicitacao(s);`,
+        `  <${name} :valor-operacao="s.valor" tipo-calculo="Pré-fixado" tipo="Contrato CPR" :partes="det.partes" :gerar-minuta="true" />`,
+      ),
+    };
+  }
+  if (path.endsWith('GarantiaMinutaStep.vue') || path.endsWith('InformacaoPagamentoStep.vue')) {
+    return {
+      props: {},
+      frame: 'wide',
+      example: baseExample(name, ''),
+    };
+  }
+
+  // ── Fundo / Taxas / Validações config ──────────────────────────────────
+  if (path.endsWith('OperationFundRankList.vue')) {
+    return {
+      props: { items: RANK_ATIVO_SEED },
+      frame: 'wide',
+      example: exampleBlock(
+        `import ${name} from './${name}.vue';\nimport { RANK_ATIVO_SEED } from '../../data/fundoPadraoData';`,
+        `  <${name} :items="RANK_ATIVO_SEED" />`,
+      ),
+    };
+  }
+  if (path.endsWith('OperationFundRankEditor.vue')) {
+    return {
+      props: { activeRank: RANK_ATIVO_SEED },
+      frame: 'wide',
+      example: exampleBlock(
+        `import ${name} from './${name}.vue';\nimport { RANK_ATIVO_SEED } from '../../data/fundoPadraoData';`,
+        `  <${name} :active-rank="RANK_ATIVO_SEED" />`,
+      ),
+    };
+  }
+  if (path.endsWith('VehicleRateDetailView.vue')) {
+    return {
+      props: { vehicle: VEICULOS_FIDC_SEED[0], tabLabel: 'FIDC' },
+      frame: 'wide',
+      example: exampleBlock(
+        `import ${name} from './${name}.vue';\nimport { VEICULOS_FIDC_SEED } from '../../data/taxasVeiculosData';`,
+        `  <${name} :vehicle="VEICULOS_FIDC_SEED[0]" tab-label="FIDC" />`,
+      ),
+    };
+  }
+  if (path.endsWith('ValidationDetailView.vue')) {
+    return {
+      props: { item: VALIDACOES_SEED[0] },
+      frame: 'wide',
+      example: exampleBlock(
+        `import ${name} from './${name}.vue';\nimport { VALIDACOES_SEED } from '../../data/validacoesConfigData';`,
+        `  <${name} :item="VALIDACOES_SEED[0]" />`,
+      ),
+    };
+  }
+  if (path.includes('/adicionar-contrato/EmptyState.vue')) {
+    return {
+      props: { icon: FileText, title: 'Nenhum item', hint: 'Não há registros para exibir.' },
+      frame: 'card',
+      example: exampleBlock(
+        `import ${name} from './${name}.vue';\nimport { FileText } from 'lucide-vue-next';`,
+        `  <${name} :icon="FileText" title="Nenhum item" hint="Não há registros para exibir." />`,
+      ),
+    };
+  }
+
   if (isModalPath(path)) {
     return {
       props: {},
@@ -670,21 +984,12 @@ export function resolvePreview(relPath: string, name: string): PreviewConfig {
     path.endsWith('FundoPadraoScreen.vue') ||
     path.endsWith('TaxasVeiculosScreen.vue') ||
     path.endsWith('ValidacoesConfigScreen.vue') ||
-    path.endsWith('OperationFundRankList.vue') ||
-    path.endsWith('OperationFundRankEditor.vue') ||
-    path.endsWith('VehicleRateDetailView.vue') ||
-    path.endsWith('ValidationDetailView.vue') ||
-    path.endsWith('StepGrid.vue') ||
-    path.endsWith('EmptyState.vue') ||
-    path.includes('/minuta/')
+    path.endsWith('StepGrid.vue')
   ) {
     return {
       props: {},
       frame: 'wide',
-      example: exampleBlock(
-        `import ${name} from './${name}.vue';\n// Se houver props obrigatórias, veja defineProps no SFC abaixo`,
-        `  <${name} />`,
-      ),
+      example: baseExample(name, ''),
     };
   }
 

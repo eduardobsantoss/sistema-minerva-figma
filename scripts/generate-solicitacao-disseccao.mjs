@@ -273,7 +273,11 @@ fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(outFile, lines.join('\n'), 'utf8');
 fs.writeFileSync(
   outCatalog,
-  JSON.stringify({ title: 'Solicitação de Operação', sections: catalogSections }, null, 2),
+  JSON.stringify(
+    { title: 'Solicitação de Operação', feature: 'solicitacao-operacao', sections: catalogSections },
+    null,
+    2,
+  ),
   'utf8',
 );
 const compCount = catalogSections.reduce((n, s) => n + s.components.length, 0);
