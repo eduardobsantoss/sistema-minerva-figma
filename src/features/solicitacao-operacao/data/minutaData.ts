@@ -85,11 +85,34 @@ export const ENDOSSATARIO_PADRAO_OPTS = ['Ceres Trading', 'Ceres Securitizadora'
 export const SERIE_EMISSAO_OPTS = ['ÚNICA', 'SÉRIE 1', 'SÉRIE 2'];
 export const NACIONALIDADE_OPTS = ['Brasileira', 'Estrangeira', 'BRASIL'];
 export const ESTADO_CIVIL_OPTS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável'];
+/** Regimes de bens — Separação* não exige formulário de cônjuge na tela de detalhe. */
+export const REGIME_CASAMENTO_OPTS = [
+  'Comunhão Parcial de Bens',
+  'Comunhão Universal de Bens',
+  'Separação Total de Bens',
+  'Separação Obrigatória de Bens',
+  'Participação Final nos Aquestos',
+];
 /** Estados civis que exigem dados do cônjuge (SpouseDetailsForm) */
 export const ESTADOS_CIVIS_COM_CONJUGE = ['Casado(a)', 'União Estável'];
 
 export function estadoCivilExigeConjuge(estadoCivil?: string): boolean {
   return !!estadoCivil && ESTADOS_CIVIS_COM_CONJUGE.includes(estadoCivil);
+}
+
+/** Regime que não é separação (total/obrigatória) — exige formulário de cônjuge. */
+export function regimeExigeConjuge(regime?: string): boolean {
+  if (!regime?.trim()) return false;
+  const n = regime
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase();
+  return !n.includes('separacao');
+}
+
+/** Casado/união estável + regime sem separação → mostra bloco do cônjuge. */
+export function parteExigeFormularioConjuge(estadoCivil?: string, regime?: string): boolean {
+  return estadoCivilExigeConjuge(estadoCivil) && regimeExigeConjuge(regime);
 }
 
 export function isGarantiaEstoque(tipo: string): boolean {

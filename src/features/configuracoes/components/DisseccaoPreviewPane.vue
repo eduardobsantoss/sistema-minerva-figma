@@ -13,7 +13,10 @@ const props = defineProps<{
   componentName: string;
 }>();
 
-const loaders = import.meta.glob('@/features/**/*.vue');
+const loaders = import.meta.glob([
+  '@/features/**/*.vue',
+  '!@/features/configuracoes/disseccoes/**',
+]);
 
 const Comp = shallowRef<Component | null>(null);
 const loadError = ref<string | null>(null);

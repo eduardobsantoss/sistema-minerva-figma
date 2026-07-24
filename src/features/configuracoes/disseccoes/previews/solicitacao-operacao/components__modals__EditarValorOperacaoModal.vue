@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { brl } from '@/features/solicitacao-operacao/data/operacaoData';
 import { computed, ref, watch } from 'vue';
 import { X, AlertTriangle } from 'lucide-vue-next';
 withDefaults(defineProps<{ valorAtual: number; feePercent: number }>(), {

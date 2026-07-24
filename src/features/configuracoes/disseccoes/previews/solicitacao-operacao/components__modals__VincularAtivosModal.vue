@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { brl } from '@/features/solicitacao-operacao/data/operacaoData';
 import { X } from 'lucide-vue-next';
 </script>
 

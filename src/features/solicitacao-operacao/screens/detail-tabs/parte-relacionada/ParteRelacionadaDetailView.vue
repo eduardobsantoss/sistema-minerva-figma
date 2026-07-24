@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { ArrowLeft, User, MapPin, Phone } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import type { ParteRelacionada, ParteTipo } from '../../../data/operacaoData';
@@ -8,10 +8,18 @@ import {
   PARTE_TIPO_LABEL,
   TIPOS_PARTE_OPTS,
 } from '../../../data/parteRelacionadaFields';
+import {
+  emptyConjugeMinuta,
+  estadoCivilExigeConjuge,
+  parteExigeFormularioConjuge,
+  type ConjugeMinuta,
+} from '../../../data/minutaData';
 import { CopyButton, Section, EmptyState } from '../shared';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
+import Checkbox from '@/components/ui/Checkbox.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import SpouseFields from '../../../components/modals/minuta/SpouseFields.vue';
 import DynamicFieldGrid from './DynamicFieldGrid.vue';
 
 const props = defineProps<{
@@ -23,6 +31,8 @@ const emit = defineEmits<{ back: [] }>();
 type AnexoTab = 'anexo-1' | 'anexo-2' | 'anexo-3';
 
 const tab = ref<AnexoTab>('anexo-1');
+const savedBanner = ref(false);
+let bannerTimer: ReturnType<typeof setTimeout> | null = null;
 
 const TAB_ICONS: Record<AnexoTab, Component> = {
   'anexo-1': User,
@@ -30,10 +40,37 @@ const TAB_ICONS: Record<AnexoTab, Component> = {
   'anexo-3': Phone,
 };
 
-const tabs = computed(() => parteAnexoTabs(props.parte));
+function cloneParte(src: ParteRelacionada): ParteRelacionada {
+  return {
+    ...src,
+    tipos: [...src.tipos],
+    contatosRelacionados: src.contatosRelacionados ? src.contatosRelacionados.map((c) => ({ ...c })) : [],
+    conjuge: src.conjuge ? { ...src.conjuge } : undefined,
+    representante: src.representante ? { ...src.representante } : undefined,
+  };
+}
+
+const draft = reactive<ParteRelacionada>(cloneParte(props.parte));
+const conjugeDraft = reactive<ConjugeMinuta>(
+  props.parte.conjuge ? { ...props.parte.conjuge } : emptyConjugeMinuta(),
+);
+
+watch(
+  () => props.parte,
+  (p) => {
+    Object.assign(draft, cloneParte(p));
+    Object.assign(conjugeDraft, p.conjuge ? { ...p.conjuge } : emptyConjugeMinuta());
+  },
+);
+
+const tabs = computed(() => parteAnexoTabs(draft));
 const activeTab = computed(() => tabs.value.find((t) => t.key === tab.value) ?? tabs.value[0]);
 const tabOptions = computed(() =>
   tabs.value.map((t) => ({ key: t.key, label: t.label, icon: TAB_ICONS[t.key] })),
+);
+
+const showSpouseForm = computed(() =>
+  draft.tipoPessoa === 'FISICA' && parteExigeFormularioConjuge(draft.estadoCivil, draft.regime),
 );
 
 const parteTone: Record<ParteTipo, { bg: string; fg: string }> = {
@@ -52,7 +89,130 @@ const {
   pageItems: contatosPageItems,
   setPage: setContatosPage,
   setPageSize: setContatosPageSize,
-} = useTablePagination(() => props.parte.contatosRelacionados ?? [], { defaultPageSize: 10 });
+} = useTablePagination(() => draft.contatosRelacionados ?? [], { defaultPageSize: 10 });
+
+function flashSaved() {
+  savedBanner.value = true;
+  if (bannerTimer) clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(() => {
+    savedBanner.value = false;
+  }, 2200);
+}
+
+function applyDraftToParte(keys?: (keyof ParteRelacionada)[]) {
+  if (keys) {
+    const target = props.parte as unknown as Record<string, unknown>;
+    for (const k of keys) {
+      target[k as string] = draft[k] as unknown;
+    }
+  } else {
+    Object.assign(props.parte, cloneParte(draft));
+  }
+}
+
+function saveIdentificacao() {
+  const pfKeys: (keyof ParteRelacionada)[] = [
+    'nome',
+    'rg',
+    'inscricaoProdutorRural',
+    'nacionalidade',
+    'dataNascimento',
+    'profissao',
+    'estadoCivil',
+    'regime',
+    'dataCasamento',
+  ];
+  const pjKeys: (keyof ParteRelacionada)[] = [
+    'razaoSocial',
+    'nomeFantasia',
+    'dataAbertura',
+    'tipoEmpresa',
+    'porte',
+    'atividadePrincipal',
+    'naturezaJuridica',
+    'inscricaoMunicipal',
+    'inscricaoEstadual',
+  ];
+
+  if (draft.tipoPessoa === 'FISICA') {
+    applyDraftToParte(pfKeys);
+    props.parte.nome = draft.nome;
+    if (!estadoCivilExigeConjuge(draft.estadoCivil)) {
+      draft.regime = undefined;
+      draft.dataCasamento = undefined;
+      props.parte.regime = undefined;
+      props.parte.dataCasamento = undefined;
+    }
+    const exige = parteExigeFormularioConjuge(draft.estadoCivil, draft.regime);
+    props.parte.possuiConjuge = exige;
+    if (!exige) {
+      props.parte.conjuge = undefined;
+      Object.assign(conjugeDraft, emptyConjugeMinuta());
+    }
+  } else {
+    applyDraftToParte(pjKeys);
+    if (draft.razaoSocial) props.parte.nome = draft.razaoSocial;
+  }
+  flashSaved();
+}
+
+function saveEndereco() {
+  applyDraftToParte([
+    'cep',
+    'localidade',
+    'numero',
+    'bairro',
+    'infoAdicionais',
+    'cidade',
+    'estado',
+    'pais',
+  ]);
+  flashSaved();
+}
+
+function saveContatoTipos() {
+  applyDraftToParte(['nomeContato', 'email', 'ddi', 'telefone']);
+  props.parte.tipos = [...draft.tipos];
+  flashSaved();
+}
+
+function saveConjuge() {
+  props.parte.conjuge = { ...conjugeDraft };
+  props.parte.possuiConjuge = true;
+  draft.conjuge = { ...conjugeDraft };
+  draft.possuiConjuge = true;
+  flashSaved();
+}
+
+function toggleTipo(codigo: string) {
+  const c = codigo as ParteTipo;
+  const idx = draft.tipos.indexOf(c);
+  if (idx >= 0) draft.tipos.splice(idx, 1);
+  else draft.tipos.push(c);
+}
+
+watch(
+  () => draft.estadoCivil,
+  (ec) => {
+    if (!estadoCivilExigeConjuge(ec)) {
+      draft.regime = undefined;
+      draft.dataCasamento = undefined;
+    }
+  },
+);
+
+/** Primary save — mesmo padrão de VehicleRateDetailView / OperationFundRankEditor. */
+const saveBtnStyle = {
+  height: '44px',
+  padding: '0 22px',
+  background: 'var(--action-primary-bg)',
+  color: 'var(--action-primary-text)',
+  borderRadius: 'var(--radius-lg)',
+  border: 'none',
+  cursor: 'pointer',
+  fontWeight: 'var(--weight-bold)',
+  fontSize: 'var(--text-sm)',
+} as const;
 </script>
 
 <template>
@@ -101,7 +261,7 @@ const {
             flex-wrap: wrap;
           "
         >
-          {{ parte.nome }}
+          {{ draft.nome }}
           <CopyButton :value="parte.documento" />
         </h2>
         <p
@@ -112,9 +272,23 @@ const {
             font-variant-numeric: tabular-nums;
           "
         >
-          {{ parte.documento }} · {{ parte.tipoPessoa === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica' }}
+          {{ parte.documento }} · {{ draft.tipoPessoa === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica' }}
         </p>
       </div>
+    </div>
+
+    <div
+      v-if="savedBanner"
+      style="
+        padding: 12px 16px;
+        border-radius: var(--radius-lg);
+        background: color-mix(in srgb, #16a34a 12%, transparent);
+        border: 1px solid color-mix(in srgb, #16a34a 35%, transparent);
+        font-size: var(--text-sm);
+        color: var(--text-default);
+      "
+    >
+      Alterações salvas com sucesso.
     </div>
 
     <SegmentedToggle
@@ -124,7 +298,6 @@ const {
       @update:model-value="tab = $event as AnexoTab"
     />
 
-    <!-- Conteúdo do anexo ativo -->
     <div
       style="
         background: var(--surface-card);
@@ -135,16 +308,27 @@ const {
     >
       <DynamicFieldGrid
         v-if="activeTab"
-        :parte="parte"
+        :draft="draft"
         :fields="activeTab.fields"
         :cols="activeTab.cols"
       />
 
-      <!-- Tabela de contatos relacionados (Anexo 1) -->
+      <!-- Contatos relacionados + cônjuge (Anexo 1) -->
       <div v-if="tab === 'anexo-1'" style="margin-top: 32px">
+        <div class="flex items-center justify-end" style="margin-bottom: 24px">
+          <button
+            type="button"
+            class="btn-animated btn-primary"
+            :style="saveBtnStyle"
+            @click="saveIdentificacao"
+          >
+            Salvar identificação
+          </button>
+        </div>
+
         <Section title="Contatos Relacionados">
           <EmptyState
-            v-if="!parte.contatosRelacionados?.length"
+            v-if="!draft.contatosRelacionados?.length"
             :icon="User"
             title="Nenhum contato relacionado"
             hint="Contatos vinculados a esta parte aparecerão aqui quando cadastrados."
@@ -200,47 +384,54 @@ const {
             />
           </div>
         </Section>
+
+        <div v-if="showSpouseForm" style="margin-top: 24px">
+          <SpouseFields v-model="conjugeDraft" />
+          <div class="flex items-center justify-end" style="margin-top: 16px">
+            <button
+              type="button"
+              class="btn-animated btn-primary"
+              :style="saveBtnStyle"
+              @click="saveConjuge"
+            >
+              {{ parte.conjuge?.nome ? 'Salvar cônjuge' : 'Adicionar cônjuge' }}
+            </button>
+          </div>
+        </div>
       </div>
 
-      <!-- Tipos (Anexo 3) -->
+      <!-- Endereço — salvar -->
+      <div v-if="tab === 'anexo-2'" class="flex items-center justify-end" style="margin-top: 24px">
+        <button
+          type="button"
+          class="btn-animated btn-primary"
+          :style="saveBtnStyle"
+          @click="saveEndereco"
+        >
+          Salvar endereço
+        </button>
+      </div>
+
+      <!-- Contato e Tipos -->
       <div v-if="tab === 'anexo-3'" style="margin-top: 32px">
         <Section title="Tipos">
           <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px">
-            <div
+            <label
               v-for="t in TIPOS_PARTE_OPTS"
               :key="t.codigo"
               class="flex items-center"
-              :style="{
-                gap: '10px',
-                fontSize: 'var(--text-sm)',
-                fontWeight: 'var(--weight-semibold)',
-                color: parte.tipos.includes(t.codigo as ParteTipo) ? 'var(--text-strong)' : 'var(--text-muted)',
-              }"
+              style="gap: 10px; cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)"
             >
-              <span
-                :style="{
-                  width: '18px',
-                  height: '18px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: `2px solid ${parte.tipos.includes(t.codigo as ParteTipo) ? 'var(--gci-base)' : 'var(--border-strong)'}`,
-                  background: parte.tipos.includes(t.codigo as ParteTipo) ? 'var(--gci-base)' : 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }"
-              >
-                <span
-                  v-if="parte.tipos.includes(t.codigo as ParteTipo)"
-                  style="width: 8px; height: 5px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) translateY(-1px)"
-                />
-              </span>
+              <Checkbox
+                :checked="draft.tipos.includes(t.codigo as ParteTipo)"
+                @change="toggleTipo(t.codigo)"
+              />
               {{ t.label }}
-            </div>
+            </label>
           </div>
-          <div class="flex items-center" style="gap: 8px; margin-top: 16px; flex-wrap: wrap">
+          <div v-if="draft.tipos.length" class="flex items-center" style="gap: 8px; margin-top: 16px; flex-wrap: wrap">
             <span
-              v-for="t in parte.tipos"
+              v-for="t in draft.tipos"
               :key="t"
               :style="{
                 fontSize: '9px',
@@ -256,6 +447,17 @@ const {
             </span>
           </div>
         </Section>
+
+        <div class="flex items-center justify-end" style="margin-top: 24px">
+          <button
+            type="button"
+            class="btn-animated btn-primary"
+            :style="saveBtnStyle"
+            @click="saveContatoTipos"
+          >
+            Salvar contato e tipos
+          </button>
+        </div>
       </div>
     </div>
   </div>

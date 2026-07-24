@@ -3,13 +3,16 @@ import { computed, reactive, watch } from 'vue';
 import { X, User, Building2, Phone, MapPin } from 'lucide-vue-next';
 import { UF_OPTIONS, PAISES_DDI, enriquecerParteRelacionada, type ParteTipo, type ParteRelacionada } from '../../data/operacaoData';
 import { BentoBox } from './parte-relacionada';
-import { ToggleRow, StepGrid, FormField, SelectField } from './adicionar-contrato';
+import { StepGrid, FormField, SelectField } from './adicionar-contrato';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import {
   estadoCivilExigeConjuge,
+  parteExigeFormularioConjuge,
   emptyConjugeMinuta,
   emptyPessoaMinuta,
   NACIONALIDADE_OPTS as NAC_OPTS,
+  ESTADO_CIVIL_OPTS,
+  REGIME_CASAMENTO_OPTS,
   type ConjugeMinuta,
   type RepresentanteLegal,
 } from '../../data/minutaData';
@@ -27,6 +30,8 @@ export interface NewParteRelacionadaData {
   dataNascimento: string;
   profissao: string;
   estadoCivil: string;
+  regime: string;
+  dataCasamento: string;
   cnpj: string;
   razaoSocial: string;
   nomeFantasia: string;
@@ -55,7 +60,6 @@ export interface NewParteRelacionadaData {
 }
 
 const NACIONALIDADE_OPTS = NAC_OPTS;
-const ESTADO_CIVIL_OPTS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável'];
 const PAIS_OPTS = PAISES_DDI.map((p) => p.pais);
 const DDI_OPTS = PAISES_DDI.map((p) => p.ddi);
 
@@ -78,6 +82,8 @@ const form = reactive<NewParteRelacionadaData>({
   dataNascimento: '',
   profissao: '',
   estadoCivil: '',
+  regime: '',
+  dataCasamento: '',
   cnpj: '',
   razaoSocial: '',
   nomeFantasia: '',
@@ -109,9 +115,15 @@ const conjuge = reactive<ConjugeMinuta>(emptyConjugeMinuta());
 const representante = reactive<RepresentanteLegal>({ ...emptyPessoaMinuta('JURIDICA').representante! });
 
 watch(
-  () => form.estadoCivil,
-  (ec) => {
-    if (estadoCivilExigeConjuge(ec)) form.possuiConjuge = true;
+  () => [form.estadoCivil, form.regime] as const,
+  ([ec, regime]) => {
+    if (!estadoCivilExigeConjuge(ec)) {
+      form.regime = '';
+      form.dataCasamento = '';
+      form.possuiConjuge = false;
+      return;
+    }
+    form.possuiConjuge = parteExigeFormularioConjuge(ec, regime);
   },
 );
 
@@ -155,6 +167,8 @@ function handleSubmit() {
     dataNascimento: form.dataNascimento,
     profissao: form.profissao,
     estadoCivil: form.estadoCivil,
+    regime: form.regime || undefined,
+    dataCasamento: form.dataCasamento || undefined,
     cnpj: form.cnpj,
     razaoSocial: form.razaoSocial,
     nomeFantasia: form.nomeFantasia,
@@ -175,8 +189,11 @@ function handleSubmit() {
     pais: form.pais,
     nomeContato: form.nomeContato,
     ddi: form.ddi,
-    possuiConjuge: form.tipoPessoa === 'FISICA' ? form.possuiConjuge : false,
-    conjuge: form.tipoPessoa === 'FISICA' && form.possuiConjuge ? { ...conjuge } : undefined,
+    possuiConjuge: form.tipoPessoa === 'FISICA' ? parteExigeFormularioConjuge(form.estadoCivil, form.regime) : false,
+    conjuge:
+      form.tipoPessoa === 'FISICA' && parteExigeFormularioConjuge(form.estadoCivil, form.regime)
+        ? { ...conjuge }
+        : undefined,
     representante: form.tipoPessoa === 'JURIDICA' ? { ...representante } : undefined,
     contatosRelacionados: [],
   }));
@@ -265,15 +282,24 @@ function handleSubmit() {
                   <FormField label="Data de nascimento" placeholder="dd/mm/aaaa" :span="4" v-model="form.dataNascimento" />
                   <FormField label="Profissão" placeholder="—" :span="4" v-model="form.profissao" />
                   <SelectField label="Estado Civil" :options="ESTADO_CIVIL_OPTS" placeholder="Selecione" :span="4" v-model="form.estadoCivil" />
+                  <SelectField
+                    v-if="estadoCivilExigeConjuge(form.estadoCivil)"
+                    label="Regime"
+                    :options="REGIME_CASAMENTO_OPTS"
+                    placeholder="Selecione"
+                    :span="4"
+                    v-model="form.regime"
+                  />
+                  <FormField
+                    v-if="estadoCivilExigeConjuge(form.estadoCivil)"
+                    label="Data do Casamento"
+                    placeholder="dd/mm/aaaa"
+                    :span="4"
+                    v-model="form.dataCasamento"
+                  />
                 </StepGrid>
-                <ToggleRow
-                  label="Possui cônjuge"
-                  :on="form.possuiConjuge"
-                  compact
-                  @toggle="form.possuiConjuge = !form.possuiConjuge"
-                />
                 <SpouseFields
-                  v-if="form.possuiConjuge"
+                  v-if="parteExigeFormularioConjuge(form.estadoCivil, form.regime)"
                   v-model="conjuge"
                 />
               </template>

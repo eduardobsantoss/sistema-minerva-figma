@@ -90,6 +90,10 @@ export interface ParteRelacionada {
   dataNascimento?: string;
   profissao?: string;
   estadoCivil?: string;
+  /** Regime de bens (PF casado / união estável). */
+  regime?: string;
+  /** Data do casamento / união estável. */
+  dataCasamento?: string;
   // Anexo 1 — Identificação (PJ)
   cnpj?: string;
   razaoSocial?: string;
@@ -367,6 +371,11 @@ const PARTES_BASE: ParteRelacionada[] = [
     tipos: ['AVA'],
     nacionalidade: 'Brasileira',
     estadoCivil: 'Casado(a)',
+    regime: 'Comunhão Parcial de Bens',
+    dataCasamento: '12/03/2010',
+    dataNascimento: '15/08/1978',
+    rg: '12.345.678-9',
+    inscricaoProdutorRural: '123456789',
     profissao: 'Produtor Rural',
     cidade: 'Uberaba',
     estado: 'MG',
@@ -374,6 +383,14 @@ const PARTES_BASE: ParteRelacionada[] = [
     ddi: '+55',
     nomeContato: 'Antonio Mazzo Junior',
     possuiConjuge: true,
+    conjuge: {
+      nome: 'Maria Aparecida Mazzo',
+      cpf: '987.654.321-00',
+      rg: '98.765.432-1',
+      dataNascimento: '22/04/1980',
+      nacionalidade: 'Brasileira',
+      profissao: 'Produtora Rural',
+    },
   }),
   enriquecerParteRelacionada({
     nome: 'Carlos Roberto Rosa',
@@ -425,12 +442,15 @@ const PARTES_BASE: ParteRelacionada[] = [
     telefone: '(34) 99547-8979',
     tipos: ['AVA', 'ITA'],
     nacionalidade: 'Brasileira',
+    estadoCivil: 'Casado(a)',
+    regime: 'Separação Total de Bens',
+    dataCasamento: '05/11/2015',
     cidade: 'Uberaba',
     estado: 'MG',
     pais: 'Brasil',
     ddi: '+55',
     nomeContato: 'Hidiovana de Melo Freitas',
-    possuiConjuge: true,
+    possuiConjuge: false,
   }),
   enriquecerParteRelacionada({
     nome: 'Eduardo Barbosa dos Santos',

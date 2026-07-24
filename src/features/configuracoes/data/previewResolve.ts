@@ -5,6 +5,8 @@ import {
   type PreviewConfig,
 } from './solicitacaoPreviewProps';
 import { resolvePreview as resolveRiscoPreview } from './riscoPreviewProps';
+import { resolvePreview as resolveCraPreview } from './craPreviewProps';
+import { resolvePreview as resolveFidcPreview } from './fidcPreviewProps';
 
 export type { PreviewConfig };
 export { isModalPath, frameStyle };
@@ -58,6 +60,12 @@ export function resolvePreview(
   }
   if (feature === 'risco') {
     return resolveRiscoPreview(relPath, name);
+  }
+  if (feature === 'cra') {
+    return resolveCraPreview(relPath, name);
+  }
+  if (feature === 'fidc') {
+    return resolveFidcPreview(relPath, name);
   }
   return resolveGeneric(relPath, name);
 }

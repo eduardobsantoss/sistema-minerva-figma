@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { brl } from '@/features/solicitacao-operacao/data/operacaoData';
 import { ArrowLeft, FileText, User, Building2 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 withDefaults(defineProps<{ ativo: ContratoAtivo; solicitacaoId: string }>(), {

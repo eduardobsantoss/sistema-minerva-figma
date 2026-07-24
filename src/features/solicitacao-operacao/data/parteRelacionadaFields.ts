@@ -1,4 +1,5 @@
-import type { ParteRelacionada, TipoPessoa } from './operacaoData';
+import type { ParteRelacionada } from './operacaoData';
+import { estadoCivilExigeConjuge } from './minutaData';
 
 export interface ParteFieldDef {
   key: keyof ParteRelacionada;
@@ -7,6 +8,8 @@ export interface ParteFieldDef {
   span?: number;
   /** Exibe o campo somente quando a condição for verdadeira. */
   when?: (parte: ParteRelacionada) => boolean;
+  /** Campo somente leitura na tela de detalhe. */
+  readonly?: boolean;
 }
 
 export const PARTE_TIPO_LABEL: Record<string, string> = {
@@ -18,18 +21,23 @@ export const PARTE_TIPO_LABEL: Record<string, string> = {
   PROC: 'Procurador',
 };
 
-export const TIPOS_PARTE_OPTS = Object.entries(PARTE_TIPO_LABEL).map(([codigo, label]) => ({
-  codigo: codigo as keyof typeof PARTE_TIPO_LABEL,
-  label,
-}));
+export const TIPOS_PARTE_OPTS: { label: string; codigo: string }[] = [
+  { label: 'Cônjuge', codigo: 'CON' },
+  { label: 'Avalista', codigo: 'AVA' },
+  { label: 'Sócio', codigo: 'SOC' },
+  { label: 'Interveniente Anuente', codigo: 'ITA' },
+  { label: 'Representante Legal', codigo: 'REP' },
+  { label: 'Procurador', codigo: 'PROC' },
+];
 
 const isFisica = (p: ParteRelacionada) => p.tipoPessoa === 'FISICA';
 const isJuridica = (p: ParteRelacionada) => p.tipoPessoa === 'JURIDICA';
+const isCasadoOuUniao = (p: ParteRelacionada) => estadoCivilExigeConjuge(p.estadoCivil);
 
 /** Anexo 1 — Identificação (campos variam por natureza da pessoa). */
 export const IDENTIFICACAO_FIELDS: ParteFieldDef[] = [
-  { key: 'tipoPessoa', label: 'Natureza' },
-  { key: 'cpf', label: 'CPF', when: isFisica },
+  { key: 'tipoPessoa', label: 'Natureza', readonly: true },
+  { key: 'cpf', label: 'CPF', when: isFisica, readonly: true },
   { key: 'nome', label: 'Nome', when: isFisica },
   { key: 'rg', label: 'RG', when: isFisica },
   { key: 'inscricaoProdutorRural', label: 'Inscrição do produtor rural', when: isFisica },
@@ -37,7 +45,9 @@ export const IDENTIFICACAO_FIELDS: ParteFieldDef[] = [
   { key: 'dataNascimento', label: 'Data de nascimento', when: isFisica },
   { key: 'profissao', label: 'Profissão', when: isFisica },
   { key: 'estadoCivil', label: 'Estado Civil', when: isFisica },
-  { key: 'cnpj', label: 'CNPJ', when: isJuridica },
+  { key: 'regime', label: 'Regime', when: (p) => isFisica(p) && isCasadoOuUniao(p) },
+  { key: 'dataCasamento', label: 'Data do Casamento', when: (p) => isFisica(p) && isCasadoOuUniao(p) },
+  { key: 'cnpj', label: 'CNPJ', when: isJuridica, readonly: true },
   { key: 'razaoSocial', label: 'Razão Social', when: isJuridica },
   { key: 'nomeFantasia', label: 'Nome Fantasia', when: isJuridica },
   { key: 'dataAbertura', label: 'Data de abertura', when: isJuridica },
@@ -76,13 +86,13 @@ export interface ParteAnexoTab {
   cols: number;
 }
 
-export function parteAnexoTabs(parte: ParteRelacionada): ParteAnexoTab[] {
+export function parteAnexoTabs(_parte: ParteRelacionada): ParteAnexoTab[] {
   return [
     {
       key: 'anexo-1',
       label: 'Identificação',
       fields: IDENTIFICACAO_FIELDS,
-      cols: parte.tipoPessoa === 'FISICA' ? 3 : 3,
+      cols: 3,
     },
     {
       key: 'anexo-2',

@@ -3764,7 +3764,7 @@ defineProps<{ role: string; name: string; cnpj: string; icon: Component }>();
 
 ```vue
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { ArrowLeft, User, MapPin, Phone } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import type { ParteRelacionada, ParteTipo } from '../../../data/operacaoData';
@@ -3773,10 +3773,18 @@ import {
   PARTE_TIPO_LABEL,
   TIPOS_PARTE_OPTS,
 } from '../../../data/parteRelacionadaFields';
+import {
+  emptyConjugeMinuta,
+  estadoCivilExigeConjuge,
+  parteExigeFormularioConjuge,
+  type ConjugeMinuta,
+} from '../../../data/minutaData';
 import { CopyButton, Section, EmptyState } from '../shared';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
+import Checkbox from '@/components/ui/Checkbox.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import SpouseFields from '../../../components/modals/minuta/SpouseFields.vue';
 import DynamicFieldGrid from './DynamicFieldGrid.vue';
 
 const props = defineProps<{
@@ -3788,6 +3796,8 @@ const emit = defineEmits<{ back: [] }>();
 type AnexoTab = 'anexo-1' | 'anexo-2' | 'anexo-3';
 
 const tab = ref<AnexoTab>('anexo-1');
+const savedBanner = ref(false);
+let bannerTimer: ReturnType<typeof setTimeout> | null = null;
 
 const TAB_ICONS: Record<AnexoTab, Component> = {
   'anexo-1': User,
@@ -3795,10 +3805,37 @@ const TAB_ICONS: Record<AnexoTab, Component> = {
   'anexo-3': Phone,
 };
 
-const tabs = computed(() => parteAnexoTabs(props.parte));
+function cloneParte(src: ParteRelacionada): ParteRelacionada {
+  return {
+    ...src,
+    tipos: [...src.tipos],
+    contatosRelacionados: src.contatosRelacionados ? src.contatosRelacionados.map((c) => ({ ...c })) : [],
+    conjuge: src.conjuge ? { ...src.conjuge } : undefined,
+    representante: src.representante ? { ...src.representante } : undefined,
+  };
+}
+
+const draft = reactive<ParteRelacionada>(cloneParte(props.parte));
+const conjugeDraft = reactive<ConjugeMinuta>(
+  props.parte.conjuge ? { ...props.parte.conjuge } : emptyConjugeMinuta(),
+);
+
+watch(
+  () => props.parte,
+  (p) => {
+    Object.assign(draft, cloneParte(p));
+    Object.assign(conjugeDraft, p.conjuge ? { ...p.conjuge } : emptyConjugeMinuta());
+  },
+);
+
+const tabs = computed(() => parteAnexoTabs(draft));
 const activeTab = computed(() => tabs.value.find((t) => t.key === tab.value) ?? tabs.value[0]);
 const tabOptions = computed(() =>
   tabs.value.map((t) => ({ key: t.key, label: t.label, icon: TAB_ICONS[t.key] })),
+);
+
+const showSpouseForm = computed(() =>
+  draft.tipoPessoa === 'FISICA' && parteExigeFormularioConjuge(draft.estadoCivil, draft.regime),
 );
 
 const parteTone: Record<ParteTipo, { bg: string; fg: string }> = {
@@ -3817,7 +3854,130 @@ const {
   pageItems: contatosPageItems,
   setPage: setContatosPage,
   setPageSize: setContatosPageSize,
-} = useTablePagination(() => props.parte.contatosRelacionados ?? [], { defaultPageSize: 10 });
+} = useTablePagination(() => draft.contatosRelacionados ?? [], { defaultPageSize: 10 });
+
+function flashSaved() {
+  savedBanner.value = true;
+  if (bannerTimer) clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(() => {
+    savedBanner.value = false;
+  }, 2200);
+}
+
+function applyDraftToParte(keys?: (keyof ParteRelacionada)[]) {
+  if (keys) {
+    const target = props.parte as unknown as Record<string, unknown>;
+    for (const k of keys) {
+      target[k as string] = draft[k] as unknown;
+    }
+  } else {
+    Object.assign(props.parte, cloneParte(draft));
+  }
+}
+
+function saveIdentificacao() {
+  const pfKeys: (keyof ParteRelacionada)[] = [
+    'nome',
+    'rg',
+    'inscricaoProdutorRural',
+    'nacionalidade',
+    'dataNascimento',
+    'profissao',
+    'estadoCivil',
+    'regime',
+    'dataCasamento',
+  ];
+  const pjKeys: (keyof ParteRelacionada)[] = [
+    'razaoSocial',
+    'nomeFantasia',
+    'dataAbertura',
+    'tipoEmpresa',
+    'porte',
+    'atividadePrincipal',
+    'naturezaJuridica',
+    'inscricaoMunicipal',
+    'inscricaoEstadual',
+  ];
+
+  if (draft.tipoPessoa === 'FISICA') {
+    applyDraftToParte(pfKeys);
+    props.parte.nome = draft.nome;
+    if (!estadoCivilExigeConjuge(draft.estadoCivil)) {
+      draft.regime = undefined;
+      draft.dataCasamento = undefined;
+      props.parte.regime = undefined;
+      props.parte.dataCasamento = undefined;
+    }
+    const exige = parteExigeFormularioConjuge(draft.estadoCivil, draft.regime);
+    props.parte.possuiConjuge = exige;
+    if (!exige) {
+      props.parte.conjuge = undefined;
+      Object.assign(conjugeDraft, emptyConjugeMinuta());
+    }
+  } else {
+    applyDraftToParte(pjKeys);
+    if (draft.razaoSocial) props.parte.nome = draft.razaoSocial;
+  }
+  flashSaved();
+}
+
+function saveEndereco() {
+  applyDraftToParte([
+    'cep',
+    'localidade',
+    'numero',
+    'bairro',
+    'infoAdicionais',
+    'cidade',
+    'estado',
+    'pais',
+  ]);
+  flashSaved();
+}
+
+function saveContatoTipos() {
+  applyDraftToParte(['nomeContato', 'email', 'ddi', 'telefone']);
+  props.parte.tipos = [...draft.tipos];
+  flashSaved();
+}
+
+function saveConjuge() {
+  props.parte.conjuge = { ...conjugeDraft };
+  props.parte.possuiConjuge = true;
+  draft.conjuge = { ...conjugeDraft };
+  draft.possuiConjuge = true;
+  flashSaved();
+}
+
+function toggleTipo(codigo: string) {
+  const c = codigo as ParteTipo;
+  const idx = draft.tipos.indexOf(c);
+  if (idx >= 0) draft.tipos.splice(idx, 1);
+  else draft.tipos.push(c);
+}
+
+watch(
+  () => draft.estadoCivil,
+  (ec) => {
+    if (!estadoCivilExigeConjuge(ec)) {
+      draft.regime = undefined;
+      draft.dataCasamento = undefined;
+    }
+  },
+);
+
+/** Primary save — mesmo padrão de VehicleRateDetailView / OperationFundRankEditor. */
+const saveBtnStyle = {
+  height: '44px',
+  padding: '0 22px',
+  background: 'var(--action-primary-bg)',
+  color: 'var(--action-primary-text)',
+  borderRadius: 'var(--radius-lg)',
+  border: 'none',
+  cursor: 'pointer',
+  fontWeight: 'var(--weight-bold)',
+  fontSize: 'var(--text-sm)',
+} as const;
 </script>
 
 <template>
@@ -3866,7 +4026,7 @@ const {
             flex-wrap: wrap;
           "
         >
-          {{ parte.nome }}
+          {{ draft.nome }}
           <CopyButton :value="parte.documento" />
         </h2>
         <p
@@ -3877,9 +4037,23 @@ const {
             font-variant-numeric: tabular-nums;
           "
         >
-          {{ parte.documento }} · {{ parte.tipoPessoa === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica' }}
+          {{ parte.documento }} · {{ draft.tipoPessoa === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica' }}
         </p>
       </div>
+    </div>
+
+    <div
+      v-if="savedBanner"
+      style="
+        padding: 12px 16px;
+        border-radius: var(--radius-lg);
+        background: color-mix(in srgb, #16a34a 12%, transparent);
+        border: 1px solid color-mix(in srgb, #16a34a 35%, transparent);
+        font-size: var(--text-sm);
+        color: var(--text-default);
+      "
+    >
+      Alterações salvas com sucesso.
     </div>
 
     <SegmentedToggle
@@ -3889,7 +4063,6 @@ const {
       @update:model-value="tab = $event as AnexoTab"
     />
 
-    <!-- Conteúdo do anexo ativo -->
     <div
       style="
         background: var(--surface-card);
@@ -3900,16 +4073,16 @@ const {
     >
       <DynamicFieldGrid
         v-if="activeTab"
-        :parte="parte"
+        :draft="draft"
         :fields="activeTab.fields"
         :cols="activeTab.cols"
       />
 
-      <!-- Tabela de contatos relacionados (Anexo 1) -->
+      <!-- Contatos relacionados + cônjuge (Anexo 1) -->
       <div v-if="tab === 'anexo-1'" style="margin-top: 32px">
         <Section title="Contatos Relacionados">
           <EmptyState
-            v-if="!parte.contatosRelacionados?.length"
+            v-if="!draft.contatosRelacionados?.length"
             :icon="User"
             title="Nenhum contato relacionado"
             hint="Contatos vinculados a esta parte aparecerão aqui quando cadastrados."
@@ -3965,47 +4138,65 @@ const {
             />
           </div>
         </Section>
+
+        <div v-if="showSpouseForm" style="margin-top: 24px">
+          <SpouseFields v-model="conjugeDraft" />
+          <div class="flex items-center justify-end" style="margin-top: 16px">
+            <button
+              type="button"
+              class="btn-animated btn-primary"
+              :style="saveBtnStyle"
+              @click="saveConjuge"
+            >
+              {{ parte.conjuge?.nome ? 'Salvar cônjuge' : 'Adicionar cônjuge' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end" style="margin-top: 24px">
+          <button
+            type="button"
+            class="btn-animated btn-primary"
+            :style="saveBtnStyle"
+            @click="saveIdentificacao"
+          >
+            Salvar identificação
+          </button>
+        </div>
       </div>
 
-      <!-- Tipos (Anexo 3) -->
+      <!-- Endereço — salvar -->
+      <div v-if="tab === 'anexo-2'" class="flex items-center justify-end" style="margin-top: 24px">
+        <button
+          type="button"
+          class="btn-animated btn-primary"
+          :style="saveBtnStyle"
+          @click="saveEndereco"
+        >
+          Salvar endereço
+        </button>
+      </div>
+
+      <!-- Contato e Tipos -->
       <div v-if="tab === 'anexo-3'" style="margin-top: 32px">
         <Section title="Tipos">
           <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px">
-            <div
+            <label
               v-for="t in TIPOS_PARTE_OPTS"
               :key="t.codigo"
               class="flex items-center"
-              :style="{
-                gap: '10px',
-                fontSize: 'var(--text-sm)',
-                fontWeight: 'var(--weight-semibold)',
-                color: parte.tipos.includes(t.codigo as ParteTipo) ? 'var(--text-strong)' : 'var(--text-muted)',
-              }"
+              style="gap: 10px; cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)"
             >
-              <span
-                :style="{
-                  width: '18px',
-                  height: '18px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: `2px solid ${parte.tipos.includes(t.codigo as ParteTipo) ? 'var(--gci-base)' : 'var(--border-strong)'}`,
-                  background: parte.tipos.includes(t.codigo as ParteTipo) ? 'var(--gci-base)' : 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }"
-              >
-                <span
-                  v-if="parte.tipos.includes(t.codigo as ParteTipo)"
-                  style="width: 8px; height: 5px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) translateY(-1px)"
-                />
-              </span>
+              <Checkbox
+                :checked="draft.tipos.includes(t.codigo as ParteTipo)"
+                @change="toggleTipo(t.codigo)"
+              />
               {{ t.label }}
-            </div>
+            </label>
           </div>
-          <div class="flex items-center" style="gap: 8px; margin-top: 16px; flex-wrap: wrap">
+          <div v-if="draft.tipos.length" class="flex items-center" style="gap: 8px; margin-top: 16px; flex-wrap: wrap">
             <span
-              v-for="t in parte.tipos"
+              v-for="t in draft.tipos"
               :key="t"
               :style="{
                 fontSize: '9px',
@@ -4021,6 +4212,17 @@ const {
             </span>
           </div>
         </Section>
+
+        <div class="flex items-center justify-end" style="margin-top: 24px">
+          <button
+            type="button"
+            class="btn-animated btn-primary"
+            :style="saveBtnStyle"
+            @click="saveContatoTipos"
+          >
+            Salvar contato e tipos
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -4033,29 +4235,87 @@ const {
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { ParteRelacionada } from '../../../data/operacaoData';
+import { UF_OPTIONS, PAISES_DDI } from '../../../data/operacaoData';
 import type { ParteFieldDef } from '../../../data/parteRelacionadaFields';
 import { visibleParteFields, parteFieldValue } from '../../../data/parteRelacionadaFields';
+import {
+  NACIONALIDADE_OPTS,
+  ESTADO_CIVIL_OPTS,
+  REGIME_CASAMENTO_OPTS,
+} from '../../../data/minutaData';
 import { Field } from '../shared';
+import { FormField, SelectField } from '../../../components/modals/adicionar-contrato';
 
 const props = defineProps<{
-  parte: ParteRelacionada;
+  draft: ParteRelacionada;
   fields: ParteFieldDef[];
   cols?: number;
 }>();
 
-const visible = computed(() => visibleParteFields(props.parte, props.fields));
+const visible = computed(() => visibleParteFields(props.draft, props.fields));
 const gridCols = computed(() => props.cols ?? 3);
+
+const PAIS_OPTS = PAISES_DDI.map((p) => p.pais);
+const DDI_OPTS = PAISES_DDI.map((p) => p.ddi);
+
+const SELECT_OPTS: Partial<Record<keyof ParteRelacionada, string[]>> = {
+  nacionalidade: NACIONALIDADE_OPTS,
+  estadoCivil: ESTADO_CIVIL_OPTS,
+  regime: REGIME_CASAMENTO_OPTS,
+  estado: UF_OPTIONS,
+  pais: PAIS_OPTS,
+  ddi: DDI_OPTS,
+};
+
+function isSelect(key: keyof ParteRelacionada): boolean {
+  return key in SELECT_OPTS;
+}
+
+function strVal(key: keyof ParteRelacionada): string {
+  const raw = props.draft[key];
+  if (raw === undefined || raw === null) return '';
+  if (typeof raw === 'boolean' || Array.isArray(raw)) return '';
+  return String(raw);
+}
+
+function setStr(key: keyof ParteRelacionada, value: string) {
+  (props.draft as unknown as Record<string, unknown>)[key as string] = value;
+}
+
+function onPaisChange(v: string) {
+  props.draft.pais = v;
+  const match = PAISES_DDI.find((p) => p.pais === v);
+  if (match) props.draft.ddi = match.ddi;
+}
 </script>
 
 <template>
-  <div class="grid" :style="{ gridTemplateColumns: `repeat(${gridCols}, 1fr)`, gap: '24px' }">
-    <div
-      v-for="field in visible"
-      :key="field.key"
-      :style="field.span ? { gridColumn: `span ${Math.min(field.span, gridCols)}` } : undefined"
-    >
-      <Field :label="field.label">{{ parteFieldValue(parte, field) }}</Field>
-    </div>
+  <div class="grid" :style="{ gridTemplateColumns: `repeat(${gridCols}, 1fr)`, gap: '20px' }">
+    <template v-for="field in visible" :key="field.key">
+      <div
+        v-if="field.readonly"
+        :style="field.span ? { gridColumn: `span ${Math.min(field.span, gridCols)}` } : undefined"
+      >
+        <Field :label="field.label">{{ parteFieldValue(draft, field) }}</Field>
+      </div>
+      <SelectField
+        v-else-if="isSelect(field.key)"
+        :label="field.label"
+        :options="SELECT_OPTS[field.key]!"
+        placeholder="Selecione"
+        :span="field.span"
+        :model-value="strVal(field.key)"
+        @update:model-value="field.key === 'pais' ? onPaisChange($event) : setStr(field.key, $event)"
+      />
+      <FormField
+        v-else
+        :label="field.label"
+        :placeholder="field.key.toString().toLowerCase().includes('data') ? 'dd/mm/aaaa' : '—'"
+        :span="field.span"
+        :model-value="strVal(field.key)"
+        @update:model-value="setStr(field.key, $event)"
+      />
+    </template>
   </div>
 </template>
 ```
@@ -8272,13 +8532,16 @@ import { computed, reactive, watch } from 'vue';
 import { X, User, Building2, Phone, MapPin } from 'lucide-vue-next';
 import { UF_OPTIONS, PAISES_DDI, enriquecerParteRelacionada, type ParteTipo, type ParteRelacionada } from '../../data/operacaoData';
 import { BentoBox } from './parte-relacionada';
-import { ToggleRow, StepGrid, FormField, SelectField } from './adicionar-contrato';
+import { StepGrid, FormField, SelectField } from './adicionar-contrato';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import {
   estadoCivilExigeConjuge,
+  parteExigeFormularioConjuge,
   emptyConjugeMinuta,
   emptyPessoaMinuta,
   NACIONALIDADE_OPTS as NAC_OPTS,
+  ESTADO_CIVIL_OPTS,
+  REGIME_CASAMENTO_OPTS,
   type ConjugeMinuta,
   type RepresentanteLegal,
 } from '../../data/minutaData';
@@ -8296,6 +8559,8 @@ export interface NewParteRelacionadaData {
   dataNascimento: string;
   profissao: string;
   estadoCivil: string;
+  regime: string;
+  dataCasamento: string;
   cnpj: string;
   razaoSocial: string;
   nomeFantasia: string;
@@ -8324,7 +8589,6 @@ export interface NewParteRelacionadaData {
 }
 
 const NACIONALIDADE_OPTS = NAC_OPTS;
-const ESTADO_CIVIL_OPTS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável'];
 const PAIS_OPTS = PAISES_DDI.map((p) => p.pais);
 const DDI_OPTS = PAISES_DDI.map((p) => p.ddi);
 
@@ -8347,6 +8611,8 @@ const form = reactive<NewParteRelacionadaData>({
   dataNascimento: '',
   profissao: '',
   estadoCivil: '',
+  regime: '',
+  dataCasamento: '',
   cnpj: '',
   razaoSocial: '',
   nomeFantasia: '',
@@ -8378,9 +8644,15 @@ const conjuge = reactive<ConjugeMinuta>(emptyConjugeMinuta());
 const representante = reactive<RepresentanteLegal>({ ...emptyPessoaMinuta('JURIDICA').representante! });
 
 watch(
-  () => form.estadoCivil,
-  (ec) => {
-    if (estadoCivilExigeConjuge(ec)) form.possuiConjuge = true;
+  () => [form.estadoCivil, form.regime] as const,
+  ([ec, regime]) => {
+    if (!estadoCivilExigeConjuge(ec)) {
+      form.regime = '';
+      form.dataCasamento = '';
+      form.possuiConjuge = false;
+      return;
+    }
+    form.possuiConjuge = parteExigeFormularioConjuge(ec, regime);
   },
 );
 
@@ -8424,6 +8696,8 @@ function handleSubmit() {
     dataNascimento: form.dataNascimento,
     profissao: form.profissao,
     estadoCivil: form.estadoCivil,
+    regime: form.regime || undefined,
+    dataCasamento: form.dataCasamento || undefined,
     cnpj: form.cnpj,
     razaoSocial: form.razaoSocial,
     nomeFantasia: form.nomeFantasia,
@@ -8444,8 +8718,11 @@ function handleSubmit() {
     pais: form.pais,
     nomeContato: form.nomeContato,
     ddi: form.ddi,
-    possuiConjuge: form.tipoPessoa === 'FISICA' ? form.possuiConjuge : false,
-    conjuge: form.tipoPessoa === 'FISICA' && form.possuiConjuge ? { ...conjuge } : undefined,
+    possuiConjuge: form.tipoPessoa === 'FISICA' ? parteExigeFormularioConjuge(form.estadoCivil, form.regime) : false,
+    conjuge:
+      form.tipoPessoa === 'FISICA' && parteExigeFormularioConjuge(form.estadoCivil, form.regime)
+        ? { ...conjuge }
+        : undefined,
     representante: form.tipoPessoa === 'JURIDICA' ? { ...representante } : undefined,
     contatosRelacionados: [],
   }));
@@ -8534,15 +8811,24 @@ function handleSubmit() {
                   <FormField label="Data de nascimento" placeholder="dd/mm/aaaa" :span="4" v-model="form.dataNascimento" />
                   <FormField label="Profissão" placeholder="—" :span="4" v-model="form.profissao" />
                   <SelectField label="Estado Civil" :options="ESTADO_CIVIL_OPTS" placeholder="Selecione" :span="4" v-model="form.estadoCivil" />
+                  <SelectField
+                    v-if="estadoCivilExigeConjuge(form.estadoCivil)"
+                    label="Regime"
+                    :options="REGIME_CASAMENTO_OPTS"
+                    placeholder="Selecione"
+                    :span="4"
+                    v-model="form.regime"
+                  />
+                  <FormField
+                    v-if="estadoCivilExigeConjuge(form.estadoCivil)"
+                    label="Data do Casamento"
+                    placeholder="dd/mm/aaaa"
+                    :span="4"
+                    v-model="form.dataCasamento"
+                  />
                 </StepGrid>
-                <ToggleRow
-                  label="Possui cônjuge"
-                  :on="form.possuiConjuge"
-                  compact
-                  @toggle="form.possuiConjuge = !form.possuiConjuge"
-                />
                 <SpouseFields
-                  v-if="form.possuiConjuge"
+                  v-if="parteExigeFormularioConjuge(form.estadoCivil, form.regime)"
                   v-model="conjuge"
                 />
               </template>

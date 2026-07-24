@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { brl } from '@/features/solicitacao-operacao/data/operacaoData';
 withDefaults(defineProps<{ ativos: ContratoAtivo[]; selectedIds: Set<string> }>(), {
   ativos: [],
   selectedIds: ''
