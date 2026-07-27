@@ -9,6 +9,7 @@ import {
   etapaCor, etapaLabel, esteiraLabel, detalheSolicitacao,
   type Solicitacao, type ParteRelacionada, type ContratoAtivo, type Esteira, type ItemValidacao,
 } from '../data/operacaoData';
+import { CONTAS_BANCARIAS_MOCK } from '../data/minutaData';
 import { enriquecerContratoAtivo } from '../data/ativoData';
 import { CopyButton } from './detail-tabs/shared';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
@@ -27,6 +28,10 @@ import ProrrogarVencimentoModal from '../components/modals/ProrrogarVencimentoMo
 import AtualizarCessaoModal from '../components/modals/AtualizarCessaoModal.vue';
 import GerarTermoCessaoModal from '../components/modals/GerarTermoCessaoModal.vue';
 import GerarCnabModal from '../components/modals/GerarCnabModal.vue';
+import VincularVeiculoOperacaoModal from '../components/modals/VincularVeiculoOperacaoModal.vue';
+import TransferirSolicitacaoModal from '../components/modals/TransferirSolicitacaoModal.vue';
+import TransferirContaBancariaModal from '../components/modals/TransferirContaBancariaModal.vue';
+import MesclarAtivosPedidosModal from '../components/modals/MesclarAtivosPedidosModal.vue';
 import InserirEvidenciaModal from '../components/modals/InserirEvidenciaModal.vue';
 import DetalheEvidenciaModal from '../components/modals/DetalheEvidenciaModal.vue';
 import DetalheValidacaoModal from '../components/modals/DetalheValidacaoModal.vue';
@@ -62,6 +67,10 @@ const showProrrogarModal = ref(false);
 const showAtualizarCessao = ref(false);
 const showGerarTermo = ref(false);
 const showGerarCnab = ref(false);
+const showVincularVeiculo = ref(false);
+const showTransferirSolicitacao = ref(false);
+const showTransferirConta = ref(false);
+const showMesclarAtivos = ref(false);
 const showInserirEvidencia = ref(false);
 const showDetalheEvidencia = ref(false);
 const showDetalheValidacao = ref(false);
@@ -159,6 +168,50 @@ function handleUpdateEsteira(esteira: Esteira) {
 
 function handleUpdateQuitacao(value: boolean) {
   props.solicitacao.quitacaoVencidos = value;
+}
+
+function nowHistorico(): string {
+  const now = new Date();
+  return `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} às ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+}
+
+function pushHistorico(acao: string) {
+  det.historico.unshift({ data: nowHistorico(), autor: 'Usuário atual', acao });
+}
+
+function onVincularVeiculo(veiculo: string) {
+  props.solicitacao.veiculo = veiculo;
+  pushHistorico(`vinculou o pedido de operação ao ${veiculo}`);
+}
+
+function onTransferirSolicitacao(veiculo: string) {
+  const anterior = props.solicitacao.veiculo || '—';
+  props.solicitacao.veiculo = veiculo;
+  pushHistorico(`transferiu a solicitação de ${anterior} para ${veiculo}`);
+}
+
+function onTransferirConta(payload: { id: string; label: string }) {
+  const conta = CONTAS_BANCARIAS_MOCK.find((c) => c.id === payload.id);
+  if (conta) {
+    props.solicitacao.banco = conta.banco;
+    props.solicitacao.agencia = conta.digitoAgencia
+      ? `${conta.agencia}-${conta.digitoAgencia}`
+      : conta.agencia;
+    props.solicitacao.conta = conta.digitoConta ? `${conta.conta}-${conta.digitoConta}` : conta.conta;
+  }
+  pushHistorico(`transferiu a conta bancária do pedido para ${payload.label}`);
+}
+
+function onMesclarAtivos(payload: {
+  pedidoDestinoId: string;
+  moverTodos: boolean;
+  ativoIds: string[];
+}) {
+  const ids = new Set(payload.ativoIds);
+  const qtd = ids.size;
+  det.ativos = det.ativos.filter((a) => !ids.has(a.id));
+  const modo = payload.moverTodos ? 'todos os ativos' : `${qtd} ativo(s)`;
+  pushHistorico(`mesclou ${modo} para o pedido ${payload.pedidoDestinoId}`);
 }
 
 function handleVincular(ativos: ContratoAtivo[]) {
@@ -284,9 +337,13 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
         </button>
         <ActionMenu
           @reject="confirmReject = true"
+          @vincular-veiculo="showVincularVeiculo = true"
+          @transferir-solicitacao="showTransferirSolicitacao = true"
           @atualizar-cessao="showAtualizarCessao = true"
           @gerar-termo-cessao="showGerarTermo = true"
           @gerar-cnab="showGerarCnab = true"
+          @mesclar-ativos="showMesclarAtivos = true"
+          @transferir-conta="showTransferirConta = true"
         />
       </div>
     </div>
@@ -387,6 +444,33 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
     <GerarCnabModal
       v-if="showGerarCnab"
       @close="showGerarCnab = false"
+    />
+
+    <VincularVeiculoOperacaoModal
+      v-if="showVincularVeiculo"
+      @close="showVincularVeiculo = false"
+      @confirm="onVincularVeiculo"
+    />
+
+    <TransferirSolicitacaoModal
+      v-if="showTransferirSolicitacao"
+      :veiculo-atual="solicitacao.veiculo"
+      @close="showTransferirSolicitacao = false"
+      @confirm="onTransferirSolicitacao"
+    />
+
+    <TransferirContaBancariaModal
+      v-if="showTransferirConta"
+      @close="showTransferirConta = false"
+      @confirm="onTransferirConta"
+    />
+
+    <MesclarAtivosPedidosModal
+      v-if="showMesclarAtivos"
+      :pedido-origem-id="solicitacao.id"
+      :ativos="det.ativos"
+      @close="showMesclarAtivos = false"
+      @confirm="onMesclarAtivos"
     />
 
     <InserirEvidenciaModal

@@ -1228,6 +1228,7 @@ import {
   etapaCor, etapaLabel, esteiraLabel, detalheSolicitacao,
   type Solicitacao, type ParteRelacionada, type ContratoAtivo, type Esteira, type ItemValidacao,
 } from '../data/operacaoData';
+import { CONTAS_BANCARIAS_MOCK } from '../data/minutaData';
 import { enriquecerContratoAtivo } from '../data/ativoData';
 import { CopyButton } from './detail-tabs/shared';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
@@ -1246,6 +1247,10 @@ import ProrrogarVencimentoModal from '../components/modals/ProrrogarVencimentoMo
 import AtualizarCessaoModal from '../components/modals/AtualizarCessaoModal.vue';
 import GerarTermoCessaoModal from '../components/modals/GerarTermoCessaoModal.vue';
 import GerarCnabModal from '../components/modals/GerarCnabModal.vue';
+import VincularVeiculoOperacaoModal from '../components/modals/VincularVeiculoOperacaoModal.vue';
+import TransferirSolicitacaoModal from '../components/modals/TransferirSolicitacaoModal.vue';
+import TransferirContaBancariaModal from '../components/modals/TransferirContaBancariaModal.vue';
+import MesclarAtivosPedidosModal from '../components/modals/MesclarAtivosPedidosModal.vue';
 import InserirEvidenciaModal from '../components/modals/InserirEvidenciaModal.vue';
 import DetalheEvidenciaModal from '../components/modals/DetalheEvidenciaModal.vue';
 import DetalheValidacaoModal from '../components/modals/DetalheValidacaoModal.vue';
@@ -1281,6 +1286,10 @@ const showProrrogarModal = ref(false);
 const showAtualizarCessao = ref(false);
 const showGerarTermo = ref(false);
 const showGerarCnab = ref(false);
+const showVincularVeiculo = ref(false);
+const showTransferirSolicitacao = ref(false);
+const showTransferirConta = ref(false);
+const showMesclarAtivos = ref(false);
 const showInserirEvidencia = ref(false);
 const showDetalheEvidencia = ref(false);
 const showDetalheValidacao = ref(false);
@@ -1378,6 +1387,50 @@ function handleUpdateEsteira(esteira: Esteira) {
 
 function handleUpdateQuitacao(value: boolean) {
   props.solicitacao.quitacaoVencidos = value;
+}
+
+function nowHistorico(): string {
+  const now = new Date();
+  return `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} às ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+}
+
+function pushHistorico(acao: string) {
+  det.historico.unshift({ data: nowHistorico(), autor: 'Usuário atual', acao });
+}
+
+function onVincularVeiculo(veiculo: string) {
+  props.solicitacao.veiculo = veiculo;
+  pushHistorico(`vinculou o pedido de operação ao ${veiculo}`);
+}
+
+function onTransferirSolicitacao(veiculo: string) {
+  const anterior = props.solicitacao.veiculo || '—';
+  props.solicitacao.veiculo = veiculo;
+  pushHistorico(`transferiu a solicitação de ${anterior} para ${veiculo}`);
+}
+
+function onTransferirConta(payload: { id: string; label: string }) {
+  const conta = CONTAS_BANCARIAS_MOCK.find((c) => c.id === payload.id);
+  if (conta) {
+    props.solicitacao.banco = conta.banco;
+    props.solicitacao.agencia = conta.digitoAgencia
+      ? `${conta.agencia}-${conta.digitoAgencia}`
+      : conta.agencia;
+    props.solicitacao.conta = conta.digitoConta ? `${conta.conta}-${conta.digitoConta}` : conta.conta;
+  }
+  pushHistorico(`transferiu a conta bancária do pedido para ${payload.label}`);
+}
+
+function onMesclarAtivos(payload: {
+  pedidoDestinoId: string;
+  moverTodos: boolean;
+  ativoIds: string[];
+}) {
+  const ids = new Set(payload.ativoIds);
+  const qtd = ids.size;
+  det.ativos = det.ativos.filter((a) => !ids.has(a.id));
+  const modo = payload.moverTodos ? 'todos os ativos' : `${qtd} ativo(s)`;
+  pushHistorico(`mesclou ${modo} para o pedido ${payload.pedidoDestinoId}`);
 }
 
 function handleVincular(ativos: ContratoAtivo[]) {
@@ -1503,9 +1556,13 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
         </button>
         <ActionMenu
           @reject="confirmReject = true"
+          @vincular-veiculo="showVincularVeiculo = true"
+          @transferir-solicitacao="showTransferirSolicitacao = true"
           @atualizar-cessao="showAtualizarCessao = true"
           @gerar-termo-cessao="showGerarTermo = true"
           @gerar-cnab="showGerarCnab = true"
+          @mesclar-ativos="showMesclarAtivos = true"
+          @transferir-conta="showTransferirConta = true"
         />
       </div>
     </div>
@@ -1608,6 +1665,33 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
       @close="showGerarCnab = false"
     />
 
+    <VincularVeiculoOperacaoModal
+      v-if="showVincularVeiculo"
+      @close="showVincularVeiculo = false"
+      @confirm="onVincularVeiculo"
+    />
+
+    <TransferirSolicitacaoModal
+      v-if="showTransferirSolicitacao"
+      :veiculo-atual="solicitacao.veiculo"
+      @close="showTransferirSolicitacao = false"
+      @confirm="onTransferirSolicitacao"
+    />
+
+    <TransferirContaBancariaModal
+      v-if="showTransferirConta"
+      @close="showTransferirConta = false"
+      @confirm="onTransferirConta"
+    />
+
+    <MesclarAtivosPedidosModal
+      v-if="showMesclarAtivos"
+      :pedido-origem-id="solicitacao.id"
+      :ativos="det.ativos"
+      @close="showMesclarAtivos = false"
+      @confirm="onMesclarAtivos"
+    />
+
     <InserirEvidenciaModal
       v-if="showInserirEvidencia && validacaoEvidenciaCtx"
       :titulo-validacao="validacaoEvidenciaCtx.titulo"
@@ -1645,32 +1729,47 @@ import {
   XCircle,
   FileText,
   FileCode,
+  Link2,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 
 const emit = defineEmits<{
   reject: [];
+  vincularVeiculo: [];
+  transferirSolicitacao: [];
   atualizarCessao: [];
   gerarTermoCessao: [];
   gerarCnab: [];
+  mesclarAtivos: [];
+  transferirConta: [];
 }>();
 
 const open = ref(false);
 const rootRef = ref<HTMLDivElement | null>(null);
 
+type ActionKey =
+  | 'vincularVeiculo'
+  | 'transferirSolicitacao'
+  | 'atualizarCessao'
+  | 'gerarTermoCessao'
+  | 'gerarCnab'
+  | 'mesclarAtivos'
+  | 'transferirConta';
+
 type ActionItem = {
   label: string;
   icon: Component;
-  action?: 'atualizarCessao' | 'gerarTermoCessao' | 'gerarCnab';
+  action: ActionKey;
 };
 
 const secondary: ActionItem[] = [
-  { label: 'Transferir solicitação', icon: ArrowRightLeft },
+  { label: 'Vincular a um veículo de operação', icon: Link2, action: 'vincularVeiculo' },
+  { label: 'Transferir solicitação', icon: ArrowRightLeft, action: 'transferirSolicitacao' },
   { label: 'Atualizar cessão', icon: RefreshCw, action: 'atualizarCessao' },
   { label: 'Gerar Termo de Cessão', icon: FileText, action: 'gerarTermoCessao' },
   { label: 'Gerar CNAB', icon: FileCode, action: 'gerarCnab' },
-  { label: 'Mesclar ativos entre pedidos', icon: Layers },
-  { label: 'Transferir conta bancária', icon: Wallet },
+  { label: 'Mesclar ativos entre pedidos', icon: Layers, action: 'mesclarAtivos' },
+  { label: 'Transferir conta bancária', icon: Wallet, action: 'transferirConta' },
 ];
 
 function handleDocClick(e: MouseEvent) {
@@ -1682,9 +1781,29 @@ onUnmounted(() => document.removeEventListener('mousedown', handleDocClick));
 
 function handleItem(a: ActionItem) {
   open.value = false;
-  if (a.action === 'atualizarCessao') emit('atualizarCessao');
-  else if (a.action === 'gerarTermoCessao') emit('gerarTermoCessao');
-  else if (a.action === 'gerarCnab') emit('gerarCnab');
+  switch (a.action) {
+    case 'vincularVeiculo':
+      emit('vincularVeiculo');
+      break;
+    case 'transferirSolicitacao':
+      emit('transferirSolicitacao');
+      break;
+    case 'atualizarCessao':
+      emit('atualizarCessao');
+      break;
+    case 'gerarTermoCessao':
+      emit('gerarTermoCessao');
+      break;
+    case 'gerarCnab':
+      emit('gerarCnab');
+      break;
+    case 'mesclarAtivos':
+      emit('mesclarAtivos');
+      break;
+    case 'transferirConta':
+      emit('transferirConta');
+      break;
+  }
 }
 
 function handleReject() {
@@ -1719,7 +1838,7 @@ function handleReject() {
         top: 52px;
         right: 0;
         z-index: 50;
-        min-width: 260px;
+        min-width: 300px;
         background: var(--surface-card);
         border: 1px solid var(--border-default);
         border-radius: var(--radius-lg);
@@ -1747,7 +1866,7 @@ function handleReject() {
         "
         @click="handleItem(a)"
       >
-        <component :is="a.icon" :size="16" style="color: var(--text-muted)" />
+        <component :is="a.icon" :size="16" style="color: var(--text-muted); flex-shrink: 0" />
         {{ a.label }}
       </button>
       <div style="height: 1px; background: var(--border-default); margin: 6px 4px" />
@@ -4080,6 +4199,17 @@ const saveBtnStyle = {
 
       <!-- Contatos relacionados + cônjuge (Anexo 1) -->
       <div v-if="tab === 'anexo-1'" style="margin-top: 32px">
+        <div class="flex items-center justify-end" style="margin-bottom: 24px">
+          <button
+            type="button"
+            class="btn-animated btn-primary"
+            :style="saveBtnStyle"
+            @click="saveIdentificacao"
+          >
+            Salvar identificação
+          </button>
+        </div>
+
         <Section title="Contatos Relacionados">
           <EmptyState
             v-if="!draft.contatosRelacionados?.length"
@@ -4151,17 +4281,6 @@ const saveBtnStyle = {
               {{ parte.conjuge?.nome ? 'Salvar cônjuge' : 'Adicionar cônjuge' }}
             </button>
           </div>
-        </div>
-
-        <div class="flex items-center justify-end" style="margin-top: 24px">
-          <button
-            type="button"
-            class="btn-animated btn-primary"
-            :style="saveBtnStyle"
-            @click="saveIdentificacao"
-          >
-            Salvar identificação
-          </button>
         </div>
       </div>
 
@@ -10036,6 +10155,652 @@ function salvar() {
           @click="salvar"
         >
           ATUALIZAR
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+### VincularVeiculoOperacaoModal
+
+```vue
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { X } from 'lucide-vue-next';
+import { SelectField, StepGrid } from './adicionar-contrato';
+import {
+  VEICULOS_FIDC_SEED,
+  VEICULOS_CRA_SEED,
+  VEICULOS_GARANTIAS_SEED,
+} from '../../data/taxasVeiculosData';
+
+const emit = defineEmits<{ close: []; confirm: [veiculo: string] }>();
+
+const VEICULO_OPTS = [
+  ...new Set([
+    ...VEICULOS_FIDC_SEED.map((v) => v.vehicleName),
+    ...VEICULOS_CRA_SEED.map((v) => v.vehicleName),
+    ...VEICULOS_GARANTIAS_SEED.map((v) => v.vehicleName),
+    'Ceres Investimentos',
+  ]),
+];
+
+const veiculo = ref('');
+const canSubmit = computed(() => veiculo.value.trim() !== '');
+
+function confirmar() {
+  if (!canSubmit.value) return;
+  emit('confirm', veiculo.value);
+  emit('close');
+}
+</script>
+
+<template>
+  <div
+    style="
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(8, 60, 74, 0.55);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    "
+    @click.self="emit('close')"
+  >
+    <div
+      style="
+        width: 100%;
+        max-width: 480px;
+        background: var(--surface-card);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      "
+      @click.stop
+    >
+      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Vincular a um veículo de operação
+          </h2>
+          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            Selecione o veículo ao qual este pedido será vinculado
+          </p>
+        </div>
+        <button
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted)"
+          @click="emit('close')"
+        >
+          <X :size="18" />
+        </button>
+      </div>
+
+      <div style="padding: 24px 28px">
+        <StepGrid>
+          <SelectField
+            label="Veículo"
+            :options="VEICULO_OPTS"
+            placeholder="Selecione"
+            :span="12"
+            v-model="veiculo"
+          />
+        </StepGrid>
+      </div>
+
+      <div class="flex items-center justify-between" style="padding: 16px 28px; border-top: 1px solid var(--border-default)">
+        <button
+          type="button"
+          style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
+          @click="emit('close')"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn-animated"
+          :class="{ 'btn-primary': canSubmit }"
+          :disabled="!canSubmit"
+          :style="{
+            height: '44px',
+            padding: '0 24px',
+            background: canSubmit ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
+            color: canSubmit ? 'var(--action-primary-text)' : 'var(--text-disabled)',
+            border: 'none',
+            borderRadius: 'var(--radius-lg)',
+            cursor: canSubmit ? 'pointer' : 'not-allowed',
+            fontWeight: 'var(--weight-bold)',
+            fontSize: 'var(--text-xs)',
+            letterSpacing: '0.08em',
+          }"
+          @click="confirmar"
+        >
+          VINCULAR
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+### TransferirSolicitacaoModal
+
+```vue
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { X } from 'lucide-vue-next';
+import { SelectField, StepGrid } from './adicionar-contrato';
+import {
+  VEICULOS_FIDC_SEED,
+  VEICULOS_CRA_SEED,
+  VEICULOS_GARANTIAS_SEED,
+} from '../../data/taxasVeiculosData';
+
+const props = defineProps<{ veiculoAtual?: string }>();
+const emit = defineEmits<{ close: []; confirm: [veiculo: string] }>();
+
+const VEICULO_OPTS = computed(() =>
+  [
+    ...new Set([
+      ...VEICULOS_FIDC_SEED.map((v) => v.vehicleName),
+      ...VEICULOS_CRA_SEED.map((v) => v.vehicleName),
+      ...VEICULOS_GARANTIAS_SEED.map((v) => v.vehicleName),
+      'Ceres Investimentos',
+    ]),
+  ].filter((v) => v !== props.veiculoAtual),
+);
+
+const veiculo = ref('');
+const canSubmit = computed(() => veiculo.value.trim() !== '');
+
+function confirmar() {
+  if (!canSubmit.value) return;
+  emit('confirm', veiculo.value);
+  emit('close');
+}
+</script>
+
+<template>
+  <div
+    style="
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(8, 60, 74, 0.55);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    "
+    @click.self="emit('close')"
+  >
+    <div
+      style="
+        width: 100%;
+        max-width: 480px;
+        background: var(--surface-card);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      "
+      @click.stop
+    >
+      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Transferir entre veículo de operação
+          </h2>
+          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            Mova esta solicitação para outro veículo
+          </p>
+        </div>
+        <button
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted)"
+          @click="emit('close')"
+        >
+          <X :size="18" />
+        </button>
+      </div>
+
+      <div style="padding: 24px 28px">
+        <StepGrid>
+          <SelectField
+            label="Veículo"
+            :options="VEICULO_OPTS"
+            placeholder="Selecione"
+            :span="12"
+            v-model="veiculo"
+          />
+        </StepGrid>
+      </div>
+
+      <div class="flex items-center justify-between" style="padding: 16px 28px; border-top: 1px solid var(--border-default)">
+        <button
+          type="button"
+          style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
+          @click="emit('close')"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn-animated"
+          :class="{ 'btn-primary': canSubmit }"
+          :disabled="!canSubmit"
+          :style="{
+            height: '44px',
+            padding: '0 24px',
+            background: canSubmit ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
+            color: canSubmit ? 'var(--action-primary-text)' : 'var(--text-disabled)',
+            border: 'none',
+            borderRadius: 'var(--radius-lg)',
+            cursor: canSubmit ? 'pointer' : 'not-allowed',
+            fontWeight: 'var(--weight-bold)',
+            fontSize: 'var(--text-xs)',
+            letterSpacing: '0.08em',
+          }"
+          @click="confirmar"
+        >
+          TRANSFERIR
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+### TransferirContaBancariaModal
+
+```vue
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { X } from 'lucide-vue-next';
+import { SelectField, StepGrid } from './adicionar-contrato';
+import { CONTAS_BANCARIAS_MOCK, labelContaBancaria } from '../../data/minutaData';
+
+const emit = defineEmits<{
+  close: [];
+  confirm: [payload: { id: string; label: string }];
+}>();
+
+const CONTA_OPTS = CONTAS_BANCARIAS_MOCK.map((c) => labelContaBancaria(c));
+const contaLabel = ref('');
+
+const canSubmit = computed(() => contaLabel.value.trim() !== '');
+
+function confirmar() {
+  if (!canSubmit.value) return;
+  const conta = CONTAS_BANCARIAS_MOCK.find((c) => labelContaBancaria(c) === contaLabel.value);
+  if (!conta) return;
+  emit('confirm', { id: conta.id, label: contaLabel.value });
+  emit('close');
+}
+</script>
+
+<template>
+  <div
+    style="
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(8, 60, 74, 0.55);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    "
+    @click.self="emit('close')"
+  >
+    <div
+      style="
+        width: 100%;
+        max-width: 520px;
+        background: var(--surface-card);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      "
+      @click.stop
+    >
+      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Transferir conta bancária
+          </h2>
+          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            Defina a conta bancária de destino deste pedido
+          </p>
+        </div>
+        <button
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted)"
+          @click="emit('close')"
+        >
+          <X :size="18" />
+        </button>
+      </div>
+
+      <div style="padding: 24px 28px">
+        <StepGrid>
+          <SelectField
+            label="Conta bancária de destino"
+            :options="CONTA_OPTS"
+            placeholder="Selecione"
+            :span="12"
+            v-model="contaLabel"
+          />
+        </StepGrid>
+      </div>
+
+      <div class="flex items-center justify-between" style="padding: 16px 28px; border-top: 1px solid var(--border-default)">
+        <button
+          type="button"
+          style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
+          @click="emit('close')"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn-animated"
+          :class="{ 'btn-primary': canSubmit }"
+          :disabled="!canSubmit"
+          :style="{
+            height: '44px',
+            padding: '0 24px',
+            background: canSubmit ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
+            color: canSubmit ? 'var(--action-primary-text)' : 'var(--text-disabled)',
+            border: 'none',
+            borderRadius: 'var(--radius-lg)',
+            cursor: canSubmit ? 'pointer' : 'not-allowed',
+            fontWeight: 'var(--weight-bold)',
+            fontSize: 'var(--text-xs)',
+            letterSpacing: '0.08em',
+          }"
+          @click="confirmar"
+        >
+          TRANSFERIR
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+### MesclarAtivosPedidosModal
+
+```vue
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { X } from 'lucide-vue-next';
+import { SelectField, ToggleRow, StepGrid } from './adicionar-contrato';
+import Checkbox from '@/components/ui/Checkbox.vue';
+import { brl, solicitacoes, type ContratoAtivo } from '../../data/operacaoData';
+
+const props = defineProps<{
+  pedidoOrigemId: string;
+  ativos: ContratoAtivo[];
+}>();
+
+const emit = defineEmits<{
+  close: [];
+  confirm: [
+    payload: {
+      pedidoDestinoId: string;
+      moverTodos: boolean;
+      ativoIds: string[];
+    },
+  ];
+}>();
+
+const PEDIDO_OPTS = solicitacoes
+  .filter((s) => s.id !== props.pedidoOrigemId)
+  .map((s) => `${s.id} · ${s.cedente}`);
+
+const pedidoDestino = ref('');
+const moverTodos = ref(false);
+const selected = ref<Set<string>>(new Set());
+
+const selectedCount = computed(() => selected.value.size);
+const allSelected = computed(
+  () => props.ativos.length > 0 && selected.value.size === props.ativos.length,
+);
+
+const canSubmit = computed(() => {
+  if (!pedidoDestino.value.trim()) return false;
+  if (moverTodos.value) return true;
+  return selected.value.size > 0;
+});
+
+function pedidoIdFromLabel(label: string): string {
+  return label.split(' · ')[0]?.trim() ?? label;
+}
+
+function toggleOne(id: string) {
+  const next = new Set(selected.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selected.value = next;
+}
+
+function toggleAll() {
+  if (allSelected.value) {
+    selected.value = new Set();
+    return;
+  }
+  selected.value = new Set(props.ativos.map((a) => a.id));
+}
+
+function confirmar() {
+  if (!canSubmit.value) return;
+  emit('confirm', {
+    pedidoDestinoId: pedidoIdFromLabel(pedidoDestino.value),
+    moverTodos: moverTodos.value,
+    ativoIds: moverTodos.value ? props.ativos.map((a) => a.id) : [...selected.value],
+  });
+  emit('close');
+}
+</script>
+
+<template>
+  <div
+    style="
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(8, 60, 74, 0.55);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    "
+    @click.self="emit('close')"
+  >
+    <div
+      style="
+        width: 100%;
+        max-width: moverTodos ? 520px : 920px;
+        max-height: calc(100vh - 64px);
+        background: var(--surface-card);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transition: max-width var(--duration-base);
+      "
+      @click.stop
+    >
+      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Mesclar ativos entre pedidos
+          </h2>
+          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            Transfira ativos deste pedido para outro pedido de destino
+          </p>
+        </div>
+        <button
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted)"
+          @click="emit('close')"
+        >
+          <X :size="18" />
+        </button>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; padding: 24px 28px" class="flex flex-col" :style="{ gap: '20px' }">
+        <StepGrid>
+          <SelectField
+            label="Pedido de destino"
+            :options="PEDIDO_OPTS"
+            placeholder="Selecione"
+            :span="12"
+            v-model="pedidoDestino"
+          />
+        </StepGrid>
+
+        <ToggleRow
+          label="Mover todos os ativos do pedido origem"
+          :on="moverTodos"
+          compact
+          @toggle="moverTodos = !moverTodos"
+        />
+
+        <div
+          v-if="!moverTodos"
+          style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden"
+        >
+          <div
+            class="flex items-center justify-between"
+            style="padding: 12px 16px; background: var(--surface-sunken); border-bottom: 1px solid var(--border-default)"
+          >
+            <label
+              class="flex items-center"
+              style="gap: 10px; cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)"
+            >
+              <Checkbox :checked="allSelected" @change="toggleAll" />
+              Selecionar todos
+            </label>
+            <span style="font-size: var(--text-xs); color: var(--text-muted); font-weight: var(--weight-semibold)">
+              {{ selectedCount }} selecionado(s)
+            </span>
+          </div>
+
+          <div
+            v-if="ativos.length === 0"
+            style="
+              margin: 16px;
+              padding: 28px 20px;
+              text-align: center;
+              border-radius: var(--radius-lg);
+              background: color-mix(in srgb, var(--gci-base) 6%, transparent);
+              font-size: var(--text-sm);
+              color: var(--text-muted);
+            "
+          >
+            Nenhum ativo disponível para seleção
+          </div>
+
+          <template v-else>
+            <div
+              class="grid"
+              style="
+                grid-template-columns: 48px 0.9fr 1.3fr 1.3fr 0.8fr 1fr;
+                padding: 10px 16px;
+                font-size: 10px;
+                font-weight: var(--weight-bold);
+                letter-spacing: 0.1em;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                border-bottom: 1px solid var(--border-default);
+              "
+            >
+              <div>Sel.</div>
+              <div>Lastro</div>
+              <div>Cedente</div>
+              <div>Sacado</div>
+              <div>Número</div>
+              <div style="text-align: right">Valor nominal</div>
+            </div>
+            <div
+              v-for="a in ativos"
+              :key="a.id"
+              class="grid items-center"
+              style="
+                grid-template-columns: 48px 0.9fr 1.3fr 1.3fr 0.8fr 1fr;
+                padding: 12px 16px;
+                border-top: 1px solid var(--border-default);
+                font-size: var(--text-sm);
+                cursor: pointer;
+              "
+              @click="toggleOne(a.id)"
+            >
+              <div @click.stop>
+                <Checkbox :checked="selected.has(a.id)" @change="toggleOne(a.id)" />
+              </div>
+              <div style="color: var(--text-default)">{{ a.lastro || a.tipo }}</div>
+              <div style="color: var(--text-strong); font-weight: var(--weight-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+                {{ a.cedenteNome }}
+              </div>
+              <div style="color: var(--text-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+                {{ a.sacadoNome }}
+              </div>
+              <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ a.numero }}</div>
+              <div style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-strong); font-weight: var(--weight-semibold)">
+                {{ brl(a.valorTotal) }}
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between" style="padding: 16px 28px; border-top: 1px solid var(--border-default)">
+        <button
+          type="button"
+          style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
+          @click="emit('close')"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn-animated"
+          :class="{ 'btn-primary': canSubmit }"
+          :disabled="!canSubmit"
+          :style="{
+            height: '44px',
+            padding: '0 24px',
+            background: canSubmit ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
+            color: canSubmit ? 'var(--action-primary-text)' : 'var(--text-disabled)',
+            border: 'none',
+            borderRadius: 'var(--radius-lg)',
+            cursor: canSubmit ? 'pointer' : 'not-allowed',
+            fontWeight: 'var(--weight-bold)',
+            fontSize: 'var(--text-xs)',
+            letterSpacing: '0.08em',
+          }"
+          @click="confirmar"
+        >
+          CONFIRMAR
         </button>
       </div>
     </div>
