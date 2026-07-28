@@ -1251,6 +1251,8 @@ import VincularVeiculoOperacaoModal from '../components/modals/VincularVeiculoOp
 import TransferirSolicitacaoModal from '../components/modals/TransferirSolicitacaoModal.vue';
 import TransferirContaBancariaModal from '../components/modals/TransferirContaBancariaModal.vue';
 import MesclarAtivosPedidosModal from '../components/modals/MesclarAtivosPedidosModal.vue';
+import GerarBoletimSubscricaoModal from '../components/modals/GerarBoletimSubscricaoModal.vue';
+import GerarTermoEndossoModal from '../components/modals/GerarTermoEndossoModal.vue';
 import InserirEvidenciaModal from '../components/modals/InserirEvidenciaModal.vue';
 import DetalheEvidenciaModal from '../components/modals/DetalheEvidenciaModal.vue';
 import DetalheValidacaoModal from '../components/modals/DetalheValidacaoModal.vue';
@@ -1290,6 +1292,8 @@ const showVincularVeiculo = ref(false);
 const showTransferirSolicitacao = ref(false);
 const showTransferirConta = ref(false);
 const showMesclarAtivos = ref(false);
+const showBoletimSubscricao = ref(false);
+const showTermoEndosso = ref(false);
 const showInserirEvidencia = ref(false);
 const showDetalheEvidencia = ref(false);
 const showDetalheValidacao = ref(false);
@@ -1433,6 +1437,14 @@ function onMesclarAtivos(payload: {
   pushHistorico(`mesclou ${modo} para o pedido ${payload.pedidoDestinoId}`);
 }
 
+function onGerarBoletim() {
+  pushHistorico('gerou o Boletim de Subscrição');
+}
+
+function onGerarTermoEndosso() {
+  pushHistorico('gerou o Termo de Endosso');
+}
+
 function handleVincular(ativos: ContratoAtivo[]) {
   det.ativos.push(...ativos);
   showVincularModal.value = false;
@@ -1555,6 +1567,7 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
           <ChevronRight :size="16" />
         </button>
         <ActionMenu
+          :tipo-contrato="solicitacao.tipoContrato"
           @reject="confirmReject = true"
           @vincular-veiculo="showVincularVeiculo = true"
           @transferir-solicitacao="showTransferirSolicitacao = true"
@@ -1563,6 +1576,8 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
           @gerar-cnab="showGerarCnab = true"
           @mesclar-ativos="showMesclarAtivos = true"
           @transferir-conta="showTransferirConta = true"
+          @gerar-boletim-subscricao="showBoletimSubscricao = true"
+          @gerar-termo-endosso="showTermoEndosso = true"
         />
       </div>
     </div>
@@ -1692,6 +1707,20 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
       @confirm="onMesclarAtivos"
     />
 
+    <GerarBoletimSubscricaoModal
+      v-if="showBoletimSubscricao"
+      :solicitacao="solicitacao"
+      @close="showBoletimSubscricao = false"
+      @confirm="onGerarBoletim"
+    />
+
+    <GerarTermoEndossoModal
+      v-if="showTermoEndosso"
+      :solicitacao="solicitacao"
+      @close="showTermoEndosso = false"
+      @confirm="onGerarTermoEndosso"
+    />
+
     <InserirEvidenciaModal
       v-if="showInserirEvidencia && validacaoEvidenciaCtx"
       :titulo-validacao="validacaoEvidenciaCtx.titulo"
@@ -1719,7 +1748,7 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
 
 ```vue
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import {
   MoreVertical,
   ArrowRightLeft,
@@ -1730,8 +1759,15 @@ import {
   FileText,
   FileCode,
   Link2,
+  BookOpen,
+  ScrollText,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
+
+const props = defineProps<{
+  /** Tipo de contrato do pedido (ex.: NC, CCB) — controla ações condicionais. */
+  tipoContrato?: string;
+}>();
 
 const emit = defineEmits<{
   reject: [];
@@ -1742,6 +1778,8 @@ const emit = defineEmits<{
   gerarCnab: [];
   mesclarAtivos: [];
   transferirConta: [];
+  gerarBoletimSubscricao: [];
+  gerarTermoEndosso: [];
 }>();
 
 const open = ref(false);
@@ -1754,23 +1792,50 @@ type ActionKey =
   | 'gerarTermoCessao'
   | 'gerarCnab'
   | 'mesclarAtivos'
-  | 'transferirConta';
+  | 'transferirConta'
+  | 'gerarBoletimSubscricao'
+  | 'gerarTermoEndosso';
 
 type ActionItem = {
   label: string;
   icon: Component;
   action: ActionKey;
+  when?: () => boolean;
 };
 
-const secondary: ActionItem[] = [
-  { label: 'Vincular a um veículo de operação', icon: Link2, action: 'vincularVeiculo' },
-  { label: 'Transferir solicitação', icon: ArrowRightLeft, action: 'transferirSolicitacao' },
-  { label: 'Atualizar cessão', icon: RefreshCw, action: 'atualizarCessao' },
-  { label: 'Gerar Termo de Cessão', icon: FileText, action: 'gerarTermoCessao' },
-  { label: 'Gerar CNAB', icon: FileCode, action: 'gerarCnab' },
-  { label: 'Mesclar ativos entre pedidos', icon: Layers, action: 'mesclarAtivos' },
-  { label: 'Transferir conta bancária', icon: Wallet, action: 'transferirConta' },
-];
+const isNc = computed(() => {
+  const t = (props.tipoContrato ?? '').toUpperCase();
+  return t === 'NC' || t.includes('NOTA COMERCIAL') || t.includes('CONTRATO NC');
+});
+
+const isCcb = computed(() => {
+  const t = (props.tipoContrato ?? '').toUpperCase();
+  return t === 'CCB' || t.includes('CONTRATO CCB');
+});
+
+const secondary = computed<ActionItem[]>(() =>
+  [
+    { label: 'Vincular a um veículo de operação', icon: Link2, action: 'vincularVeiculo' as const },
+    { label: 'Transferir solicitação', icon: ArrowRightLeft, action: 'transferirSolicitacao' as const },
+    { label: 'Atualizar cessão', icon: RefreshCw, action: 'atualizarCessao' as const },
+    { label: 'Gerar Termo de Cessão', icon: FileText, action: 'gerarTermoCessao' as const },
+    { label: 'Gerar CNAB', icon: FileCode, action: 'gerarCnab' as const },
+    {
+      label: 'Gerar Boletim de Subscrição',
+      icon: BookOpen,
+      action: 'gerarBoletimSubscricao' as const,
+      when: () => isNc.value,
+    },
+    {
+      label: 'Gerar Termo de Endosso',
+      icon: ScrollText,
+      action: 'gerarTermoEndosso' as const,
+      when: () => isCcb.value,
+    },
+    { label: 'Mesclar ativos entre pedidos', icon: Layers, action: 'mesclarAtivos' as const },
+    { label: 'Transferir conta bancária', icon: Wallet, action: 'transferirConta' as const },
+  ].filter((a) => !a.when || a.when()),
+);
 
 function handleDocClick(e: MouseEvent) {
   if (rootRef.value && !rootRef.value.contains(e.target as Node)) open.value = false;
@@ -1802,6 +1867,12 @@ function handleItem(a: ActionItem) {
       break;
     case 'transferirConta':
       emit('transferirConta');
+      break;
+    case 'gerarBoletimSubscricao':
+      emit('gerarBoletimSubscricao');
+      break;
+    case 'gerarTermoEndosso':
+      emit('gerarTermoEndosso');
       break;
   }
 }
@@ -10636,7 +10707,7 @@ function confirmar() {
     <div
       style="
         width: 100%;
-        max-width: moverTodos ? 520px : 920px;
+        max-width: 760px;
         max-height: calc(100vh - 64px);
         background: var(--surface-card);
         border-radius: var(--radius-xl);
@@ -10644,7 +10715,6 @@ function confirmar() {
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        transition: max-width var(--duration-base);
       "
       @click.stop
     >
@@ -10724,7 +10794,7 @@ function confirmar() {
             <div
               class="grid"
               style="
-                grid-template-columns: 48px 0.9fr 1.3fr 1.3fr 0.8fr 1fr;
+                grid-template-columns: 48px 0.9fr 1.2fr 1.2fr 0.75fr 1fr;
                 padding: 10px 16px;
                 font-size: 10px;
                 font-weight: var(--weight-bold);
@@ -10746,7 +10816,7 @@ function confirmar() {
               :key="a.id"
               class="grid items-center"
               style="
-                grid-template-columns: 48px 0.9fr 1.3fr 1.3fr 0.8fr 1fr;
+                grid-template-columns: 48px 0.9fr 1.2fr 1.2fr 0.75fr 1fr;
                 padding: 12px 16px;
                 border-top: 1px solid var(--border-default);
                 font-size: var(--text-sm);
@@ -10801,6 +10871,502 @@ function confirmar() {
           @click="confirmar"
         >
           CONFIRMAR
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+### GerarBoletimSubscricaoModal
+
+```vue
+<script setup lang="ts">
+import { computed, reactive, watch } from 'vue';
+import { X, Building2, Tag, FileText, User, Mail, MapPin, Landmark, CalendarCheck } from 'lucide-vue-next';
+import { UF_OPTIONS, PAISES_DDI, type Solicitacao } from '../../data/operacaoData';
+import { BentoBox, StepGrid, FormField, SelectField, ToggleRow } from './adicionar-contrato';
+import {
+  SERIE_EMISSAO_OPTS,
+  MEIO_INTEGRALIZACAO_OPTS,
+  CONTAS_BANCARIAS_MOCK,
+  BANCO_OPTS,
+  labelContaBancaria,
+  CREDORAS_PADRAO,
+  emptyPessoaMinuta,
+  cidadesDaUf,
+  type PessoaMinuta,
+} from '../../data/minutaData';
+
+const props = defineProps<{ solicitacao: Solicitacao }>();
+const emit = defineEmits<{ close: []; confirm: [] }>();
+
+const DDI_OPTS = PAISES_DDI.map((p) => `${p.pais} (${p.ddi})`);
+const PAIS_OPTS = PAISES_DDI.map((p) => p.pais);
+const CONTA_OPTS = CONTAS_BANCARIAS_MOCK.map(labelContaBancaria);
+
+const CONTATO_EMISSOR_OPTS = [
+  'Financeiro · financeiro@fazendao.com.br',
+  'Jurídico · juridico@fazendao.com.br',
+  'Operações · operacoes@fazendao.com.br',
+];
+const ENDERECO_EMISSOR_OPTS = [
+  'Sede · Uberaba/MG',
+  'Filial · São Paulo/SP',
+];
+const REPRESENTANTE_EMISSOR_OPTS = [
+  'CARLOS EDUARDO BENITEZ · 165.833.928-28',
+  'MARCELO TARTARO · 144.112.938-38',
+];
+
+const form = reactive({
+  nomeEmissor: props.solicitacao.cedente || 'FAZENDAO INDUSTRIA E COMERCIO DE PRODUTOS AGROPECUARIOS LT',
+  contatoEmissor: CONTATO_EMISSOR_OPTS[0] ?? '',
+  enderecoEmissor: ENDERECO_EMISSOR_OPTS[0] ?? '',
+  representanteEmissor: REPRESENTANTE_EMISSOR_OPTS[0] ?? '',
+  contaBancariaEmissor: CONTA_OPTS[0] ?? '',
+  uf: 'MG',
+  cidade: '',
+  numeroEmissao: '',
+  serie: 'ÚNICA',
+  valorNominalUnitario: '',
+  quantidade: '',
+  precoTotalUnitario: '',
+  precoSubscricao: '',
+  subscritorPadrao: false,
+  subscritor: emptyPessoaMinuta('JURIDICA') as PessoaMinuta,
+  banco: '',
+  agencia: '',
+  conta: '',
+  titularidade: '',
+  meioIntegralizacao: '',
+});
+
+const cidadeOpts = computed(() => cidadesDaUf(form.uf));
+const cidadeSubOpts = computed(() => cidadesDaUf(form.subscritor.estado ?? ''));
+
+watch(
+  () => form.uf,
+  () => {
+    if (form.cidade && !cidadeOpts.value.includes(form.cidade)) form.cidade = '';
+  },
+);
+
+watch(
+  () => form.subscritor.estado,
+  () => {
+    if (form.subscritor.cidade && !cidadeSubOpts.value.includes(form.subscritor.cidade)) {
+      form.subscritor.cidade = '';
+    }
+  },
+);
+
+watch(
+  () => form.subscritorPadrao,
+  (on) => {
+    if (on) {
+      const data = CREDORAS_PADRAO['Ceres Securitizadora'];
+      if (data) Object.assign(form.subscritor, JSON.parse(JSON.stringify(data)));
+      form.banco = '341 - Itaú';
+      form.agencia = '1475';
+      form.conta = '43810-5';
+      form.titularidade = data?.razaoSocial ?? 'CERES SECURITIZADORA S.A.';
+    } else {
+      form.subscritor = emptyPessoaMinuta('JURIDICA');
+      form.banco = '';
+      form.agencia = '';
+      form.conta = '';
+      form.titularidade = '';
+    }
+  },
+);
+
+const ddiLabel = computed({
+  get: () => {
+    const ddi = form.subscritor.ddi || '+55';
+    const match = PAISES_DDI.find((p) => p.ddi === ddi);
+    return match ? `${match.pais} (${match.ddi})` : DDI_OPTS[0] ?? '';
+  },
+  set: (v: string) => {
+    const m = v.match(/\(([^)]+)\)/);
+    form.subscritor.ddi = m?.[1] ?? '+55';
+  },
+});
+
+function gerar() {
+  emit('confirm');
+  emit('close');
+}
+</script>
+
+<template>
+  <div
+    style="
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(8, 60, 74, 0.55);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    "
+    @click.self="emit('close')"
+  >
+    <div
+      style="
+        width: 100%;
+        max-width: 960px;
+        max-height: calc(100vh - 64px);
+        background: var(--surface-card);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      "
+      @click.stop
+    >
+      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Gerar Boletim de Subscrição
+          </h2>
+          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            Nota Comercial · {{ solicitacao.id }}
+          </p>
+        </div>
+        <button
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted)"
+          @click="emit('close')"
+        >
+          <X :size="18" />
+        </button>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; padding: 24px 28px" class="flex flex-col" :style="{ gap: '24px' }">
+        <BentoBox title="Emissor" :icon="Building2">
+          <StepGrid>
+            <FormField label="Nome / Razão social" :span="12" v-model="form.nomeEmissor" />
+            <SelectField label="Contato" :options="CONTATO_EMISSOR_OPTS" placeholder="Selecione" :span="3" v-model="form.contatoEmissor" />
+            <SelectField label="Endereço" :options="ENDERECO_EMISSOR_OPTS" placeholder="Selecione" :span="3" v-model="form.enderecoEmissor" />
+            <SelectField label="Representante legal" :options="REPRESENTANTE_EMISSOR_OPTS" placeholder="Selecione" :span="3" v-model="form.representanteEmissor" />
+            <SelectField label="Conta bancária" :options="CONTA_OPTS" placeholder="Selecione" :span="3" v-model="form.contaBancariaEmissor" />
+          </StepGrid>
+        </BentoBox>
+
+        <BentoBox title="Resumo da emissão" :icon="Tag">
+          <StepGrid>
+            <SelectField label="UF da emissão" :options="UF_OPTIONS" placeholder="UF" required :span="3" v-model="form.uf" />
+            <SelectField
+              label="Cidade da emissão"
+              :options="cidadeOpts"
+              placeholder="Selecione"
+              required
+              :span="3"
+              :disabled="!form.uf"
+              v-model="form.cidade"
+            />
+            <FormField label="Número de emissão" placeholder="—" required :span="3" v-model="form.numeroEmissao" />
+            <SelectField label="Série" :options="SERIE_EMISSAO_OPTS" placeholder="Selecione" required :span="3" v-model="form.serie" />
+            <FormField label="Valor nominal unitário" placeholder="R$ 0,00" required currency :span="4" v-model="form.valorNominalUnitario" />
+          </StepGrid>
+        </BentoBox>
+
+        <BentoBox title="Notas comerciais subscritas" :icon="FileText">
+          <StepGrid>
+            <FormField label="Quantidade" placeholder="—" required :span="4" v-model="form.quantidade" />
+            <FormField label="Preço total unitário" placeholder="R$ 0,00" required currency :span="4" v-model="form.precoTotalUnitario" />
+            <FormField label="Preço de subscrição" placeholder="R$ 0,00" required currency :span="4" v-model="form.precoSubscricao" />
+          </StepGrid>
+        </BentoBox>
+
+        <BentoBox title="Dados do subscritor" :icon="User">
+          <div class="flex flex-col" style="gap: 16px">
+            <ToggleRow
+              label="Subscritor Ceres Securitizadora"
+              :on="form.subscritorPadrao"
+              compact
+              @toggle="form.subscritorPadrao = !form.subscritorPadrao"
+            />
+
+            <StepGrid>
+              <FormField label="CNPJ" placeholder="—" :span="4" :disabled="form.subscritorPadrao" v-model="form.subscritor.cnpj!" />
+              <FormField label="Razão social" placeholder="—" :span="5" :disabled="form.subscritorPadrao" v-model="form.subscritor.razaoSocial!" />
+              <FormField label="Nome Fantasia" placeholder="—" :span="3" :disabled="form.subscritorPadrao" v-model="form.subscritor.nomeFantasia!" />
+              <FormField label="Data de abertura" placeholder="dd/mm/aaaa" :span="3" :disabled="form.subscritorPadrao" v-model="form.subscritor.dataAbertura!" />
+              <FormField label="Tipo" placeholder="—" :span="3" :disabled="form.subscritorPadrao" v-model="form.subscritor.tipoEmpresa!" />
+              <FormField label="Porte" placeholder="—" :span="3" :disabled="form.subscritorPadrao" v-model="form.subscritor.porte!" />
+              <FormField label="Atividade principal" placeholder="—" :span="3" :disabled="form.subscritorPadrao" v-model="form.subscritor.atividadePrincipal!" />
+              <FormField label="Natureza jurídica" placeholder="—" :span="6" :disabled="form.subscritorPadrao" v-model="form.subscritor.naturezaJuridica!" />
+              <FormField label="Inscrição municipal" placeholder="—" :span="3" :disabled="form.subscritorPadrao" v-model="form.subscritor.inscricaoMunicipal!" />
+              <FormField label="Inscrição estadual" placeholder="—" :span="3" :disabled="form.subscritorPadrao" v-model="form.subscritor.inscricaoEstadual!" />
+            </StepGrid>
+
+            <BentoBox title="Contato" :icon="Mail">
+              <StepGrid>
+                <FormField label="E-mail" placeholder="—" required :span="5" :disabled="form.subscritorPadrao" v-model="form.subscritor.email!" />
+                <SelectField label="DDI" :options="DDI_OPTS" :span="3" :disabled="form.subscritorPadrao" v-model="ddiLabel" />
+                <FormField label="Telefone" placeholder="—" required :span="4" :disabled="form.subscritorPadrao" v-model="form.subscritor.telefone!" />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Endereço" :icon="MapPin">
+              <StepGrid>
+                <FormField label="CEP" placeholder="—" :span="3" :disabled="form.subscritorPadrao" v-model="form.subscritor.cep!" />
+                <FormField label="Localidade" placeholder="—" :span="6" :disabled="form.subscritorPadrao" v-model="form.subscritor.localidade!" />
+                <FormField label="Número" placeholder="—" :span="3" :disabled="form.subscritorPadrao" v-model="form.subscritor.numero!" />
+                <FormField label="Bairro" placeholder="—" :span="4" :disabled="form.subscritorPadrao" v-model="form.subscritor.bairro!" />
+                <FormField label="Informações adicionais" placeholder="—" :span="8" :disabled="form.subscritorPadrao" v-model="form.subscritor.infoAdicionais!" />
+                <FormField label="Cidade" placeholder="—" :span="4" :disabled="form.subscritorPadrao" v-model="form.subscritor.cidade!" />
+                <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="4" :disabled="form.subscritorPadrao" v-model="form.subscritor.estado!" />
+                <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="4" :disabled="form.subscritorPadrao" v-model="form.subscritor.pais!" />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Dados bancários" :icon="Landmark">
+              <StepGrid>
+                <SelectField label="Banco" :options="BANCO_OPTS" placeholder="Selecione" :span="6" :disabled="form.subscritorPadrao" v-model="form.banco" />
+                <FormField label="Agência" placeholder="—" :span="6" :disabled="form.subscritorPadrao" v-model="form.agencia" />
+                <FormField label="Conta" placeholder="—" :span="6" :disabled="form.subscritorPadrao" v-model="form.conta" />
+                <FormField label="Titularidade da conta bancária" placeholder="—" :span="6" :disabled="form.subscritorPadrao" v-model="form.titularidade" />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Integralização" :icon="CalendarCheck">
+              <StepGrid>
+                <SelectField
+                  label="Meio de integralização"
+                  :options="MEIO_INTEGRALIZACAO_OPTS"
+                  placeholder="Selecione"
+                  required
+                  :span="6"
+                  v-model="form.meioIntegralizacao"
+                />
+              </StepGrid>
+            </BentoBox>
+          </div>
+        </BentoBox>
+      </div>
+
+      <div class="flex items-center justify-between" style="padding: 16px 28px; border-top: 1px solid var(--border-default)">
+        <button
+          type="button"
+          style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
+          @click="emit('close')"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn-animated btn-primary"
+          style="
+            height: 44px;
+            padding: 0 24px;
+            background: var(--action-primary-bg);
+            color: var(--action-primary-text);
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            font-weight: var(--weight-bold);
+            font-size: var(--text-xs);
+            letter-spacing: 0.08em;
+          "
+          @click="gerar"
+        >
+          GERAR
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+### GerarTermoEndossoModal
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import { X, Building2, Handshake } from 'lucide-vue-next';
+import type { Component } from 'vue';
+import type { Solicitacao } from '../../data/operacaoData';
+import {
+  CREDORA_PADRAO_OPTS_NC_CCB,
+  CREDORAS_PADRAO,
+  emptyPessoaMinuta,
+  type PessoaMinuta,
+} from '../../data/minutaData';
+import MinutaStepper from './minuta/MinutaStepper.vue';
+import CredoraStep from './minuta/CredoraStep.vue';
+import EndossatarioStep from './minuta/EndossatarioStep.vue';
+
+defineProps<{ solicitacao: Solicitacao }>();
+const emit = defineEmits<{ close: []; confirm: [] }>();
+
+const STEPS: { key: string; label: string; icon: Component }[] = [
+  { key: 'endossante', label: 'Endossante', icon: Building2 },
+  { key: 'endossatario', label: 'Endossatário', icon: Handshake },
+];
+
+const step = ref(0);
+
+function clonePadrao(key: string): PessoaMinuta {
+  const data = CREDORAS_PADRAO[key];
+  return data ? (JSON.parse(JSON.stringify(data)) as PessoaMinuta) : emptyPessoaMinuta('JURIDICA');
+}
+
+const endossantePadrao = ref('BMP');
+const endossante = ref<PessoaMinuta>(clonePadrao('BMP'));
+const endossanteDoc = ref('');
+const endossanteContato = ref('');
+const endossanteEndereco = ref('');
+const endossanteRep = ref('');
+
+const endossatarioPadrao = ref('Ceres Securitizadora');
+const endossatario = ref<PessoaMinuta>(clonePadrao('Ceres Securitizadora'));
+const endossatarioDoc = ref('');
+const endossatarioContato = ref('');
+const endossatarioEndereco = ref('');
+const endossatarioRep = ref('');
+
+function gerar() {
+  emit('confirm');
+  emit('close');
+}
+</script>
+
+<template>
+  <div
+    style="
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(8, 60, 74, 0.55);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    "
+    @click.self="emit('close')"
+  >
+    <div
+      style="
+        width: 100%;
+        max-width: 960px;
+        max-height: calc(100vh - 64px);
+        background: var(--surface-card);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      "
+      @click.stop
+    >
+      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Gerar Termo de Endosso
+          </h2>
+          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            CCB · {{ solicitacao.id }}
+          </p>
+        </div>
+        <button
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted)"
+          @click="emit('close')"
+        >
+          <X :size="18" />
+        </button>
+      </div>
+
+      <MinutaStepper :steps="STEPS" :current="step" @select="step = $event" />
+
+      <div style="flex: 1; overflow-y: auto; padding: 24px 28px">
+        <CredoraStep
+          v-if="step === 0"
+          v-model:credora-padrao="endossantePadrao"
+          v-model:form="endossante"
+          v-model:doc-busca="endossanteDoc"
+          v-model:contato="endossanteContato"
+          v-model:endereco="endossanteEndereco"
+          v-model:representante="endossanteRep"
+          :padrao-options="CREDORA_PADRAO_OPTS_NC_CCB"
+        />
+        <EndossatarioStep
+          v-else
+          v-model:endossatario-padrao="endossatarioPadrao"
+          v-model:form="endossatario"
+          v-model:doc-busca="endossatarioDoc"
+          v-model:contato="endossatarioContato"
+          v-model:endereco="endossatarioEndereco"
+          v-model:representante="endossatarioRep"
+        />
+      </div>
+
+      <div class="flex items-center justify-between" style="padding: 16px 28px; border-top: 1px solid var(--border-default)">
+        <button
+          v-if="step === 0"
+          type="button"
+          style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
+          @click="emit('close')"
+        >
+          Cancelar
+        </button>
+        <button
+          v-else
+          type="button"
+          style="background: none; border: none; cursor: pointer; color: var(--gci-base); font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em"
+          @click="step = 0"
+        >
+          VOLTAR
+        </button>
+
+        <button
+          v-if="step === 0"
+          type="button"
+          class="btn-animated btn-primary"
+          style="
+            height: 44px;
+            padding: 0 24px;
+            background: var(--action-primary-bg);
+            color: var(--action-primary-text);
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            font-weight: var(--weight-bold);
+            font-size: var(--text-xs);
+            letter-spacing: 0.08em;
+          "
+          @click="step = 1"
+        >
+          PRÓXIMO
+        </button>
+        <button
+          v-else
+          type="button"
+          class="btn-animated btn-primary"
+          style="
+            height: 44px;
+            padding: 0 24px;
+            background: var(--action-primary-bg);
+            color: var(--action-primary-text);
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            font-weight: var(--weight-bold);
+            font-size: var(--text-xs);
+            letter-spacing: 0.08em;
+          "
+          @click="gerar"
+        >
+          GERAR
         </button>
       </div>
     </div>

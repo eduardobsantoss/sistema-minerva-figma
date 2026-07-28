@@ -143,6 +143,8 @@ const SECTIONS = [
       'components/modals/TransferirSolicitacaoModal.vue',
       'components/modals/TransferirContaBancariaModal.vue',
       'components/modals/MesclarAtivosPedidosModal.vue',
+      'components/modals/GerarBoletimSubscricaoModal.vue',
+      'components/modals/GerarTermoEndossoModal.vue',
       'components/modals/ProrrogarVencimentoModal.vue',
       'components/modals/ConfirmarTituloModal.vue',
       'components/modals/EditarValorOperacaoModal.vue',

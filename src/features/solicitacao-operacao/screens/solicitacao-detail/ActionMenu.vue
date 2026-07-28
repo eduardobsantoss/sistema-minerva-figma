@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import {
   MoreVertical,
   ArrowRightLeft,
@@ -10,8 +10,15 @@ import {
   FileText,
   FileCode,
   Link2,
+  BookOpen,
+  ScrollText,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
+
+const props = defineProps<{
+  /** Tipo de contrato do pedido (ex.: NC, CCB) — controla ações condicionais. */
+  tipoContrato?: string;
+}>();
 
 const emit = defineEmits<{
   reject: [];
@@ -22,6 +29,8 @@ const emit = defineEmits<{
   gerarCnab: [];
   mesclarAtivos: [];
   transferirConta: [];
+  gerarBoletimSubscricao: [];
+  gerarTermoEndosso: [];
 }>();
 
 const open = ref(false);
@@ -34,23 +43,50 @@ type ActionKey =
   | 'gerarTermoCessao'
   | 'gerarCnab'
   | 'mesclarAtivos'
-  | 'transferirConta';
+  | 'transferirConta'
+  | 'gerarBoletimSubscricao'
+  | 'gerarTermoEndosso';
 
 type ActionItem = {
   label: string;
   icon: Component;
   action: ActionKey;
+  when?: () => boolean;
 };
 
-const secondary: ActionItem[] = [
-  { label: 'Vincular a um veículo de operação', icon: Link2, action: 'vincularVeiculo' },
-  { label: 'Transferir solicitação', icon: ArrowRightLeft, action: 'transferirSolicitacao' },
-  { label: 'Atualizar cessão', icon: RefreshCw, action: 'atualizarCessao' },
-  { label: 'Gerar Termo de Cessão', icon: FileText, action: 'gerarTermoCessao' },
-  { label: 'Gerar CNAB', icon: FileCode, action: 'gerarCnab' },
-  { label: 'Mesclar ativos entre pedidos', icon: Layers, action: 'mesclarAtivos' },
-  { label: 'Transferir conta bancária', icon: Wallet, action: 'transferirConta' },
-];
+const isNc = computed(() => {
+  const t = (props.tipoContrato ?? '').toUpperCase();
+  return t === 'NC' || t.includes('NOTA COMERCIAL') || t.includes('CONTRATO NC');
+});
+
+const isCcb = computed(() => {
+  const t = (props.tipoContrato ?? '').toUpperCase();
+  return t === 'CCB' || t.includes('CONTRATO CCB');
+});
+
+const secondary = computed<ActionItem[]>(() =>
+  [
+    { label: 'Vincular a um veículo de operação', icon: Link2, action: 'vincularVeiculo' as const },
+    { label: 'Transferir solicitação', icon: ArrowRightLeft, action: 'transferirSolicitacao' as const },
+    { label: 'Atualizar cessão', icon: RefreshCw, action: 'atualizarCessao' as const },
+    { label: 'Gerar Termo de Cessão', icon: FileText, action: 'gerarTermoCessao' as const },
+    { label: 'Gerar CNAB', icon: FileCode, action: 'gerarCnab' as const },
+    {
+      label: 'Gerar Boletim de Subscrição',
+      icon: BookOpen,
+      action: 'gerarBoletimSubscricao' as const,
+      when: () => isNc.value,
+    },
+    {
+      label: 'Gerar Termo de Endosso',
+      icon: ScrollText,
+      action: 'gerarTermoEndosso' as const,
+      when: () => isCcb.value,
+    },
+    { label: 'Mesclar ativos entre pedidos', icon: Layers, action: 'mesclarAtivos' as const },
+    { label: 'Transferir conta bancária', icon: Wallet, action: 'transferirConta' as const },
+  ].filter((a) => !a.when || a.when()),
+);
 
 function handleDocClick(e: MouseEvent) {
   if (rootRef.value && !rootRef.value.contains(e.target as Node)) open.value = false;
@@ -82,6 +118,12 @@ function handleItem(a: ActionItem) {
       break;
     case 'transferirConta':
       emit('transferirConta');
+      break;
+    case 'gerarBoletimSubscricao':
+      emit('gerarBoletimSubscricao');
+      break;
+    case 'gerarTermoEndosso':
+      emit('gerarTermoEndosso');
       break;
   }
 }

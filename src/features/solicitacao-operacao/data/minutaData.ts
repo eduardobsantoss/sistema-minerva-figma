@@ -83,6 +83,13 @@ export const CREDORA_PADRAO_OPTS_NC_CCB = ['Ceres Trading', 'Ceres Securitizador
 export const ESCRITURADOR_PADRAO_OPTS = ['Vortx', 'BMP'];
 export const ENDOSSATARIO_PADRAO_OPTS = ['Ceres Trading', 'Ceres Securitizadora'];
 export const SERIE_EMISSAO_OPTS = ['ÚNICA', 'SÉRIE 1', 'SÉRIE 2'];
+export const MEIO_INTEGRALIZACAO_OPTS = [
+  'TED',
+  'DOC',
+  'PIX',
+  'Depósito em conta',
+  'Compensação',
+];
 export const NACIONALIDADE_OPTS = ['Brasileira', 'Estrangeira', 'BRASIL'];
 export const ESTADO_CIVIL_OPTS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável'];
 /** Regimes de bens — Separação* não exige formulário de cônjuge na tela de detalhe. */

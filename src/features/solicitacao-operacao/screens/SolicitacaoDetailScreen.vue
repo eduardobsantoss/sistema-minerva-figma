@@ -32,6 +32,8 @@ import VincularVeiculoOperacaoModal from '../components/modals/VincularVeiculoOp
 import TransferirSolicitacaoModal from '../components/modals/TransferirSolicitacaoModal.vue';
 import TransferirContaBancariaModal from '../components/modals/TransferirContaBancariaModal.vue';
 import MesclarAtivosPedidosModal from '../components/modals/MesclarAtivosPedidosModal.vue';
+import GerarBoletimSubscricaoModal from '../components/modals/GerarBoletimSubscricaoModal.vue';
+import GerarTermoEndossoModal from '../components/modals/GerarTermoEndossoModal.vue';
 import InserirEvidenciaModal from '../components/modals/InserirEvidenciaModal.vue';
 import DetalheEvidenciaModal from '../components/modals/DetalheEvidenciaModal.vue';
 import DetalheValidacaoModal from '../components/modals/DetalheValidacaoModal.vue';
@@ -71,6 +73,8 @@ const showVincularVeiculo = ref(false);
 const showTransferirSolicitacao = ref(false);
 const showTransferirConta = ref(false);
 const showMesclarAtivos = ref(false);
+const showBoletimSubscricao = ref(false);
+const showTermoEndosso = ref(false);
 const showInserirEvidencia = ref(false);
 const showDetalheEvidencia = ref(false);
 const showDetalheValidacao = ref(false);
@@ -214,6 +218,14 @@ function onMesclarAtivos(payload: {
   pushHistorico(`mesclou ${modo} para o pedido ${payload.pedidoDestinoId}`);
 }
 
+function onGerarBoletim() {
+  pushHistorico('gerou o Boletim de Subscrição');
+}
+
+function onGerarTermoEndosso() {
+  pushHistorico('gerou o Termo de Endosso');
+}
+
 function handleVincular(ativos: ContratoAtivo[]) {
   det.ativos.push(...ativos);
   showVincularModal.value = false;
@@ -336,6 +348,7 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
           <ChevronRight :size="16" />
         </button>
         <ActionMenu
+          :tipo-contrato="solicitacao.tipoContrato"
           @reject="confirmReject = true"
           @vincular-veiculo="showVincularVeiculo = true"
           @transferir-solicitacao="showTransferirSolicitacao = true"
@@ -344,6 +357,8 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
           @gerar-cnab="showGerarCnab = true"
           @mesclar-ativos="showMesclarAtivos = true"
           @transferir-conta="showTransferirConta = true"
+          @gerar-boletim-subscricao="showBoletimSubscricao = true"
+          @gerar-termo-endosso="showTermoEndosso = true"
         />
       </div>
     </div>
@@ -471,6 +486,20 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
       :ativos="det.ativos"
       @close="showMesclarAtivos = false"
       @confirm="onMesclarAtivos"
+    />
+
+    <GerarBoletimSubscricaoModal
+      v-if="showBoletimSubscricao"
+      :solicitacao="solicitacao"
+      @close="showBoletimSubscricao = false"
+      @confirm="onGerarBoletim"
+    />
+
+    <GerarTermoEndossoModal
+      v-if="showTermoEndosso"
+      :solicitacao="solicitacao"
+      @close="showTermoEndosso = false"
+      @confirm="onGerarTermoEndosso"
     />
 
     <InserirEvidenciaModal
