@@ -245,6 +245,25 @@ export interface ValidacaoEvidencia {
   data: string;
 }
 
+export interface ValidacaoMensagemAnexo {
+  nome: string;
+  arquivo: string;
+}
+
+export interface ValidacaoMensagem {
+  id: string;
+  autor: string;
+  data: string;
+  texto: string;
+  anexo?: ValidacaoMensagemAnexo;
+}
+
+export interface ValidacaoOperacaoApto {
+  id: string;
+  veiculo: string;
+  apto: boolean;
+}
+
 export interface ItemValidacao {
   titulo: string;
   descricao: string;
@@ -255,6 +274,13 @@ export interface ItemValidacao {
   evidencia?: ValidacaoEvidencia;
   /** mensagens de erro/detalhe retornadas pela regra */
   erros?: string[];
+  /**
+   * Validação de aptidão em operações: só exibe ícones
+   * Habilitar Operações + Mensagens (sem Autorizar/Evidência).
+   */
+  controleOperacoes?: boolean;
+  operacoes?: ValidacaoOperacaoApto[];
+  mensagens?: ValidacaoMensagem[];
 }
 
 export interface AnexoDoc {
@@ -522,6 +548,42 @@ const PARTES_BASE: ParteRelacionada[] = [
  */
 export function detalheSolicitacao(s: Solicitacao): DetalheSolicitacao {
   const validacoes: ItemValidacao[] = [
+    {
+      titulo: 'Cadastro de Cedente - Apto à operar',
+      descricao:
+        'Verifica se o Cedente está apto nas operações: |URA AGRO| - |URA AGRO 2| - |42º CRA Ceres|',
+      area: 'Cadastro',
+      status: 'NAO_OK',
+      controleOperacoes: true,
+      operacoes: [
+        { id: 'op-1', veiculo: '38ª CRA URA AGRO (18)', apto: false },
+        { id: 'op-2', veiculo: 'CDCA Cultura Agronegócios', apto: false },
+        { id: 'op-3', veiculo: '16ª - CRA Ura Agro (6)', apto: false },
+        { id: 'op-4', veiculo: '18ª - CRA Ura Agro (7)', apto: false },
+        { id: 'op-5', veiculo: '19ª - CRA Ura Agro (8)', apto: false },
+        { id: 'op-6', veiculo: 'URA AGRO 2', apto: false },
+        { id: 'op-7', veiculo: '42º CRA Ceres', apto: true },
+        { id: 'op-8', veiculo: 'FIDC Ceres Multicedente', apto: false },
+      ],
+      mensagens: [
+        {
+          id: 'msg-1',
+          autor: 'daniel.santos',
+          data: '27/07/2026 às 17:18:35',
+          texto: 'Cedente inapto nas operações URA AGRO. Aguardando liberação de cadastro.',
+        },
+        {
+          id: 'msg-2',
+          autor: 'daniel.santos',
+          data: '27/07/2026 às 17:20:12',
+          texto: 'Segue evidência do parecer de cadastro.',
+          anexo: {
+            nome: '2026-07-27T20:18:45.parecer-cadastro.pdf',
+            arquivo: '2026-07-27T20:18:45.parecer-cadastro.pdf',
+          },
+        },
+      ],
+    },
     { titulo: 'Contato Válido do Sacado (E-mail e Telefone)', descricao: 'Verifica se o(s) Sacado(s) possuem contato válido cadastrado.', area: 'Comercial', status: 'PENDENTE' },
     { titulo: 'Endereço Válido do Sacado',                    descricao: 'Verifica se o(s) Sacado(s) possuem endereço válido cadastrado.', area: 'Comercial', status: 'PROCESSANDO' },
     {

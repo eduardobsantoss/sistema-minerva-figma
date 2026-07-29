@@ -1253,6 +1253,8 @@ import TransferirContaBancariaModal from '../components/modals/TransferirContaBa
 import MesclarAtivosPedidosModal from '../components/modals/MesclarAtivosPedidosModal.vue';
 import GerarBoletimSubscricaoModal from '../components/modals/GerarBoletimSubscricaoModal.vue';
 import GerarTermoEndossoModal from '../components/modals/GerarTermoEndossoModal.vue';
+import ControleOperacoesModal from '../components/modals/ControleOperacoesModal.vue';
+import MensagensValidacaoModal from '../components/modals/MensagensValidacaoModal.vue';
 import InserirEvidenciaModal from '../components/modals/InserirEvidenciaModal.vue';
 import DetalheEvidenciaModal from '../components/modals/DetalheEvidenciaModal.vue';
 import DetalheValidacaoModal from '../components/modals/DetalheValidacaoModal.vue';
@@ -1294,11 +1296,15 @@ const showTransferirConta = ref(false);
 const showMesclarAtivos = ref(false);
 const showBoletimSubscricao = ref(false);
 const showTermoEndosso = ref(false);
+const showControleOperacoes = ref(false);
+const showMensagensValidacao = ref(false);
 const showInserirEvidencia = ref(false);
 const showDetalheEvidencia = ref(false);
 const showDetalheValidacao = ref(false);
 const validacaoEvidenciaCtx = ref<ItemValidacao | null>(null);
 const validacaoDetalheCtx = ref<ItemValidacao | null>(null);
+const validacaoOperacoesCtx = ref<ItemValidacao | null>(null);
+const validacaoMensagensCtx = ref<ItemValidacao | null>(null);
 const selectedParte = ref<ParteRelacionada | null>(null);
 const selectedAtivo = ref<ContratoAtivo | null>(null);
 const ativosAcao = ref<ContratoAtivo[]>([]);
@@ -1321,6 +1327,16 @@ function openVerEvidencia(v: ItemValidacao) {
 function openVerDetalhes(v: ItemValidacao) {
   validacaoDetalheCtx.value = v;
   showDetalheValidacao.value = true;
+}
+
+function openControleOperacoes(v: ItemValidacao) {
+  validacaoOperacoesCtx.value = v;
+  showControleOperacoes.value = true;
+}
+
+function openMensagensValidacao(v: ItemValidacao) {
+  validacaoMensagensCtx.value = v;
+  showMensagensValidacao.value = true;
 }
 
 function handleAutorizar(v: ItemValidacao) {
@@ -1504,6 +1520,8 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
     @ver-evidencia="openVerEvidencia"
     @autorizar="handleAutorizar"
     @ver-detalhes="openVerDetalhes"
+    @habilitar-operacoes="openControleOperacoes"
+    @mensagens="openMensagensValidacao"
   />
   <ParteRelacionadaDetailView
     v-else-if="subView === 'parte-detalhe' && selectedParte"
@@ -1621,6 +1639,8 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
         @ver-evidencia="openVerEvidencia"
         @autorizar="handleAutorizar"
         @ver-detalhes="openVerDetalhes"
+        @habilitar-operacoes="openControleOperacoes"
+        @mensagens="openMensagensValidacao"
       />
       <AnexosTab v-else-if="tab === 'anexos'" :det="det" />
       <AtaTab v-else-if="tab === 'ata'" />
@@ -1739,6 +1759,18 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
       v-if="showDetalheValidacao && validacaoDetalheCtx"
       :v="validacaoDetalheCtx"
       @close="showDetalheValidacao = false; validacaoDetalheCtx = null"
+    />
+
+    <ControleOperacoesModal
+      v-if="showControleOperacoes && validacaoOperacoesCtx"
+      :validacao="validacaoOperacoesCtx"
+      @close="showControleOperacoes = false; validacaoOperacoesCtx = null"
+    />
+
+    <MensagensValidacaoModal
+      v-if="showMensagensValidacao && validacaoMensagensCtx"
+      :validacao="validacaoMensagensCtx"
+      @close="showMensagensValidacao = false; validacaoMensagensCtx = null"
     />
   </div>
 </template>
@@ -4866,6 +4898,8 @@ const emit = defineEmits<{
   verEvidencia: [v: ItemValidacao];
   autorizar: [v: ItemValidacao];
   verDetalhes: [v: ItemValidacao];
+  habilitarOperacoes: [v: ItemValidacao];
+  mensagens: [v: ItemValidacao];
 }>();
 
 const naoAprovadas = computed(() => props.det.validacoes.filter((v) => v.status === 'NAO_OK'));
@@ -4918,6 +4952,8 @@ const aprovadas = computed(() =>
           @ver-evidencia="emit('verEvidencia', $event)"
           @autorizar="emit('autorizar', $event)"
           @ver-detalhes="emit('verDetalhes', $event)"
+          @habilitar-operacoes="emit('habilitarOperacoes', $event)"
+          @mensagens="emit('mensagens', $event)"
         />
       </div>
     </Section>
@@ -4931,6 +4967,8 @@ const aprovadas = computed(() =>
           @ver-evidencia="emit('verEvidencia', $event)"
           @autorizar="emit('autorizar', $event)"
           @ver-detalhes="emit('verDetalhes', $event)"
+          @habilitar-operacoes="emit('habilitarOperacoes', $event)"
+          @mensagens="emit('mensagens', $event)"
         />
       </div>
     </Section>
@@ -4944,6 +4982,8 @@ const aprovadas = computed(() =>
           @ver-evidencia="emit('verEvidencia', $event)"
           @autorizar="emit('autorizar', $event)"
           @ver-detalhes="emit('verDetalhes', $event)"
+          @habilitar-operacoes="emit('habilitarOperacoes', $event)"
+          @mensagens="emit('mensagens', $event)"
         />
       </div>
     </Section>
@@ -4972,6 +5012,8 @@ const emit = defineEmits<{
   verEvidencia: [v: ItemValidacao];
   autorizar: [v: ItemValidacao];
   verDetalhes: [v: ItemValidacao];
+  habilitarOperacoes: [v: ItemValidacao];
+  mensagens: [v: ItemValidacao];
 }>();
 
 const naoAprovadas = computed(() => props.det.validacoes.filter((v) => v.status === 'NAO_OK'));
@@ -5116,6 +5158,8 @@ const kpis = computed(() => [
               @ver-evidencia="emit('verEvidencia', $event)"
               @autorizar="emit('autorizar', $event)"
               @ver-detalhes="emit('verDetalhes', $event)"
+              @habilitar-operacoes="emit('habilitarOperacoes', $event)"
+              @mensagens="emit('mensagens', $event)"
             />
           </div>
         </Section>
@@ -5129,6 +5173,8 @@ const kpis = computed(() => [
               @ver-evidencia="emit('verEvidencia', $event)"
               @autorizar="emit('autorizar', $event)"
               @ver-detalhes="emit('verDetalhes', $event)"
+              @habilitar-operacoes="emit('habilitarOperacoes', $event)"
+              @mensagens="emit('mensagens', $event)"
             />
           </div>
         </Section>
@@ -5142,6 +5188,8 @@ const kpis = computed(() => [
               @ver-evidencia="emit('verEvidencia', $event)"
               @autorizar="emit('autorizar', $event)"
               @ver-detalhes="emit('verDetalhes', $event)"
+              @habilitar-operacoes="emit('habilitarOperacoes', $event)"
+              @mensagens="emit('mensagens', $event)"
             />
           </div>
         </Section>
@@ -5155,6 +5203,8 @@ const kpis = computed(() => [
               @ver-evidencia="emit('verEvidencia', $event)"
               @autorizar="emit('autorizar', $event)"
               @ver-detalhes="emit('verDetalhes', $event)"
+              @habilitar-operacoes="emit('habilitarOperacoes', $event)"
+              @mensagens="emit('mensagens', $event)"
             />
           </div>
         </Section>
@@ -5168,7 +5218,7 @@ const kpis = computed(() => [
 
 ```vue
 <script setup lang="ts">
-import { AlertCircle, CheckCircle2, XCircle, Clock, Loader2, Send, Eye, ListTree } from 'lucide-vue-next';
+import { AlertCircle, CheckCircle2, XCircle, Clock, Loader2, Send, Eye, ListTree, SlidersHorizontal, MessageSquare } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import {
   VALIDACAO_STATUS_LABEL,
@@ -5182,6 +5232,8 @@ const emit = defineEmits<{
   verEvidencia: [v: ItemValidacao];
   autorizar: [v: ItemValidacao];
   verDetalhes: [v: ItemValidacao];
+  habilitarOperacoes: [v: ItemValidacao];
+  mensagens: [v: ItemValidacao];
 }>();
 
 const valTone: Record<ValidacaoStatus, { bg: string; fg: string; icon: Component }> = {
@@ -5190,6 +5242,20 @@ const valTone: Record<ValidacaoStatus, { bg: string; fg: string; icon: Component
   OK: { bg: 'var(--status-success-bg)', fg: 'var(--status-success-text)', icon: CheckCircle2 },
   NAO_OK: { bg: 'var(--status-danger-bg)', fg: 'var(--status-danger-text)', icon: XCircle },
   EXCECAO: { bg: 'var(--status-warning-bg)', fg: 'var(--status-warning-text)', icon: AlertCircle },
+};
+
+const iconBtnStyle = {
+  width: '36px',
+  height: '36px',
+  borderRadius: '9999px',
+  border: '1px solid var(--border-default)',
+  background: 'var(--surface-card)',
+  cursor: 'pointer',
+  color: 'var(--text-muted)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '0',
 };
 </script>
 
@@ -5255,35 +5321,59 @@ const valTone: Record<ValidacaoStatus, { bg: string; fg: string; icon: Component
         </div>
       </div>
       <div class="flex items-center" style="gap: 8px; flex-shrink: 0">
-        <GhostButton
-          v-if="v.erros?.length"
-          :icon="ListTree"
-          @click="emit('verDetalhes', v)"
-        >
-          Ver detalhes
-        </GhostButton>
-        <template v-if="v.exigeAutorizacao">
-          <GhostButton :icon="Send">Solicitar autorização</GhostButton>
-          <GhostButton v-if="v.evidencia" :icon="Eye" @click="emit('verEvidencia', v)">Ver evidência</GhostButton>
+        <!-- Controle de operações: só Habilitar + Mensagens -->
+        <template v-if="v.controleOperacoes">
           <button
-            class="flex items-center"
-            style="
-              gap: 6px;
-              height: 38px;
-              padding: 0 16px;
-              background: var(--action-primary-bg);
-              color: var(--action-primary-text);
-              border: none;
-              border-radius: var(--radius-lg);
-              cursor: pointer;
-              font-weight: var(--weight-bold);
-              font-size: var(--text-xs);
-              letter-spacing: 0.06em;
-            "
-            @click="emit('autorizar', v)"
+            type="button"
+            title="Habilitar operações"
+            aria-label="Habilitar operações"
+            :style="iconBtnStyle"
+            @click="emit('habilitarOperacoes', v)"
           >
-            <CheckCircle2 :size="15" /> Autorizar
+            <SlidersHorizontal :size="16" />
           </button>
+          <button
+            type="button"
+            title="Mensagens"
+            aria-label="Mensagens"
+            :style="iconBtnStyle"
+            @click="emit('mensagens', v)"
+          >
+            <MessageSquare :size="16" />
+          </button>
+        </template>
+
+        <template v-else>
+          <GhostButton
+            v-if="v.erros?.length"
+            :icon="ListTree"
+            @click="emit('verDetalhes', v)"
+          >
+            Ver detalhes
+          </GhostButton>
+          <template v-if="v.exigeAutorizacao">
+            <GhostButton :icon="Send">Solicitar autorização</GhostButton>
+            <GhostButton v-if="v.evidencia" :icon="Eye" @click="emit('verEvidencia', v)">Ver evidência</GhostButton>
+            <button
+              class="flex items-center"
+              style="
+                gap: 6px;
+                height: 38px;
+                padding: 0 16px;
+                background: var(--action-primary-bg);
+                color: var(--action-primary-text);
+                border: none;
+                border-radius: var(--radius-lg);
+                cursor: pointer;
+                font-weight: var(--weight-bold);
+                font-size: var(--text-xs);
+                letter-spacing: 0.06em;
+              "
+              @click="emit('autorizar', v)"
+            >
+              <CheckCircle2 :size="15" /> Autorizar
+            </button>
+          </template>
         </template>
       </div>
     </div>
@@ -11368,6 +11458,611 @@ function gerar() {
         >
           GERAR
         </button>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+### ControleOperacoesModal
+
+```vue
+<script setup lang="ts">
+import { computed, reactive, ref } from 'vue';
+import { X, Plus } from 'lucide-vue-next';
+import type { ItemValidacao, ValidacaoOperacaoApto } from '../../data/operacaoData';
+import {
+  VEICULOS_FIDC_SEED,
+  VEICULOS_CRA_SEED,
+  VEICULOS_GARANTIAS_SEED,
+} from '../../data/taxasVeiculosData';
+import { SelectField, StepGrid } from './adicionar-contrato';
+
+const props = defineProps<{ validacao: ItemValidacao }>();
+const emit = defineEmits<{ close: [] }>();
+
+const operacoes = reactive<ValidacaoOperacaoApto[]>(
+  (props.validacao.operacoes ?? []).map((o) => ({ ...o })),
+);
+
+const showAdd = ref(false);
+const novoVeiculo = ref('');
+
+const veiculoOpts = computed(() => {
+  const usados = new Set(operacoes.map((o) => o.veiculo));
+  return [
+    ...new Set([
+      ...VEICULOS_FIDC_SEED.map((v) => v.vehicleName),
+      ...VEICULOS_CRA_SEED.map((v) => v.vehicleName),
+      ...VEICULOS_GARANTIAS_SEED.map((v) => v.vehicleName),
+      '38ª CRA URA AGRO (18)',
+      'CDCA Cultura Agronegócios',
+      '16ª - CRA Ura Agro (6)',
+      '18ª - CRA Ura Agro (7)',
+      '19ª - CRA Ura Agro (8)',
+      'URA AGRO 2',
+      '42º CRA Ceres',
+    ]),
+  ].filter((v) => !usados.has(v));
+});
+
+function toggleApto(id: string) {
+  const row = operacoes.find((o) => o.id === id);
+  if (row) row.apto = !row.apto;
+  // sync back to source item for prototype persistence
+  if (props.validacao.operacoes) {
+    const src = props.validacao.operacoes.find((o) => o.id === id);
+    if (src) src.apto = row?.apto ?? false;
+  }
+}
+
+function adicionar() {
+  if (!novoVeiculo.value.trim()) return;
+  const item: ValidacaoOperacaoApto = {
+    id: `op-${Date.now()}`,
+    veiculo: novoVeiculo.value,
+    apto: false,
+  };
+  operacoes.push(item);
+  if (!props.validacao.operacoes) props.validacao.operacoes = [];
+  props.validacao.operacoes.push({ ...item });
+  novoVeiculo.value = '';
+  showAdd.value = false;
+}
+</script>
+
+<template>
+  <div
+    style="
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(8, 60, 74, 0.55);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    "
+    @click.self="emit('close')"
+  >
+    <div
+      style="
+        width: 100%;
+        max-width: 640px;
+        max-height: calc(100vh - 64px);
+        background: var(--surface-card);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      "
+      @click.stop
+    >
+      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Controle de operações
+          </h2>
+          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            {{ validacao.titulo }}
+          </p>
+        </div>
+        <button
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted)"
+          @click="emit('close')"
+        >
+          <X :size="18" />
+        </button>
+      </div>
+
+      <div
+        class="flex items-center justify-between"
+        style="padding: 14px 28px; background: var(--surface-sunken); border-bottom: 1px solid var(--border-default)"
+      >
+        <span
+          style="
+            font-size: 10px;
+            font-weight: var(--weight-bold);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+          "
+        >
+          Operações
+        </span>
+        <button
+          type="button"
+          class="flex items-center"
+          style="
+            gap: 6px;
+            height: 34px;
+            padding: 0 12px;
+            background: var(--surface-card);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            font-weight: var(--weight-bold);
+            font-size: var(--text-xs);
+            letter-spacing: 0.06em;
+            color: var(--gci-base);
+          "
+          @click="showAdd = !showAdd"
+        >
+          <Plus :size="14" /> NOVO
+        </button>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; padding: 20px 28px" class="flex flex-col" :style="{ gap: '16px' }">
+        <p style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--action-danger-text-only); margin: 0">
+          Caso seja inapto, não será possível iniciar cessões;
+        </p>
+
+        <div
+          v-if="showAdd"
+          style="
+            padding: 16px;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            background: var(--surface-sunken);
+          "
+        >
+          <StepGrid>
+            <SelectField
+              label="Veículo"
+              :options="veiculoOpts"
+              placeholder="Selecione"
+              :span="12"
+              v-model="novoVeiculo"
+            />
+          </StepGrid>
+          <div class="flex justify-end" style="margin-top: 12px; gap: 8px">
+            <button
+              type="button"
+              style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--weight-semibold)"
+              @click="showAdd = false"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn-animated btn-primary"
+              :disabled="!novoVeiculo"
+              :style="{
+                height: '38px',
+                padding: '0 16px',
+                background: novoVeiculo ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
+                color: novoVeiculo ? 'var(--action-primary-text)' : 'var(--text-disabled)',
+                border: 'none',
+                borderRadius: 'var(--radius-lg)',
+                cursor: novoVeiculo ? 'pointer' : 'not-allowed',
+                fontWeight: 'var(--weight-bold)',
+                fontSize: 'var(--text-xs)',
+                letterSpacing: '0.06em',
+              }"
+              @click="adicionar"
+            >
+              Adicionar
+            </button>
+          </div>
+        </div>
+
+        <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+          <div
+            class="grid"
+            style="
+              grid-template-columns: 1fr 140px;
+              padding: 12px 16px;
+              background: var(--surface-sunken);
+              font-size: 10px;
+              font-weight: var(--weight-bold);
+              letter-spacing: 0.1em;
+              color: var(--text-muted);
+              text-transform: uppercase;
+            "
+          >
+            <div>Veículo</div>
+            <div style="text-align: center">Apto</div>
+          </div>
+          <div
+            v-for="(op, i) in operacoes"
+            :key="op.id"
+            class="grid items-center"
+            :style="{
+              gridTemplateColumns: '1fr 140px',
+              padding: '10px 16px',
+              borderTop: '1px solid var(--border-default)',
+              background: i % 2 === 0 ? 'var(--surface-card)' : 'color-mix(in srgb, var(--gci-base) 4%, transparent)',
+            }"
+          >
+            <div style="font-size: var(--text-sm); color: var(--text-strong); font-weight: var(--weight-semibold)">
+              {{ op.veiculo }}
+            </div>
+            <div class="flex justify-center">
+              <button
+                type="button"
+                :aria-checked="op.apto"
+                role="switch"
+                :title="op.apto ? 'Apto' : 'Inapto'"
+                :style="{
+                  position: 'relative',
+                  width: '44px',
+                  height: '24px',
+                  borderRadius: '9999px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: op.apto ? 'var(--success-base)' : 'var(--border-strong)',
+                  transition: 'background var(--duration-base)',
+                  padding: 0,
+                }"
+                @click="toggleApto(op.id)"
+              >
+                <span
+                  :style="{
+                    position: 'absolute',
+                    top: '3px',
+                    left: op.apto ? '23px' : '3px',
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '9999px',
+                    background: '#fff',
+                    transition: 'left var(--duration-base)',
+                    boxShadow: 'var(--shadow-xs)',
+                  }"
+                />
+              </button>
+            </div>
+          </div>
+          <div
+            v-if="operacoes.length === 0"
+            style="padding: 28px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+          >
+            Nenhuma operação cadastrada. Use + NOVO para vincular um veículo.
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end" style="padding: 16px 28px; border-top: 1px solid var(--border-default)">
+        <button
+          type="button"
+          class="btn-animated btn-primary"
+          style="
+            height: 44px;
+            padding: 0 24px;
+            background: var(--action-primary-bg);
+            color: var(--action-primary-text);
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            font-weight: var(--weight-bold);
+            font-size: var(--text-xs);
+            letter-spacing: 0.08em;
+          "
+          @click="emit('close')"
+        >
+          FECHAR
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+### MensagensValidacaoModal
+
+```vue
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { X, Paperclip, MessageSquare, Download, Trash2, FileText } from 'lucide-vue-next';
+import type { ItemValidacao, ValidacaoMensagem } from '../../data/operacaoData';
+
+const props = defineProps<{ validacao: ItemValidacao }>();
+const emit = defineEmits<{ close: [] }>();
+
+const texto = ref('');
+const anexoNome = ref('');
+const touched = ref(false);
+
+const mensagens = computed(() => props.validacao.mensagens ?? []);
+const showRequired = computed(() => touched.value && !texto.value.trim());
+const canPost = computed(() => texto.value.trim().length > 0);
+
+function nowLabel(): string {
+  const now = new Date();
+  return `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} às ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+}
+
+function onFileChange(e: Event) {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  anexoNome.value = file?.name ?? '';
+  input.value = '';
+}
+
+function removeAnexo() {
+  anexoNome.value = '';
+}
+
+function postar() {
+  touched.value = true;
+  if (!canPost.value) return;
+  const msg: ValidacaoMensagem = {
+    id: `msg-${Date.now()}`,
+    autor: 'usuario.atual',
+    data: nowLabel(),
+    texto: texto.value.trim(),
+    anexo: anexoNome.value
+      ? { nome: anexoNome.value, arquivo: anexoNome.value }
+      : undefined,
+  };
+  if (!props.validacao.mensagens) props.validacao.mensagens = [];
+  props.validacao.mensagens.unshift(msg);
+  texto.value = '';
+  anexoNome.value = '';
+  touched.value = false;
+}
+</script>
+
+<template>
+  <div
+    style="
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(8, 60, 74, 0.55);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    "
+    @click.self="emit('close')"
+  >
+    <div
+      style="
+        width: 100%;
+        max-width: 640px;
+        max-height: calc(100vh - 64px);
+        background: var(--surface-card);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      "
+      @click.stop
+    >
+      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Mensagens
+          </h2>
+          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            {{ validacao.titulo }}
+          </p>
+        </div>
+        <button
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted)"
+          @click="emit('close')"
+        >
+          <X :size="18" />
+        </button>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; padding: 24px 28px" class="flex flex-col" :style="{ gap: '28px' }">
+        <!-- Composer -->
+        <div class="flex" style="gap: 14px">
+          <div
+            class="flex items-center justify-center"
+            style="
+              width: 40px;
+              height: 40px;
+              border-radius: 9999px;
+              background: var(--gci-base);
+              color: #fff;
+              font-weight: var(--weight-bold);
+              font-size: var(--text-sm);
+              flex-shrink: 0;
+            "
+          >
+            U
+          </div>
+          <div style="flex: 1; min-width: 0">
+            <label style="font-size: var(--text-xs); color: var(--text-muted); font-weight: var(--weight-semibold)">
+              Mensagem
+            </label>
+            <textarea
+              v-model="texto"
+              rows="3"
+              placeholder="Escreva uma mensagem…"
+              :style="{
+                width: '100%',
+                marginTop: '6px',
+                padding: '12px 14px',
+                border: `1px solid ${showRequired ? 'var(--danger-base)' : 'var(--border-default)'}`,
+                borderRadius: 'var(--radius-lg)',
+                outline: 'none',
+                resize: 'vertical',
+                fontSize: 'var(--text-sm)',
+                color: 'var(--text-strong)',
+                background: 'var(--surface-card)',
+                fontFamily: 'inherit',
+              }"
+              @blur="touched = true"
+            />
+            <div class="flex items-center justify-between" style="margin-top: 6px">
+              <span
+                v-if="showRequired"
+                style="font-size: var(--text-xs); color: var(--danger-base); font-weight: var(--weight-semibold)"
+              >
+                Campo obrigatório
+              </span>
+              <span v-else />
+              <span style="font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums">
+                {{ texto.length }}
+              </span>
+            </div>
+
+            <div class="flex items-center justify-between" style="margin-top: 12px; gap: 12px; flex-wrap: wrap">
+              <div class="flex flex-col" style="gap: 8px; min-width: 0">
+                <label
+                  class="flex items-center"
+                  style="gap: 8px; cursor: pointer; color: var(--gci-base); font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.06em"
+                >
+                  <Paperclip :size="15" />
+                  ANEXAR
+                  <input type="file" style="display: none" @change="onFileChange" />
+                </label>
+                <div
+                  v-if="anexoNome"
+                  class="flex items-center"
+                  style="gap: 8px; font-size: var(--text-xs); color: var(--text-muted); max-width: 360px"
+                >
+                  <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+                    Arquivo selecionado: {{ anexoNome }}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Remover anexo"
+                    style="background: none; border: none; cursor: pointer; color: var(--action-danger-text-only); padding: 0; flex-shrink: 0"
+                    @click="removeAnexo"
+                  >
+                    <Trash2 :size="14" />
+                  </button>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn-animated"
+                :class="{ 'btn-primary': canPost }"
+                :disabled="!canPost"
+                :style="{
+                  height: '40px',
+                  padding: '0 20px',
+                  background: canPost ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
+                  color: canPost ? 'var(--action-primary-text)' : 'var(--text-disabled)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-lg)',
+                  cursor: canPost ? 'pointer' : 'not-allowed',
+                  fontWeight: 'var(--weight-bold)',
+                  fontSize: 'var(--text-xs)',
+                  letterSpacing: '0.08em',
+                }"
+                @click="postar"
+              >
+                POSTAR
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div v-if="mensagens.length" style="position: relative; padding-left: 28px">
+          <div
+            style="
+              position: absolute;
+              left: 15px;
+              top: 8px;
+              bottom: 8px;
+              width: 2px;
+              background: var(--border-default);
+            "
+          />
+          <div class="flex flex-col" style="gap: 20px">
+            <div v-for="m in mensagens" :key="m.id" style="position: relative">
+              <div
+                class="flex items-center justify-center"
+                style="
+                  position: absolute;
+                  left: -28px;
+                  top: 0;
+                  width: 32px;
+                  height: 32px;
+                  border-radius: 9999px;
+                  background: var(--gci-base);
+                  color: #fff;
+                "
+              >
+                <MessageSquare :size="14" />
+              </div>
+              <div style="padding-left: 12px">
+                <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: 8px">
+                  De: {{ m.autor }} · {{ m.data }}
+                </div>
+                <div
+                  style="
+                    padding: 14px 16px;
+                    border-radius: var(--radius-lg);
+                    background: color-mix(in srgb, var(--gci-base) 8%, transparent);
+                    border: 1px solid color-mix(in srgb, var(--gci-base) 16%, transparent);
+                  "
+                >
+                  <p style="font-size: var(--text-sm); color: var(--text-strong); margin: 0; line-height: 1.45; white-space: pre-wrap">
+                    {{ m.texto }}
+                  </p>
+                  <div
+                    v-if="m.anexo"
+                    class="flex items-center"
+                    style="
+                      gap: 12px;
+                      margin-top: 12px;
+                      padding: 10px 12px;
+                      background: var(--surface-card);
+                      border: 1px solid var(--border-default);
+                      border-radius: var(--radius-md);
+                    "
+                  >
+                    <FileText :size="18" style="color: var(--gci-base); flex-shrink: 0" />
+                    <div style="flex: 1; min-width: 0">
+                      <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+                        {{ m.anexo.nome }}
+                      </div>
+                      <div style="font-size: var(--text-xs); color: var(--text-muted)">Anexo de mensagem</div>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label="Baixar anexo"
+                      style="background: none; border: none; cursor: pointer; color: var(--gci-base); padding: 4px"
+                    >
+                      <Download :size="16" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          v-else
+          style="padding: 24px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+        >
+          Nenhuma mensagem ainda. Seja o primeiro a postar.
+        </div>
       </div>
     </div>
   </div>

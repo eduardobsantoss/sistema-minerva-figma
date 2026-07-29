@@ -34,6 +34,8 @@ import TransferirContaBancariaModal from '../components/modals/TransferirContaBa
 import MesclarAtivosPedidosModal from '../components/modals/MesclarAtivosPedidosModal.vue';
 import GerarBoletimSubscricaoModal from '../components/modals/GerarBoletimSubscricaoModal.vue';
 import GerarTermoEndossoModal from '../components/modals/GerarTermoEndossoModal.vue';
+import ControleOperacoesModal from '../components/modals/ControleOperacoesModal.vue';
+import MensagensValidacaoModal from '../components/modals/MensagensValidacaoModal.vue';
 import InserirEvidenciaModal from '../components/modals/InserirEvidenciaModal.vue';
 import DetalheEvidenciaModal from '../components/modals/DetalheEvidenciaModal.vue';
 import DetalheValidacaoModal from '../components/modals/DetalheValidacaoModal.vue';
@@ -75,11 +77,15 @@ const showTransferirConta = ref(false);
 const showMesclarAtivos = ref(false);
 const showBoletimSubscricao = ref(false);
 const showTermoEndosso = ref(false);
+const showControleOperacoes = ref(false);
+const showMensagensValidacao = ref(false);
 const showInserirEvidencia = ref(false);
 const showDetalheEvidencia = ref(false);
 const showDetalheValidacao = ref(false);
 const validacaoEvidenciaCtx = ref<ItemValidacao | null>(null);
 const validacaoDetalheCtx = ref<ItemValidacao | null>(null);
+const validacaoOperacoesCtx = ref<ItemValidacao | null>(null);
+const validacaoMensagensCtx = ref<ItemValidacao | null>(null);
 const selectedParte = ref<ParteRelacionada | null>(null);
 const selectedAtivo = ref<ContratoAtivo | null>(null);
 const ativosAcao = ref<ContratoAtivo[]>([]);
@@ -102,6 +108,16 @@ function openVerEvidencia(v: ItemValidacao) {
 function openVerDetalhes(v: ItemValidacao) {
   validacaoDetalheCtx.value = v;
   showDetalheValidacao.value = true;
+}
+
+function openControleOperacoes(v: ItemValidacao) {
+  validacaoOperacoesCtx.value = v;
+  showControleOperacoes.value = true;
+}
+
+function openMensagensValidacao(v: ItemValidacao) {
+  validacaoMensagensCtx.value = v;
+  showMensagensValidacao.value = true;
 }
 
 function handleAutorizar(v: ItemValidacao) {
@@ -285,6 +301,8 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
     @ver-evidencia="openVerEvidencia"
     @autorizar="handleAutorizar"
     @ver-detalhes="openVerDetalhes"
+    @habilitar-operacoes="openControleOperacoes"
+    @mensagens="openMensagensValidacao"
   />
   <ParteRelacionadaDetailView
     v-else-if="subView === 'parte-detalhe' && selectedParte"
@@ -402,6 +420,8 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
         @ver-evidencia="openVerEvidencia"
         @autorizar="handleAutorizar"
         @ver-detalhes="openVerDetalhes"
+        @habilitar-operacoes="openControleOperacoes"
+        @mensagens="openMensagensValidacao"
       />
       <AnexosTab v-else-if="tab === 'anexos'" :det="det" />
       <AtaTab v-else-if="tab === 'ata'" />
@@ -520,6 +540,18 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
       v-if="showDetalheValidacao && validacaoDetalheCtx"
       :v="validacaoDetalheCtx"
       @close="showDetalheValidacao = false; validacaoDetalheCtx = null"
+    />
+
+    <ControleOperacoesModal
+      v-if="showControleOperacoes && validacaoOperacoesCtx"
+      :validacao="validacaoOperacoesCtx"
+      @close="showControleOperacoes = false; validacaoOperacoesCtx = null"
+    />
+
+    <MensagensValidacaoModal
+      v-if="showMensagensValidacao && validacaoMensagensCtx"
+      :validacao="validacaoMensagensCtx"
+      @close="showMensagensValidacao = false; validacaoMensagensCtx = null"
     />
   </div>
 </template>

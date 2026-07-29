@@ -145,6 +145,8 @@ const SECTIONS = [
       'components/modals/MesclarAtivosPedidosModal.vue',
       'components/modals/GerarBoletimSubscricaoModal.vue',
       'components/modals/GerarTermoEndossoModal.vue',
+      'components/modals/ControleOperacoesModal.vue',
+      'components/modals/MensagensValidacaoModal.vue',
       'components/modals/ProrrogarVencimentoModal.vue',
       'components/modals/ConfirmarTituloModal.vue',
       'components/modals/EditarValorOperacaoModal.vue',

@@ -14,6 +14,8 @@ const emit = defineEmits<{
   verEvidencia: [v: ItemValidacao];
   autorizar: [v: ItemValidacao];
   verDetalhes: [v: ItemValidacao];
+  habilitarOperacoes: [v: ItemValidacao];
+  mensagens: [v: ItemValidacao];
 }>();
 
 const naoAprovadas = computed(() => props.det.validacoes.filter((v) => v.status === 'NAO_OK'));
@@ -66,6 +68,8 @@ const aprovadas = computed(() =>
           @ver-evidencia="emit('verEvidencia', $event)"
           @autorizar="emit('autorizar', $event)"
           @ver-detalhes="emit('verDetalhes', $event)"
+          @habilitar-operacoes="emit('habilitarOperacoes', $event)"
+          @mensagens="emit('mensagens', $event)"
         />
       </div>
     </Section>
@@ -79,6 +83,8 @@ const aprovadas = computed(() =>
           @ver-evidencia="emit('verEvidencia', $event)"
           @autorizar="emit('autorizar', $event)"
           @ver-detalhes="emit('verDetalhes', $event)"
+          @habilitar-operacoes="emit('habilitarOperacoes', $event)"
+          @mensagens="emit('mensagens', $event)"
         />
       </div>
     </Section>
@@ -92,6 +98,8 @@ const aprovadas = computed(() =>
           @ver-evidencia="emit('verEvidencia', $event)"
           @autorizar="emit('autorizar', $event)"
           @ver-detalhes="emit('verDetalhes', $event)"
+          @habilitar-operacoes="emit('habilitarOperacoes', $event)"
+          @mensagens="emit('mensagens', $event)"
         />
       </div>
     </Section>
