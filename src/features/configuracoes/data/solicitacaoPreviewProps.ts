@@ -763,6 +763,57 @@ export function resolvePreview(relPath: string, name: string): PreviewConfig {
     };
   }
 
+  if (path.endsWith('MesclarAtivosPedidosModal.vue')) {
+    return {
+      props: {
+        pedidoOrigemId: sampleSolicitacao.id,
+        ativos: sampleDet.ativos,
+      },
+      frame: 'modal',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nimport { solicitacoes, detalheSolicitacao } from '../../data/operacaoData';\nconst open = ref(true);\nconst s = solicitacoes[0];\nconst ativos = detalheSolicitacao(s).ativos;`,
+        `  <${name} v-if="open" :pedido-origem-id="s.id" :ativos="ativos" @close="open = false" />`,
+      ),
+    };
+  }
+
+  if (
+    path.endsWith('GerarBoletimSubscricaoModal.vue') ||
+    path.endsWith('GerarTermoEndossoModal.vue')
+  ) {
+    const solicitacaoNc =
+      solicitacoes.find((s) => s.tipoContrato === 'NC') ?? sampleSolicitacao;
+    const solicitacaoCcb =
+      solicitacoes.find((s) => s.tipoContrato === 'CCB') ?? sampleSolicitacao;
+    const solicitacao = path.endsWith('GerarBoletimSubscricaoModal.vue')
+      ? solicitacaoNc
+      : solicitacaoCcb;
+    return {
+      props: { solicitacao },
+      frame: 'modal',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nimport { solicitacoes } from '../../data/operacaoData';\nconst open = ref(true);\nconst solicitacao = solicitacoes.find((s) => s.tipoContrato === '${solicitacao.tipoContrato}') ?? solicitacoes[0];`,
+        `  <${name} v-if="open" :solicitacao="solicitacao" @close="open = false" />`,
+      ),
+    };
+  }
+
+  if (
+    path.endsWith('ControleOperacoesModal.vue') ||
+    path.endsWith('MensagensValidacaoModal.vue')
+  ) {
+    const validacaoControle =
+      sampleDet.validacoes.find((v) => v.controleOperacoes) ?? sampleValidacao;
+    return {
+      props: { validacao: validacaoControle },
+      frame: 'modal',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nimport { solicitacoes, detalheSolicitacao } from '../../data/operacaoData';\nconst open = ref(true);\nconst validacao = detalheSolicitacao(solicitacoes[0]).validacoes.find((v) => v.controleOperacoes) ?? detalheSolicitacao(solicitacoes[0]).validacoes[0];`,
+        `  <${name} v-if="open" :validacao="validacao" @close="open = false" />`,
+      ),
+    };
+  }
+
   // ── Minuta (defineModel + props obrigatórias) ──────────────────────────
   if (path.endsWith('SpouseFields.vue')) {
     return {

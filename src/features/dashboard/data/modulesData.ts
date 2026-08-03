@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Receipt,
   ClipboardList,
+  Search,
 } from 'lucide-vue-next';
 
 export type Tone = 'info' | 'success' | 'warning' | 'danger' | 'accent';
@@ -88,6 +89,12 @@ export const modules: ModuleItem[] = [
     description: 'Monitoramento de exposição, alertas e métricas de risco operacional.',
     icon: AlertCircle,
     tone: 'accent',
+  },
+  {
+    title: 'Serasa',
+    description: 'Consulta de crédito por CPF/CNPJ com score, restrições, protestos e processos judiciais.',
+    icon: Search,
+    tone: 'info',
   },
 ];
 
