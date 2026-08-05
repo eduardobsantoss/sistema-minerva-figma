@@ -1222,12 +1222,13 @@ import { computed, reactive, ref } from 'vue';
 import type { Component } from 'vue';
 import {
   ArrowLeft, FileText, Boxes, ShieldCheck, CheckCircle2, Paperclip,
-  MessageSquare, Activity, ChevronRight,
+  MessageSquare, Activity, ChevronRight, Layers,
 } from 'lucide-vue-next';
 import {
   etapaCor, etapaLabel, esteiraLabel, detalheSolicitacao,
   type Solicitacao, type ParteRelacionada, type ContratoAtivo, type Esteira, type ItemValidacao,
 } from '../data/operacaoData';
+import { isDescontoDuplicataTipo } from '../data/lotesProcessamentoData';
 import { CONTAS_BANCARIAS_MOCK } from '../data/minutaData';
 import { enriquecerContratoAtivo } from '../data/ativoData';
 import { CopyButton } from './detail-tabs/shared';
@@ -1235,6 +1236,7 @@ import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import DadosGeraisTab from './detail-tabs/DadosGeraisTab.vue';
 import AtivosTab from './detail-tabs/AtivosTab.vue';
 import GarantiasTab from './detail-tabs/GarantiasTab.vue';
+import LotesProcessamentoTab from './detail-tabs/LotesProcessamentoTab.vue';
 import { ValidacoesTab, ValidacoesFullView } from './detail-tabs/ValidacoesTab';
 import AnexosTab from './detail-tabs/AnexosTab.vue';
 import AtaTab from './detail-tabs/AtaTab.vue';
@@ -1268,15 +1270,21 @@ const emit = defineEmits<{ back: [] }>();
 type Tab = 'gerais' | 'ativos' | 'garantias' | 'validacoes' | 'anexos' | 'ata' | 'historico';
 type SubView = null | 'validacoes-detalhe' | 'parte-detalhe' | 'ativo-detalhe';
 
-const TABS: { key: Tab; label: string; icon: Component }[] = [
+const isDescontoDuplicata = computed(() => isDescontoDuplicataTipo(props.solicitacao.tipoOperacao));
+
+const TABS = computed<{ key: Tab; label: string; icon: Component }[]>(() => [
   { key: 'gerais', label: 'Dados Gerais', icon: FileText },
   { key: 'ativos', label: 'Ativos', icon: Boxes },
-  { key: 'garantias', label: 'Garantias', icon: ShieldCheck },
+  {
+    key: 'garantias',
+    label: isDescontoDuplicata.value ? 'Lotes em Processamento' : 'Garantias',
+    icon: isDescontoDuplicata.value ? Layers : ShieldCheck,
+  },
   { key: 'validacoes', label: 'Validações', icon: CheckCircle2 },
   { key: 'anexos', label: 'Anexos', icon: Paperclip },
   { key: 'ata', label: 'Ata de Deliberação', icon: MessageSquare },
   { key: 'historico', label: 'Histórico', icon: Activity },
-];
+]);
 
 const tab = ref<Tab>('gerais');
 const subView = ref<SubView>(null);
@@ -1630,6 +1638,7 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
         @prorrogar="handleProrrogar"
         @confirmar="handleConfirmar"
       />
+      <LotesProcessamentoTab v-else-if="tab === 'garantias' && isDescontoDuplicata" />
       <GarantiasTab v-else-if="tab === 'garantias'" :det="det" />
       <ValidacoesTab
         v-else-if="tab === 'validacoes'"
@@ -4877,6 +4886,690 @@ function onSave(g: GarantiaOperacao) {
 </template>
 ```
 
+## Detalhe / Lotes em Processamento
+
+### LotesProcessamentoTab
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import {
+  Layers, AlertTriangle, Files, CheckCircle2, Clock, XCircle, Loader2,
+} from 'lucide-vue-next';
+import {
+  LOTE_STATUS_LABEL,
+  LOTE_STATUS_TONE,
+  seedLotesProcessamento,
+  type LoteProcessamento,
+} from '../../data/lotesProcessamentoData';
+import { Section, EmptyState } from './shared';
+import VerArquivosLoteModal from '../../components/modals/VerArquivosLoteModal.vue';
+import VerErrosLoteModal from '../../components/modals/VerErrosLoteModal.vue';
+
+const lotes = ref(seedLotesProcessamento());
+const hoveredId = ref<string | null>(null);
+const loteArquivos = ref<LoteProcessamento | null>(null);
+const loteErros = ref<LoteProcessamento | null>(null);
+
+function openArquivos(lote: LoteProcessamento) {
+  loteArquivos.value = lote;
+}
+
+function openErros(lote: LoteProcessamento) {
+  loteErros.value = lote;
+}
+</script>
+
+<template>
+  <Section title="Lotes em Processamento">
+    <EmptyState
+      v-if="lotes.length === 0"
+      :icon="Layers"
+      title="Nenhum lote em processamento"
+      hint="Os lotes de arquivos XML enviados nesta solicitação aparecerão aqui."
+    />
+
+    <div
+      v-else
+      class="grid"
+      style="
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+      "
+    >
+      <div
+        v-for="lote in lotes"
+        :key="lote.id"
+        class="flex flex-col"
+        :style="{
+          gap: '16px',
+          padding: '22px',
+          background: 'var(--surface-card)',
+          border: `1px solid ${hoveredId === lote.id ? 'rgba(242,125,38,0.30)' : 'var(--border-default)'}`,
+          borderRadius: 'var(--radius-xl)',
+          boxShadow:
+            hoveredId === lote.id
+              ? '0 20px 40px -16px rgba(8,60,74,0.10)'
+              : 'none',
+          transform: hoveredId === lote.id ? 'translateY(-4px)' : 'translateY(0)',
+          transition:
+            'transform var(--duration-base) var(--ease-standard), box-shadow var(--duration-base), border-color var(--duration-base)',
+        }"
+        @mouseenter="hoveredId = lote.id"
+        @mouseleave="hoveredId = null"
+      >
+        <div class="flex items-start justify-between" style="gap: 12px">
+          <div
+            class="flex items-center justify-center"
+            style="
+              width: 42px;
+              height: 42px;
+              border-radius: var(--radius-lg);
+              background: var(--accent-bg);
+              color: var(--accent);
+              flex-shrink: 0;
+            "
+          >
+            <Layers :size="20" />
+          </div>
+          <span
+            style="
+              display: inline-flex;
+              align-items: center;
+              height: 24px;
+              padding: 0 10px;
+              border-radius: var(--radius-sm);
+              font-size: 10px;
+              font-weight: var(--weight-bold);
+              letter-spacing: 0.06em;
+              text-transform: uppercase;
+              white-space: nowrap;
+            "
+            :style="{
+              background: LOTE_STATUS_TONE[lote.status].bg,
+              color: LOTE_STATUS_TONE[lote.status].fg,
+            }"
+          >
+            {{ LOTE_STATUS_LABEL[lote.status] }}
+          </span>
+        </div>
+
+        <div>
+          <div
+            style="
+              font-size: 10px;
+              font-weight: var(--weight-bold);
+              letter-spacing: 0.1em;
+              color: var(--accent);
+              text-transform: uppercase;
+              margin-bottom: 6px;
+            "
+          >
+            Lote
+          </div>
+          <div
+            style="
+              font-size: var(--text-sm);
+              font-weight: var(--weight-bold);
+              color: var(--text-strong);
+              line-height: 1.35;
+            "
+          >
+            {{ lote.nome }}
+          </div>
+        </div>
+
+        <div
+          class="grid"
+          style="
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            padding: 12px;
+            background: var(--surface-sunken);
+            border-radius: var(--radius-lg);
+          "
+        >
+          <div class="flex flex-col" style="gap: 2px; align-items: center">
+            <Files :size="13" style="color: var(--text-muted)" />
+            <div style="font-size: var(--text-md); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
+              {{ lote.total }}
+            </div>
+            <div style="font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.06em; color: var(--text-muted); text-transform: uppercase">
+              Total
+            </div>
+          </div>
+          <div class="flex flex-col" style="gap: 2px; align-items: center">
+            <CheckCircle2 :size="13" style="color: var(--status-success-text)" />
+            <div style="font-size: var(--text-md); font-weight: var(--weight-bold); color: var(--status-success-text); font-variant-numeric: tabular-nums">
+              {{ lote.processados }}
+            </div>
+            <div style="font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.06em; color: var(--text-muted); text-transform: uppercase">
+              Processados
+            </div>
+          </div>
+          <div class="flex flex-col" style="gap: 2px; align-items: center">
+            <component
+              :is="lote.pendentes > 0 && lote.status === 'PROCESSANDO' ? Loader2 : Clock"
+              :size="13"
+              style="color: var(--text-muted)"
+            />
+            <div style="font-size: var(--text-md); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
+              {{ lote.pendentes }}
+            </div>
+            <div style="font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.06em; color: var(--text-muted); text-transform: uppercase">
+              Pendentes
+            </div>
+          </div>
+          <div class="flex flex-col" style="gap: 2px; align-items: center">
+            <XCircle :size="13" style="color: var(--status-danger-text)" />
+            <div style="font-size: var(--text-md); font-weight: var(--weight-bold); color: var(--status-danger-text); font-variant-numeric: tabular-nums">
+              {{ lote.falhas }}
+            </div>
+            <div style="font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.06em; color: var(--text-muted); text-transform: uppercase">
+              Falhas
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center" style="gap: 8px; margin-top: auto">
+          <button
+            type="button"
+            class="flex items-center"
+            style="
+              flex: 1;
+              gap: 6px;
+              height: 36px;
+              justify-content: center;
+              padding: 0 12px;
+              border-radius: var(--radius-md);
+              border: 1px solid var(--border-default);
+              background: var(--surface-card);
+              cursor: pointer;
+              font-size: var(--text-xs);
+              font-weight: var(--weight-bold);
+            "
+            :style="{
+              color: lote.falhas > 0 ? 'var(--action-danger-text-only)' : 'var(--text-muted)',
+              opacity: lote.falhas > 0 ? 1 : 0.55,
+              cursor: lote.falhas > 0 ? 'pointer' : 'not-allowed',
+            }"
+            :disabled="lote.falhas === 0"
+            @click="openErros(lote)"
+          >
+            <AlertTriangle :size="13" /> Ver Erros
+          </button>
+          <button
+            type="button"
+            class="flex items-center"
+            style="
+              flex: 1;
+              gap: 6px;
+              height: 36px;
+              justify-content: center;
+              padding: 0 12px;
+              border-radius: var(--radius-md);
+              border: 1px solid var(--border-default);
+              background: var(--surface-card);
+              cursor: pointer;
+              font-size: var(--text-xs);
+              font-weight: var(--weight-bold);
+              color: var(--text-strong);
+            "
+            @click="openArquivos(lote)"
+          >
+            <Files :size="13" /> Ver Arquivos
+          </button>
+        </div>
+      </div>
+    </div>
+  </Section>
+
+  <VerArquivosLoteModal
+    v-if="loteArquivos"
+    :lote="loteArquivos"
+    @close="loteArquivos = null"
+  />
+
+  <VerErrosLoteModal
+    v-if="loteErros"
+    :lote="loteErros"
+    @close="loteErros = null"
+  />
+</template>
+```
+
+### VerArquivosLoteModal
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import { X, ArrowLeft, FileCode2 } from 'lucide-vue-next';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
+import {
+  ARQUIVO_STATUS_LABEL,
+  ARQUIVO_STATUS_TONE,
+  type ArquivoLote,
+  type LoteProcessamento,
+} from '../../data/lotesProcessamentoData';
+
+const props = defineProps<{ lote: LoteProcessamento }>();
+const emit = defineEmits<{ close: [] }>();
+
+const selected = ref<ArquivoLote | null>(null);
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => props.lote.arquivos,
+  { defaultPageSize: 10 },
+);
+</script>
+
+<template>
+  <div
+    style="
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(8, 60, 74, 0.55);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    "
+    @click.self="emit('close')"
+  >
+    <div
+      style="
+        width: 100%;
+        max-width: 820px;
+        max-height: calc(100vh - 64px);
+        background: var(--surface-card);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      "
+      @click.stop
+    >
+      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default); gap: 16px">
+        <div class="flex items-start" style="gap: 16px; min-width: 0; flex: 1">
+          <button
+            v-if="selected"
+            type="button"
+            aria-label="Voltar"
+            class="flex items-center justify-center"
+            style="
+              width: 48px;
+              height: 48px;
+              border-radius: var(--radius-lg);
+              background: var(--surface-card);
+              border: 1px solid var(--border-default);
+              cursor: pointer;
+              color: var(--text-strong);
+              flex-shrink: 0;
+            "
+            @click="selected = null"
+          >
+            <ArrowLeft :size="20" />
+          </button>
+          <div style="min-width: 0">
+            <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong); line-height: 1.3">
+              {{ selected ? 'Detalhes do arquivo' : 'Arquivos do lote' }}
+            </h2>
+            <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+              {{ selected ? selected.nome : lote.nome }}
+            </p>
+          </div>
+        </div>
+        <button
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
+          @click="emit('close')"
+        >
+          <X :size="18" />
+        </button>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; padding: 24px 28px">
+        <!-- Lista em tabela -->
+        <div
+          v-if="!selected"
+          style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden"
+        >
+          <div
+            class="grid"
+            style="
+              grid-template-columns: 1.6fr 0.7fr 1fr;
+              padding: 12px 16px;
+              background: var(--surface-sunken);
+              font-size: 10px;
+              font-weight: var(--weight-bold);
+              letter-spacing: 0.12em;
+              color: var(--text-muted);
+              text-transform: uppercase;
+            "
+          >
+            <div>Nome do arquivo</div>
+            <div>Status</div>
+            <div>Processado em</div>
+          </div>
+          <button
+            v-for="arq in pageItems"
+            :key="arq.id"
+            type="button"
+            class="grid items-center row-btn"
+            style="
+              width: 100%;
+              grid-template-columns: 1.6fr 0.7fr 1fr;
+              padding: 14px 16px;
+              border: none;
+              border-top: 1px solid var(--border-default);
+              background: transparent;
+              cursor: pointer;
+              text-align: left;
+              font-size: var(--text-sm);
+              color: var(--text-default);
+            "
+            @click="selected = arq"
+          >
+            <div class="flex items-center" style="gap: 10px; min-width: 0">
+              <FileCode2 :size="16" style="color: var(--text-muted); flex-shrink: 0" />
+              <span style="font-weight: var(--weight-semibold); color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+                {{ arq.nome }}
+              </span>
+            </div>
+            <div>
+              <span
+                class="badge"
+                :style="{
+                  background: ARQUIVO_STATUS_TONE[arq.status].bg,
+                  color: ARQUIVO_STATUS_TONE[arq.status].fg,
+                }"
+              >
+                {{ ARQUIVO_STATUS_LABEL[arq.status] }}
+              </span>
+            </div>
+            <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">
+              {{ arq.processadoEm ?? '—' }}
+            </div>
+          </button>
+          <TablePagination
+            v-if="lote.arquivos.length > 0"
+            sunken
+            compact
+            :total="total"
+            :page="page"
+            :page-size="pageSize"
+            @update:page="setPage"
+            @update:page-size="setPageSize"
+          />
+        </div>
+
+        <!-- Detalhe do arquivo -->
+        <div v-else class="flex flex-col" style="gap: 16px">
+          <div class="flex items-center" style="gap: 10px; flex-wrap: wrap">
+            <span
+              class="badge"
+              :style="{
+                background: ARQUIVO_STATUS_TONE[selected.status].bg,
+                color: ARQUIVO_STATUS_TONE[selected.status].fg,
+              }"
+            >
+              {{ ARQUIVO_STATUS_LABEL[selected.status] }}
+            </span>
+            <span style="font-size: var(--text-xs); color: var(--text-muted)">
+              {{ selected.processadoEm ? `Processado em ${selected.processadoEm}` : 'Ainda não processado' }}
+            </span>
+          </div>
+
+          <div
+            class="grid"
+            style="
+              grid-template-columns: 1fr 1fr;
+              gap: 14px;
+              padding: 18px;
+              background: var(--surface-sunken);
+              border-radius: var(--radius-lg);
+              border: 1px solid var(--border-default);
+            "
+          >
+            <div>
+              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">Arquivo</div>
+              <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); word-break: break-all">{{ selected.nome }}</div>
+            </div>
+            <div>
+              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">Tamanho</div>
+              <div style="font-size: var(--text-sm); color: var(--text-default)">{{ selected.tamanho }}</div>
+            </div>
+            <div>
+              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">Nº NF</div>
+              <div style="font-size: var(--text-sm); color: var(--text-default)">{{ selected.numeroNf }}</div>
+            </div>
+            <div>
+              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">Valor</div>
+              <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">{{ selected.valor }}</div>
+            </div>
+            <div style="grid-column: 1 / -1">
+              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">Chave NFe</div>
+              <div style="font-size: var(--text-xs); color: var(--text-default); font-family: ui-monospace, monospace; word-break: break-all">{{ selected.chaveNfe }}</div>
+            </div>
+            <div>
+              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">Emitente</div>
+              <div style="font-size: var(--text-sm); color: var(--text-default)">{{ selected.emitente }}</div>
+            </div>
+            <div>
+              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">Destinatário</div>
+              <div style="font-size: var(--text-sm); color: var(--text-default)">{{ selected.destinatario }}</div>
+            </div>
+          </div>
+
+          <div v-if="selected.erros.length > 0" class="flex flex-col" style="gap: 8px">
+            <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--status-danger-text); text-transform: uppercase">
+              Erros ({{ selected.erros.length }})
+            </div>
+            <div
+              v-for="(erro, i) in selected.erros"
+              :key="i"
+              style="
+                padding: 12px 14px;
+                background: var(--status-danger-bg);
+                border-radius: var(--radius-md);
+                font-size: var(--text-sm);
+                color: var(--status-danger-text);
+                line-height: 1.45;
+              "
+            >
+              {{ erro }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.row-btn {
+  transition: background var(--duration-fast);
+}
+
+.row-btn:hover {
+  background: var(--surface-sunken);
+}
+</style>
+```
+
+### VerErrosLoteModal
+
+```vue
+<script setup lang="ts">
+import { computed } from 'vue';
+import { X, AlertTriangle, FileCode2 } from 'lucide-vue-next';
+import type { LoteProcessamento } from '../../data/lotesProcessamentoData';
+
+const props = defineProps<{ lote: LoteProcessamento }>();
+const emit = defineEmits<{ close: [] }>();
+
+/** Arquivos com falha — até 3 erros por arquivo para ilustração. */
+const arquivosComErro = computed(() =>
+  props.lote.arquivos
+    .filter((a) => a.status === 'FALHA' && a.erros.length > 0)
+    .map((a) => ({ ...a, erros: a.erros.slice(0, 3) })),
+);
+</script>
+
+<template>
+  <div
+    style="
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(8, 60, 74, 0.55);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    "
+    @click.self="emit('close')"
+  >
+    <div
+      style="
+        width: 100%;
+        max-width: 640px;
+        max-height: calc(100vh - 64px);
+        background: var(--surface-card);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      "
+      @click.stop
+    >
+      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
+        <div style="min-width: 0; padding-right: 12px">
+          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong); line-height: 1.3">
+            Erros do lote
+          </h2>
+          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            {{ lote.nome }} · {{ arquivosComErro.length }} arquivo{{ arquivosComErro.length === 1 ? '' : 's' }} com falha
+          </p>
+        </div>
+        <button
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
+          @click="emit('close')"
+        >
+          <X :size="18" />
+        </button>
+      </div>
+
+      <div class="flex flex-col" style="flex: 1; overflow-y: auto; padding: 24px 28px; gap: 16px">
+        <div
+          v-if="arquivosComErro.length === 0"
+          style="
+            padding: 32px 24px;
+            text-align: center;
+            background: var(--surface-sunken);
+            border-radius: var(--radius-lg);
+            border: 1px dashed var(--border-default);
+            color: var(--text-muted);
+            font-size: var(--text-sm);
+          "
+        >
+          Nenhum erro encontrado neste lote.
+        </div>
+
+        <div
+          v-for="arq in arquivosComErro"
+          :key="arq.id"
+          style="
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            background: var(--surface-card);
+          "
+        >
+          <div
+            class="flex items-center"
+            style="
+              gap: 10px;
+              padding: 14px 16px;
+              background: var(--surface-sunken);
+              border-bottom: 1px solid var(--border-default);
+            "
+          >
+            <FileCode2 :size="16" style="color: var(--text-muted); flex-shrink: 0" />
+            <div style="min-width: 0; flex: 1">
+              <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+                {{ arq.nome }}
+              </div>
+              <div v-if="arq.processadoEm" style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">
+                Processado em {{ arq.processadoEm }}
+              </div>
+            </div>
+            <span
+              style="
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                height: 22px;
+                padding: 0 8px;
+                border-radius: var(--radius-sm);
+                background: var(--status-danger-bg);
+                color: var(--status-danger-text);
+                font-size: 10px;
+                font-weight: var(--weight-bold);
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                flex-shrink: 0;
+              "
+            >
+              <AlertTriangle :size="11" /> Falha
+            </span>
+          </div>
+
+          <div class="flex flex-col" style="padding: 12px 16px; gap: 8px">
+            <div
+              v-for="(erro, i) in arq.erros"
+              :key="i"
+              style="
+                padding: 10px 12px;
+                background: var(--status-danger-bg);
+                border-radius: var(--radius-md);
+                font-size: var(--text-sm);
+                color: var(--status-danger-text);
+                line-height: 1.45;
+              "
+            >
+              {{ erro }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
 ## Detalhe / Validações
 
 ### ValidacoesTab
@@ -5218,16 +5911,28 @@ const kpis = computed(() => [
 
 ```vue
 <script setup lang="ts">
-import { AlertCircle, CheckCircle2, XCircle, Clock, Loader2, Send, Eye, ListTree, SlidersHorizontal, MessageSquare } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+import {
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Loader2,
+  Send,
+  Eye,
+  ListTree,
+  SlidersHorizontal,
+  MessageSquare,
+  MoreVertical,
+} from 'lucide-vue-next';
 import type { Component } from 'vue';
 import {
   VALIDACAO_STATUS_LABEL,
   type ValidacaoStatus,
   type ItemValidacao,
 } from '../../../data/operacaoData';
-import { GhostButton } from '../shared';
 
-defineProps<{ v: ItemValidacao }>();
+const props = defineProps<{ v: ItemValidacao }>();
 const emit = defineEmits<{
   verEvidencia: [v: ItemValidacao];
   autorizar: [v: ItemValidacao];
@@ -5235,6 +5940,9 @@ const emit = defineEmits<{
   habilitarOperacoes: [v: ItemValidacao];
   mensagens: [v: ItemValidacao];
 }>();
+
+const open = ref(false);
+const rootRef = ref<HTMLDivElement | null>(null);
 
 const valTone: Record<ValidacaoStatus, { bg: string; fg: string; icon: Component }> = {
   PENDENTE: { bg: 'var(--surface-sunken)', fg: 'var(--text-muted)', icon: Clock },
@@ -5244,19 +5952,79 @@ const valTone: Record<ValidacaoStatus, { bg: string; fg: string; icon: Component
   EXCECAO: { bg: 'var(--status-warning-bg)', fg: 'var(--status-warning-text)', icon: AlertCircle },
 };
 
-const iconBtnStyle = {
-  width: '36px',
-  height: '36px',
-  borderRadius: '9999px',
-  border: '1px solid var(--border-default)',
-  background: 'var(--surface-card)',
-  cursor: 'pointer',
-  color: 'var(--text-muted)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '0',
+type MenuAction = {
+  key: string;
+  label: string;
+  icon: Component;
+  run: () => void;
 };
+
+const menuActions = computed<MenuAction[]>(() => {
+  const v = props.v;
+  const items: MenuAction[] = [];
+
+  if (v.controleOperacoes) {
+    items.push({
+      key: 'habilitar',
+      label: 'Habilitar operações',
+      icon: SlidersHorizontal,
+      run: () => emit('habilitarOperacoes', v),
+    });
+  } else {
+    if (v.erros?.length) {
+      items.push({
+        key: 'detalhes',
+        label: 'Ver detalhes',
+        icon: ListTree,
+        run: () => emit('verDetalhes', v),
+      });
+    }
+    if (v.exigeAutorizacao) {
+      items.push({
+        key: 'solicitar',
+        label: 'Solicitar autorização',
+        icon: Send,
+        run: () => {},
+      });
+      if (v.evidencia) {
+        items.push({
+          key: 'evidencia',
+          label: 'Ver evidência',
+          icon: Eye,
+          run: () => emit('verEvidencia', v),
+        });
+      }
+      items.push({
+        key: 'autorizar',
+        label: 'Autorizar',
+        icon: CheckCircle2,
+        run: () => emit('autorizar', v),
+      });
+    }
+  }
+
+  // Mensagens — disponível em todas as validações
+  items.push({
+    key: 'mensagens',
+    label: 'Mensagens',
+    icon: MessageSquare,
+    run: () => emit('mensagens', v),
+  });
+
+  return items;
+});
+
+function handleDocClick(e: MouseEvent) {
+  if (rootRef.value && !rootRef.value.contains(e.target as Node)) open.value = false;
+}
+
+function handleAction(a: MenuAction) {
+  open.value = false;
+  a.run();
+}
+
+onMounted(() => document.addEventListener('mousedown', handleDocClick));
+onUnmounted(() => document.removeEventListener('mousedown', handleDocClick));
 </script>
 
 <template>
@@ -5320,65 +6088,80 @@ const iconBtnStyle = {
           <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 3px">{{ v.descricao }}</div>
         </div>
       </div>
-      <div class="flex items-center" style="gap: 8px; flex-shrink: 0">
-        <!-- Controle de operações: só Habilitar + Mensagens -->
-        <template v-if="v.controleOperacoes">
-          <button
-            type="button"
-            title="Habilitar operações"
-            aria-label="Habilitar operações"
-            :style="iconBtnStyle"
-            @click="emit('habilitarOperacoes', v)"
-          >
-            <SlidersHorizontal :size="16" />
-          </button>
-          <button
-            type="button"
-            title="Mensagens"
-            aria-label="Mensagens"
-            :style="iconBtnStyle"
-            @click="emit('mensagens', v)"
-          >
-            <MessageSquare :size="16" />
-          </button>
-        </template>
 
-        <template v-else>
-          <GhostButton
-            v-if="v.erros?.length"
-            :icon="ListTree"
-            @click="emit('verDetalhes', v)"
+      <div ref="rootRef" style="position: relative; flex-shrink: 0">
+        <button
+          type="button"
+          aria-label="Ações"
+          class="flex items-center"
+          style="
+            gap: 8px;
+            height: 38px;
+            padding: 0 14px;
+            background: var(--surface-card);
+            color: var(--text-strong);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            font-weight: var(--weight-bold);
+            font-size: var(--text-xs);
+            letter-spacing: 0.06em;
+          "
+          @click="open = !open"
+        >
+          <MoreVertical :size="15" />
+          Ações
+        </button>
+        <div
+          v-if="open"
+          class="flex flex-col"
+          style="
+            position: absolute;
+            top: 44px;
+            right: 0;
+            z-index: 50;
+            min-width: 220px;
+            background: var(--surface-card);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 20px 48px -16px rgba(8, 60, 74, 0.28);
+            padding: 6px;
+          "
+        >
+          <button
+            v-for="a in menuActions"
+            :key="a.key"
+            type="button"
+            class="flex items-center action-item"
+            style="
+              gap: 10px;
+              padding: 10px 12px;
+              background: none;
+              border: none;
+              cursor: pointer;
+              border-radius: var(--radius-md);
+              text-align: left;
+              font-size: var(--text-sm);
+              font-weight: var(--weight-semibold);
+              color: var(--text-default);
+              width: 100%;
+            "
+            @click="handleAction(a)"
           >
-            Ver detalhes
-          </GhostButton>
-          <template v-if="v.exigeAutorizacao">
-            <GhostButton :icon="Send">Solicitar autorização</GhostButton>
-            <GhostButton v-if="v.evidencia" :icon="Eye" @click="emit('verEvidencia', v)">Ver evidência</GhostButton>
-            <button
-              class="flex items-center"
-              style="
-                gap: 6px;
-                height: 38px;
-                padding: 0 16px;
-                background: var(--action-primary-bg);
-                color: var(--action-primary-text);
-                border: none;
-                border-radius: var(--radius-lg);
-                cursor: pointer;
-                font-weight: var(--weight-bold);
-                font-size: var(--text-xs);
-                letter-spacing: 0.06em;
-              "
-              @click="emit('autorizar', v)"
-            >
-              <CheckCircle2 :size="15" /> Autorizar
-            </button>
-          </template>
-        </template>
+            <component :is="a.icon" :size="16" style="color: var(--text-muted); flex-shrink: 0" />
+            {{ a.label }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.action-item:hover {
+  background: var(--surface-sunken);
+}
+</style>
 ```
 
 ## Detalhe / Anexos · Ata · Histórico

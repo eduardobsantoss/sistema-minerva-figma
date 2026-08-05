@@ -86,6 +86,14 @@ const SECTIONS = [
     files: ['screens/detail-tabs/GarantiasTab.vue'],
   },
   {
+    section: 'Detalhe / Lotes em Processamento',
+    files: [
+      'screens/detail-tabs/LotesProcessamentoTab.vue',
+      'components/modals/VerArquivosLoteModal.vue',
+      'components/modals/VerErrosLoteModal.vue',
+    ],
+  },
+  {
     section: 'Detalhe / Validações',
     files: [
       'screens/detail-tabs/ValidacoesTab/ValidacoesTab.vue',

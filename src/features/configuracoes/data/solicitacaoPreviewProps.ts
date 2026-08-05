@@ -5,6 +5,7 @@ import {
   type ParteRelacionada,
 } from '@/features/solicitacao-operacao/data/operacaoData';
 import { seedAtivos } from '@/features/solicitacao-operacao/data/ativoData';
+import { seedLotesProcessamento } from '@/features/solicitacao-operacao/data/lotesProcessamentoData';
 import type { NewPedidoData } from '@/features/solicitacao-operacao/components/novo-pedido/types';
 import { IDENTIFICACAO_FIELDS } from '@/features/solicitacao-operacao/data/parteRelacionadaFields';
 import {
@@ -79,6 +80,7 @@ const sampleGarantia = sampleDet.garantias[0] ?? {
   valor: 'R$ 100.000,00',
   anexos: [],
 };
+const sampleLote = seedLotesProcessamento()[0]!;
 
 const samplePessoaAtivo = sampleAtivo.cedente ?? {
   nome: 'NATIVA AGRONEGOCIOS LTDA',
@@ -351,6 +353,26 @@ export function resolvePreview(relPath: string, name: string): PreviewConfig {
       example: exampleBlock(
         `import ${name} from './${name}.vue';\nimport { solicitacoes, detalheSolicitacao } from '../../data/operacaoData';\nconst det = detalheSolicitacao(solicitacoes[0]);`,
         `  <${name} :det="det" />`,
+      ),
+    };
+  }
+  if (path.endsWith('LotesProcessamentoTab.vue')) {
+    return {
+      props: {},
+      frame: 'wide',
+      example: exampleBlock(
+        `import ${name} from './${name}.vue';`,
+        `  <${name} />`,
+      ),
+    };
+  }
+  if (path.endsWith('VerArquivosLoteModal.vue') || path.endsWith('VerErrosLoteModal.vue')) {
+    return {
+      props: { lote: sampleLote },
+      frame: 'modal',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nimport { seedLotesProcessamento } from '../../data/lotesProcessamentoData';\nconst open = ref(true);\nconst lote = seedLotesProcessamento()[0];`,
+        `  <${name} v-if="open" :lote="lote" @close="open = false" />`,
       ),
     };
   }
