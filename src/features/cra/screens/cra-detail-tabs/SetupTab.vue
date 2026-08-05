@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, toRaw, watch } from 'vue';
 import {
-  Settings, SlidersHorizontal, FileCheck, Wallet, Receipt, ListChecks,
+  Settings, SlidersHorizontal, FileCheck, Wallet, Receipt, ListChecks, Save,
 } from 'lucide-vue-next';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import FormField from '../../components/create-cra-operacao-modal/FormField.vue';
@@ -23,6 +23,7 @@ function cloneSetup(s: CraSetup): CraSetup {
 
 const subTab = ref<SubTab>('Dados gerais');
 const local = ref<CraSetup>(cloneSetup(props.setup));
+const saved = ref(false);
 
 watch(
   () => props.setup,
@@ -34,11 +35,17 @@ watch(
 
 function save() {
   emit('update', cloneSetup(local.value));
+  saved.value = true;
+  setTimeout(() => {
+    saved.value = false;
+  }, 2000);
 }
 
 function toggleBond(id: string) {
-  const bt = local.value.bondTypes.find((b) => b.id === id);
-  if (bt) bt.ativo = !bt.ativo;
+  local.value = {
+    ...local.value,
+    bondTypes: local.value.bondTypes.map((b) => (b.id === id ? { ...b, ativo: !b.ativo } : b)),
+  };
 }
 </script>
 
@@ -114,18 +121,22 @@ function toggleBond(id: string) {
 
       <template v-else-if="subTab === 'Tipos de título'">
         <SectionGroup :icon="FileCheck" title="Tipos de título">
-          <div class="flex flex-col" style="gap: 10px">
+          <div style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+            <div class="grid" style="grid-template-columns: 0.6fr 1.4fr 0.5fr; padding: 14px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase">
+              <div>Abreviação</div>
+              <div>Descrição</div>
+              <div>Ativo</div>
+            </div>
             <div
               v-for="bt in local.bondTypes"
               :key="bt.id"
-              class="flex items-center"
-              style="gap: 12px; padding: 12px 16px; border-radius: var(--radius-lg); border: 1px solid var(--border-default); background: var(--surface-card); cursor: pointer"
-              @click="toggleBond(bt.id)"
+              class="grid items-center"
+              style="grid-template-columns: 0.6fr 1.4fr 0.5fr; padding: 14px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
             >
-              <Checkbox :checked="bt.ativo" @change="toggleBond(bt.id)" />
-              <div style="flex: 1">
-                <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">{{ bt.abreviacao }}</div>
-                <div style="font-size: var(--text-xs); color: var(--text-muted)">{{ bt.descricao }}</div>
+              <div style="font-weight: var(--weight-semibold)">{{ bt.abreviacao }}</div>
+              <div style="color: var(--text-muted)">{{ bt.descricao }}</div>
+              <div>
+                <Checkbox :checked="bt.ativo" @change="toggleBond(bt.id)" />
               </div>
             </div>
           </div>
@@ -163,57 +174,38 @@ function toggleBond(id: string) {
 
       <template v-else>
         <SectionGroup :icon="ListChecks" title="Elegibilidade">
-          <div class="flex flex-col" style="gap: 12px">
+          <div style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+            <div class="grid" style="grid-template-columns: 0.8fr 0.6fr 0.6fr; padding: 14px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase">
+              <div>Tipo</div>
+              <div>Quantidade</div>
+              <div>Concentração %</div>
+            </div>
             <div
               v-for="top in local.eligibilityTops"
               :key="top.id"
               class="grid items-center"
-              style="grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 12px 16px; border-radius: var(--radius-lg); border: 1px solid var(--border-default); background: var(--surface-card)"
+              style="grid-template-columns: 0.8fr 0.6fr 0.6fr; padding: 14px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
             >
-              <div>
-                <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">Tipo</div>
-                <select
-                  v-model="top.tipo"
-                  style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-sunken); border: 1px solid var(--border-default); border-radius: var(--radius-md); font-size: var(--text-sm)"
-                >
-                  <option value="CEDENTE">CEDENTE</option>
-                  <option value="SACADO">SACADO</option>
-                </select>
-              </div>
-              <div>
-                <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">Quantidade</div>
-                <input
-                  v-model.number="top.quantidade"
-                  type="number"
-                  style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-sunken); border: 1px solid var(--border-default); border-radius: var(--radius-md); font-size: var(--text-sm)"
-                />
-              </div>
-              <div>
-                <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">Concentração (%)</div>
-                <input
-                  v-model.number="top.concentracaoPct"
-                  type="number"
-                  style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-sunken); border: 1px solid var(--border-default); border-radius: var(--radius-md); font-size: var(--text-sm)"
-                />
-              </div>
+              <div style="font-weight: var(--weight-semibold)">{{ top.tipo }}</div>
+              <div style="font-variant-numeric: tabular-nums">{{ top.quantidade }}</div>
+              <div style="font-variant-numeric: tabular-nums">{{ top.concentracaoPct }}%</div>
             </div>
-            <button
-              type="button"
-              style="background: none; border: none; cursor: default; font-size: var(--text-sm); color: var(--text-muted); text-align: left; padding: 4px 0"
-            >
-              Ver ranking (em breve)
-            </button>
           </div>
+          <p style="font-size: var(--text-xs); color: var(--gci-base); margin-top: 12px; font-weight: var(--weight-semibold); cursor: pointer">
+            Ver ranking de concentração →
+          </p>
         </SectionGroup>
       </template>
 
-      <div class="flex justify-end">
+      <div class="flex items-center justify-end" style="gap: 12px; margin-top: 4px">
+        <span v-if="saved" style="font-size: var(--text-sm); color: var(--success-base); font-weight: var(--weight-semibold)">Alterações salvas</span>
         <button
           type="button"
-          style="padding: 12px 28px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: 700; font-size: var(--text-sm); box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
+          class="flex items-center btn-animated btn-agro"
+          style="gap: 8px; padding: 10px 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
           @click="save"
         >
-          Salvar
+          <Save :size="14" /> SALVAR
         </button>
       </div>
     </div>
