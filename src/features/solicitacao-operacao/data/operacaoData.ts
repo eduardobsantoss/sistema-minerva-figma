@@ -700,7 +700,7 @@ export const solicitacoes: Solicitacao[] = [
   {
     id: '#1383', cedente: 'Fazenda São João', tipoContrato: 'CCB', validacao: 'VALIDO',
     valor: 1_250_000, vinculo: 'Grupo Ceres', veiculo: 'Ceres Investimentos', etapa: 'RASCUNHO',
-    esteira: 'CRA_MONOCEDENTE', tipoOperacao: 'Desconto', grupoEmpresarial: 'Grupo Ceres',
+    esteira: 'CRA_MONOCEDENTE', tipoOperacao: 'Desconto Duplicata', grupoEmpresarial: 'Grupo Ceres',
     abertura: '2026-06-22', tempoTotalHoras: 6, tempoEtapaHoras: 6, slaEtapaHoras: 24,
     taxa: 1.92, gerente: 'Ana Martins', atendente: 'Eduardo Resende Mota',
   },

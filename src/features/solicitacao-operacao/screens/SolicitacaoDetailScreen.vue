@@ -3,12 +3,13 @@ import { computed, reactive, ref } from 'vue';
 import type { Component } from 'vue';
 import {
   ArrowLeft, FileText, Boxes, ShieldCheck, CheckCircle2, Paperclip,
-  MessageSquare, Activity, ChevronRight,
+  MessageSquare, Activity, ChevronRight, Layers,
 } from 'lucide-vue-next';
 import {
   etapaCor, etapaLabel, esteiraLabel, detalheSolicitacao,
   type Solicitacao, type ParteRelacionada, type ContratoAtivo, type Esteira, type ItemValidacao,
 } from '../data/operacaoData';
+import { isDescontoDuplicataTipo } from '../data/lotesProcessamentoData';
 import { CONTAS_BANCARIAS_MOCK } from '../data/minutaData';
 import { enriquecerContratoAtivo } from '../data/ativoData';
 import { CopyButton } from './detail-tabs/shared';
@@ -16,6 +17,7 @@ import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import DadosGeraisTab from './detail-tabs/DadosGeraisTab.vue';
 import AtivosTab from './detail-tabs/AtivosTab.vue';
 import GarantiasTab from './detail-tabs/GarantiasTab.vue';
+import LotesProcessamentoTab from './detail-tabs/LotesProcessamentoTab.vue';
 import { ValidacoesTab, ValidacoesFullView } from './detail-tabs/ValidacoesTab';
 import AnexosTab from './detail-tabs/AnexosTab.vue';
 import AtaTab from './detail-tabs/AtaTab.vue';
@@ -49,15 +51,21 @@ const emit = defineEmits<{ back: [] }>();
 type Tab = 'gerais' | 'ativos' | 'garantias' | 'validacoes' | 'anexos' | 'ata' | 'historico';
 type SubView = null | 'validacoes-detalhe' | 'parte-detalhe' | 'ativo-detalhe';
 
-const TABS: { key: Tab; label: string; icon: Component }[] = [
+const isDescontoDuplicata = computed(() => isDescontoDuplicataTipo(props.solicitacao.tipoOperacao));
+
+const TABS = computed<{ key: Tab; label: string; icon: Component }[]>(() => [
   { key: 'gerais', label: 'Dados Gerais', icon: FileText },
   { key: 'ativos', label: 'Ativos', icon: Boxes },
-  { key: 'garantias', label: 'Garantias', icon: ShieldCheck },
+  {
+    key: 'garantias',
+    label: isDescontoDuplicata.value ? 'Lotes em Processamento' : 'Garantias',
+    icon: isDescontoDuplicata.value ? Layers : ShieldCheck,
+  },
   { key: 'validacoes', label: 'Validações', icon: CheckCircle2 },
   { key: 'anexos', label: 'Anexos', icon: Paperclip },
   { key: 'ata', label: 'Ata de Deliberação', icon: MessageSquare },
   { key: 'historico', label: 'Histórico', icon: Activity },
-];
+]);
 
 const tab = ref<Tab>('gerais');
 const subView = ref<SubView>(null);
@@ -411,6 +419,7 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
         @prorrogar="handleProrrogar"
         @confirmar="handleConfirmar"
       />
+      <LotesProcessamentoTab v-else-if="tab === 'garantias' && isDescontoDuplicata" />
       <GarantiasTab v-else-if="tab === 'garantias'" :det="det" />
       <ValidacoesTab
         v-else-if="tab === 'validacoes'"
