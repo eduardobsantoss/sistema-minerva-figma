@@ -121,6 +121,46 @@ export interface SerasaProcess {
   occurrenceDetails: ProcessOccurrence[];
 }
 
+export interface SlaveLaborRestriction {
+  id: number;
+  fiscalActionYear?: number | null;
+  state: string;
+  employerName: string;
+  federalDocument: string;
+  location: string;
+  workersInvolved?: number | null;
+  cnae: string;
+  administrativeDecision: string;
+  registryInclusionStartDate: string;
+  registryInclusionEndDate?: string | null;
+  createdAt: string;
+}
+
+export interface IbamaRestrictionBatch {
+  id: number;
+  sourceCode: string;
+  resourceName?: string | null;
+  packageName?: string | null;
+  resourceUrl?: string | null;
+  executedAt: string;
+  finishedAt?: string | null;
+  totalRowsImported?: number | null;
+}
+
+export interface IbamaRestriction {
+  id: number;
+  document: string;
+  documentType: string;
+  restrictionType: string;
+  personName?: string | null;
+  stateCode?: string | null;
+  municipalityName?: string | null;
+  referenceCode?: string | null;
+  occurredAt?: string | null;
+  details?: string | null;
+  batch: IbamaRestrictionBatch;
+}
+
 export interface CreditQueryLatest {
   queryId: number;
   externalId: string;
@@ -135,6 +175,8 @@ export interface CreditQueryLatest {
   basicInfo?: BasicInfo | null;
   creditReports: CreditReport[];
   processes: SerasaProcess[];
+  slaveLaborRestrictions: SlaveLaborRestriction[];
+  ibamaRestrictions: IbamaRestriction[];
 }
 
 export interface HistoryItem {

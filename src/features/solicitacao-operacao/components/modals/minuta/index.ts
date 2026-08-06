@@ -13,3 +13,5 @@ export { default as BoletimSubscricaoStep } from './BoletimSubscricaoStep.vue';
 export { default as EndossatarioStep } from './EndossatarioStep.vue';
 export { default as CetStep } from './CetStep.vue';
 export { default as SpouseFields } from './SpouseFields.vue';
+export { default as PessoaNaturezaFields } from './PessoaNaturezaFields.vue';
+export { default as EnderecosLocacaoFields } from './EnderecosLocacaoFields.vue';

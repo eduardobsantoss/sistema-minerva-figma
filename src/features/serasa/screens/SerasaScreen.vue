@@ -2,6 +2,7 @@
 import { onUnmounted, ref, type Component } from 'vue';
 import {
   User, AlertTriangle, Scale, History, Search, XCircle, RefreshCw,
+  Users, Trees,
 } from 'lucide-vue-next';
 import type {
   CreditQueryLatest,
@@ -26,16 +27,20 @@ import ConfirmRefreshModal from '../components/ConfirmRefreshModal.vue';
 import BasicInfoTab from './tabs/BasicInfoTab.vue';
 import CreditReportsTab from './tabs/CreditReportsTab.vue';
 import ProcessesTab from './tabs/ProcessesTab.vue';
+import SlaveLaborTab from './tabs/SlaveLaborTab.vue';
+import IbamaTab from './tabs/IbamaTab.vue';
 import HistoryTab from './tabs/HistoryTab.vue';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import { EmptyState } from '@/features/risco/screens/detail-tabs/shared';
 
-type Tab = 'cadastro' | 'restricoes' | 'processos' | 'historico';
+type Tab = 'cadastro' | 'restricoes' | 'processos' | 'trabalho-escravo' | 'ibama' | 'historico';
 
 const TABS: { key: Tab; label: string; icon: Component }[] = [
   { key: 'cadastro', label: 'Dados cadastrais', icon: User },
   { key: 'restricoes', label: 'Restrições financeiras', icon: AlertTriangle },
   { key: 'processos', label: 'Processos judiciais', icon: Scale },
+  { key: 'trabalho-escravo', label: 'Trabalho Escravo', icon: Users },
+  { key: 'ibama', label: 'IBAMA', icon: Trees },
   { key: 'historico', label: 'Histórico', icon: History },
 ];
 
@@ -275,6 +280,8 @@ async function loadDemoScenario(scenario: MockScenario) {
 
       <CreditReportsTab v-if="tab === 'restricoes'" :credit-reports="latest.creditReports" />
       <ProcessesTab v-if="tab === 'processos'" :processes="latest.processes" />
+      <SlaveLaborTab v-if="tab === 'trabalho-escravo'" :items="latest.slaveLaborRestrictions ?? []" />
+      <IbamaTab v-if="tab === 'ibama'" :items="latest.ibamaRestrictions ?? []" />
       <HistoryTab v-if="tab === 'historico'" :items="history" />
     </template>
 

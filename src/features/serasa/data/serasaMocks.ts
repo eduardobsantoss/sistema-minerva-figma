@@ -3,8 +3,10 @@ import type {
   CreditQueryByDocumentResponse,
   CreditReport,
   HistoryItem,
+  IbamaRestriction,
   MockScenario,
   SerasaProcess,
+  SlaveLaborRestriction,
 } from './serasaTypes';
 import { DEMO_DOCUMENTS } from './serasaConstants';
 
@@ -134,6 +136,126 @@ const pfCreditReports: CreditReport[] = [
   },
 ];
 
+const pfSlaveLabor: SlaveLaborRestriction[] = [
+  {
+    id: 1,
+    fiscalActionYear: 2024,
+    state: 'GO',
+    employerName: 'JOAO DA SILVA SANTOS',
+    federalDocument: DEMO_DOCUMENTS.pfCompleto,
+    location: 'FAZENDA BOA ESPERANCA - RIO VERDE/GO',
+    workersInvolved: 8,
+    cnae: '0151-2/01',
+    administrativeDecision: 'INCLUSAO NO CADASTRO DE EMPREGADORES',
+    registryInclusionStartDate: '2024-09-15',
+    registryInclusionEndDate: null,
+    createdAt: NOW,
+  },
+  {
+    id: 2,
+    fiscalActionYear: 2021,
+    state: 'PA',
+    employerName: 'JOAO DA SILVA SANTOS',
+    federalDocument: DEMO_DOCUMENTS.pfCompleto,
+    location: 'SITIO SAO JOSE - MARABA/PA',
+    workersInvolved: 3,
+    cnae: '0111-3/01',
+    administrativeDecision: 'EXCLUSAO DO CADASTRO',
+    registryInclusionStartDate: '2021-03-10',
+    registryInclusionEndDate: '2023-11-20',
+    createdAt: '2023-11-21T08:00:00Z',
+  },
+];
+
+const pfIbama: IbamaRestriction[] = [
+  {
+    id: 1,
+    document: DEMO_DOCUMENTS.pfCompleto,
+    documentType: 'CPF',
+    restrictionType: 'EMBARGO',
+    personName: 'JOAO DA SILVA SANTOS',
+    stateCode: 'GO',
+    municipalityName: 'RIO VERDE',
+    referenceCode: 'EMB-2025-00421',
+    occurredAt: '2025-04-18T00:00:00Z',
+    details: 'Embargo ambiental por desmatamento em área de reserva legal. Atividade agropecuária suspensa até regularização.',
+    batch: {
+      id: 10,
+      sourceCode: 'IBAMA-EMBARGOS',
+      resourceName: 'Lista de embargos ambientais',
+      packageName: 'embargos-ibama-2026',
+      resourceUrl: 'https://dadosabertos.ibama.gov.br/',
+      executedAt: '2026-07-28T14:00:00Z',
+      finishedAt: '2026-07-28T14:12:00Z',
+      totalRowsImported: 18420,
+    },
+  },
+  {
+    id: 2,
+    document: DEMO_DOCUMENTS.pfCompleto,
+    documentType: 'CPF',
+    restrictionType: 'AUTUACAO',
+    personName: 'JOAO DA SILVA SANTOS',
+    stateCode: 'GO',
+    municipalityName: 'JATAI',
+    referenceCode: 'AUT-2024-11880',
+    occurredAt: '2024-11-02T00:00:00Z',
+    details: null,
+    batch: {
+      id: 11,
+      sourceCode: 'IBAMA-AUTUACOES',
+      resourceName: 'Autuações ambientais',
+      packageName: 'autuacoes-ibama-2026',
+      resourceUrl: 'https://dadosabertos.ibama.gov.br/',
+      executedAt: '2026-07-20T09:30:00Z',
+      finishedAt: '2026-07-20T09:45:00Z',
+      totalRowsImported: 9200,
+    },
+  },
+];
+
+const pjSlaveLabor: SlaveLaborRestriction[] = [
+  {
+    id: 3,
+    fiscalActionYear: 2023,
+    state: 'MT',
+    employerName: 'FAZENDA SANTA NIVA AGROPECUARIA LTDA',
+    federalDocument: DEMO_DOCUMENTS.pjCompleto,
+    location: 'FAZENDA SANTA NIVA - SORRISO/MT',
+    workersInvolved: 14,
+    cnae: '0115-6/00',
+    administrativeDecision: 'INCLUSAO NO CADASTRO DE EMPREGADORES',
+    registryInclusionStartDate: '2023-06-01',
+    registryInclusionEndDate: null,
+    createdAt: NOW,
+  },
+];
+
+const pjIbama: IbamaRestriction[] = [
+  {
+    id: 3,
+    document: DEMO_DOCUMENTS.pjCompleto,
+    documentType: 'CNPJ',
+    restrictionType: 'EMBARGO',
+    personName: 'FAZENDA SANTA NIVA AGROPECUARIA LTDA',
+    stateCode: 'GO',
+    municipalityName: 'RIO VERDE',
+    referenceCode: 'EMB-2025-09912',
+    occurredAt: '2025-08-05T00:00:00Z',
+    details: 'Embargo por intervenção em APP sem autorização. Área de 42 ha sob restrição.',
+    batch: {
+      id: 10,
+      sourceCode: 'IBAMA-EMBARGOS',
+      resourceName: 'Lista de embargos ambientais',
+      packageName: 'embargos-ibama-2026',
+      resourceUrl: 'https://dadosabertos.ibama.gov.br/',
+      executedAt: '2026-07-28T14:00:00Z',
+      finishedAt: '2026-07-28T14:12:00Z',
+      totalRowsImported: 18420,
+    },
+  },
+];
+
 const pfProcesses: SerasaProcess[] = [
   {
     id: 20,
@@ -217,6 +339,8 @@ export const MOCK_PF_COMPLETO: CreditQueryLatest = {
   },
   creditReports: pfCreditReports,
   processes: pfProcesses,
+  slaveLaborRestrictions: pfSlaveLabor,
+  ibamaRestrictions: pfIbama,
 };
 
 export const MOCK_PJ_COMPLETO: CreditQueryLatest = {
@@ -341,6 +465,8 @@ export const MOCK_PJ_COMPLETO: CreditQueryLatest = {
       ],
     },
   ],
+  slaveLaborRestrictions: pjSlaveLabor,
+  ibamaRestrictions: pjIbama,
 };
 
 export const MOCK_SEM_RESTRICOES: CreditQueryLatest = {
@@ -378,6 +504,8 @@ export const MOCK_SEM_RESTRICOES: CreditQueryLatest = {
   },
   creditReports: [],
   processes: [],
+  slaveLaborRestrictions: [],
+  ibamaRestrictions: [],
 };
 
 export const MOCK_EXPIRED: CreditQueryLatest = {

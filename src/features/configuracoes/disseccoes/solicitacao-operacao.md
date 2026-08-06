@@ -1,5 +1,9 @@
 # Solicitação de Operação
 
+> **Atalho para devs — Minuta / Nova Garantia**  
+> Spec de campos e regras (separada por tipo): [Minuta / Nova Garantia — referência](#minuta--nova-garantia--referência-para-devs)  
+> Código dump do step: [`GarantiaMinutaStep`](#garantiaminutastep) · helpers em `minutaData.ts` · UI compartilhada `PessoaNaturezaFields` / `SpouseFields` / `EnderecosLocacaoFields`
+
 ## Lista
 
 ### SolicitacaoScreen
@@ -15862,7 +15866,212 @@ function gerarPagamentosAutomaticos() {
 </template>
 ```
 
+## Minuta / Nova Garantia — referência para devs
+
+> Fluxo: **Solicitação → Ativos → Adicionar Contrato → Gerar Minuta → etapa Garantia → Nova Garantia**  
+> Fontes: `GarantiaMinutaStep.vue`, `PessoaNaturezaFields.vue`, `SpouseFields.vue`, `EnderecosLocacaoFields.vue`, `minutaData.ts`  
+> Handoff complementar: `docs/handoff/solicitacao/adicionar-contrato.md` §7.6
+
+---
+
+### Arquivos
+
+| Arquivo | Papel |
+|---|---|
+| `components/modals/minuta/GarantiaMinutaStep.vue` | Modal Nova Garantia + lista de garantias |
+| `components/modals/minuta/PessoaNaturezaFields.vue` | PF/PJ do proprietário (garantia e imóvel locado/arrendado) |
+| `components/modals/minuta/SpouseFields.vue` | Bloco do cônjuge (usado nas garantias **sem** data de nascimento) |
+| `components/modals/minuta/EnderecosLocacaoFields.vue` | Lista de endereços (tipos que usam “Adicionar endereço”) |
+| `data/minutaData.ts` | `TIPO_GARANTIA_MINUTA_OPTS`, helpers `isGarantia*`, `codigoGarantiaBackend`, tipos |
+
+---
+
+### Catálogo de tipos (`TIPO_GARANTIA_MINUTA_OPTS`)
+
+**Disponíveis hoje**
+
+| Label UI | Helper | Código back-end (`codigoGarantiaBackend`) |
+|---|---|---|
+| AF. Estoque | `isGarantiaEstoque` | label |
+| Penhor de Estoque | `isGarantiaEstoque` (mesmo form que AF. Estoque) | label |
+| AF. Ativos Biológicos | `isGarantiaAtivosBiologicos` | label |
+| AF. Lavoura | `isGarantiaLavoura` | `agricola` |
+| AF. Imóvel | `isGarantiaImovel` | `imovel` |
+| AF. Bens Móveis | `isGarantiaBensMoveis` | `bens_moveis` |
+| Cessão Fiduciária de Direitos Creditórios (DUPLICATAS) | `isGarantiaCessaoDuplicatas` | `cessao_fiduciaria_duplicatas` |
+| Cessão Fiduciária de Direitos Creditórios (CONTRATO) | `isGarantiaCessaoContrato` | `cessao_fiduciaria_contrato` |
+
+**Fora do catálogo por enquanto** (não listar no select): Alienação Fiduciária · Hipoteca · Penhor · Fiança · Cessão Fiduciária (genérica) · Aval · Caução.
+
+Todos os tipos acima entram em `isGarantiaFormularioEspecifico` → **sem** testemunhas / obrigação / forma do produto / constituir garantia.
+
+---
+
+### Regras de cabeçalho (todas as garantias)
+
+| Situação | Campos visíveis |
+|---|---|
+| Nenhum tipo selecionado | Só **Tipo** + **Valor** (ocultar Nº testemunhas e Obrigação/vínculo) |
+| Tipo específico (`isGarantiaFormularioEspecifico`) | Tipo + Valor; **sem** descrição, instrumento particular, testemunhas, obrigação, forma produto, constituir |
+| Tipo genérico (hoje não há no select) | Tipo + Valor + testemunhas + obrigação + (forma produto se estoque) + constituir |
+
+Cadastro: botão habilitado com `form.tipo` + `form.valor`.
+
+---
+
+### Pessoa Física / Jurídica — regras compartilhadas
+
+Usado em: **Proprietário da garantia** e **Proprietário do imóvel locado/arrendado** (`PessoaNaturezaFields`).
+
+#### Pessoa Física
+
+| Campo | Salva? |
+|---|---|
+| CPF, Nome, RG | sim |
+| Nacionalidade, Data nascimento, Profissão | sim |
+| Estado civil | sim — opts **sem** União Estável (`ESTADO_CIVIL_GARANTIA_OPTS`) |
+| Regime | sim — só se Casado(a); **sem** Separação Obrigatória de Bens |
+| Data do casamento | sim — **só** quando o bloco do cônjuge aparece |
+| E-mail | **não** |
+| Inscrição do produtor rural | **não** |
+| Órgão emissor do RG | **não** |
+
+**Cônjuge** (`SpouseFields`, só se Casado + regime ≠ separação):
+
+| Campo | Ordem / nota |
+|---|---|
+| CPF do cônjuge | 1º (doc antes do nome) |
+| Nome completo do cônjuge | 2º |
+| RG, Nacionalidade, Profissão | sim |
+| Data de nascimento do cônjuge | **não** (`mostrar-data-nascimento="false"`) |
+
+#### Pessoa Jurídica
+
+| Bloco | Campos | Não salva / não exibe |
+|---|---|---|
+| Empresa | CNPJ, Razão social, Nome fantasia, Data abertura, Tipo, Porte, Atividade, Natureza jurídica, Inscrição municipal, Inscrição estadual | **E-mail da empresa** |
+| Representante Legal | CPF, Nome, Nacionalidade, Profissão, **Estado civil**, **E-mail**, **Telefone** | RG · Inscrição produtor rural · Data de nascimento |
+
+---
+
+### Por tipo de garantia
+
+#### AF. Estoque / Penhor de Estoque
+
+> Mesmo formulário (`isGarantiaEstoque`). Penhor de Estoque = AF. Estoque.
+
+| Seção | Campos |
+|---|---|
+| Cabeçalho | Tipo · Valor |
+| Contrato | Número do contrato de estoque (terceiro) |
+| Estoque de formação | Nome imóvel · Matrícula · Zona · Tipo · Área total afetada · Unidade · Cartório · UF registro · Cidade registro |
+| Imóvel locado | Toggle → (se on) Tipo locação · Data início · Prazo indeterminado · Data término · Proprietário locado (`PessoaNaturezaFields`) · Partes |
+| Endereço da locação | **Sempre visível** (endereço único no form, sem lista): CEP · Localidade · Número · Bairro · Info · Cidade · Estado · País |
+| Proprietário da garantia | `PessoaNaturezaFields` |
+| Estoques | Botão **Adicionar dados do estoque** → tabela Propriedade \| Proprietário (empty: “Não foi encontrado nenhum resultado.”) |
+| Relatório | Data do relatório* · Periodicidade · Data da primeira atualização* |
+
+---
+
+#### AF. Ativos Biológicos
+
+| Seção | Campos |
+|---|---|
+| Cabeçalho | Tipo · Valor |
+| Animais | Quantidade · Categoria · Peso médio · Unidade de medida (peso) |
+| Local de formação | Nome imóvel · Matrícula · Zona · Tipo · Área · Unidade · Cartório · UF · Cidade |
+| Imóvel arrendado | Toggle → Locação · Proprietário arrendado (`PessoaNaturezaFields`) · Partes |
+| Endereços da locação | `EnderecosLocacaoFields` (draft + **Adicionar endereço** → lista) |
+| Proprietário da garantia | `PessoaNaturezaFields` |
+
+---
+
+#### AF. Lavoura (back-end `agricola`)
+
+| Seção | Campos |
+|---|---|
+| Cabeçalho | Tipo · Valor |
+| Área / safra | Tamanho de área · Unidade · Ano da safra |
+| Produto | Produto · Quantidade · Unidade · Preço unitário |
+| Local de formação | Nome da fazenda · Matrícula · Zona · Tipo · Área afetada · Unidade · Cartório · UF · Cidade |
+| Imóvel arrendado | Toggle → Locação · Proprietário arrendado · Partes |
+| Endereços da locação | `EnderecosLocacaoFields` |
+| Proprietário da garantia | `PessoaNaturezaFields` |
+
+---
+
+#### AF. Imóvel (back-end `imovel`)
+
+| Seção | Campos |
+|---|---|
+| Cabeçalho | Tipo · Valor |
+| Imóvel | Nome · Matrícula · Zona · Tipo · Área afetada · Unidade · Cartório · UF · Cidade |
+| Opcionais | **CAR** · **NIRF** · **CCIR** · **CCIR Ano** · **SIGEF/INCRA** · **Possui seguro** (toggle) |
+| Imóvel arrendado | Toggle → Locação · Proprietário arrendado · Partes |
+| Endereços da locação | `EnderecosLocacaoFields` |
+| Proprietário da garantia | `PessoaNaturezaFields` |
+
+---
+
+#### AF. Bens Móveis (back-end `bens_moveis`)
+
+| Seção | Campos |
+|---|---|
+| Cabeçalho | Tipo · Valor |
+| Dados do bem (draft) | Descrição · Preço unitário · Quantidade · Marca · Modelo · Ano fabricação · Nº série · Matrícula |
+| Local de armazenamento | CEP · Localidade · Número · Bairro · Info · Cidade · Estado · País |
+| Dados de registro | Cartório · UF · Cidade registro |
+| Proprietário da garantia | `PessoaNaturezaFields` |
+| Documentos | **Textarea** com descrição livre do documento (+ contador de caracteres) — **não** é select multi |
+| Lista | **Adicionar bem** → tabela Descrição \| Marca/Modelo \| Ano \| Proprietário |
+
+---
+
+#### Cessão Fiduciária (DUPLICATAS)
+
+| Seção | Campos |
+|---|---|
+| Cabeçalho | Tipo · Valor |
+| Contrato | Tipo de contrato* · Data emissão* · Data vencimento* · Descrição* (textarea + contador) |
+| Cedente | CPF/CNPJ* · Nome/Razão social* |
+| Sacado | CPF/CNPJ* · Nome/Razão social* |
+| Opcionais | Toggle → % equivalente CPRF · Banco · Conta Escrow · Agência Escrow · Titular |
+
+---
+
+#### Cessão Fiduciária (CONTRATO)
+
+| Seção | Campos |
+|---|---|
+| Cabeçalho | Tipo · Valor |
+| Contrato | Tipo de título* · Tipo de contrato* · Data emissão* · Data vencimento* · Descrição* |
+| Cedente | CPF/CNPJ* · Nome/Razão social* |
+| Sacado | CPF/CNPJ* · Nome/Razão social* · endereço completo (CEP… País) |
+| Opcionais | Nada obrigatório abaixo do toggle: Data assinatura · Representantes (→ tabela) · dados Escrow |
+
+---
+
+### Constantes úteis (`minutaData.ts`)
+
+```ts
+ESTADO_CIVIL_GARANTIA_OPTS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)']; // sem União Estável
+REGIME_CASAMENTO_OPTS = [
+  'Comunhão Parcial de Bens',
+  'Comunhão Universal de Bens',
+  'Separação Total de Bens', // não exige cônjuge
+  'Participação Final nos Aquestos',
+]; // sem Separação Obrigatória
+ZONA_OPTS = ['Rural', 'Urbana'];
+TIPO_IMOVEL_OPTS = ['Fazenda', 'Armazém', 'Galpão', 'Silo'];
+TIPO_LOCACAO_OPTS = ['Arrendamento', 'Comodato', 'Parceria Agrícola'];
+PERIODICIDADE_RELATORIO_OPTS = ['Mensal', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'];
+```
+
+---
+
 ### GarantiaMinutaStep
+
+> Abaixo: dump do componente (pode estar desatualizado vs. a spec acima — **priorize a referência desta seção**).
 
 ```vue
 <script setup lang="ts">

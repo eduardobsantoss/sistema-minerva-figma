@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, type Component } from 'vue';
-import { Gauge, AlertTriangle, FileWarning, Banknote, Scale } from 'lucide-vue-next';
+import { Gauge, AlertTriangle, FileWarning, Banknote, Scale, Users, Trees } from 'lucide-vue-next';
 import type { CreditQueryLatest } from '../data/serasaTypes';
 import { CHEQUE_CATEGORIES, PROTEST_CATEGORY } from '../data/serasaConstants';
 import { brl } from '@/features/passivo/data/passivoData';
@@ -21,6 +21,8 @@ const cards = computed<KpiCard[]>(() => {
   const { latest } = props;
   const reports = latest.creditReports ?? [];
   const processes = latest.processes ?? [];
+  const slaveLabor = latest.slaveLaborRestrictions ?? [];
+  const ibama = latest.ibamaRestrictions ?? [];
 
   const totalOccurrences = reports.reduce((s, r) => s + r.occurrences, 0);
   const totalValue = reports.reduce((s, r) => s + (r.valueOfOccurrences ?? 0), 0);
@@ -35,6 +37,8 @@ const cards = computed<KpiCard[]>(() => {
 
   const procOcc = processes.reduce((s, p) => s + p.occurrences, 0);
   const procVal = processes.reduce((s, p) => s + (p.valueOfOccurrences ?? 0), 0);
+
+  const slaveActive = slaveLabor.filter((i) => !i.registryInclusionEndDate).length;
 
   return [
     {
@@ -74,6 +78,20 @@ const cards = computed<KpiCard[]>(() => {
       primary: String(procOcc),
       secondary: brl(procVal),
       tone: procOcc > 0 ? 'var(--danger-base)' : 'var(--status-success-text)',
+    },
+    {
+      icon: Users,
+      title: 'Trabalho Escravo',
+      primary: String(slaveLabor.length),
+      secondary: slaveActive > 0 ? `${slaveActive} na lista` : 'Nenhum ativo',
+      tone: slaveActive > 0 ? 'var(--danger-base)' : 'var(--status-success-text)',
+    },
+    {
+      icon: Trees,
+      title: 'IBAMA',
+      primary: String(ibama.length),
+      secondary: ibama.length > 0 ? 'Ocorrências ambientais' : 'Sem restrições',
+      tone: ibama.length > 0 ? 'var(--warning-base)' : 'var(--status-success-text)',
     },
   ];
 });

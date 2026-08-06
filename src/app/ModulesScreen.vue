@@ -60,7 +60,7 @@ type View =
   | 'risco-ratings'
   | 'risco-agrupamentos'
   | 'risco-rel'
-  | 'serasa'
+  | 'risco-serasa'
   | 'passivo'
   | 'colab'
   | 'rel'
@@ -92,7 +92,7 @@ const titleMap: Record<View, string> = {
   'risco-ratings': 'Cadastro de Rating',
   'risco-agrupamentos': 'Agrupamentos de Limite',
   'risco-rel': 'Relatórios de Risco',
-  serasa: 'Consulta Serasa',
+  'risco-serasa': 'Consulta Serasa',
   passivo: 'Passivo',
   colab: 'Colaboradores',
   rel: 'Relatórios',
@@ -105,8 +105,7 @@ const VALID_VIEWS = new Set<View>([
   'fidcs', 'fidcs-simulador', 'fidcs-relatorios',
   'cras', 'cras-simulador', 'cras-relatorios',
   'cobranca', 'cobranca-titulos', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-notif-cessao', 'cobranca-resultado-notif', 'cobranca-rel',
-  'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-agrupamentos', 'risco-rel',
-  'serasa',
+  'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-agrupamentos', 'risco-serasa', 'risco-rel',
   'passivo', 'colab', 'rel', 'conf',
 ]);
 
@@ -181,8 +180,6 @@ function handleModuleClick(title: string) {
   } else if (title === 'Risco') {
     view.value = 'risco-dashboard';
     openMenu.value = 'risco';
-  } else if (title === 'Serasa') {
-    view.value = 'serasa';
   } else if (title === 'Passivo') {
     view.value = 'passivo';
   }
@@ -235,7 +232,7 @@ function handleModuleClick(title: string) {
           <GruposScreen v-else-if="view === 'risco-grupos'" />
           <RelatoriosScreen v-else-if="view === 'risco-rel'" />
           <RiscoDashboardScreen v-else-if="view === 'risco-dashboard'" />
-          <SerasaScreen v-else-if="view === 'serasa'" />
+          <SerasaScreen v-else-if="view === 'risco-serasa'" />
           <PassivoScreen v-else-if="view === 'passivo'" />
           <ConfiguracoesScreen v-else-if="view === 'conf'" />
           <Placeholder v-else :name="titleMap[view]" />

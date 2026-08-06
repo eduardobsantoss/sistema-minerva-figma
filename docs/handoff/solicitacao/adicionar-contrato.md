@@ -401,17 +401,87 @@ UNIDADE_MEDIDA_OPTS = ['Saca (60kg)', 'Tonelada', 'Quilograma', 'Arroba', 'Hecta
 
 Lista + `AddButton` → nested modal **Nova Garantia**.
 
-**Tipos nesta fase:** apenas `AF. Estoque` e `Penhor de Estoque`.
+**Tipos disponíveis hoje:** `AF. Estoque`, `Penhor de Estoque` (mesmo form), `AF. Ativos Biológicos`, `AF. Lavoura` (`agricola`), `AF. Imóvel` (`imovel`), `AF. Bens Móveis` (`bens_moveis`), `Cessão Fiduciária de Direitos Creditórios (DUPLICATAS)`, `Cessão Fiduciária de Direitos Creditórios (CONTRATO)`.  
+**Fora do catálogo por enquanto:** Alienação Fiduciária, Hipoteca, Penhor, Fiança, Cessão Fiduciária (genérica), Aval, Caução.
+
+#### AF. Estoque / Penhor de Estoque
 
 | Seção | Campos (spans) |
 |---|---|
-| Tipo | Selecione o tipo · 5 |
-| Estoque de formação | Nome imóvel 6 · Matrícula 6 · Zona 3 · Tipo imóvel 3 · Área 3 · Unidade 3 · Cartório 4 · UF registro 4 · Cidade registro 4 |
-| Imóvel locado | Toggle → Tipo locação 4 · Data início 4 · Prazo indeterminado toggle · Data término 4 (hidden se indeterminado) · Natureza 4 · Contratante 6 · Contratado 6 |
-| Endereço | Número 3 · Bairro 4 · Info 5 · Estado 3 (`UF_OPTIONS` full) · Cidade 5 · País 4 |
-| Proprietário garantia | Natureza 4 |
-| Estoques | “Adicionar dados do estoque” → rows propriedade/proprietário |
-| Relatório | Data relatório 4 · Periodicidade 4 · Data 1ª atualização 4 |
+| Cabeçalho | Tipo · Valor (**sem** descrição, testemunhas, obrigação, forma produto, instrumento, constituir) |
+| Contrato estoque | Número do contrato de estoque (terceiro) · 12 |
+| Estoque de formação | Nome 3 · Matrícula 3 · Zona 3 · Tipo 3 · Área 3 · Unidade 3 · Cartório 3 · UF 3 · Cidade registro 3 |
+| Imóvel locado | Toggle → (se on) Tipo locação · Data início · Prazo indeterminado · Data término · Proprietário locado · Partes |
+| Endereço da locação | Sempre visível (endereço único): CEP 4 · Localidade 8 · Número 4 · Bairro 8 · Info 12 · Cidade 12 · Estado 6 · País 6 |
+| Proprietário garantia | `PessoaNaturezaFields` |
+| Estoques | **Adicionar dados do estoque** → tabela Propriedade · Proprietário |
+| Relatório | Data relatório* 4 · Periodicidade 4 · Data 1ª atualização* 4 |
+
+#### AF. Ativos Biológicos
+
+| Seção | Campos |
+|---|---|
+| Cabeçalho | Tipo · Valor (**sem** descrição, testemunhas, obrigação, forma produto, instrumento, constituir) |
+| Animais | Quantidade · Categoria · Peso médio · Unidade de medida (peso) |
+| Local de formação | Nome imóvel · Matrícula · Zona · Tipo · Área · Unidade · Cartório · UF · Cidade |
+| Imóvel arrendado | Toggle → Locação (tipo, início, prazo indeterminado linha inteira, término) · Proprietário arrendado (`PessoaNaturezaFields`) · Partes |
+| Endereços da locação | Form CEP/Localidade/Nº/Bairro/Info/Estado/Cidade/País → **Adicionar endereço** → lista CEP / Logradouro / Cidade / UF |
+| Proprietário garantia | `PessoaNaturezaFields` |
+
+#### AF. Lavoura (back-end `agricola` via `codigoGarantiaBackend`)
+
+| Seção | Campos |
+|---|---|
+| Cabeçalho | Tipo · Valor |
+| Área / safra | Tamanho de área · Unidade · Ano da safra |
+| Produto | Produto · Quantidade · Unidade · Preço unitário |
+| Local de formação | Nome da fazenda · Matrícula · Zona · Tipo · Área afetada · Unidade · Cartório · UF · Cidade |
+| Imóvel arrendado | Toggle → Locação · Proprietário arrendado (`PessoaNaturezaFields`) · Partes |
+| Endereços da locação | `EnderecosLocacaoFields` (lista) |
+| Proprietário garantia | `PessoaNaturezaFields` |
+
+#### AF. Imóvel (back-end `imovel` via `codigoGarantiaBackend`)
+
+| Seção | Campos |
+|---|---|
+| Cabeçalho | Tipo · Valor |
+| Imóvel | Nome · Matrícula · Zona · Tipo · Área afetada · Unidade · Cartório · UF · Cidade |
+| Opcionais imóvel | CAR · NIRF · CCIR · CCIR Ano · SIGEF/INCRA · Possui seguro (toggle) |
+| Imóvel arrendado | Toggle → Locação · Proprietário arrendado (`PessoaNaturezaFields`) · Partes |
+| Endereços da locação | `EnderecosLocacaoFields` (lista) |
+| Proprietário garantia | `PessoaNaturezaFields` |
+
+#### AF. Bens Móveis (back-end `bens_moveis` via `codigoGarantiaBackend`)
+
+| Seção | Campos |
+|---|---|
+| Cabeçalho | Tipo · Valor (**sem** descrição, testemunhas, obrigação, forma produto, instrumento, constituir) |
+| Dados do bem (draft) | Descrição 6 · Preço unitário 3 · Quantidade 3 · Marca 3 · Modelo 3 · Ano fabricação 3 · Nº série 3 · Matrícula 3 |
+| Local de armazenamento | CEP 4 · Localidade 8 · Número 4 · Bairro 8 · Info 12 · Cidade 12 · Estado 6 · País 6 |
+| Dados de registro | Cartório 4 · UF 4 · Cidade registro 4 |
+| Proprietário garantia | `PessoaNaturezaFields` |
+| Documentos | Textarea descrição livre + contador de caracteres |
+| Lista | **Adicionar bem** → tabela Descrição · Marca/Modelo · Ano · Proprietário (`form.bensMoveis`) |
+
+#### Cessão Fiduciária de Direitos Creditórios (DUPLICATAS)
+
+| Seção | Campos |
+|---|---|
+| Cabeçalho | Tipo · Valor |
+| Contrato | Tipo de contrato* · Data emissão* · Data vencimento* · Descrição do contrato* (textarea + contador) |
+| Cedente | CPF/CNPJ* · Nome/Razão social* |
+| Sacado | CPF/CNPJ* · Nome/Razão social* |
+| Opcionais | Toggle **Cadastrar campos opcionais** → % equivalente CPRF · Banco · Conta Escrow · Agência Escrow · Titular |
+
+#### Cessão Fiduciária de Direitos Creditórios (CONTRATO)
+
+| Seção | Campos |
+|---|---|
+| Cabeçalho | Tipo · Valor |
+| Contrato | Tipo de título* · Tipo de contrato* · Data emissão* · Data vencimento* · Descrição* |
+| Cedente | CPF/CNPJ* · Nome/Razão social* |
+| Sacado | CPF/CNPJ* · Nome/Razão social* · CEP · Localidade · Número · Bairro · Info · Cidade · Estado · País |
+| Opcionais (nada obrigatório abaixo do toggle) | Data da assinatura · Representantes (Nome + Cadastrar → tabela) · Banco · Conta/Agência Escrow · Titular |
 
 Cadastro exige `form.tipo`. Valor exibido = `areaTotal || valor || '—'`.
 

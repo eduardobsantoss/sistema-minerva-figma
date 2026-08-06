@@ -62,21 +62,35 @@ export function cidadesDaUf(uf: string): string[] {
 
 export const PRODUTO_TIPO_OPTS = ['Soja', 'Milho', 'Algodão', 'Café', 'Trigo', 'Boi Gordo'];
 export const UNIDADE_MEDIDA_OPTS = ['Saca (60kg)', 'Tonelada', 'Quilograma', 'Arroba', 'Hectare'];
+export const UNIDADE_PESO_ANIMAL_OPTS = ['Quilograma', 'Arroba', 'Tonelada'];
+export const CATEGORIA_ANIMAL_OPTS = ['Bezerro', 'Novilho', 'Boi magro', 'Boi gordo', 'Vaca'];
 export const ZONA_OPTS = ['Rural', 'Urbana'];
 export const TIPO_IMOVEL_OPTS = ['Fazenda', 'Armazém', 'Galpão', 'Silo'];
 export const TIPO_LOCACAO_OPTS = ['Arrendamento', 'Comodato', 'Parceria Agrícola'];
 export const PERIODICIDADE_RELATORIO_OPTS = ['Mensal', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'];
 export const TIPO_GARANTIA_MINUTA_OPTS = [
   'AF. Estoque',
+  'AF. Ativos Biológicos',
+  'AF. Lavoura',
+  'AF. Imóvel',
+  'AF. Bens Móveis',
   'Penhor de Estoque',
-  'Alienação Fiduciária',
-  'Hipoteca',
-  'Penhor',
-  'Fiança',
-  'Cessão Fiduciária',
-  'Aval',
-  'Caução',
+  'Cessão Fiduciária de Direitos Creditórios (DUPLICATAS)',
+  'Cessão Fiduciária de Direitos Creditórios (CONTRATO)',
 ];
+
+export const TIPO_CONTRATO_CESSAO_OPTS = ['CCB', 'CPR-F', 'CDCA', 'CDA-WA', 'NCE', 'Duplicata'];
+export const TIPO_TITULO_CESSAO_OPTS = ['CPR', 'CPR-F', 'CCB', 'CDCA', 'NC', 'Duplicata'];
+
+/** Código do tipo no back-end quando diverge do label da UI. */
+export function codigoGarantiaBackend(tipo: string): string {
+  if (tipo === 'AF. Lavoura') return 'agricola';
+  if (tipo === 'AF. Imóvel') return 'imovel';
+  if (tipo === 'AF. Bens Móveis') return 'bens_moveis';
+  if (tipo === 'Cessão Fiduciária de Direitos Creditórios (DUPLICATAS)') return 'cessao_fiduciaria_duplicatas';
+  if (tipo === 'Cessão Fiduciária de Direitos Creditórios (CONTRATO)') return 'cessao_fiduciaria_contrato';
+  return tipo;
+}
 export const FORMA_PRODUTO_GARANTIA_OPTS = ['Física', 'Financeira', 'Mista'];
 export const CREDORA_PADRAO_OPTS = ['Ceres Trading', 'Ceres Confina', 'Ceres Investimentos'];
 export const CREDORA_PADRAO_OPTS_NC_CCB = ['Ceres Trading', 'Ceres Securitizadora', 'BMP'];
@@ -92,12 +106,13 @@ export const MEIO_INTEGRALIZACAO_OPTS = [
 ];
 export const NACIONALIDADE_OPTS = ['Brasileira', 'Estrangeira', 'BRASIL'];
 export const ESTADO_CIVIL_OPTS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável'];
-/** Regimes de bens — Separação* não exige formulário de cônjuge na tela de detalhe. */
+/** Estado civil nas garantias da minuta — sem União Estável. */
+export const ESTADO_CIVIL_GARANTIA_OPTS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)'];
+/** Regimes de bens — Separação Total não exige formulário de cônjuge. */
 export const REGIME_CASAMENTO_OPTS = [
   'Comunhão Parcial de Bens',
   'Comunhão Universal de Bens',
   'Separação Total de Bens',
-  'Separação Obrigatória de Bens',
   'Participação Final nos Aquestos',
 ];
 /** Estados civis que exigem dados do cônjuge (SpouseDetailsForm) */
@@ -124,6 +139,46 @@ export function parteExigeFormularioConjuge(estadoCivil?: string, regime?: strin
 
 export function isGarantiaEstoque(tipo: string): boolean {
   return tipo === 'AF. Estoque' || tipo === 'Penhor de Estoque';
+}
+
+export function isGarantiaAtivosBiologicos(tipo: string): boolean {
+  return tipo === 'AF. Ativos Biológicos';
+}
+
+export function isGarantiaLavoura(tipo: string): boolean {
+  return tipo === 'AF. Lavoura';
+}
+
+export function isGarantiaImovel(tipo: string): boolean {
+  return tipo === 'AF. Imóvel';
+}
+
+export function isGarantiaBensMoveis(tipo: string): boolean {
+  return tipo === 'AF. Bens Móveis';
+}
+
+export function isGarantiaCessaoDuplicatas(tipo: string): boolean {
+  return tipo === 'Cessão Fiduciária de Direitos Creditórios (DUPLICATAS)';
+}
+
+export function isGarantiaCessaoContrato(tipo: string): boolean {
+  return tipo === 'Cessão Fiduciária de Direitos Creditórios (CONTRATO)';
+}
+
+export function isGarantiaCessao(tipo: string): boolean {
+  return isGarantiaCessaoDuplicatas(tipo) || isGarantiaCessaoContrato(tipo);
+}
+
+/** Tipos de garantia com formulário específico (sem testemunhas / constituição / obrigação). */
+export function isGarantiaFormularioEspecifico(tipo: string): boolean {
+  return (
+    isGarantiaEstoque(tipo) ||
+    isGarantiaAtivosBiologicos(tipo) ||
+    isGarantiaLavoura(tipo) ||
+    isGarantiaImovel(tipo) ||
+    isGarantiaBensMoveis(tipo) ||
+    isGarantiaCessao(tipo)
+  );
 }
 
 export function isGarantiaComFormaProduto(tipo: string): boolean {
@@ -163,7 +218,9 @@ export interface RepresentanteLegal {
   nacionalidade: string;
   dataNascimento: string;
   profissao: string;
+  estadoCivil?: string;
   email?: string;
+  telefone?: string;
 }
 
 export interface PessoaMinuta {
@@ -179,6 +236,8 @@ export interface PessoaMinuta {
   dataNascimento?: string;
   profissao?: string;
   estadoCivil?: string;
+  regime?: string;
+  dataCasamento?: string;
   conjuge?: ConjugeMinuta;
   // PJ
   cnpj?: string;
@@ -526,6 +585,8 @@ export function emptyPessoaMinuta(tipoPessoa: TipoPessoa = 'FISICA'): PessoaMinu
     dataNascimento: '',
     profissao: '',
     estadoCivil: '',
+    regime: '',
+    dataCasamento: '',
     conjuge: emptyConjugeMinuta(),
     cnpj: '',
     razaoSocial: '',
@@ -557,7 +618,9 @@ export function emptyPessoaMinuta(tipoPessoa: TipoPessoa = 'FISICA'): PessoaMinu
       nacionalidade: '',
       dataNascimento: '',
       profissao: '',
+      estadoCivil: '',
       email: '',
+      telefone: '',
     },
   };
 }
@@ -597,6 +660,80 @@ export interface EstoqueItem {
   proprietario: string;
 }
 
+export interface BemMovelItem {
+  descricao: string;
+  precoUnitario: string;
+  quantidade: string;
+  marca: string;
+  modelo: string;
+  anoFabricacao: string;
+  numeroSerie: string;
+  matricula: string;
+  cep: string;
+  localidade: string;
+  numero: string;
+  bairro: string;
+  infoAdicionais: string;
+  cidade: string;
+  estado: string;
+  pais: string;
+  cartorioRegistro: string;
+  ufRegistro: string;
+  cidadeRegistro: string;
+  proprietario: string;
+  /** Descrição livre dos documentos do bem */
+  documentos: string;
+}
+
+export function emptyBemMovelDraft(): Omit<BemMovelItem, 'proprietario'> {
+  return {
+    descricao: '',
+    precoUnitario: '',
+    quantidade: '',
+    marca: '',
+    modelo: '',
+    anoFabricacao: '',
+    numeroSerie: '',
+    matricula: '',
+    cep: '',
+    localidade: '',
+    numero: '',
+    bairro: '',
+    infoAdicionais: '',
+    cidade: '',
+    estado: '',
+    pais: 'Brasil',
+    cartorioRegistro: '',
+    ufRegistro: '',
+    cidadeRegistro: '',
+    documentos: '',
+  };
+}
+
+export interface EnderecoLocacaoItem {
+  cep: string;
+  localidade: string;
+  numero: string;
+  bairro: string;
+  infoAdicionais: string;
+  cidade: string;
+  estado: string;
+  pais: string;
+}
+
+export function emptyEnderecoLocacaoItem(): EnderecoLocacaoItem {
+  return {
+    cep: '',
+    localidade: '',
+    numero: '',
+    bairro: '',
+    infoAdicionais: '',
+    cidade: '',
+    estado: '',
+    pais: 'Brasil',
+  };
+}
+
 export interface GarantiaMinuta {
   tipo: string;
   valor: string;
@@ -611,6 +748,7 @@ export interface GarantiaMinuta {
   dataPrevistaConstituicao: string;
   observacoesConstituicao: string;
   // Formação de estoque (tipos estoque)
+  numeroContratoEstoque: string;
   nomeImovel: string;
   matricula: string;
   zona: string;
@@ -620,21 +758,44 @@ export interface GarantiaMinuta {
   cartorioRegistro: string;
   ufRegistro: string;
   cidadeRegistro: string;
-  // Endereço
+  // AF. Imóvel — campos opcionais
+  car: string;
+  nirf: string;
+  ccir: string;
+  ccirAno: string;
+  sigefIncra: string;
+  possuiSeguro: boolean;
+  // AF. Ativos Biológicos
+  quantidadeAnimais: string;
+  categoriaAnimal: string;
+  pesoMedio: string;
+  unidadeMedidaPeso: string;
+  // AF. Lavoura (back-end: agricola)
+  tamanhoArea: string;
+  unidadeMedidaTamanhoArea: string;
+  anoSafra: string;
+  produto: string;
+  quantidadeProduto: string;
+  unidadeMedidaProduto: string;
+  precoUnitario: string;
+  enderecosLocacao: EnderecoLocacaoItem[];
+  // Endereço da locação / estoque (draft ou endereço único)
+  cep: string;
+  localidade: string;
   numero: string;
   bairro: string;
   infoAdicionais: string;
   cidade: string;
   estado: string;
   pais: string;
-  tipoPessoaProprietario: TipoPessoa;
-  // Locação
+  proprietarioGarantia: PessoaMinuta;
+  // Locação / arrendamento
   imovelLocado: boolean;
   tipoLocacao: string;
   dataInicio: string;
   prazoIndeterminado: boolean;
   dataTermino: string;
-  tipoPessoaLocado: TipoPessoa;
+  proprietarioLocado: PessoaMinuta;
   nomeContratante: string;
   nomeContratado: string;
   // Estoques
@@ -643,6 +804,35 @@ export interface GarantiaMinuta {
   dataRelatorio: string;
   periodicidadeRelatorio: string;
   dataPrimeiraAtualizacao: string;
+  // Cessão Fiduciária de Direitos Creditórios (DUPLICATAS / CONTRATO)
+  tipoTitulo: string;
+  tipoContrato: string;
+  dataEmissaoContrato: string;
+  dataVencimentoContrato: string;
+  descricaoContrato: string;
+  cedenteDocumento: string;
+  cedenteNome: string;
+  sacadoDocumento: string;
+  sacadoNome: string;
+  /** Endereço do sacado (CONTRATO) — campos no form; não obrigatório além de doc/nome */
+  sacadoCep: string;
+  sacadoLocalidade: string;
+  sacadoNumero: string;
+  sacadoBairro: string;
+  sacadoInfoAdicionais: string;
+  sacadoCidade: string;
+  sacadoEstado: string;
+  sacadoPais: string;
+  cadastrarCamposOpcionais: boolean;
+  pctEquivalenteCprf: string;
+  dataAssinatura: string;
+  representantes: string[];
+  bancoEscrow: string;
+  contaEscrow: string;
+  agenciaEscrow: string;
+  titularEscrow: string;
+  // AF. Bens Móveis
+  bensMoveis: BemMovelItem[];
 }
 
 export function emptyGarantiaMinuta(): GarantiaMinuta {
@@ -658,6 +848,7 @@ export function emptyGarantiaMinuta(): GarantiaMinuta {
     cartorioConstituicao: '',
     dataPrevistaConstituicao: '',
     observacoesConstituicao: '',
+    numeroContratoEstoque: '',
     nomeImovel: '',
     matricula: '',
     zona: '',
@@ -667,25 +858,71 @@ export function emptyGarantiaMinuta(): GarantiaMinuta {
     cartorioRegistro: '',
     ufRegistro: '',
     cidadeRegistro: '',
+    car: '',
+    nirf: '',
+    ccir: '',
+    ccirAno: '',
+    sigefIncra: '',
+    possuiSeguro: false,
+    quantidadeAnimais: '',
+    categoriaAnimal: '',
+    pesoMedio: '',
+    unidadeMedidaPeso: '',
+    tamanhoArea: '',
+    unidadeMedidaTamanhoArea: '',
+    anoSafra: '',
+    produto: '',
+    quantidadeProduto: '',
+    unidadeMedidaProduto: '',
+    precoUnitario: '',
+    enderecosLocacao: [],
+    cep: '',
+    localidade: '',
     numero: '',
     bairro: '',
     infoAdicionais: '',
     cidade: '',
     estado: '',
     pais: 'Brasil',
-    tipoPessoaProprietario: 'FISICA',
+    proprietarioGarantia: emptyPessoaMinuta('FISICA'),
     imovelLocado: false,
     tipoLocacao: '',
     dataInicio: '',
     prazoIndeterminado: false,
     dataTermino: '',
-    tipoPessoaLocado: 'FISICA',
+    proprietarioLocado: emptyPessoaMinuta('FISICA'),
     nomeContratante: '',
     nomeContratado: '',
     estoques: [],
     dataRelatorio: '',
     periodicidadeRelatorio: '',
     dataPrimeiraAtualizacao: '',
+    tipoTitulo: '',
+    tipoContrato: '',
+    dataEmissaoContrato: '',
+    dataVencimentoContrato: '',
+    descricaoContrato: '',
+    cedenteDocumento: '',
+    cedenteNome: '',
+    sacadoDocumento: '',
+    sacadoNome: '',
+    sacadoCep: '',
+    sacadoLocalidade: '',
+    sacadoNumero: '',
+    sacadoBairro: '',
+    sacadoInfoAdicionais: '',
+    sacadoCidade: '',
+    sacadoEstado: '',
+    sacadoPais: 'Brasil',
+    cadastrarCamposOpcionais: false,
+    pctEquivalenteCprf: '',
+    dataAssinatura: '',
+    representantes: [],
+    bancoEscrow: '',
+    contaEscrow: '',
+    agenciaEscrow: '',
+    titularEscrow: '',
+    bensMoveis: [],
   };
 }
 
