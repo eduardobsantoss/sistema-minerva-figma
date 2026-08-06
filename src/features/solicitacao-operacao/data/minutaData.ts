@@ -874,7 +874,45 @@ export interface ConstitucaoGarantiaConfig {
 }
 
 export const FIDUCIARIA_PADRAO_OPTS = ['Ceres Trading', 'Ceres Securitizadora', 'BMP', 'Vortx'];
-export const CESSAO_VINCULADA_OPTS = ['Cessão 001', 'Cessão 002', 'Cessão 003'];
+
+export interface CessaoVinculadaMock {
+  id: string;
+  label: string;
+  totalValorCompra: string;
+  totalValorNominal: string;
+  quantidadeTitulos: number;
+}
+
+/** Cessões mock para o select “Cessão vinculada” + card de resumo. */
+export const CESSOES_VINCULADAS_MOCK: CessaoVinculadaMock[] = [
+  {
+    id: 'PEDRO_OP.2361_06082026',
+    label: 'PEDRO_OP.2361_06082026',
+    totalValorCompra: 'R$ 428.826,34',
+    totalValorNominal: 'R$ 500.000,00',
+    quantidadeTitulos: 1,
+  },
+  {
+    id: 'CERES_OP.1842_12072026',
+    label: 'CERES_OP.1842_12072026',
+    totalValorCompra: 'R$ 1.250.000,00',
+    totalValorNominal: 'R$ 1.400.000,00',
+    quantidadeTitulos: 3,
+  },
+  {
+    id: 'BMP_OP.0911_01062026',
+    label: 'BMP_OP.0911_01062026',
+    totalValorCompra: 'R$ 89.500,00',
+    totalValorNominal: 'R$ 100.000,00',
+    quantidadeTitulos: 2,
+  },
+];
+
+export const CESSAO_VINCULADA_OPTS = CESSOES_VINCULADAS_MOCK.map((c) => c.label);
+
+export function cessaoVinculadaPorLabel(label: string): CessaoVinculadaMock | undefined {
+  return CESSOES_VINCULADAS_MOCK.find((c) => c.label === label || c.id === label);
+}
 
 export function emptyTestemunhaConstituicao(): TestemunhaConstituicao {
   return { cpf: '', nome: '', email: '' };

@@ -15936,7 +15936,7 @@ Estado: `garantia.constituicao` (`ConstituicaoGarantiaConfig`) + sync de `instru
 
 | Estado dos toggles | Conteúdo |
 |---|---|
-| Instrumento Particular: **Não** | Seção **Cessão vinculada** → select Cessão |
+| Instrumento Particular: **Não** | Seção **Cessão vinculada** → select Cessão; ao selecionar, card com **Total valor de compra** · **Total valor nominal** · **Quantidade** (título(s)) |
 | Instrumento Particular: **Sim** | **Dados do cedente**: Cedente · Representante legal do grupo · (se cedente) Contato · Endereço |
 | Constituir garantia: **Sim** | **Fiduciária** (select padrão + PJ) · Representante Legal · Contato · Endereço · **Obrigação garantida** |
 | Instrumento **ou** Constituir | Toggle **Possui testemunhas** → lista (CPF · Nome* · E-mail*) + **Adicionar testemunha** |

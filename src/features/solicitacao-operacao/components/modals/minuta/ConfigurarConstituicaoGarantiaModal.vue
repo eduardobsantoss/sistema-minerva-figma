@@ -15,6 +15,7 @@ import {
   FIDUCIARIA_PADRAO_OPTS,
   CESSAO_VINCULADA_OPTS,
   MOCK_CLIENTES_MINUTA,
+  cessaoVinculadaPorLabel,
   emptyConstituicaoGarantia,
   emptyTestemunhaConstituicao,
   emptyPessoaMinuta,
@@ -55,6 +56,10 @@ const representanteGrupoOpts = computed(() =>
   MOCK_CLIENTES_MINUTA.filter((c) => c.tipoPessoa === 'FISICA').map(
     (c) => `${c.documento} - ${c.nome}`,
   ),
+);
+
+const cessaoResumo = computed(() =>
+  form.cessaoVinculada ? cessaoVinculadaPorLabel(form.cessaoVinculada) : undefined,
 );
 
 const ddiModel = computed({
@@ -196,6 +201,37 @@ function salvar() {
                 v-model="form.cessaoVinculada"
               />
             </StepGrid>
+            <div
+              v-if="cessaoResumo"
+              class="grid"
+              style="
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 16px;
+                padding: 16px 18px;
+                border: 1px solid var(--border-default);
+                border-radius: var(--radius-lg);
+                background: var(--surface-sunken);
+              "
+            >
+              <div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px">Total valor de compra</div>
+                <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+                  {{ cessaoResumo.totalValorCompra }}
+                </div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px">Total valor nominal</div>
+                <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+                  {{ cessaoResumo.totalValorNominal }}
+                </div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px">Quantidade</div>
+                <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+                  {{ cessaoResumo.quantidadeTitulos }} título(s)
+                </div>
+              </div>
+            </div>
           </template>
 
           <!-- Instrumento particular ON → Dados do cedente -->
