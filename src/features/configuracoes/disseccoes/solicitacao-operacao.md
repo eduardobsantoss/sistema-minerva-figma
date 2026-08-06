@@ -15919,6 +15919,36 @@ Cadastro: botão habilitado com `form.tipo` + `form.valor`.
 
 ---
 
+### Tabela da step Garantia (após cadastrar)
+
+| Coluna / UI | Detalhe |
+|---|---|
+| Tipo · Valor · Instr. particular · Constituir · Testemunhas | Dados da garantia |
+| **Uso** | Mini barra + `%` (`percentualUsado`: tipicamente **0 / 50 / 100**) — à esquerda do botão de ação |
+| **Ação** | Ícone de configuração (`Settings2`) — **não há lixeira** |
+| Clique na linha | Abre edição da garantia (modal Nova/Editar) |
+| Clique na ação | Abre **Configurar constituição da garantia** |
+
+Arquivo do modal: `ConfigurarConstituicaoGarantiaModal.vue`  
+Estado: `garantia.constituicao` (`ConstituicaoGarantiaConfig`) + sync de `instrumentoParticular` / `constituirGarantia` / contagem de testemunhas na linha.
+
+#### Modal — Configurar constituição da garantia
+
+| Estado dos toggles | Conteúdo |
+|---|---|
+| Instrumento Particular: **Não** | Seção **Cessão vinculada** → select Cessão |
+| Instrumento Particular: **Sim** | **Dados do cedente**: Cedente · Representante legal do grupo · (se cedente) Contato · Endereço |
+| Constituir garantia: **Sim** | **Fiduciária** (select padrão + PJ) · Representante Legal · Contato · Endereço · **Obrigação garantida** |
+| Instrumento **ou** Constituir | Toggle **Possui testemunhas** → lista (CPF · Nome* · E-mail*) + **Adicionar testemunha** |
+
+**Fiduciária PJ — Representante Legal** (mesmas regras das garantias): CPF · Nome · Nacionalidade · Profissão · Estado civil · E-mail · Telefone — **sem** RG / inscrição rural / data nascimento.  
+**Contato da fiduciária** (empresa): E-mail · DDI · Telefone.  
+**Obrigação garantida:** Instrumento (Nome) · Documento (CNPJ) · Compradora · Vendedora · Fiador(es) · Local · Data* · Produto · Quantidade · Valor da obrigação.
+
+Footer: **SALVAR**.
+
+---
+
 ### Pessoa Física / Jurídica — regras compartilhadas
 
 Usado em: **Proprietário da garantia** e **Proprietário do imóvel locado/arrendado** (`PessoaNaturezaFields`).

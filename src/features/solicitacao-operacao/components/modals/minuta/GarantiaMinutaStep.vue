@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
-import { X, Trash2, Shield, Home, Scale, User } from 'lucide-vue-next';
+import { X, Trash2, Shield, Home, Scale, User, Settings2 } from 'lucide-vue-next';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { UF_OPTIONS, PAISES_DDI } from '../../../data/operacaoData';
@@ -47,15 +47,20 @@ import {
   type EstoqueItem,
   type EnderecoLocacaoItem,
   type BemMovelItem,
+  type ConstitucaoGarantiaConfig,
+  emptyConstituicaoGarantia,
 } from '../../../data/minutaData';
 import PessoaNaturezaFields from './PessoaNaturezaFields.vue';
 import EnderecosLocacaoFields from './EnderecosLocacaoFields.vue';
+import ConfigurarConstituicaoGarantiaModal from './ConfigurarConstituicaoGarantiaModal.vue';
 
 const garantias = defineModel<GarantiaMinuta[]>('garantias', { default: () => [] });
 
 const possuiGarantias = ref(true);
 const showNova = ref(false);
 const editingIndex = ref<number | null>(null);
+const showConstituicao = ref(false);
+const constituicaoIndex = ref<number | null>(null);
 const form = reactive<GarantiaMinuta>(emptyGarantiaMinuta());
 const estoqueDraft = reactive({ propriedade: '', proprietario: '' });
 const enderecoDraft = reactive<EnderecoLocacaoItem>(emptyEnderecoLocacaoItem());
@@ -141,6 +146,10 @@ function hydrateGarantia(g: GarantiaMinuta) {
         documentos: Array.isArray(b.documentos) ? b.documentos.join('\n') : b.documentos || '',
       }))
     : [];
+  form.percentualUsado = (g.percentualUsado === 50 || g.percentualUsado === 100 ? g.percentualUsado : 0) as 0 | 50 | 100;
+  form.constituicao = g.constituicao
+    ? { ...emptyConstituicaoGarantia(), ...JSON.parse(JSON.stringify(g.constituicao)) }
+    : emptyConstituicaoGarantia();
   // Migra endereço único legado → lista
   if (
     form.enderecosLocacao.length === 0 &&
@@ -274,8 +283,35 @@ function cadastrar() {
   editingIndex.value = null;
 }
 
-function removeGarantia(i: number) {
-  garantias.value = garantias.value.filter((_, idx) => idx !== i);
+function openConstituicao(i: number) {
+  constituicaoIndex.value = i;
+  showConstituicao.value = true;
+}
+
+function saveConstituicao(config: ConstitucaoGarantiaConfig) {
+  if (constituicaoIndex.value == null) return;
+  const next = [...garantias.value];
+  const g = { ...next[constituicaoIndex.value] };
+  g.constituicao = config;
+  g.instrumentoParticular = config.instrumentoParticular;
+  g.constituirGarantia = config.constituirGarantia;
+  g.numeroTestemunhas = config.possuiTestemunhas
+    ? String(config.testemunhas.length || 0)
+    : g.numeroTestemunhas;
+  next[constituicaoIndex.value] = g;
+  garantias.value = next;
+  showConstituicao.value = false;
+  constituicaoIndex.value = null;
+}
+
+const garantiaConstituicao = computed(() =>
+  constituicaoIndex.value != null ? garantias.value[constituicaoIndex.value] ?? null : null,
+);
+
+function usoBarColor(pct: number) {
+  if (pct >= 100) return 'var(--success-base, #16a34a)';
+  if (pct >= 50) return 'var(--warning-base, #f59e0b)';
+  return 'var(--neutral-300, #cbd5e1)';
 }
 
 const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
@@ -302,13 +338,13 @@ function globalIndex(pageIdx: number) {
         v-if="garantias.length === 0"
         :icon="Shield"
         title="Nenhuma garantia adicionada"
-        hint="Clique em Adicionar garantia para cadastrar AF, Hipoteca, Penhor, Fiança e demais tipos."
+        hint="Clique em Adicionar garantia para cadastrar AF. Estoque, Lavoura, Imóvel e demais tipos disponíveis."
       />
       <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
         <div
           class="grid"
           style="
-            grid-template-columns: 1.3fr 0.9fr 0.9fr 0.9fr 0.7fr auto;
+            grid-template-columns: 1.3fr 0.9fr 0.7fr 0.9fr 0.9fr 0.7fr auto;
             padding: 10px 14px;
             background: var(--surface-sunken);
             font-size: 10px;
@@ -320,6 +356,7 @@ function globalIndex(pageIdx: number) {
         >
           <div>Tipo</div>
           <div>Valor</div>
+          <div>Uso</div>
           <div>Instr. particular</div>
           <div>Constituir</div>
           <div>Testemunhas</div>
@@ -330,7 +367,7 @@ function globalIndex(pageIdx: number) {
           :key="pageIdx"
           class="grid items-center"
           style="
-            grid-template-columns: 1.3fr 0.9fr 0.9fr 0.9fr 0.7fr auto;
+            grid-template-columns: 1.3fr 0.9fr 0.7fr 0.9fr 0.9fr 0.7fr auto;
             padding: 10px 14px;
             border-top: 1px solid var(--border-default);
             font-size: var(--text-sm);
@@ -340,15 +377,49 @@ function globalIndex(pageIdx: number) {
         >
           <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ g.tipo }}</div>
           <div>{{ g.valor || '—' }}</div>
+          <div class="flex items-center" style="gap: 8px">
+            <div
+              style="
+                width: 48px;
+                height: 6px;
+                border-radius: 999px;
+                background: var(--surface-sunken);
+                overflow: hidden;
+                border: 1px solid var(--border-default);
+              "
+              :title="`${g.percentualUsado ?? 0}% usado`"
+            >
+              <div
+                :style="{
+                  width: `${g.percentualUsado ?? 0}%`,
+                  height: '100%',
+                  background: usoBarColor(g.percentualUsado ?? 0),
+                }"
+              />
+            </div>
+            <span style="font-size: 11px; color: var(--text-muted); min-width: 32px">
+              {{ g.percentualUsado ?? 0 }}%
+            </span>
+          </div>
           <div>{{ g.instrumentoParticular ? 'Sim' : 'Não' }}</div>
           <div>{{ g.constituirGarantia ? 'Sim' : 'Não' }}</div>
           <div>{{ g.numeroTestemunhas || '—' }}</div>
           <button
-            aria-label="Remover"
-            style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
-            @click.stop="removeGarantia(globalIndex(pageIdx))"
+            aria-label="Configurar constituição"
+            title="Configurar constituição da garantia"
+            class="flex items-center justify-center"
+            style="
+              width: 32px;
+              height: 32px;
+              border: 1px solid var(--border-default);
+              border-radius: var(--radius-md);
+              background: var(--surface-card);
+              cursor: pointer;
+              color: var(--action-primary-bg);
+            "
+            @click.stop="openConstituicao(globalIndex(pageIdx))"
           >
-            <Trash2 :size="14" />
+            <Settings2 :size="15" />
           </button>
         </div>
         <TablePagination
@@ -1453,5 +1524,12 @@ function globalIndex(pageIdx: number) {
         </div>
       </div>
     </div>
+
+    <ConfigurarConstituicaoGarantiaModal
+      :open="showConstituicao"
+      :garantia="garantiaConstituicao"
+      @close="showConstituicao = false; constituicaoIndex = null"
+      @save="saveConstituicao"
+    />
   </div>
 </template>

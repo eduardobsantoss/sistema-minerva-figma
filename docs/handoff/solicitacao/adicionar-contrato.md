@@ -483,7 +483,11 @@ Lista + `AddButton` → nested modal **Nova Garantia**.
 | Sacado | CPF/CNPJ* · Nome/Razão social* · CEP · Localidade · Número · Bairro · Info · Cidade · Estado · País |
 | Opcionais (nada obrigatório abaixo do toggle) | Data da assinatura · Representantes (Nome + Cadastrar → tabela) · Banco · Conta/Agência Escrow · Titular |
 
-Cadastro exige `form.tipo`. Valor exibido = `areaTotal || valor || '—'`.
+Cadastro exige `form.tipo` + `form.valor`.
+
+**Tabela da step:** colunas Tipo · Valor · **Uso** (mini barra 0/50/100%) · Instr. particular · Constituir · Testemunhas · **ação** (`Settings2` → modal Configurar constituição). Sem lixeira.
+
+**Modal Configurar constituição** (`ConfigurarConstituicaoGarantiaModal.vue`): toggles Instrumento Particular / Constituir garantia → Cessão vinculada **ou** Dados do cedente; se constituir → Fiduciária + Representante + Contato + Endereço + Obrigação; testemunhas opcionais. Persiste em `garantia.constituicao`.
 
 ```ts
 ZONA_OPTS = ['Rural', 'Urbana'];

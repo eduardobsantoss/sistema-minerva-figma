@@ -833,6 +833,83 @@ export interface GarantiaMinuta {
   titularEscrow: string;
   // AF. Bens Móveis
   bensMoveis: BemMovelItem[];
+  /** Uso da garantia na tabela (0 / 50 / 100) */
+  percentualUsado: 0 | 50 | 100;
+  /** Configuração do modal “Configurar constituição da garantia” */
+  constituicao: ConstitucaoGarantiaConfig;
+}
+
+export interface TestemunhaConstituicao {
+  cpf: string;
+  nome: string;
+  email: string;
+}
+
+export interface ObrigacaoGarantidaConstituicao {
+  instrumentoNome: string;
+  documentoInstrumento: string;
+  compradora: string;
+  vendedora: string;
+  fiadores: string;
+  local: string;
+  data: string;
+  produto: string;
+  quantidade: string;
+  valor: string;
+}
+
+export interface ConstitucaoGarantiaConfig {
+  instrumentoParticular: boolean;
+  constituirGarantia: boolean;
+  cessaoVinculada: string;
+  cedenteDoc: string;
+  representanteLegalGrupo: string;
+  contatoCedente: string;
+  enderecoCedente: string;
+  possuiTestemunhas: boolean;
+  testemunhas: TestemunhaConstituicao[];
+  fiduciariaPadrao: string;
+  fiduciaria: PessoaMinuta;
+  obrigacao: ObrigacaoGarantidaConstituicao;
+}
+
+export const FIDUCIARIA_PADRAO_OPTS = ['Ceres Trading', 'Ceres Securitizadora', 'BMP', 'Vortx'];
+export const CESSAO_VINCULADA_OPTS = ['Cessão 001', 'Cessão 002', 'Cessão 003'];
+
+export function emptyTestemunhaConstituicao(): TestemunhaConstituicao {
+  return { cpf: '', nome: '', email: '' };
+}
+
+export function emptyObrigacaoGarantidaConstituicao(): ObrigacaoGarantidaConstituicao {
+  return {
+    instrumentoNome: '',
+    documentoInstrumento: '',
+    compradora: '',
+    vendedora: '',
+    fiadores: '',
+    local: '',
+    data: '',
+    produto: '',
+    quantidade: '',
+    valor: '',
+  };
+}
+
+export function emptyConstituicaoGarantia(): ConstitucaoGarantiaConfig {
+  return {
+    instrumentoParticular: false,
+    constituirGarantia: false,
+    cessaoVinculada: '',
+    cedenteDoc: '',
+    representanteLegalGrupo: '',
+    contatoCedente: '',
+    enderecoCedente: '',
+    possuiTestemunhas: false,
+    testemunhas: [],
+    fiduciariaPadrao: '',
+    fiduciaria: emptyPessoaMinuta('JURIDICA'),
+    obrigacao: emptyObrigacaoGarantidaConstituicao(),
+  };
 }
 
 export function emptyGarantiaMinuta(): GarantiaMinuta {
@@ -923,6 +1000,8 @@ export function emptyGarantiaMinuta(): GarantiaMinuta {
     agenciaEscrow: '',
     titularEscrow: '',
     bensMoveis: [],
+    percentualUsado: 0,
+    constituicao: emptyConstituicaoGarantia(),
   };
 }
 

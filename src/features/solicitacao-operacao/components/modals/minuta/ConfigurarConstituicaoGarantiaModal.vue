@@ -1,0 +1,428 @@
+<script setup lang="ts">
+import { computed, reactive, watch } from 'vue';
+import { X, Trash2, User, Mail, MapPin, Plus } from 'lucide-vue-next';
+import { UF_OPTIONS, PAISES_DDI } from '../../../data/operacaoData';
+import {
+  BentoBox,
+  StepGrid,
+  FormField,
+  SelectField,
+  ToggleRow,
+} from '../adicionar-contrato';
+import {
+  ESTADO_CIVIL_GARANTIA_OPTS,
+  NACIONALIDADE_OPTS,
+  FIDUCIARIA_PADRAO_OPTS,
+  CESSAO_VINCULADA_OPTS,
+  MOCK_CLIENTES_MINUTA,
+  emptyConstituicaoGarantia,
+  emptyTestemunhaConstituicao,
+  emptyPessoaMinuta,
+  type ConstitucaoGarantiaConfig,
+  type GarantiaMinuta,
+} from '../../../data/minutaData';
+
+const props = defineProps<{
+  open: boolean;
+  garantia: GarantiaMinuta | null;
+}>();
+
+const emit = defineEmits<{
+  close: [];
+  save: [config: ConstitucaoGarantiaConfig];
+}>();
+
+const form = reactive<ConstituicaoGarantiaConfig>(emptyConstituicaoGarantia());
+
+const DDI_LABELS = PAISES_DDI.map((p) => `${p.pais} (${p.ddi})`);
+const PAIS_OPTS = PAISES_DDI.map((p) => p.pais);
+
+const cedenteOpts = computed(() =>
+  MOCK_CLIENTES_MINUTA.map((c) => `${c.documento} - ${c.nome || c.razaoSocial || ''}`),
+);
+
+const contatoOpts = computed(() => {
+  if (!form.cedenteDoc) return [] as string[];
+  return ['E-mail principal', 'E-mail financeiro', 'Telefone comercial'];
+});
+
+const enderecoOpts = computed(() => {
+  if (!form.cedenteDoc) return [] as string[];
+  return ['Endereço principal', 'Endereço de cobrança'];
+});
+
+const representanteGrupoOpts = computed(() =>
+  MOCK_CLIENTES_MINUTA.filter((c) => c.tipoPessoa === 'FISICA').map(
+    (c) => `${c.documento} - ${c.nome}`,
+  ),
+);
+
+const ddiModel = computed({
+  get: () => {
+    const ddi = form.fiduciaria.ddi || '+55';
+    const hit = PAISES_DDI.find((p) => p.ddi === ddi);
+    return hit ? `${hit.pais} (${hit.ddi})` : `Brasil (${ddi})`;
+  },
+  set: (v: string) => {
+    const m = v.match(/\(([^)]+)\)/);
+    form.fiduciaria.ddi = m?.[1] || '+55';
+  },
+});
+
+watch(
+  () => [props.open, props.garantia] as const,
+  ([open, g]) => {
+    if (!open || !g) return;
+    const base = emptyConstituicaoGarantia();
+    const raw = g.constituicao ? JSON.parse(JSON.stringify(g.constituicao)) : {};
+    Object.assign(form, base, raw, {
+      instrumentoParticular: g.constituicao?.instrumentoParticular ?? g.instrumentoParticular ?? false,
+      constituirGarantia: g.constituicao?.constituirGarantia ?? g.constituirGarantia ?? false,
+      fiduciaria: {
+        ...emptyPessoaMinuta('JURIDICA'),
+        ...(raw.fiduciaria ?? {}),
+        representante: {
+          ...emptyPessoaMinuta('JURIDICA').representante!,
+          ...(raw.fiduciaria?.representante ?? {}),
+        },
+      },
+      testemunhas: Array.isArray(raw.testemunhas) ? raw.testemunhas : [],
+      obrigacao: { ...base.obrigacao, ...(raw.obrigacao ?? {}) },
+    });
+  },
+  { immediate: true },
+);
+
+function addTestemunha() {
+  form.testemunhas.push(emptyTestemunhaConstituicao());
+}
+
+function removeTestemunha(i: number) {
+  form.testemunhas.splice(i, 1);
+}
+
+function salvar() {
+  emit('save', JSON.parse(JSON.stringify(form)) as ConstitucaoGarantiaConfig);
+}
+</script>
+
+<template>
+  <div
+    v-if="open"
+    style="
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 60, 74, 0.55);
+      backdrop-filter: blur(8px);
+      z-index: 560;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    "
+    @click.self="emit('close')"
+  >
+    <div
+      style="
+        background: var(--surface-card);
+        border-radius: var(--radius-xl);
+        width: 100%;
+        max-width: 820px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+      "
+      @click.stop
+    >
+      <div
+        class="flex items-center justify-between"
+        style="
+          padding: 16px 24px;
+          background: var(--action-primary-bg);
+          color: #fff;
+        "
+      >
+        <div style="width: 36px" />
+        <h2
+          style="
+            font-size: var(--text-sm);
+            font-weight: var(--weight-bold);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            text-align: center;
+            flex: 1;
+          "
+        >
+          Configurar constituição da garantia
+        </h2>
+        <button
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 36px; height: 36px; border: none; background: none; cursor: pointer; color: #fff"
+          @click="emit('close')"
+        >
+          <X :size="18" />
+        </button>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; padding: 24px 28px">
+        <div class="flex flex-col" style="gap: 18px">
+          <ToggleRow
+            :label="`Instrumento Particular: ${form.instrumentoParticular ? 'Sim' : 'Não'}`"
+            :on="form.instrumentoParticular"
+            @toggle="form.instrumentoParticular = !form.instrumentoParticular"
+          />
+          <ToggleRow
+            :label="`Constituir garantia: ${form.constituirGarantia ? 'Sim' : 'Não'}`"
+            :on="form.constituirGarantia"
+            @toggle="form.constituirGarantia = !form.constituirGarantia"
+          />
+
+          <div style="height: 1px; background: var(--border-default)" />
+
+          <!-- Instrumento particular OFF → Cessão vinculada -->
+          <template v-if="!form.instrumentoParticular">
+            <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+              Cessão vinculada
+            </div>
+            <StepGrid>
+              <SelectField
+                label="Cessão"
+                :options="CESSAO_VINCULADA_OPTS"
+                placeholder="Selecione"
+                :span="12"
+                v-model="form.cessaoVinculada"
+              />
+            </StepGrid>
+          </template>
+
+          <!-- Instrumento particular ON → Dados do cedente -->
+          <template v-else>
+            <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+              Dados do cedente
+            </div>
+            <StepGrid>
+              <SelectField
+                label="Cedente"
+                :options="cedenteOpts"
+                placeholder="Selecione"
+                :span="6"
+                v-model="form.cedenteDoc"
+              />
+              <SelectField
+                label="Representante legal do grupo"
+                :options="representanteGrupoOpts"
+                placeholder="Selecione"
+                :span="6"
+                v-model="form.representanteLegalGrupo"
+              />
+              <SelectField
+                v-if="form.cedenteDoc"
+                label="Contato do cedente"
+                :options="contatoOpts"
+                placeholder="Selecione"
+                :span="6"
+                v-model="form.contatoCedente"
+              />
+              <SelectField
+                v-if="form.cedenteDoc"
+                label="Endereço do cedente"
+                :options="enderecoOpts"
+                placeholder="Selecione"
+                :span="6"
+                v-model="form.enderecoCedente"
+              />
+            </StepGrid>
+          </template>
+
+          <!-- Constituir garantia ON → Fiduciária + obrigação -->
+          <template v-if="form.constituirGarantia">
+            <div style="height: 1px; background: var(--border-default)" />
+            <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+              Fiduciária
+            </div>
+            <StepGrid>
+              <SelectField
+                label="Selecione a fiduciária padrão"
+                :options="FIDUCIARIA_PADRAO_OPTS"
+                placeholder="Selecione"
+                :span="12"
+                v-model="form.fiduciariaPadrao"
+              />
+              <FormField label="CNPJ" placeholder="—" :span="4" v-model="form.fiduciaria.cnpj!" />
+              <FormField label="Razão social" placeholder="—" :span="5" v-model="form.fiduciaria.razaoSocial!" />
+              <FormField label="Nome Fantasia" placeholder="—" :span="3" v-model="form.fiduciaria.nomeFantasia!" />
+              <FormField label="Data de abertura" placeholder="dd/mm/aaaa" :span="4" v-model="form.fiduciaria.dataAbertura!" />
+              <FormField label="Tipo" placeholder="—" :span="4" v-model="form.fiduciaria.tipoEmpresa!" />
+              <FormField label="Porte" placeholder="—" :span="4" v-model="form.fiduciaria.porte!" />
+              <FormField label="Atividade principal" placeholder="—" :span="4" v-model="form.fiduciaria.atividadePrincipal!" />
+              <FormField label="Natureza jurídica" placeholder="—" :span="4" v-model="form.fiduciaria.naturezaJuridica!" />
+              <FormField label="Inscrição municipal" placeholder="—" :span="4" v-model="form.fiduciaria.inscricaoMunicipal!" />
+              <FormField label="Inscrição estadual" placeholder="—" :span="4" v-model="form.fiduciaria.inscricaoEstadual!" />
+            </StepGrid>
+
+            <BentoBox title="Representante Legal" :icon="User">
+              <StepGrid>
+                <FormField label="CPF" placeholder="—" :span="3" v-model="form.fiduciaria.representante!.cpf" />
+                <FormField label="Nome" placeholder="—" :span="5" v-model="form.fiduciaria.representante!.nome" />
+                <SelectField
+                  label="Nacionalidade"
+                  :options="NACIONALIDADE_OPTS"
+                  placeholder="Selecione"
+                  :span="4"
+                  v-model="form.fiduciaria.representante!.nacionalidade"
+                />
+                <FormField label="Profissão" placeholder="—" :span="4" v-model="form.fiduciaria.representante!.profissao" />
+                <SelectField
+                  label="Estado Civil"
+                  :options="ESTADO_CIVIL_GARANTIA_OPTS"
+                  placeholder="Selecione"
+                  :span="4"
+                  v-model="form.fiduciaria.representante!.estadoCivil"
+                />
+                <FormField label="E-mail" placeholder="—" :span="4" v-model="form.fiduciaria.representante!.email" />
+                <FormField label="Telefone" placeholder="—" :span="4" v-model="form.fiduciaria.representante!.telefone" />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Contato" :icon="Mail">
+              <StepGrid>
+                <FormField label="E-mail" placeholder="—" :span="5" v-model="form.fiduciaria.email!" />
+                <SelectField label="DDI" :options="DDI_LABELS" :span="3" v-model="ddiModel" />
+                <FormField label="Telefone" placeholder="—" :span="4" v-model="form.fiduciaria.telefone!" />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Endereço" :icon="MapPin">
+              <StepGrid>
+                <FormField label="CEP" placeholder="—" :span="4" v-model="form.fiduciaria.cep!" />
+                <FormField label="Localidade" placeholder="—" :span="8" v-model="form.fiduciaria.localidade!" />
+                <FormField label="Número" placeholder="—" :span="4" v-model="form.fiduciaria.numero!" />
+                <FormField label="Bairro" placeholder="—" :span="8" v-model="form.fiduciaria.bairro!" />
+                <FormField label="Informações adicionais" placeholder="—" :span="12" v-model="form.fiduciaria.infoAdicionais!" />
+                <FormField label="Cidade" placeholder="—" :span="12" v-model="form.fiduciaria.cidade!" />
+                <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="6" v-model="form.fiduciaria.estado!" />
+                <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="6" v-model="form.fiduciaria.pais!" />
+              </StepGrid>
+            </BentoBox>
+
+            <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+              Obrigação garantida
+            </div>
+            <StepGrid>
+              <FormField label="Instrumento (Nome)" placeholder="—" :span="6" v-model="form.obrigacao.instrumentoNome" />
+              <FormField
+                label="Documento do instrumento (CNPJ)"
+                placeholder="—"
+                :span="6"
+                v-model="form.obrigacao.documentoInstrumento"
+              />
+              <FormField label="Compradora" placeholder="—" :span="4" v-model="form.obrigacao.compradora" />
+              <FormField label="Vendedora" placeholder="—" :span="4" v-model="form.obrigacao.vendedora" />
+              <FormField label="Fiador(es)" placeholder="—" :span="4" v-model="form.obrigacao.fiadores" />
+              <FormField label="Local" placeholder="—" :span="3" v-model="form.obrigacao.local" />
+              <FormField label="Data" placeholder="dd/mm/aaaa" required :span="3" v-model="form.obrigacao.data" />
+              <FormField label="Produto" placeholder="—" :span="3" v-model="form.obrigacao.produto" />
+              <FormField label="Quantidade" placeholder="—" :span="3" v-model="form.obrigacao.quantidade" />
+              <FormField
+                label="Valor da obrigação garantida"
+                placeholder="R$ 0,00"
+                currency
+                :span="6"
+                v-model="form.obrigacao.valor"
+              />
+            </StepGrid>
+          </template>
+
+          <!-- Testemunhas: quando instrumento particular ou constituir -->
+          <template v-if="form.instrumentoParticular || form.constituirGarantia">
+            <div style="height: 1px; background: var(--border-default)" />
+            <ToggleRow
+              label="Possui testemunhas"
+              :on="form.possuiTestemunhas"
+              @toggle="form.possuiTestemunhas = !form.possuiTestemunhas"
+            />
+
+            <template v-if="form.possuiTestemunhas">
+              <div class="flex items-center justify-between">
+                <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+                  Testemunhas
+                </div>
+                <button
+                  type="button"
+                  class="inline-flex items-center"
+                  style="
+                    gap: 8px;
+                    height: 36px;
+                    padding: 0 14px;
+                    border: none;
+                    border-radius: var(--radius-lg);
+                    background: var(--action-primary-bg);
+                    color: #fff;
+                    font-size: 11px;
+                    font-weight: var(--weight-bold);
+                    letter-spacing: 0.06em;
+                    text-transform: uppercase;
+                    cursor: pointer;
+                  "
+                  @click="addTestemunha"
+                >
+                  Adicionar testemunha
+                  <Plus :size="14" />
+                </button>
+              </div>
+
+              <div
+                v-if="form.testemunhas.length === 0"
+                style="padding: 12px 0; font-size: var(--text-sm); color: var(--text-muted)"
+              >
+                Nenhuma testemunha adicionada.
+              </div>
+
+              <div
+                v-for="(t, i) in form.testemunhas"
+                :key="i"
+                class="grid items-end"
+                style="grid-template-columns: 1fr 1.2fr 1.2fr auto; gap: 12px"
+              >
+                <FormField label="CPF" placeholder="—" :span="12" v-model="t.cpf" />
+                <FormField label="Nome" placeholder="—" required :span="12" v-model="t.nome" />
+                <FormField label="E-mail" placeholder="—" required :span="12" v-model="t.email" />
+                <button
+                  aria-label="Remover testemunha"
+                  style="width: 36px; height: 36px; border: none; background: none; cursor: pointer; color: var(--danger-base); margin-bottom: 2px"
+                  @click="removeTestemunha(i)"
+                >
+                  <Trash2 :size="16" />
+                </button>
+              </div>
+            </template>
+          </template>
+        </div>
+      </div>
+
+      <div class="flex justify-end" style="padding: 16px 28px; border-top: 1px solid var(--border-default)">
+        <button
+          type="button"
+          style="
+            height: 40px;
+            padding: 0 28px;
+            border: none;
+            border-radius: var(--radius-lg);
+            background: var(--action-primary-bg);
+            color: #fff;
+            font-size: var(--text-xs);
+            font-weight: var(--weight-bold);
+            letter-spacing: 0.08em;
+            cursor: pointer;
+          "
+          @click="salvar"
+        >
+          SALVAR
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
