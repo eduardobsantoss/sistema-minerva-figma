@@ -102,12 +102,10 @@ const steps = computed<StepDef[]>(() => {
       { key: 'avalista', label: 'Avalista', icon: Users },
       { key: 'emissao', label: 'Emissão', icon: MapPin },
       { key: 'pagamento', label: 'Pagamento', icon: ScrollText },
+      { key: 'garantia', label: 'Garantia', icon: Shield },
     ];
-    // NC + Ceres Trading: Boletim de Subscrição no lugar de Garantia
     if (showBoletim.value) {
       list.push({ key: 'boletim', label: 'Boletim', icon: BookOpen });
-    } else {
-      list.push({ key: 'garantia', label: 'Garantia', icon: Shield });
     }
     list.push({ key: 'titulo', label: 'Título', icon: Tag });
     return list;
@@ -334,8 +332,7 @@ function buildMinuta(): MinutaResumo {
     possuiAvalistas: possuiAvalistas.value,
     emissao: emissaoPayload,
     produtos: cat === 'CPR' ? [...produtos.value] : [],
-    // Boletim substitui Garantia no fluxo NC + Ceres Trading
-    garantias: showBoletim.value ? [] : [...garantias.value],
+    garantias: [...garantias.value],
     cessao: { ...tituloForm.value.cessao },
   };
 

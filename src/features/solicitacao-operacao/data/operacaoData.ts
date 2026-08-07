@@ -698,7 +698,7 @@ export function groupByEtapa(list: Solicitacao[]): Record<Etapa, Solicitacao[]> 
 
 export const solicitacoes: Solicitacao[] = [
   {
-    // QA: NC + Ceres Trading → minuta com step Boletim (no lugar de Garantia)
+    // QA: NC + Ceres Trading → minuta com step Boletim após Garantia
     id: '#1382', cedente: 'Trading Agro Norte S/A', tipoContrato: 'NC', validacao: 'VALIDO',
     valor: 3_500_000, vinculo: 'Grupo Ceres', veiculo: 'CRA Ceres Agro', etapa: 'RASCUNHO',
     esteira: 'CONVENCIONAL', tipoOperacao: 'Contrato NC', grupoEmpresarial: 'Grupo Ceres',
