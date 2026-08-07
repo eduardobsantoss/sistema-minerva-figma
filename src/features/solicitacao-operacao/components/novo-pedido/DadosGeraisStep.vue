@@ -22,7 +22,7 @@ const TIPO_OPERACAO_OPTS = [
   'Contrato CPRF',
   'Contrato CDCA',
 ];
-const TIPO_CONTRATO_OPTS = ['CCB', 'CPR-F', 'CDCA', 'CDA-WA', 'NCE'];
+const TIPO_CONTRATO_OPTS = ['CCB', 'CPR-F', 'CDCA', 'CDA-WA', 'NC', 'NCE'];
 const UNIDADE_OPTS = ['Ceres Trading', 'Ceres Confina', 'Ceres Investimentos'];
 const GERENTE_OPTS = ['Ana Martins', 'Carlos Eduardo', 'Fernanda Lima', 'Roberto Alves'];
 const FUNDO_OPTS = ['CRA Semeagro', 'CRA Ceres Agro', 'CRA BTG Agro', 'FIDC Boa Safra'];

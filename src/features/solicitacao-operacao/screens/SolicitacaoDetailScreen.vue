@@ -209,7 +209,7 @@ function pushHistorico(acao: string) {
 
 function onVincularVeiculo(veiculo: string) {
   props.solicitacao.veiculo = veiculo;
-  pushHistorico(`vinculou o pedido de operação ao ${veiculo}`);
+  pushHistorico(`vinculou a solicitação de operação ao ${veiculo}`);
 }
 
 function onTransferirSolicitacao(veiculo: string) {
@@ -227,7 +227,7 @@ function onTransferirConta(payload: { id: string; label: string }) {
       : conta.agencia;
     props.solicitacao.conta = conta.digitoConta ? `${conta.conta}-${conta.digitoConta}` : conta.conta;
   }
-  pushHistorico(`transferiu a conta bancária do pedido para ${payload.label}`);
+  pushHistorico(`transferiu a conta bancária da solicitação para ${payload.label}`);
 }
 
 function onMesclarAtivos(payload: {
@@ -239,7 +239,7 @@ function onMesclarAtivos(payload: {
   const qtd = ids.size;
   det.ativos = det.ativos.filter((a) => !ids.has(a.id));
   const modo = payload.moverTodos ? 'todos os ativos' : `${qtd} ativo(s)`;
-  pushHistorico(`mesclou ${modo} para o pedido ${payload.pedidoDestinoId}`);
+  pushHistorico(`mesclou ${modo} para a solicitação ${payload.pedidoDestinoId}`);
 }
 
 function onGerarBoletim() {

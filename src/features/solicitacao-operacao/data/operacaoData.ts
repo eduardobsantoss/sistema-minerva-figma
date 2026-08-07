@@ -627,7 +627,7 @@ export function detalheSolicitacao(s: Solicitacao): DetalheSolicitacao {
       { nome: 'Parecer de Crédito', arquivo: '2025-10-22T20_45_42.253Z_parecer.pdf', obrigatorio: false, enviado: true },
     ],
     historico: [
-      { data: '08/06/2026 às 13:53:00', autor: 'Daniel Santos Patrocinio', acao: `vinculou o pedido de operação ao ${s.veiculo || 'veículo'}` },
+      { data: '08/06/2026 às 13:53:00', autor: 'Daniel Santos Patrocinio', acao: `vinculou a solicitação de operação ao ${s.veiculo || 'veículo'}` },
       { data: '08/06/2026 às 13:52:42', autor: 'Daniel Santos Patrocinio', acao: 'criou a solicitação' },
     ],
   };
@@ -698,6 +698,15 @@ export function groupByEtapa(list: Solicitacao[]): Record<Etapa, Solicitacao[]> 
 
 export const solicitacoes: Solicitacao[] = [
   {
+    // QA: NC + Ceres Trading → minuta com step Boletim (no lugar de Garantia)
+    id: '#1382', cedente: 'Trading Agro Norte S/A', tipoContrato: 'NC', validacao: 'VALIDO',
+    valor: 3_500_000, vinculo: 'Grupo Ceres', veiculo: 'CRA Ceres Agro', etapa: 'RASCUNHO',
+    esteira: 'CONVENCIONAL', tipoOperacao: 'Contrato NC', grupoEmpresarial: 'Grupo Ceres',
+    abertura: '2026-06-23', tempoTotalHoras: 2, tempoEtapaHoras: 2, slaEtapaHoras: 24,
+    taxa: 1.85, gerente: 'Ana Martins', atendente: 'Eduardo Resende Mota',
+    unidadeNegocio: 'Ceres Trading', tipoTaxa: 'Pré-fixado',
+  },
+  {
     id: '#1383', cedente: 'Fazenda São João', tipoContrato: 'CCB', validacao: 'VALIDO',
     valor: 1_250_000, vinculo: 'Grupo Ceres', veiculo: 'Ceres Investimentos', etapa: 'RASCUNHO',
     esteira: 'CRA_MONOCEDENTE', tipoOperacao: 'Desconto Duplicata', grupoEmpresarial: 'Grupo Ceres',
@@ -738,6 +747,7 @@ export const solicitacoes: Solicitacao[] = [
     esteira: 'CLIENTE', tipoOperacao: 'Aquisição', grupoEmpresarial: 'Raízen',
     abertura: '2026-06-08', tempoTotalHoras: 426, tempoEtapaHoras: 408, slaEtapaHoras: 120,
     taxa: 2.31, gerente: 'Leynin Marcell Valério', atendente: 'Eduardo Resende Mota',
+    unidadeNegocio: 'Ceres Investimentos',
   },
   {
     id: '#1389', cedente: 'Distribuidora Campo Verde', tipoContrato: 'CCB', validacao: 'VALIDO',

@@ -87,7 +87,7 @@ function handleClear() {
 
   <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 14px">
     <div style="grid-column: 1 / -1">
-      <div :style="labelStyle">ID do Pedido</div>
+      <div :style="labelStyle">ID da Solicitação</div>
       <input v-model="draft.idPedido" placeholder="Buscar por ID" :style="inputStyle" />
     </div>
 
@@ -100,7 +100,7 @@ function handleClear() {
     </div>
 
     <div>
-      <div :style="labelStyle">Tipo de pedido</div>
+      <div :style="labelStyle">Tipo de solicitação</div>
       <select v-model="draft.tipoPedido" :style="inputStyle">
         <option value="">Todos</option>
         <option v-for="opt in tiposPedido" :key="opt" :value="opt">{{ opt }}</option>
@@ -129,7 +129,7 @@ function handleClear() {
     </div>
 
     <div>
-      <div :style="labelStyle">Requerente do pedido</div>
+      <div :style="labelStyle">Requerente da solicitação</div>
       <select v-model="draft.requerente" :style="inputStyle">
         <option value="">Todos</option>
         <option v-for="opt in requerentes" :key="opt" :value="opt">{{ opt }}</option>

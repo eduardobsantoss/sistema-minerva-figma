@@ -68,6 +68,7 @@ function buildFromForm(data: NewPedidoData): Solicitacao {
     taxa: parseFloat((data.taxaOperacao || '').replace(',', '.')) || 0,
     gerente: data.gerenteComercial || '—',
     atendente: '',
+    unidadeNegocio: data.unidadeNegocio || undefined,
   };
 }
 

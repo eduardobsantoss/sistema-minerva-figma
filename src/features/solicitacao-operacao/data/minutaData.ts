@@ -9,10 +9,22 @@ export const TIPOS_MINUTA_DISPONIVEIS = [
   'Contrato CCB',
 ] as const;
 
+/** NC / NCE / Nota Comercial → categoria de minuta NC. */
+export function isTipoNc(tipo: string): boolean {
+  const t = tipo.toUpperCase().replace(/\s/g, '').replace(/-/g, '');
+  return (
+    t === 'NC' ||
+    t === 'NCE' ||
+    t.includes('CONTRATONC') ||
+    t.includes('CONTRATONCE') ||
+    t.includes('NOTACOMERCIAL')
+  );
+}
+
 export function categoriaMinuta(tipo: string): CategoriaMinuta {
   const t = tipo.toUpperCase().replace(/\s/g, '').replace(/-/g, '');
   if (t.includes('CCB') || t.includes('CONTRATOCCB')) return 'CCB';
-  if (t.includes('NC') || t.includes('CONTRATONC') || t.includes('NOTACOMERCIAL')) return 'NC';
+  if (isTipoNc(tipo)) return 'NC';
   return 'CPR';
 }
 
@@ -23,10 +35,13 @@ export function isTipoMinutaDisponivel(tipo: string): boolean {
     t === 'CPR' ||
     t === 'CPRF' ||
     t === 'NC' ||
+    t === 'NCE' ||
     t === 'CCB' ||
     t.includes('CONTRATOCPR') ||
     t.includes('CONTRATONC') ||
-    t.includes('CONTRATOCCB')
+    t.includes('CONTRATONCE') ||
+    t.includes('CONTRATOCCB') ||
+    isTipoNc(tipo)
   );
 }
 
@@ -79,7 +94,7 @@ export const TIPO_GARANTIA_MINUTA_OPTS = [
   'Cessão Fiduciária de Direitos Creditórios (CONTRATO)',
 ];
 
-export const TIPO_CONTRATO_CESSAO_OPTS = ['CCB', 'CPR-F', 'CDCA', 'CDA-WA', 'NCE', 'Duplicata'];
+export const TIPO_CONTRATO_CESSAO_OPTS = ['CCB', 'CPR-F', 'CDCA', 'CDA-WA', 'NC', 'NCE', 'Duplicata'];
 export const TIPO_TITULO_CESSAO_OPTS = ['CPR', 'CPR-F', 'CCB', 'CDCA', 'NC', 'Duplicata'];
 
 /** Código do tipo no back-end quando diverge do label da UI. */

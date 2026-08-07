@@ -409,7 +409,7 @@ function handleAtualizar() {
       >
         <div class="flex items-end" style="gap: 12px; flex-wrap: wrap">
           <div style="flex: 1; min-width: 240px">
-            <div :style="labelStyle">Tipo de Pedido</div>
+            <div :style="labelStyle">Tipo de Solicitação</div>
             <select v-model="newRequestTypeId" :style="inputStyle">
               <option value="">Selecione</option>
               <option v-for="t in TIPO_PEDIDO_OPTS" :key="t.value" :value="t.value">
@@ -473,7 +473,7 @@ function handleAtualizar() {
             text-transform: uppercase;
           "
         >
-          <div>Tipo de Pedido</div>
+          <div>Tipo de Solicitação</div>
           <div>Qtd. veículos</div>
           <div style="text-align: right">Remover</div>
         </div>

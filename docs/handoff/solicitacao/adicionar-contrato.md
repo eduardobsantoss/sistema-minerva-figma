@@ -661,7 +661,7 @@ PAISES_DDI = [
 10. Garantias: catálogo expandido (AF. Estoque, Penhor de Estoque, Alienação Fiduciária, Hipoteca, Penhor, Fiança, Cessão Fiduciária, Aval, Caução) + instrumento particular, constituição, testemunhas, obrigação garantida; detalhes de estoque só para tipos de estoque.
 11. Opções de dropdown vêm dos mocks aprovados — não inventar labels.
 12. NC: emissora **só PJ**, máximo **1**; templates habilitados (2 opções); **sem** “Gerar via não negociável”.
-13. NC + `unidadeNegocio === 'Ceres Trading'` → step **Boletim de Subscrição**.
+13. NC + `unidadeNegocio === 'Ceres Trading'` → step **Boletim de Subscrição** (no lugar de Garantia).
 14. CCB: emissora múltipla PF/PJ; step **Endossatário**; step **CET** depois do Título; UF/cidade de emissão fixos `SP`/`São Paulo` (sem step Emissão).
 15. Credora padrão NC/CCB: `Ceres Trading`, `Ceres Securitizadora`, `BMP` (CPR mantém lista própria).
 
@@ -718,7 +718,7 @@ Prop `unidadeNegocio` flui: `SolicitacaoDetailScreen` → `AdicionarContratoModa
 
 ```
 NC:  Emissora → Credora → Escriturador → Avalista → Emissão(+série/valores)
-     → Pagamento → Garantia → [Boletim se Ceres Trading] → Título
+     → Pagamento → Garantia | Boletim (se Ceres Trading, no lugar de Garantia) → Título
 
 CCB: Emissora → Credora → Avalista → Endossatário → Garantia → Título → CET
 
@@ -744,7 +744,7 @@ CPR: Emitente → Credora → Avalista → Emissão → Produto → Garantia →
 |---|---|---|
 | Escriturador | NC | Padrão Vortx/BMP · PJ · contato/endereço · **sem** representante legal |
 | Informação de Pagamento | NC | Conta bancária + form completo (banco, agência+dígito, conta+dígito, tipo Corrente/Poupança, PIX, titular) |
-| Boletim de Subscrição | NC condicional | Toggle Ceres Securitizadora · subscritor · conta · qtd/preços · dias integração |
+| Boletim de Subscrição | NC + Ceres Trading (substitui Garantia) | Toggle Ceres Securitizadora · subscritor · conta · qtd/preços · dias integração |
 | Endossatário | CCB | Padrão Ceres Trading / Ceres Securitizadora · mesmo padrão Credora |
 | CET | CCB | CET dia/mês/ano (conversão) · IOF · custo emissão · taxas A.D./A.M./A.A. · líquido/CCB/prazo readonly |
 | Emissão (extras NC) | NC | Número · Série · Valor nominal unitário · Quantidade · Valor total |

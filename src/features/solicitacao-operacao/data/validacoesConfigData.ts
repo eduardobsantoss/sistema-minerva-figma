@@ -91,7 +91,7 @@ export const VALIDACOES_SEED: ValidationItem[] = [
   {
     id: 104,
     name: 'Aprovação comercial',
-    description: 'Validação do gerente comercial responsável pelo pedido.',
+    description: 'Validação do gerente comercial responsável pela solicitação.',
     responsibleSector: 1,
     requiresAttachmentOnAuthorization: false,
     usedByMonoTransferor: false,

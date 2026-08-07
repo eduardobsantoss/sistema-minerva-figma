@@ -63,7 +63,7 @@ function confirmar() {
             Vincular a um veículo de operação
           </h2>
           <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Selecione o veículo ao qual este pedido será vinculado
+            Selecione o veículo ao qual esta solicitação será vinculada
           </p>
         </div>
         <button

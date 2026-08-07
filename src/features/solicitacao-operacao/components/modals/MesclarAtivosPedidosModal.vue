@@ -102,10 +102,10 @@ function confirmar() {
       <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
         <div>
           <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
-            Mesclar ativos entre pedidos
+            Mesclar ativos entre solicitações
           </h2>
           <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Transfira ativos deste pedido para outro pedido de destino
+            Transfira ativos desta solicitação para outra solicitação de destino
           </p>
         </div>
         <button
@@ -121,7 +121,7 @@ function confirmar() {
       <div style="flex: 1; overflow-y: auto; padding: 24px 28px" class="flex flex-col" :style="{ gap: '20px' }">
         <StepGrid>
           <SelectField
-            label="Pedido de destino"
+            label="Solicitação de destino"
             :options="PEDIDO_OPTS"
             placeholder="Selecione"
             :span="12"
@@ -130,7 +130,7 @@ function confirmar() {
         </StepGrid>
 
         <ToggleRow
-          label="Mover todos os ativos do pedido origem"
+          label="Mover todos os ativos da solicitação origem"
           :on="moverTodos"
           compact
           @toggle="moverTodos = !moverTodos"

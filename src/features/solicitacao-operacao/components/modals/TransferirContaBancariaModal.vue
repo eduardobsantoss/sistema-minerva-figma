@@ -57,7 +57,7 @@ function confirmar() {
             Transferir conta bancária
           </h2>
           <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Defina a conta bancária de destino deste pedido
+            Defina a conta bancária de destino desta solicitação
           </p>
         </div>
         <button

@@ -252,7 +252,7 @@ function goNext() {
       >
         <div>
           <h2 style="font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.01em">
-            Novo Pedido de Operação
+            Nova Solicitação de Operação
           </h2>
           <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
             {{ step.hint }} · Etapa {{ stepIdx + 1 }} de {{ steps.length }}

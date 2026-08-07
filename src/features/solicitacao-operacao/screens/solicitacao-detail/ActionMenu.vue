@@ -14,9 +14,10 @@ import {
   ScrollText,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
+import { isTipoNc } from '../../data/minutaData';
 
 const props = defineProps<{
-  /** Tipo de contrato do pedido (ex.: NC, CCB) — controla ações condicionais. */
+  /** Tipo de contrato da solicitação (ex.: NC, CCB) — controla ações condicionais. */
   tipoContrato?: string;
 }>();
 
@@ -54,10 +55,7 @@ type ActionItem = {
   when?: () => boolean;
 };
 
-const isNc = computed(() => {
-  const t = (props.tipoContrato ?? '').toUpperCase();
-  return t === 'NC' || t.includes('NOTA COMERCIAL') || t.includes('CONTRATO NC');
-});
+const isNc = computed(() => isTipoNc(props.tipoContrato ?? ''));
 
 const isCcb = computed(() => {
   const t = (props.tipoContrato ?? '').toUpperCase();
@@ -83,7 +81,7 @@ const secondary = computed<ActionItem[]>(() =>
       action: 'gerarTermoEndosso' as const,
       when: () => isCcb.value,
     },
-    { label: 'Mesclar ativos entre pedidos', icon: Layers, action: 'mesclarAtivos' as const },
+    { label: 'Mesclar ativos entre solicitações', icon: Layers, action: 'mesclarAtivos' as const },
     { label: 'Transferir conta bancária', icon: Wallet, action: 'transferirConta' as const },
   ].filter((a) => !a.when || a.when()),
 );
