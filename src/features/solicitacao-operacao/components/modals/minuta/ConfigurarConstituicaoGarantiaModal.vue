@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
-import { X, Trash2, User, Mail, MapPin, Plus } from 'lucide-vue-next';
+import { X, Trash2, User, Mail, MapPin } from 'lucide-vue-next';
 import { UF_OPTIONS, PAISES_DDI } from '../../../data/operacaoData';
 import {
   BentoBox,
@@ -8,6 +8,7 @@ import {
   FormField,
   SelectField,
   ToggleRow,
+  AddButton,
 } from '../adicionar-contrato';
 import {
   ESTADO_CIVIL_GARANTIA_OPTS,
@@ -132,8 +133,8 @@ function salvar() {
         background: var(--surface-card);
         border-radius: var(--radius-xl);
         width: 100%;
-        max-width: 820px;
-        max-height: 90vh;
+        max-width: 860px;
+        height: 85vh;
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -141,39 +142,35 @@ function salvar() {
       "
       @click.stop
     >
-      <div
-        class="flex items-center justify-between"
-        style="
-          padding: 16px 24px;
-          background: var(--action-primary-bg);
-          color: #fff;
-        "
-      >
-        <div style="width: 36px" />
-        <h2
-          style="
-            font-size: var(--text-sm);
-            font-weight: var(--weight-bold);
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            text-align: center;
-            flex: 1;
-          "
-        >
-          Configurar constituição da garantia
-        </h2>
+      <div class="flex items-start justify-between" style="padding: 24px 32px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h2 style="font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Configurar constituição da garantia
+          </h2>
+          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            Instrumento particular, constituição, cessão vinculada e testemunhas
+          </p>
+        </div>
         <button
           aria-label="Fechar"
           class="flex items-center justify-center"
-          style="width: 36px; height: 36px; border: none; background: none; cursor: pointer; color: #fff"
+          style="
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-default);
+            background: var(--surface-card);
+            cursor: pointer;
+            color: var(--text-muted);
+          "
           @click="emit('close')"
         >
           <X :size="18" />
         </button>
       </div>
 
-      <div style="flex: 1; overflow-y: auto; padding: 24px 28px">
-        <div class="flex flex-col" style="gap: 18px">
+      <div style="flex: 1; overflow-y: auto; padding: 32px">
+        <div class="flex flex-col" style="gap: 20px">
           <ToggleRow
             :label="`Instrumento Particular: ${form.instrumentoParticular ? 'Sim' : 'Não'}`"
             :on="form.instrumentoParticular"
@@ -185,119 +182,129 @@ function salvar() {
             @toggle="form.constituirGarantia = !form.constituirGarantia"
           />
 
-          <div style="height: 1px; background: var(--border-default)" />
-
           <!-- Instrumento particular OFF → Cessão vinculada -->
           <template v-if="!form.instrumentoParticular">
-            <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-              Cessão vinculada
-            </div>
-            <StepGrid>
-              <SelectField
-                label="Cessão"
-                :options="CESSAO_VINCULADA_OPTS"
-                placeholder="Selecione"
-                :span="12"
-                v-model="form.cessaoVinculada"
-              />
-            </StepGrid>
-            <div
-              v-if="cessaoResumo"
-              class="grid"
-              style="
-                grid-template-columns: 1fr 1fr 1fr;
-                gap: 16px;
-                padding: 16px 18px;
-                border: 1px solid var(--border-default);
-                border-radius: var(--radius-lg);
-                background: var(--surface-sunken);
-              "
-            >
-              <div>
-                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px">Total valor de compra</div>
-                <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-                  {{ cessaoResumo.totalValorCompra }}
+            <BentoBox title="Cessão vinculada">
+              <div class="flex flex-col" style="gap: 14px">
+                <StepGrid>
+                  <SelectField
+                    label="Cessão"
+                    :options="CESSAO_VINCULADA_OPTS"
+                    placeholder="Selecione"
+                    :span="12"
+                    v-model="form.cessaoVinculada"
+                  />
+                </StepGrid>
+                <div
+                  v-if="cessaoResumo"
+                  class="grid"
+                  style="
+                    grid-template-columns: 1fr 1fr 1fr;
+                    gap: 16px;
+                    padding: 14px 16px;
+                    border: 1px solid var(--border-default);
+                    border-radius: var(--radius-lg);
+                    background: var(--surface-sunken);
+                  "
+                >
+                  <div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px">Total valor de compra</div>
+                    <div
+                      style="
+                        font-size: var(--text-sm);
+                        font-weight: var(--weight-bold);
+                        color: var(--text-strong);
+                        font-variant-numeric: tabular-nums;
+                      "
+                    >
+                      {{ cessaoResumo.totalValorCompra }}
+                    </div>
+                  </div>
+                  <div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px">Total valor nominal</div>
+                    <div
+                      style="
+                        font-size: var(--text-sm);
+                        font-weight: var(--weight-bold);
+                        color: var(--text-strong);
+                        font-variant-numeric: tabular-nums;
+                      "
+                    >
+                      {{ cessaoResumo.totalValorNominal }}
+                    </div>
+                  </div>
+                  <div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px">Quantidade</div>
+                    <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+                      {{ cessaoResumo.quantidadeTitulos }} título(s)
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div>
-                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px">Total valor nominal</div>
-                <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-                  {{ cessaoResumo.totalValorNominal }}
-                </div>
-              </div>
-              <div>
-                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px">Quantidade</div>
-                <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-                  {{ cessaoResumo.quantidadeTitulos }} título(s)
-                </div>
-              </div>
-            </div>
+            </BentoBox>
           </template>
 
           <!-- Instrumento particular ON → Dados do cedente -->
           <template v-else>
-            <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-              Dados do cedente
-            </div>
-            <StepGrid>
-              <SelectField
-                label="Cedente"
-                :options="cedenteOpts"
-                placeholder="Selecione"
-                :span="6"
-                v-model="form.cedenteDoc"
-              />
-              <SelectField
-                label="Representante legal do grupo"
-                :options="representanteGrupoOpts"
-                placeholder="Selecione"
-                :span="6"
-                v-model="form.representanteLegalGrupo"
-              />
-              <SelectField
-                v-if="form.cedenteDoc"
-                label="Contato do cedente"
-                :options="contatoOpts"
-                placeholder="Selecione"
-                :span="6"
-                v-model="form.contatoCedente"
-              />
-              <SelectField
-                v-if="form.cedenteDoc"
-                label="Endereço do cedente"
-                :options="enderecoOpts"
-                placeholder="Selecione"
-                :span="6"
-                v-model="form.enderecoCedente"
-              />
-            </StepGrid>
+            <BentoBox title="Dados do cedente" :icon="User">
+              <StepGrid>
+                <SelectField
+                  label="Cedente"
+                  :options="cedenteOpts"
+                  placeholder="Selecione"
+                  :span="6"
+                  v-model="form.cedenteDoc"
+                />
+                <SelectField
+                  label="Representante legal do grupo"
+                  :options="representanteGrupoOpts"
+                  placeholder="Selecione"
+                  :span="6"
+                  v-model="form.representanteLegalGrupo"
+                />
+                <SelectField
+                  v-if="form.cedenteDoc"
+                  label="Contato do cedente"
+                  :options="contatoOpts"
+                  placeholder="Selecione"
+                  :span="6"
+                  v-model="form.contatoCedente"
+                />
+                <SelectField
+                  v-if="form.cedenteDoc"
+                  label="Endereço do cedente"
+                  :options="enderecoOpts"
+                  placeholder="Selecione"
+                  :span="6"
+                  v-model="form.enderecoCedente"
+                />
+              </StepGrid>
+            </BentoBox>
           </template>
 
           <!-- Constituir garantia ON → Fiduciária + obrigação -->
           <template v-if="form.constituirGarantia">
-            <div style="height: 1px; background: var(--border-default)" />
-            <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-              Fiduciária
-            </div>
-            <StepGrid>
-              <SelectField
-                label="Selecione a fiduciária padrão"
-                :options="FIDUCIARIA_PADRAO_OPTS"
-                placeholder="Selecione"
-                :span="12"
-                v-model="form.fiduciariaPadrao"
-              />
-              <FormField label="CNPJ" placeholder="—" :span="4" v-model="form.fiduciaria.cnpj!" />
-              <FormField label="Razão social" placeholder="—" :span="5" v-model="form.fiduciaria.razaoSocial!" />
-              <FormField label="Nome Fantasia" placeholder="—" :span="3" v-model="form.fiduciaria.nomeFantasia!" />
-              <FormField label="Data de abertura" placeholder="dd/mm/aaaa" :span="4" v-model="form.fiduciaria.dataAbertura!" />
-              <FormField label="Tipo" placeholder="—" :span="4" v-model="form.fiduciaria.tipoEmpresa!" />
-              <FormField label="Porte" placeholder="—" :span="4" v-model="form.fiduciaria.porte!" />
-              <FormField label="Atividade principal" placeholder="—" :span="4" v-model="form.fiduciaria.atividadePrincipal!" />
-              <FormField label="Natureza jurídica" placeholder="—" :span="4" v-model="form.fiduciaria.naturezaJuridica!" />
-              <FormField label="Inscrição municipal" placeholder="—" :span="4" v-model="form.fiduciaria.inscricaoMunicipal!" />
-              <FormField label="Inscrição estadual" placeholder="—" :span="4" v-model="form.fiduciaria.inscricaoEstadual!" />
-            </StepGrid>
+            <BentoBox title="Fiduciária">
+              <StepGrid>
+                <SelectField
+                  label="Selecione a fiduciária padrão"
+                  :options="FIDUCIARIA_PADRAO_OPTS"
+                  placeholder="Selecione"
+                  :span="12"
+                  v-model="form.fiduciariaPadrao"
+                />
+                <FormField label="CNPJ" placeholder="—" :span="4" v-model="form.fiduciaria.cnpj!" />
+                <FormField label="Razão social" placeholder="—" :span="5" v-model="form.fiduciaria.razaoSocial!" />
+                <FormField label="Nome Fantasia" placeholder="—" :span="3" v-model="form.fiduciaria.nomeFantasia!" />
+                <FormField label="Data de abertura" placeholder="dd/mm/aaaa" :span="4" v-model="form.fiduciaria.dataAbertura!" />
+                <FormField label="Tipo" placeholder="—" :span="4" v-model="form.fiduciaria.tipoEmpresa!" />
+                <FormField label="Porte" placeholder="—" :span="4" v-model="form.fiduciaria.porte!" />
+                <FormField label="Atividade principal" placeholder="—" :span="4" v-model="form.fiduciaria.atividadePrincipal!" />
+                <FormField label="Natureza jurídica" placeholder="—" :span="4" v-model="form.fiduciaria.naturezaJuridica!" />
+                <FormField label="Inscrição municipal" placeholder="—" :span="4" v-model="form.fiduciaria.inscricaoMunicipal!" />
+                <FormField label="Inscrição estadual" placeholder="—" :span="4" v-model="form.fiduciaria.inscricaoEstadual!" />
+              </StepGrid>
+            </BentoBox>
 
             <BentoBox title="Representante Legal" :icon="User">
               <StepGrid>
@@ -344,107 +351,98 @@ function salvar() {
               </StepGrid>
             </BentoBox>
 
-            <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-              Obrigação garantida
-            </div>
-            <StepGrid>
-              <FormField label="Instrumento (Nome)" placeholder="—" :span="6" v-model="form.obrigacao.instrumentoNome" />
-              <FormField
-                label="Documento do instrumento (CNPJ)"
-                placeholder="—"
-                :span="6"
-                v-model="form.obrigacao.documentoInstrumento"
-              />
-              <FormField label="Compradora" placeholder="—" :span="4" v-model="form.obrigacao.compradora" />
-              <FormField label="Vendedora" placeholder="—" :span="4" v-model="form.obrigacao.vendedora" />
-              <FormField label="Fiador(es)" placeholder="—" :span="4" v-model="form.obrigacao.fiadores" />
-              <FormField label="Local" placeholder="—" :span="3" v-model="form.obrigacao.local" />
-              <FormField label="Data" placeholder="dd/mm/aaaa" required :span="3" v-model="form.obrigacao.data" />
-              <FormField label="Produto" placeholder="—" :span="3" v-model="form.obrigacao.produto" />
-              <FormField label="Quantidade" placeholder="—" :span="3" v-model="form.obrigacao.quantidade" />
-              <FormField
-                label="Valor da obrigação garantida"
-                placeholder="R$ 0,00"
-                currency
-                :span="6"
-                v-model="form.obrigacao.valor"
-              />
-            </StepGrid>
+            <BentoBox title="Obrigação garantida">
+              <StepGrid>
+                <FormField label="Instrumento (Nome)" placeholder="—" :span="6" v-model="form.obrigacao.instrumentoNome" />
+                <FormField
+                  label="Documento do instrumento (CNPJ)"
+                  placeholder="—"
+                  :span="6"
+                  v-model="form.obrigacao.documentoInstrumento"
+                />
+                <FormField label="Compradora" placeholder="—" :span="4" v-model="form.obrigacao.compradora" />
+                <FormField label="Vendedora" placeholder="—" :span="4" v-model="form.obrigacao.vendedora" />
+                <FormField label="Fiador(es)" placeholder="—" :span="4" v-model="form.obrigacao.fiadores" />
+                <FormField label="Local" placeholder="—" :span="3" v-model="form.obrigacao.local" />
+                <FormField label="Data" placeholder="dd/mm/aaaa" required :span="3" v-model="form.obrigacao.data" />
+                <FormField label="Produto" placeholder="—" :span="3" v-model="form.obrigacao.produto" />
+                <FormField label="Quantidade" placeholder="—" :span="3" v-model="form.obrigacao.quantidade" />
+                <FormField
+                  label="Valor da obrigação garantida"
+                  placeholder="R$ 0,00"
+                  currency
+                  :span="6"
+                  v-model="form.obrigacao.valor"
+                />
+              </StepGrid>
+            </BentoBox>
           </template>
 
           <!-- Testemunhas: quando instrumento particular ou constituir -->
           <template v-if="form.instrumentoParticular || form.constituirGarantia">
-            <div style="height: 1px; background: var(--border-default)" />
             <ToggleRow
               label="Possui testemunhas"
               :on="form.possuiTestemunhas"
               @toggle="form.possuiTestemunhas = !form.possuiTestemunhas"
             />
 
-            <template v-if="form.possuiTestemunhas">
-              <div class="flex items-center justify-between">
-                <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-                  Testemunhas
+            <BentoBox v-if="form.possuiTestemunhas" title="Testemunhas" :icon="User">
+              <div class="flex flex-col" style="gap: 14px">
+                <div class="flex justify-end">
+                  <AddButton @click="addTestemunha">Adicionar testemunha</AddButton>
                 </div>
-                <button
-                  type="button"
-                  class="inline-flex items-center"
-                  style="
-                    gap: 8px;
-                    height: 36px;
-                    padding: 0 14px;
-                    border: none;
-                    border-radius: var(--radius-lg);
-                    background: var(--action-primary-bg);
-                    color: #fff;
-                    font-size: 11px;
-                    font-weight: var(--weight-bold);
-                    letter-spacing: 0.06em;
-                    text-transform: uppercase;
-                    cursor: pointer;
-                  "
-                  @click="addTestemunha"
-                >
-                  Adicionar testemunha
-                  <Plus :size="14" />
-                </button>
-              </div>
 
-              <div
-                v-if="form.testemunhas.length === 0"
-                style="padding: 12px 0; font-size: var(--text-sm); color: var(--text-muted)"
-              >
-                Nenhuma testemunha adicionada.
-              </div>
-
-              <div
-                v-for="(t, i) in form.testemunhas"
-                :key="i"
-                class="grid items-end"
-                style="grid-template-columns: 1fr 1.2fr 1.2fr auto; gap: 12px"
-              >
-                <FormField label="CPF" placeholder="—" :span="12" v-model="t.cpf" />
-                <FormField label="Nome" placeholder="—" required :span="12" v-model="t.nome" />
-                <FormField label="E-mail" placeholder="—" required :span="12" v-model="t.email" />
-                <button
-                  aria-label="Remover testemunha"
-                  style="width: 36px; height: 36px; border: none; background: none; cursor: pointer; color: var(--danger-base); margin-bottom: 2px"
-                  @click="removeTestemunha(i)"
+                <div
+                  v-if="form.testemunhas.length === 0"
+                  style="padding: 12px 0; font-size: var(--text-sm); color: var(--text-muted); text-align: center"
                 >
-                  <Trash2 :size="16" />
-                </button>
+                  Nenhuma testemunha adicionada.
+                </div>
+
+                <div
+                  v-for="(t, i) in form.testemunhas"
+                  :key="i"
+                  class="grid items-end"
+                  style="grid-template-columns: 1fr 1.2fr 1.2fr auto; gap: 12px"
+                >
+                  <FormField label="CPF" placeholder="—" :span="12" v-model="t.cpf" />
+                  <FormField label="Nome" placeholder="—" required :span="12" v-model="t.nome" />
+                  <FormField label="E-mail" placeholder="—" required :span="12" v-model="t.email" />
+                  <button
+                    aria-label="Remover testemunha"
+                    style="width: 36px; height: 36px; border: none; background: none; cursor: pointer; color: var(--danger-base); margin-bottom: 2px"
+                    @click="removeTestemunha(i)"
+                  >
+                    <Trash2 :size="16" />
+                  </button>
+                </div>
               </div>
-            </template>
+            </BentoBox>
           </template>
         </div>
       </div>
 
-      <div class="flex justify-end" style="padding: 16px 28px; border-top: 1px solid var(--border-default)">
+      <div class="flex items-center justify-end" style="gap: 12px; padding: 16px 32px; border-top: 1px solid var(--border-default)">
+        <button
+          style="
+            height: 44px;
+            padding: 0 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-weight: var(--weight-semibold);
+            font-size: var(--text-sm);
+          "
+          @click="emit('close')"
+        >
+          Cancelar
+        </button>
         <button
           type="button"
           style="
-            height: 40px;
-            padding: 0 28px;
+            height: 44px;
+            padding: 0 24px;
             border: none;
             border-radius: var(--radius-lg);
             background: var(--action-primary-bg);

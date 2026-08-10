@@ -92,7 +92,7 @@ const titleMap: Record<View, string> = {
   'risco-ratings': 'Cadastro de Rating',
   'risco-agrupamentos': 'Agrupamentos de Limite',
   'risco-rel': 'Relatórios de Risco',
-  'risco-serasa': 'Consulta Serasa',
+  'risco-serasa': 'Consultas',
   passivo: 'Passivo',
   colab: 'Colaboradores',
   rel: 'Relatórios',

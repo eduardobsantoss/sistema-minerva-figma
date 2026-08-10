@@ -11,6 +11,7 @@ import DisseccaoMarkdownViewer, {
 } from './DisseccaoMarkdownViewer.vue';
 import { copyText } from '../utils/copyText';
 import designTokensMd from '../disseccoes/minerva-design-tokens.md?raw';
+import shellCatalog from '../disseccoes/shell.catalog.json';
 import solicitacaoCatalog from '../disseccoes/solicitacao-operacao.catalog.json';
 import fidcCatalog from '../disseccoes/fidc.catalog.json';
 import craCatalog from '../disseccoes/cra.catalog.json';
@@ -22,6 +23,7 @@ import passivoCatalog from '../disseccoes/passivo.catalog.json';
 const emit = defineEmits<{ back: [] }>();
 
 const CATALOGS: Record<TelaDisseccaoKey, DisseccaoCatalog> = {
+  shell: shellCatalog as DisseccaoCatalog,
   'solicitacao-operacao': solicitacaoCatalog as DisseccaoCatalog,
   fidc: fidcCatalog as DisseccaoCatalog,
   cra: craCatalog as DisseccaoCatalog,

@@ -119,7 +119,14 @@ const sol = spawnSync(process.execPath, [path.join(__dirname, 'generate-solicita
 });
 if (sol.status !== 0) process.exit(sol.status ?? 1);
 
-// 3) Demais módulos
+// 3) Shell — Login / Header / Sidebar (seções curadas)
+const shell = spawnSync(process.execPath, [path.join(__dirname, 'generate-shell-disseccao.mjs')], {
+  cwd: root,
+  stdio: 'inherit',
+});
+if (shell.status !== 0) process.exit(shell.status ?? 1);
+
+// 4) Demais módulos
 for (const mod of AUTO_MODULES) generateAutoModule(mod);
 
 console.log('Done. Output:', outDir);

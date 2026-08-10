@@ -279,13 +279,24 @@ export function resolvePreview(relPath: string, name: string): PreviewConfig {
     };
   }
 
-  if (path.endsWith('ConfigurarNotificacoesModal.vue') || path.endsWith('HabilitarOperarModal.vue')) {
+  if (path.endsWith('ConfigurarNotificacoesModal.vue')) {
     return {
       props: { grupoNome: sampleGrupo.nome },
       frame: 'modal',
       example: exampleBlock(
         `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nconst open = ref(true);`,
         `  <${name} v-if="open" grupo-nome="${sampleGrupo.nome}" @close="open = false" />`,
+      ),
+    };
+  }
+
+  if (path.endsWith('HabilitarOperarModal.vue')) {
+    return {
+      props: { grupoId: sampleGrupo.id, grupoNome: sampleGrupo.nome },
+      frame: 'modal',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nconst open = ref(true);`,
+        `  <${name} v-if="open" grupo-id="${sampleGrupo.id}" grupo-nome="${sampleGrupo.nome}" @close="open = false" />`,
       ),
     };
   }

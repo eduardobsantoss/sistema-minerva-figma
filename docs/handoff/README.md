@@ -7,7 +7,8 @@ Documentação de handoff por **módulo**, para reimplementação pixel-perfect 
 ```
 docs/handoff/
 ├── README.md                 ← este índice
-├── layout-shell.md           ← shell compartilhado (sidebar, topbar, dashboard)
+├── login-header-sidebar.md   ← login + header + sidebar + home (pixel-perfect)
+├── layout-shell.md           ← shell compartilhado (navegação, dashboard, views)
 ├── cra/
 │   ├── README.md
 │   ├── gestao.md             ← Gestão (pixel-perfect)
@@ -37,7 +38,8 @@ docs/handoff/
 
 | Módulo | Pasta | Entrada principal |
 |---|---|---|
-| Shell | [layout-shell.md](./layout-shell.md) | App chrome |
+| Login / Shell / Home | [login-header-sidebar.md](./login-header-sidebar.md) | `?view=conf` → Telas → Login / Shell / Home |
+| Shell | [layout-shell.md](./layout-shell.md) | App chrome + dashboard |
 | CRA | [cra/](./cra/) | `?view=cras` |
 | FIDC | [fidc/fidc.md](./fidc/fidc.md) | `?view=fidcs` |
 | Risco | [risco/](./risco/) | `?view=risco-grupos` etc. |

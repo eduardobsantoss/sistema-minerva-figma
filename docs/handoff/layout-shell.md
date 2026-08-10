@@ -1,6 +1,8 @@
 # Handoff — Shell do App (Sidebar, Header e Dashboard)
 
-> Fonte de verdade complementar: `guidelines/Guidelines.md` (design tokens) e `src/styles/theme.css` (variáveis de layout responsivo). Este documento cobre o **esqueleto global** da aplicação — login → shell principal → menu lateral, topbar e tela inicial de módulos.
+> Fonte de verdade complementar: `guidelines/Guidelines.md` (design tokens) e `src/styles/theme.css` (variáveis de layout responsivo). Este documento cobre o **esqueleto global** da aplicação — login → shell principal → menu lateral, topbar e tela inicial de módulos.  
+> Spec pixel-perfect de Login + Header + Sidebar: [login-header-sidebar.md](./login-header-sidebar.md).  
+> Dissecção no app: **Configurações → Telas → Login / Shell / Home**.
 
 ---
 

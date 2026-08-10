@@ -31,6 +31,7 @@ import {
 import gciLogoMark from '@/assets/gci-logo-mark.png';
 import gciLogoFull from '@/assets/gci-logo-full.png';
 import Tooltip from '@/components/ui/Tooltip.vue';
+import { CURRENT_USER } from '@/lib/userDisplay';
 
 interface SubItem {
   key: string;
@@ -102,7 +103,7 @@ const items: NavItem[] = [
       { key: 'risco-grupos', label: 'Grupos Empresariais', icon: Building2 },
       { key: 'risco-ratings', label: 'Ratings', icon: Layers },
       { key: 'risco-agrupamentos', label: 'Agrupamentos de Limite', icon: ScrollText },
-      { key: 'risco-serasa', label: 'Consulta Serasa', icon: Search },
+      { key: 'risco-serasa', label: 'Consultas', icon: Search },
       { key: 'risco-rel', label: 'Relatórios', icon: BarChart3 },
     ],
   },
@@ -395,9 +396,11 @@ function handleItemClick(it: NavItem) {
               color: #fff;
               line-height: 1.2;
               white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
             "
           >
-            Eduardo Santos
+            {{ CURRENT_USER.fullName }}
           </div>
           <div
             style="
@@ -407,7 +410,7 @@ function handleItemClick(it: NavItem) {
               white-space: nowrap;
             "
           >
-            Administrador
+            {{ CURRENT_USER.role }}
           </div>
         </div>
         <button

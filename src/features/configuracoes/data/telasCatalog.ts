@@ -1,7 +1,17 @@
 import type { Component } from 'vue';
-import { Building2, ClipboardList, Landmark, Layers, Shield, Wallet, Briefcase } from 'lucide-vue-next';
+import {
+  Building2,
+  ClipboardList,
+  Landmark,
+  Layers,
+  LayoutPanelLeft,
+  Shield,
+  Wallet,
+  Briefcase,
+} from 'lucide-vue-next';
 
 export type TelaDisseccaoKey =
+  | 'shell'
   | 'solicitacao-operacao'
   | 'fidc'
   | 'cra'
@@ -18,6 +28,12 @@ export interface TelaDisseccao {
 }
 
 export const TELAS_DISSECCOES: TelaDisseccao[] = [
+  {
+    key: 'shell',
+    title: 'Login / Shell / Home',
+    description: 'Login, topbar, sidebar, home (módulos) e ModuleCard.',
+    cta: 'Abrir dissecção',
+  },
   {
     key: 'solicitacao-operacao',
     title: 'Solicitação de Operação',
@@ -63,6 +79,7 @@ export const TELAS_DISSECCOES: TelaDisseccao[] = [
 ];
 
 export const TELA_ICONS: Record<TelaDisseccaoKey, Component> = {
+  shell: LayoutPanelLeft,
   'solicitacao-operacao': ClipboardList,
   fidc: Landmark,
   cra: Building2,

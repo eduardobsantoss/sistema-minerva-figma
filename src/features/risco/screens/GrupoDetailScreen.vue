@@ -160,7 +160,13 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
 
     <TransferirGerenteModal v-if="transferindo" :grupo-nome="grupo.nome" :gerente-atual="grupo.gerente" @close="transferindo = false" @confirm="transferindo = false" />
     <ConfigurarNotificacoesModal v-if="configurandoNotif" :grupo-nome="grupo.nome" @close="configurandoNotif = false" @confirm="configurandoNotif = false" />
-    <HabilitarOperarModal v-if="habilitando" :grupo-nome="grupo.nome" @close="habilitando = false" @confirm="habilitando = false" />
+    <HabilitarOperarModal
+      v-if="habilitando"
+      :grupo-id="grupo.id"
+      :grupo-nome="grupo.nome"
+      @close="habilitando = false"
+      @confirm="habilitando = false"
+    />
     <VincularAgrupamentoModal
       v-if="vinculandoVeiculo"
       :target="grupo"

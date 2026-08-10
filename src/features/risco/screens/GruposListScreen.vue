@@ -396,7 +396,13 @@ function menuActions(g: GrupoEmpresarial) {
 
     <TransferirGerenteModal v-if="transferindo" :grupo-nome="transferindo.nome" :gerente-atual="transferindo.gerente" @close="transferindo = null" @confirm="transferindo = null" />
     <ConfigurarNotificacoesModal v-if="configurandoNotif" :grupo-nome="configurandoNotif.nome" @close="configurandoNotif = null" @confirm="configurandoNotif = null" />
-    <HabilitarOperarModal v-if="habilitando" :grupo-nome="habilitando.nome" @close="habilitando = null" @confirm="habilitando = null" />
+    <HabilitarOperarModal
+      v-if="habilitando"
+      :grupo-id="habilitando.id"
+      :grupo-nome="habilitando.nome"
+      @close="habilitando = null"
+      @confirm="habilitando = null"
+    />
     <VincularAgrupamentoModal
       v-if="vinculando"
       :target="vinculando"

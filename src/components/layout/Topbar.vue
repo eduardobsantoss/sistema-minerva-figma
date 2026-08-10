@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Search, Bell } from 'lucide-vue-next';
+import { CURRENT_USER, getUserInitials } from '@/lib/userDisplay';
 
 defineProps<{ title: string }>();
 
 const searchFocus = ref(false);
+const initials = computed(() => getUserInitials(CURRENT_USER.fullName));
 </script>
 
 <template>
@@ -88,13 +90,14 @@ const searchFocus = ref(false);
       <span
         style="
           position: absolute;
-          top: 10px;
-          right: 10px;
-          width: 8px;
-          height: 8px;
+          top: 11px;
+          right: 11px;
+          width: 6px;
+          height: 6px;
           border-radius: 9999px;
           background: var(--agro-base);
-          border: 2px solid var(--surface-card);
+          border: 1.5px solid var(--surface-card);
+          box-sizing: content-box;
         "
       />
     </button>
@@ -107,19 +110,22 @@ const searchFocus = ref(false);
 
     <!-- User chip -->
     <div class="flex items-center" style="gap: 12px; flex-shrink: 0">
-      <div class="topbar-user-meta" style="text-align: right">
+      <div class="topbar-user-meta" style="text-align: right; min-width: 0; max-width: 200px">
         <div
           style="
             font-size: var(--text-sm);
             font-weight: var(--weight-bold);
             color: var(--text-strong);
             line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           "
         >
-          Eduardo Santos
+          {{ CURRENT_USER.fullName }}
         </div>
         <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">
-          Administrador
+          {{ CURRENT_USER.role }}
         </div>
       </div>
       <div
@@ -133,9 +139,10 @@ const searchFocus = ref(false);
           font-size: var(--text-sm);
           font-weight: var(--weight-bold);
           letter-spacing: 0.02em;
+          flex-shrink: 0;
         "
       >
-        ES
+        {{ initials }}
       </div>
     </div>
   </header>

@@ -344,7 +344,7 @@ function globalIndex(pageIdx: number) {
         <div
           class="grid"
           style="
-            grid-template-columns: 1.3fr 0.9fr 0.7fr 0.9fr 0.9fr 0.7fr auto;
+            grid-template-columns: minmax(120px, 1.1fr) minmax(96px, 0.7fr) 96px minmax(90px, 0.75fr) minmax(80px, 0.65fr) minmax(72px, 0.55fr) 40px;
             padding: 10px 14px;
             background: var(--surface-sunken);
             font-size: 10px;
@@ -352,6 +352,8 @@ function globalIndex(pageIdx: number) {
             letter-spacing: 0.1em;
             color: var(--text-muted);
             text-transform: uppercase;
+            column-gap: 12px;
+            align-items: center;
           "
         >
           <div>Tipo</div>
@@ -367,25 +369,26 @@ function globalIndex(pageIdx: number) {
           :key="pageIdx"
           class="grid items-center"
           style="
-            grid-template-columns: 1.3fr 0.9fr 0.7fr 0.9fr 0.9fr 0.7fr auto;
-            padding: 10px 14px;
+            grid-template-columns: minmax(120px, 1.1fr) minmax(96px, 0.7fr) 96px minmax(90px, 0.75fr) minmax(80px, 0.65fr) minmax(72px, 0.55fr) 40px;
+            padding: 12px 14px;
             border-top: 1px solid var(--border-default);
             font-size: var(--text-sm);
             cursor: pointer;
+            column-gap: 12px;
           "
           @click="openEdit(globalIndex(pageIdx))"
         >
-          <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ g.tipo }}</div>
-          <div>{{ g.valor || '—' }}</div>
-          <div class="flex items-center" style="gap: 8px">
+          <div style="font-weight: var(--weight-semibold); color: var(--text-strong); min-width: 0">{{ g.tipo }}</div>
+          <div style="font-variant-numeric: tabular-nums; color: var(--text-strong)">{{ g.valor || '—' }}</div>
+          <div class="flex items-center" style="gap: 6px">
             <div
               style="
-                width: 48px;
+                width: 40px;
                 height: 6px;
                 border-radius: 999px;
-                background: var(--surface-sunken);
+                background: var(--neutral-200);
                 overflow: hidden;
-                border: 1px solid var(--border-default);
+                flex-shrink: 0;
               "
               :title="`${g.percentualUsado ?? 0}% usado`"
             >
@@ -397,7 +400,7 @@ function globalIndex(pageIdx: number) {
                 }"
               />
             </div>
-            <span style="font-size: 11px; color: var(--text-muted); min-width: 32px">
+            <span style="font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums">
               {{ g.percentualUsado ?? 0 }}%
             </span>
           </div>
@@ -412,10 +415,10 @@ function globalIndex(pageIdx: number) {
               width: 32px;
               height: 32px;
               border: 1px solid var(--border-default);
-              border-radius: var(--radius-md);
+              border-radius: var(--radius-lg);
               background: var(--surface-card);
               cursor: pointer;
-              color: var(--action-primary-bg);
+              color: var(--text-muted);
             "
             @click.stop="openConstituicao(globalIndex(pageIdx))"
           >
