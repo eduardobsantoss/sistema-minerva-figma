@@ -242,7 +242,7 @@ Catálogo de relatórios (hoje só **Parecer de Crédito**). Fluxo: selecionar �
 interface Parametrizacoes {
   limite: ParametrizacaoLimite;           // parecer, rating, tabela de limites por produto
   autoatendimento: ParametrizacaoAutoatendimento;
-  geral: ParametrizacaoGeral;             // confirmações, Serasa, laudos, avalistas, exceções
+  geral: ParametrizacaoGeral;             // confirmações, Consulta, laudos, avalistas, exceções
   garantia: ParametrizacaoGarantia;
 }
 ```

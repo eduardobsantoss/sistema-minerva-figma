@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import { Trash2, Package } from 'lucide-vue-next';
-import { UF_OPTIONS, brl } from '../../../data/operacaoData';
-import { StepGrid, FormField, SelectField, AddButton, EmptyState } from '../adicionar-contrato';
+import { Trash2, Package, Truck } from 'lucide-vue-next';
+import { UF_OPTIONS, PAISES_DDI, brl } from '../../../data/operacaoData';
+import { BentoBox, StepGrid, FormField, SelectField, AddButton, EmptyState } from '../adicionar-contrato';
 import {
   PRODUTO_TIPO_OPTS,
   UNIDADE_MEDIDA_OPTS,
+  RESPONSAVEL_TRANSPORTE_OPTS,
   cidadesDaUf,
   emptyProdutoMinuta,
   type ProdutoMinuta,
@@ -14,6 +15,7 @@ import {
 const produtos = defineModel<ProdutoMinuta[]>('produtos', { default: () => [] });
 const form = defineModel<ProdutoMinuta>('form', { required: true });
 
+const PAIS_OPTS = PAISES_DDI.map((p) => p.pais);
 const cidadeProducaoOpts = computed(() => cidadesDaUf(form.value.estadoProducao));
 const cidadeRegistroOpts = computed(() => cidadesDaUf(form.value.ufRegistro));
 const ufOpts = computed(() => ['MG', 'SP', 'MT', 'GO', 'PR', 'MS', 'BA', 'TO'].filter((u) => UF_OPTIONS.includes(u)));
@@ -80,6 +82,42 @@ function fmtValor(v: string) {
         v-model="form.cidadeRegistro"
       />
     </StepGrid>
+
+    <BentoBox title="Entrega - Recebimento/Retirada" :icon="Truck">
+      <StepGrid>
+        <FormField label="CPF/CNPJ do local de entrega" placeholder="—" :span="3" v-model="form.docLocalEntrega" />
+        <FormField label="Nome do local de entrega" placeholder="—" :span="3" v-model="form.nomeLocalEntrega" />
+        <FormField
+          label="Data inicial de entrega"
+          placeholder="dd/mm/aaaa"
+          required
+          :span="3"
+          v-model="form.dataInicialEntrega"
+        />
+        <FormField
+          label="Data de vencimento"
+          placeholder="dd/mm/aaaa"
+          required
+          :span="3"
+          v-model="form.dataVencimento"
+        />
+        <SelectField
+          label="Responsável pelo transporte"
+          :options="RESPONSAVEL_TRANSPORTE_OPTS"
+          placeholder="Selecione"
+          :span="12"
+          v-model="form.responsavelTransporte"
+        />
+        <FormField label="CEP" placeholder="—" :span="4" v-model="form.cep" />
+        <FormField label="Localidade" placeholder="—" :span="8" v-model="form.localidade" />
+        <FormField label="Número" placeholder="—" :span="4" v-model="form.numero" />
+        <FormField label="Bairro" placeholder="—" :span="8" v-model="form.bairro" />
+        <FormField label="Informações adicionais" placeholder="—" :span="12" v-model="form.infoAdicionais" />
+        <FormField label="Cidade" placeholder="—" :span="12" v-model="form.cidade" />
+        <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="6" v-model="form.estado" />
+        <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="6" v-model="form.pais" />
+      </StepGrid>
+    </BentoBox>
 
     <div class="flex justify-end">
       <AddButton @click="addProduto">Adicionar produto</AddButton>

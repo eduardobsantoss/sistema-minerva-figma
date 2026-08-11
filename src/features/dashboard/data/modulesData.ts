@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Receipt,
   ClipboardList,
+  Layers,
 } from 'lucide-vue-next';
 
 export type Tone = 'info' | 'success' | 'warning' | 'danger' | 'accent';
@@ -58,6 +59,12 @@ export const modules: ModuleItem[] = [
     description: 'Fundos de Investimento em Direitos Creditórios e suas cotas.',
     icon: Landmark,
     tone: 'info',
+  },
+  {
+    title: 'Semiestruturadas',
+    description: 'Controle e gestão de operações semiestruturadas (NC, CPRF, CCB, CDCA, CDA e afins).',
+    icon: Layers,
+    tone: 'warning',
   },
   {
     title: 'Cobrança',

@@ -1007,60 +1007,7 @@ function globalIndex(pageIdx: number) {
                     :on="form.possuiSeguro"
                     @toggle="form.possuiSeguro = !form.possuiSeguro"
                   />
-
-                  <ToggleRow
-                    label="Imóvel arrendado"
-                    :on="form.imovelLocado"
-                    @toggle="form.imovelLocado = !form.imovelLocado"
-                  />
-
-                  <template v-if="form.imovelLocado">
-                    <BentoBox title="Informações da locação">
-                      <div class="flex flex-col" style="gap: 14px">
-                        <StepGrid>
-                          <SelectField
-                            label="Tipo de Locação"
-                            :options="TIPO_LOCACAO_OPTS"
-                            placeholder="Selecione"
-                            required
-                            :span="6"
-                            v-model="form.tipoLocacao"
-                          />
-                          <FormField label="Data de início" placeholder="dd/mm/aaaa" required :span="6" v-model="form.dataInicio" />
-                        </StepGrid>
-                        <ToggleRow
-                          label="Prazo indeterminado"
-                          :on="form.prazoIndeterminado"
-                          @toggle="form.prazoIndeterminado = !form.prazoIndeterminado"
-                        />
-                        <StepGrid v-if="!form.prazoIndeterminado">
-                          <FormField
-                            label="Data de término"
-                            placeholder="dd/mm/aaaa"
-                            required
-                            :span="6"
-                            v-model="form.dataTermino"
-                          />
-                        </StepGrid>
-                      </div>
-                    </BentoBox>
-
-                    <BentoBox title="Proprietário do imóvel arrendado">
-                      <PessoaNaturezaFields v-model="form.proprietarioLocado" />
-                    </BentoBox>
-
-                    <BentoBox title="Partes">
-                      <StepGrid>
-                        <FormField label="Nome do contratante" placeholder="—" :span="6" v-model="form.nomeContratante" />
-                        <FormField label="Nome do contratado" placeholder="—" :span="6" v-model="form.nomeContratado" />
-                      </StepGrid>
-                    </BentoBox>
-                  </template>
                 </div>
-              </BentoBox>
-
-              <BentoBox title="Endereços da locação" :icon="Home">
-                <EnderecosLocacaoFields v-model:lista="form.enderecosLocacao" v-model:draft="enderecoDraft" />
               </BentoBox>
 
               <BentoBox title="Informações do proprietário da garantia">

@@ -77,6 +77,7 @@ export function cidadesDaUf(uf: string): string[] {
 
 export const PRODUTO_TIPO_OPTS = ['Soja', 'Milho', 'Algodão', 'Café', 'Trigo', 'Boi Gordo'];
 export const UNIDADE_MEDIDA_OPTS = ['Saca (60kg)', 'Tonelada', 'Quilograma', 'Arroba', 'Hectare'];
+export const RESPONSAVEL_TRANSPORTE_OPTS = ['Emitente', 'Credora', 'Terceiro'];
 export const UNIDADE_PESO_ANIMAL_OPTS = ['Quilograma', 'Arroba', 'Tonelada'];
 export const CATEGORIA_ANIMAL_OPTS = ['Bezerro', 'Novilho', 'Boi magro', 'Boi gordo', 'Vaca'];
 export const ZONA_OPTS = ['Rural', 'Urbana'];
@@ -652,6 +653,20 @@ export interface ProdutoMinuta {
   matricula: string;
   ufRegistro: string;
   cidadeRegistro: string;
+  // Entrega - Recebimento/Retirada
+  docLocalEntrega: string;
+  nomeLocalEntrega: string;
+  dataInicialEntrega: string;
+  dataVencimento: string;
+  responsavelTransporte: string;
+  cep: string;
+  localidade: string;
+  numero: string;
+  bairro: string;
+  infoAdicionais: string;
+  cidade: string;
+  estado: string;
+  pais: string;
 }
 
 export function emptyProdutoMinuta(): ProdutoMinuta {
@@ -667,6 +682,19 @@ export function emptyProdutoMinuta(): ProdutoMinuta {
     matricula: '',
     ufRegistro: '',
     cidadeRegistro: '',
+    docLocalEntrega: '',
+    nomeLocalEntrega: '',
+    dataInicialEntrega: '',
+    dataVencimento: '',
+    responsavelTransporte: '',
+    cep: '',
+    localidade: '',
+    numero: '',
+    bairro: '',
+    infoAdicionais: '',
+    cidade: '',
+    estado: '',
+    pais: '',
   };
 }
 

@@ -82,6 +82,14 @@ const items: NavItem[] = [
     ],
   },
   {
+    key: 'semiestruturadas',
+    label: 'Semiestruturadas',
+    icon: Layers,
+    children: [
+      { key: 'semiestruturadas', label: 'Gestão', icon: Layers },
+    ],
+  },
+  {
     key: 'cobranca',
     label: 'Cobrança',
     icon: Receipt,

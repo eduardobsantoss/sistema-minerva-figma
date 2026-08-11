@@ -390,11 +390,32 @@ CREDORA_PADRAO_OPTS = ['Ceres Trading', 'Ceres Confina', 'Ceres Investimentos'];
 | UF de registro | 4 · subset |
 | Cidade de registro | 4 · dependente |
 
+#### Entrega - Recebimento/Retirada (`BentoBox` + ícone Truck)
+
+Campos no rascunho do produto (antes de Adicionar); seguem no item ao adicionar.
+
+| Campo | Span |
+|---|---|
+| CPF/CNPJ do local de entrega | 3 |
+| Nome do local de entrega | 3 |
+| Data inicial de entrega * | 3 · `dd/mm/aaaa` |
+| Data de vencimento * | 3 · `dd/mm/aaaa` |
+| Responsável pelo transporte | 12 · `RESPONSAVEL_TRANSPORTE_OPTS` |
+| CEP | 4 |
+| Localidade | 8 |
+| Número | 4 |
+| Bairro | 8 |
+| Informações adicionais | 12 |
+| Cidade | 12 · texto livre |
+| Estado | 6 · `UF_OPTIONS` |
+| País | 6 · `PAISES_DDI` |
+
 Add exige `tipo`. Lista: Tipo / Valor unitário / Quantidade / Safra.
 
 ```ts
 PRODUTO_TIPO_OPTS = ['Soja', 'Milho', 'Algodão', 'Café', 'Trigo', 'Boi Gordo'];
 UNIDADE_MEDIDA_OPTS = ['Saca (60kg)', 'Tonelada', 'Quilograma', 'Arroba', 'Hectare'];
+RESPONSAVEL_TRANSPORTE_OPTS = ['Emitente', 'Credora', 'Terceiro'];
 ```
 
 ### 7.6 Garantia
@@ -447,8 +468,6 @@ Lista + `AddButton` → nested modal **Nova Garantia**.
 | Cabeçalho | Tipo · Valor |
 | Imóvel | Nome · Matrícula · Zona · Tipo · Área afetada · Unidade · Cartório · UF · Cidade |
 | Opcionais imóvel | CAR · NIRF · CCIR · CCIR Ano · SIGEF/INCRA · Possui seguro (toggle) |
-| Imóvel arrendado | Toggle → Locação · Proprietário arrendado (`PessoaNaturezaFields`) · Partes |
-| Endereços da locação | `EnderecosLocacaoFields` (lista) |
 | Proprietário garantia | `PessoaNaturezaFields` |
 
 #### AF. Bens Móveis (back-end `bens_moveis` via `codigoGarantiaBackend`)

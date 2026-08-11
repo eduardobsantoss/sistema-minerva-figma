@@ -6,6 +6,7 @@ import DashboardView from './DashboardView.vue';
 import Placeholder from './Placeholder.vue';
 import { FidcScreen, FidcSimuladorScreen, FidcRelatoriosScreen } from '@/features/fidc';
 import { CraScreen, CraSimuladorScreen, CraRelatoriosScreen } from '@/features/cra';
+import { SemiestruturadasScreen } from '@/features/semiestruturadas';
 import {
   CobrancaScreen,
   TitulosScreen,
@@ -48,6 +49,7 @@ type View =
   | 'cras'
   | 'cras-simulador'
   | 'cras-relatorios'
+  | 'semiestruturadas'
   | 'cobranca'
   | 'cobranca-titulos'
   | 'cobranca-dashboard'
@@ -80,6 +82,7 @@ const titleMap: Record<View, string> = {
   cras: "Gestão de CRA's",
   'cras-simulador': 'Simulador',
   'cras-relatorios': 'Relatórios',
+  semiestruturadas: 'Gestão de Semiestruturadas',
   cobranca: 'Cobrança',
   'cobranca-titulos': 'Títulos',
   'cobranca-dashboard': 'Dashboard de Cobrança',
@@ -104,6 +107,7 @@ const VALID_VIEWS = new Set<View>([
   'ativos',
   'fidcs', 'fidcs-simulador', 'fidcs-relatorios',
   'cras', 'cras-simulador', 'cras-relatorios',
+  'semiestruturadas',
   'cobranca', 'cobranca-titulos', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-notif-cessao', 'cobranca-resultado-notif', 'cobranca-rel',
   'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-agrupamentos', 'risco-serasa', 'risco-rel',
   'passivo', 'colab', 'rel', 'conf',
@@ -125,6 +129,7 @@ const openMenu = ref<string | null>((() => {
   if (v.startsWith('solicitacoes')) return 'solicitacoes';
   if (v.startsWith('cras')) return 'cras';
   if (v.startsWith('fidcs')) return 'fidcs';
+  if (v.startsWith('semiestruturadas')) return 'semiestruturadas';
   return null;
 })());
 const userToggledSidebar = ref(false);
@@ -174,6 +179,9 @@ function handleModuleClick(title: string) {
   } else if (title === "CRA's") {
     view.value = 'cras';
     openMenu.value = 'cras';
+  } else if (title === 'Semiestruturadas') {
+    view.value = 'semiestruturadas';
+    openMenu.value = 'semiestruturadas';
   } else if (title === 'Cobrança') {
     view.value = 'cobranca-dashboard';
     openMenu.value = 'cobranca';
@@ -218,6 +226,7 @@ function handleModuleClick(title: string) {
           <CraScreen v-else-if="view === 'cras'" />
           <CraSimuladorScreen v-else-if="view === 'cras-simulador'" />
           <CraRelatoriosScreen v-else-if="view === 'cras-relatorios'" />
+          <SemiestruturadasScreen v-else-if="view === 'semiestruturadas'" />
           <TitulosScreen v-else-if="view === 'cobranca-titulos'" />
           <CobrancaDashboardScreen
             v-else-if="view === 'cobranca-dashboard'"
