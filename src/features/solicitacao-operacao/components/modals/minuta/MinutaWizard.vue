@@ -16,6 +16,9 @@ import {
   BookOpen,
   Forward,
   Percent,
+  Info,
+  PawPrint,
+  Receipt,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import type { ParteRelacionada, ParcelaAtivo } from '../../../data/operacaoData';
@@ -33,7 +36,13 @@ import InformacaoPagamentoStep from './InformacaoPagamentoStep.vue';
 import BoletimSubscricaoStep from './BoletimSubscricaoStep.vue';
 import EndossatarioStep from './EndossatarioStep.vue';
 import CetStep from './CetStep.vue';
+import ConfinaOperacaoStep from './ConfinaOperacaoStep.vue';
+import ConfinaPromissoriaStep from './ConfinaPromissoriaStep.vue';
+import ConfinaAnimaisStep from './ConfinaAnimaisStep.vue';
+import ConfinaNotasStep from './ConfinaNotasStep.vue';
+import ConfinaParceiroStep from './ConfinaParceiroStep.vue';
 import ParteRelacionadaModal from '../ParteRelacionadaModal.vue';
+import { simulatePromissoryNote } from '@/features/cra/data/simuladorData';
 import {
   categoriaMinuta,
   templatesDisponiveis,
@@ -45,6 +54,10 @@ import {
   emptyBoletimSubscricao,
   emptyCetForm,
   emptyCessaoForm,
+  emptyConfinaOperacao,
+  emptyConfinaPromissoria,
+  emptyConfinaAnimais,
+  emptyConfinaParceiro,
   type PessoaMinuta,
   type ProdutoMinuta,
   type AvalistaMinutaRow,
@@ -55,6 +68,7 @@ import {
   type BoletimSubscricao,
   type CetForm,
   type EmissaoMinuta,
+  type ConfinaNotaFiscal,
 } from '../../../data/minutaData';
 
 const props = withDefaults(
@@ -94,6 +108,15 @@ const showBoletim = computed(
 type StepDef = { key: string; label: string; icon: Component };
 
 const steps = computed<StepDef[]>(() => {
+  if (categoria.value === 'NP') {
+    return [
+      { key: 'confina-operacao', label: 'Dados da Operação', icon: Info },
+      { key: 'confina-promissoria', label: 'Promissória', icon: FileText },
+      { key: 'confina-animais', label: 'Animais', icon: PawPrint },
+      { key: 'confina-notas', label: 'Notas Fiscais', icon: Receipt },
+      { key: 'confina-parceiro', label: 'Parceiro e Testemunhas', icon: Users },
+    ];
+  }
   if (categoria.value === 'NC') {
     const list: StepDef[] = [
       { key: 'emitente', label: 'Emissora', icon: User },
@@ -151,15 +174,25 @@ watch(
   },
 );
 
-const gerarViaNaoNegociavel = ref(categoria.value !== 'NC');
+const gerarViaNaoNegociavel = ref(categoria.value !== 'NC' && categoria.value !== 'NP');
 watch(categoria, (c) => {
-  if (c === 'NC') gerarViaNaoNegociavel.value = false;
+  if (c === 'NC' || c === 'NP') gerarViaNaoNegociavel.value = false;
   else if (!gerarViaNaoNegociavel.value) gerarViaNaoNegociavel.value = true;
 });
 
 const topBarCols = computed(() =>
-  categoria.value === 'NC' ? '1fr 1.5fr' : '1fr 1.5fr 1fr',
+  categoria.value === 'NC' || categoria.value === 'NP' ? '1fr 1.5fr' : '1fr 1.5fr 1fr',
 );
+
+const gerarToggleLabel = computed(() =>
+  categoria.value === 'NP' ? 'Gerar termo' : 'Gerar minuta',
+);
+
+const confinaOperacao = ref(emptyConfinaOperacao());
+const confinaPromissoria = ref(emptyConfinaPromissoria());
+const confinaAnimais = ref(emptyConfinaAnimais());
+const confinaNotas = ref<ConfinaNotaFiscal[]>([]);
+const confinaParceiro = ref(emptyConfinaParceiro());
 
 const emitenteForm = ref<PessoaMinuta>(
   emptyPessoaMinuta(categoria.value === 'NC' ? 'JURIDICA' : 'FISICA'),
@@ -223,6 +256,7 @@ const garantias = ref<GarantiaMinuta[]>([]);
 
 const tipoTituloLabel = computed(() => {
   const cat = categoria.value;
+  if (cat === 'NP') return 'NP';
   if (cat === 'NC') return 'NC';
   if (cat === 'CCB') return 'CCB';
   const t = props.tipo.toUpperCase();
@@ -312,9 +346,62 @@ function onAddParte(parte: ParteRelacionada) {
   showParteModal.value = false;
 }
 
+function parseConfinaNum(v: string) {
+  return Number(String(v).replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+}
+
+function confinaValorNominal() {
+  const op = confinaOperacao.value;
+  const qty = parseConfinaNum(op.quantidadeAnimais);
+  const unit = parseConfinaNum(op.valorUnitarioArroba);
+  const weight = parseConfinaNum(op.pesoLoteArroba);
+  const rate = parseConfinaNum(op.taxaJuros);
+  if (!qty || !unit || !weight) return props.valorOperacao;
+  return simulatePromissoryNote({
+    animalsQuantity: qty,
+    unitValue: unit,
+    batchWeightInArroba: weight,
+    rate,
+    issueDate: op.emissao,
+    dueDate: op.vencimento,
+  }).valorNominal;
+}
+
 function buildMinuta(): MinutaResumo {
   const base = emptyMinutaResumo(props.tipo);
   const cat = categoria.value;
+
+  if (cat === 'NP') {
+    return {
+      ...base,
+      template: templateSel.value,
+      gerarViaNaoNegociavel: false,
+      emitentes: [],
+      credora: null,
+      credoraPadrao: '',
+      avalistas: [],
+      possuiAvalistas: false,
+      emissao: { uf: '', cidade: '' },
+      produtos: [],
+      garantias: [],
+      confina: {
+        operacao: { ...confinaOperacao.value },
+        promissoria: { ...confinaPromissoria.value },
+        animais: {
+          ...confinaAnimais.value,
+          infos: confinaAnimais.value.infos.map((i) => ({ ...i })),
+        },
+        notas: confinaNotas.value.map((n) => ({
+          ...n,
+          gtas: n.gtas.map((g) => ({ ...g })),
+        })),
+        parceiro: {
+          ...confinaParceiro.value,
+          testemunhas: confinaParceiro.value.testemunhas.map((t) => ({ ...t })),
+        },
+      },
+    };
+  }
 
   const emissaoPayload: EmissaoMinuta =
     cat === 'CCB'
@@ -355,6 +442,25 @@ function buildMinuta(): MinutaResumo {
 }
 
 function handleSubmit() {
+  if (categoria.value === 'NP') {
+    const outorgado = confinaOperacao.value.outorgado;
+    const [docPart, ...nomeParts] = outorgado.split(' - ');
+    const sacadoDocumento = nomeParts.length ? docPart.trim() : '';
+    const sacadoNome = nomeParts.length ? nomeParts.join(' - ').trim() : outorgado;
+    emit('create', {
+      numero: confinaPromissoria.value.numeroTitulo || confinaOperacao.value.grupoEmpresarial || 'NP',
+      tipo: 'NP',
+      emissao: confinaOperacao.value.emissao,
+      vencimento: confinaOperacao.value.vencimento,
+      valorTotal: confinaValorNominal(),
+      sacadoNome,
+      sacadoDocumento,
+      parcelas: [],
+      minuta: buildMinuta(),
+    });
+    return;
+  }
+
   emit('create', {
     numero: tituloForm.value.numero,
     tipo: tituloForm.value.tipo,
@@ -369,6 +475,7 @@ function handleSubmit() {
 }
 
 const subtitleByCat = computed(() => {
+  if (categoria.value === 'NP') return 'Geração de termo Nota Promissória (Confina)';
   if (categoria.value === 'NC') return 'Geração de minuta Nota Comercial';
   if (categoria.value === 'CCB') return 'Geração de minuta CCB';
   return 'Geração de minuta CPR / CPR-F';
@@ -388,7 +495,7 @@ const subtitleByCat = computed(() => {
       }"
     >
       <ToggleRow
-        label="Gerar minuta"
+        :label="gerarToggleLabel"
         :on="gerarMinuta"
         compact
         @toggle="emit('update:gerarMinuta', !gerarMinuta)"
@@ -401,7 +508,7 @@ const subtitleByCat = computed(() => {
         :disabled="templateDisabled"
       />
       <ToggleRow
-        v-if="categoria !== 'NC'"
+        v-if="categoria !== 'NC' && categoria !== 'NP'"
         label="Gerar via não negociável"
         :on="gerarViaNaoNegociavel"
         compact
@@ -412,8 +519,32 @@ const subtitleByCat = computed(() => {
     <MinutaStepper :steps="steps" :current="stepIdx" @select="selectStep" />
 
     <div style="flex: 1; overflow-y: auto; padding: 32px">
+      <ConfinaOperacaoStep
+        v-if="currentKey === 'confina-operacao'"
+        v-model="confinaOperacao"
+      />
+      <ConfinaPromissoriaStep
+        v-else-if="currentKey === 'confina-promissoria'"
+        v-model="confinaPromissoria"
+        :operacao="confinaOperacao"
+      />
+      <ConfinaAnimaisStep
+        v-else-if="currentKey === 'confina-animais'"
+        v-model="confinaAnimais"
+        :operacao="confinaOperacao"
+      />
+      <ConfinaNotasStep
+        v-else-if="currentKey === 'confina-notas'"
+        v-model:notas="confinaNotas"
+        :operacao="confinaOperacao"
+      />
+      <ConfinaParceiroStep
+        v-else-if="currentKey === 'confina-parceiro'"
+        v-model="confinaParceiro"
+        :operacao="confinaOperacao"
+      />
       <EmitenteStep
-        v-if="currentKey === 'emitente'"
+        v-else-if="currentKey === 'emitente'"
         v-model:emitentes="emitentes"
         v-model:form="emitenteForm"
         v-model:doc-busca="emitenteDocBusca"

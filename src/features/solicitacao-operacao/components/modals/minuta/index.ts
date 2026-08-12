@@ -12,6 +12,12 @@ export { default as InformacaoPagamentoStep } from './InformacaoPagamentoStep.vu
 export { default as BoletimSubscricaoStep } from './BoletimSubscricaoStep.vue';
 export { default as EndossatarioStep } from './EndossatarioStep.vue';
 export { default as CetStep } from './CetStep.vue';
+export { default as ConfinaOperacaoStep } from './ConfinaOperacaoStep.vue';
+export { default as ConfinaPromissoriaStep } from './ConfinaPromissoriaStep.vue';
+export { default as ConfinaAnimaisStep } from './ConfinaAnimaisStep.vue';
+export { default as ConfinaNotasStep } from './ConfinaNotasStep.vue';
+export { default as ConfinaParceiroStep } from './ConfinaParceiroStep.vue';
+export { default as ConfinaPreviaSimulacao } from './ConfinaPreviaSimulacao.vue';
 export { default as SpouseFields } from './SpouseFields.vue';
 export { default as PessoaNaturezaFields } from './PessoaNaturezaFields.vue';
 export { default as EnderecosLocacaoFields } from './EnderecosLocacaoFields.vue';

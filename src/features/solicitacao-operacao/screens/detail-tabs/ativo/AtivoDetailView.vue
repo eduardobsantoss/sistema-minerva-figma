@@ -25,6 +25,9 @@ const TABS: { key: Tab; label: string; icon: Component }[] = [
 ];
 
 const tone = computed(() => TONE_SITUACAO[props.ativo.situacao]);
+const showValorHero = computed(
+  () => props.ativo.tipo === 'NP' || !!props.ativo.minuta?.confina,
+);
 </script>
 
 <template>
@@ -56,10 +59,29 @@ const tone = computed(() => TONE_SITUACAO[props.ativo.situacao]);
           Lastro {{ ativo.lastro }} · {{ ativo.cedenteNome }} → {{ ativo.sacadoNome }}
         </p>
       </div>
-      <div style="text-align: right; flex-shrink: 0">
+      <div v-if="!showValorHero" style="text-align: right; flex-shrink: 0">
         <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase">Valor nominal</div>
         <div style="font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums; letter-spacing: -0.02em">
           {{ brl(ativo.valorTotal) }}
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="showValorHero"
+      class="relative overflow-hidden flex items-center"
+      style="background: var(--gci-base); border-radius: var(--radius-xl); padding: 28px 32px; color: #fff; box-shadow: 0 20px 40px -20px rgba(8,60,74,0.40)"
+    >
+      <div style="position: absolute; top: -100px; right: -100px; width: 320px; height: 320px; border-radius: 9999px; background: rgba(255,255,255,0.04)" />
+      <div style="flex: 1; position: relative; z-index: 1">
+        <div style="font-size: 11px; font-weight: var(--weight-bold); letter-spacing: 0.18em; color: var(--agro-base); text-transform: uppercase; margin-bottom: 10px">
+          Valor Nominal do Título
+        </div>
+        <div style="font-size: 36px; font-weight: var(--weight-bold); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1">
+          {{ brl(ativo.valorTotal) }}
+        </div>
+        <div style="font-size: var(--text-xs); color: rgba(255,255,255,0.65); margin-top: 8px">
+          Tipo: {{ ativo.tipo }} · Emissão: {{ ativo.emissao || '—' }} · Vencimento: {{ ativo.vencimento || '—' }}
         </div>
       </div>
     </div>

@@ -707,6 +707,15 @@ export const solicitacoes: Solicitacao[] = [
     unidadeNegocio: 'Ceres Trading', tipoTaxa: 'Pré-fixado',
   },
   {
+    // QA: NP + Ceres Confina → Gerar termo / Nota Promissória (Confina)
+    id: '#1381', cedente: 'Confina Agropecuária LTDA', tipoContrato: 'NP', validacao: 'VALIDO',
+    valor: 2_800_000, vinculo: 'Grupo Ceres', veiculo: 'CRA Confina II', etapa: 'RASCUNHO',
+    esteira: 'CONVENCIONAL', tipoOperacao: 'Contrato NP', grupoEmpresarial: 'Grupo Ceres',
+    abertura: '2026-06-24', tempoTotalHoras: 1, tempoEtapaHoras: 1, slaEtapaHoras: 24,
+    taxa: 1.85, gerente: 'Ana Martins', atendente: 'Eduardo Resende Mota',
+    unidadeNegocio: 'Ceres Confina', tipoTaxa: 'Pré-fixado',
+  },
+  {
     id: '#1383', cedente: 'Fazenda São João', tipoContrato: 'CCB', validacao: 'VALIDO',
     valor: 1_250_000, vinculo: 'Grupo Ceres', veiculo: 'Ceres Investimentos', etapa: 'RASCUNHO',
     esteira: 'CRA_MONOCEDENTE', tipoOperacao: 'Desconto Duplicata', grupoEmpresarial: 'Grupo Ceres',

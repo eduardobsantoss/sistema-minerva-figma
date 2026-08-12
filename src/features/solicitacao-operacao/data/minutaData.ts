@@ -1,13 +1,16 @@
 import type { TipoPessoa } from './operacaoData';
 
-export type CategoriaMinuta = 'CPR' | 'NC' | 'CCB';
+export type CategoriaMinuta = 'CPR' | 'NC' | 'CCB' | 'NP';
 
 export const TIPOS_MINUTA_DISPONIVEIS = [
   'Contrato CPR',
   'Contrato CPRF',
   'Contrato NC',
   'Contrato CCB',
+  'Contrato NP',
 ] as const;
+
+export const UNIDADE_CONFINA = 'Ceres Confina';
 
 /** NC / NCE / Nota Comercial → categoria de minuta NC. */
 export function isTipoNc(tipo: string): boolean {
@@ -21,14 +24,26 @@ export function isTipoNc(tipo: string): boolean {
   );
 }
 
+/** NP / Nota Promissória → categoria de termo Confina. */
+export function isTipoNp(tipo: string): boolean {
+  const t = tipo.toUpperCase().replace(/\s/g, '').replace(/-/g, '');
+  return t === 'NP' || t.includes('CONTRATONP') || t.includes('NOTAPROMISSORIA');
+}
+
 export function categoriaMinuta(tipo: string): CategoriaMinuta {
   const t = tipo.toUpperCase().replace(/\s/g, '').replace(/-/g, '');
   if (t.includes('CCB') || t.includes('CONTRATOCCB')) return 'CCB';
   if (isTipoNc(tipo)) return 'NC';
+  if (isTipoNp(tipo)) return 'NP';
   return 'CPR';
 }
 
-export function isTipoMinutaDisponivel(tipo: string): boolean {
+/**
+ * Minuta/termo disponível por tipo.
+ * Contrato NP só com unidade de negócio Ceres Confina.
+ */
+export function isTipoMinutaDisponivel(tipo: string, unidadeNegocio?: string): boolean {
+  if (isTipoNp(tipo)) return unidadeNegocio === UNIDADE_CONFINA;
   if ((TIPOS_MINUTA_DISPONIVEIS as readonly string[]).includes(tipo)) return true;
   const t = tipo.toUpperCase().replace(/\s/g, '').replace(/-/g, '');
   return (
@@ -47,6 +62,7 @@ export function isTipoMinutaDisponivel(tipo: string): boolean {
 
 export function templatesDisponiveis(tipo: string): string[] {
   const cat = categoriaMinuta(tipo);
+  if (cat === 'NP') return ['Nota Promissória (Confina)'];
   if (cat === 'CCB') return ['CCB (Ceres Investimentos)'];
   if (cat === 'NC') return ['Nota Comercial (Trading)', 'Nota Comercial (Ceres Investimentos)'];
   const t = tipo.toUpperCase().replace(/\s/g, '');
@@ -204,6 +220,163 @@ export function isGarantiaComFormaProduto(tipo: string): boolean {
 export function credoraPadraoOptions(categoria: CategoriaMinuta): string[] {
   if (categoria === 'NC' || categoria === 'CCB') return CREDORA_PADRAO_OPTS_NC_CCB;
   return CREDORA_PADRAO_OPTS;
+}
+
+/** Opções e tipos do termo Nota Promissória (Confina). */
+export const CONFINA_BASE_DIAS_OPTS = ['21', '30', '30/360', '252', '360', '365'] as const;
+export const CONFINA_CATEGORIA_ANIMAL_OPTS = ['Novilho', 'Boi magro', 'Boi gordo', 'Vaca'] as const;
+export const CONFINA_RACA_OPTS = ['Nelore', 'Angus', 'Cruzado', 'Brahman'] as const;
+export const CONFINA_TIPO_ANIMAL_OPTS = ['Bezerro', 'Novilho', 'Boi magro', 'Boi gordo', 'Vaca'] as const;
+export const CONFINA_IDADE_RANGE_OPTS = ['0-12', '12-18', '18-24', '24-36', '36+'] as const;
+export const CONFINA_POSICAO_ANEXO_OPTS = ['0', 'Início', 'Final'] as const;
+export const CONFINA_FAZENDA_OPTS = [
+  'Auma Suínos',
+  'Fazenda Santa Rita — MT',
+  'Fazenda Boa Vista — GO',
+  'Confinamento Alto Vale — MS',
+] as const;
+export const CONFINA_GRUPO_OPTS = [
+  'RHAISSA SCHNEIDER LAZAROTTO',
+  'Grupo Ceres',
+  'Semeagro',
+  'JBS Agro',
+] as const;
+export const CONFINA_OUTORGADO_OPTS = [
+  '03162104041 - RHAISSA SCHNEIDER LAZAROTTO',
+  '12345678901 - CLAUDIO NASSER DE CARVALHO',
+  '98765432100 - FAZENDA SANTA LUZIA',
+] as const;
+export const CONFINA_FILIAL_OPTS = [
+  'CERES CONFINAMENTO LTDA - 19.192.001/0001-00',
+  'CERES CONFINA SA - 04.851.443/0001-10',
+] as const;
+
+export interface ConfinaInfoAnimal {
+  tipo: string;
+  idade: string;
+  quantidade: string;
+}
+
+export interface ConfinaGta {
+  numero: string;
+  quantidade: string;
+}
+
+export interface ConfinaNotaFiscal {
+  numero: string;
+  valorTotal: string;
+  dataEmissao: string;
+  gtas: ConfinaGta[];
+}
+
+export interface ConfinaTestemunha {
+  nome: string;
+  cpf: string;
+}
+
+export interface ConfinaOperacaoForm {
+  grupoEmpresarial: string;
+  outorgado: string;
+  quantidadeAnimais: string;
+  valorUnitarioArroba: string;
+  pesoLoteArroba: string;
+  taxaJuros: string;
+  emissao: string;
+  vencimento: string;
+  baseCalculoDias: string;
+}
+
+export interface ConfinaPromissoriaForm {
+  numeroTitulo: string;
+  filialOutorgante: string;
+  feeMonitoramento: string;
+  prazoAssinaturaDias: string;
+  vigenciaMeses: string;
+  enviarCopiaCertificador: boolean;
+}
+
+export interface ConfinaAnimaisForm {
+  categoria: string;
+  raca: string;
+  pesoMinIndividualArroba: string;
+  pesoLoteArroba: string;
+  pesoLoteKg: string;
+  infos: ConfinaInfoAnimal[];
+}
+
+export interface ConfinaParceiroForm {
+  fazenda: string;
+  proprietario: string;
+  posicaoAnexo: string;
+  testemunhas: ConfinaTestemunha[];
+}
+
+export interface ConfinaMinutaPayload {
+  operacao: ConfinaOperacaoForm;
+  promissoria: ConfinaPromissoriaForm;
+  animais: ConfinaAnimaisForm;
+  notas: ConfinaNotaFiscal[];
+  parceiro: ConfinaParceiroForm;
+}
+
+export function emptyConfinaOperacao(): ConfinaOperacaoForm {
+  return {
+    grupoEmpresarial: '',
+    outorgado: '',
+    quantidadeAnimais: '',
+    valorUnitarioArroba: '',
+    pesoLoteArroba: '',
+    taxaJuros: '',
+    emissao: '',
+    vencimento: '',
+    baseCalculoDias: '30',
+  };
+}
+
+export function emptyConfinaPromissoria(): ConfinaPromissoriaForm {
+  return {
+    numeroTitulo: '',
+    filialOutorgante: '',
+    feeMonitoramento: '',
+    prazoAssinaturaDias: '',
+    vigenciaMeses: '',
+    enviarCopiaCertificador: false,
+  };
+}
+
+export function emptyConfinaAnimais(): ConfinaAnimaisForm {
+  return {
+    categoria: '',
+    raca: '',
+    pesoMinIndividualArroba: '',
+    pesoLoteArroba: '',
+    pesoLoteKg: '',
+    infos: [],
+  };
+}
+
+export function emptyConfinaInfoAnimal(): ConfinaInfoAnimal {
+  return { tipo: '', idade: '', quantidade: '' };
+}
+
+export function emptyConfinaParceiro(): ConfinaParceiroForm {
+  return {
+    fazenda: '',
+    proprietario: '',
+    posicaoAnexo: '0',
+    testemunhas: [{ nome: '', cpf: '' }],
+  };
+}
+
+export function emptyConfinaNotaDraft(): { numero: string; valorTotal: string; dataEmissao: string; gtaNumero: string; gtaQuantidade: string; gtas: ConfinaGta[] } {
+  return {
+    numero: '',
+    valorTotal: '',
+    dataEmissao: '',
+    gtaNumero: '',
+    gtaQuantidade: '',
+    gtas: [],
+  };
 }
 
 export interface ConjugeMinuta {
@@ -1366,17 +1539,20 @@ export interface MinutaResumo {
   endossatario?: PessoaMinuta | null;
   endossatarioPadrao?: string;
   cet?: CetForm;
+  // NP / Confina
+  confina?: ConfinaMinutaPayload;
 }
 
 export function emptyMinutaResumo(tipo: string): MinutaResumo {
+  const cat = categoriaMinuta(tipo);
   return {
     template: templateMinuta(tipo),
-    gerarViaNaoNegociavel: categoriaMinuta(tipo) !== 'NC',
+    gerarViaNaoNegociavel: cat !== 'NC' && cat !== 'NP',
     emitentes: [],
     credora: null,
     credoraPadrao: '',
     avalistas: [],
-    possuiAvalistas: true,
+    possuiAvalistas: cat !== 'NP',
     emissao: { uf: '', cidade: '' },
     produtos: [],
     garantias: [],

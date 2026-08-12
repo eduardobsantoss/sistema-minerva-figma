@@ -5,7 +5,7 @@ import {
   brl, UF_OPTIONS, PAISES_DDI, buscarSacadoCadastrado,
   type ContratoAtivo, type ParcelaAtivo, type ParteRelacionada,
 } from '../../data/operacaoData';
-import { isTipoMinutaDisponivel, categoriaMinuta } from '../../data/minutaData';
+import { isTipoMinutaDisponivel, categoriaMinuta, isTipoNp, UNIDADE_CONFINA } from '../../data/minutaData';
 import { BentoBox, BentoGrid, FormField, SelectField, EmptyState, ToggleRow, AddButton } from './adicionar-contrato';
 import { MinutaWizard } from './minuta';
 
@@ -110,19 +110,32 @@ watch(() => form.sacadoDocumento, (doc) => {
   if (found) form.sacadoNome = found.nome;
 });
 
-const minutaHabilitada = computed(() => isTipoMinutaDisponivel(form.tipo));
+const minutaHabilitada = computed(() =>
+  isTipoMinutaDisponivel(form.tipo, props.unidadeNegocio),
+);
 const showWizard = computed(() => form.gerarMinuta && minutaHabilitada.value);
+const gerarLabel = computed(() => (isTipoNp(form.tipo) ? 'Gerar termo' : 'Gerar minuta'));
 const wizardSubtitle = computed(() => {
   const cat = categoriaMinuta(form.tipo);
+  if (cat === 'NP') return 'Geração de termo Nota Promissória (Confina)';
   if (cat === 'NC') return 'Geração de minuta Nota Comercial';
   if (cat === 'CCB') return 'Geração de minuta CCB';
   return 'Geração de minuta CPR / CPR-F';
 });
+const minutaDisabledHint = computed(() => {
+  if (!form.tipo) {
+    return 'Selecione o tipo do título (CPR, CPRF, NC, CCB ou NP) em Dados do Título para habilitar a geração.';
+  }
+  if (isTipoNp(form.tipo) && props.unidadeNegocio !== UNIDADE_CONFINA) {
+    return `Disponível para Contrato NP apenas quando a unidade de negócio for ${UNIDADE_CONFINA}.`;
+  }
+  return 'Disponível apenas para Contrato CPR, CPRF, NC, CCB e NP (Confina) nesta versão.';
+});
 
 watch(
-  () => form.tipo,
-  (t) => {
-    if (!isTipoMinutaDisponivel(t) && form.gerarMinuta) {
+  () => [form.tipo, props.unidadeNegocio] as const,
+  ([t]) => {
+    if (!isTipoMinutaDisponivel(t, props.unidadeNegocio) && form.gerarMinuta) {
       form.gerarMinuta = false;
     }
   },
@@ -312,22 +325,16 @@ function toggleGerarMinuta() {
         <div style="flex: 1; overflow-y: auto; padding: 32px">
           <div class="flex flex-col" style="gap: 24px">
             <ToggleRow
-              label="Gerar minuta"
+              :label="gerarLabel"
               :on="form.gerarMinuta"
               :disabled="!minutaHabilitada"
               @toggle="toggleGerarMinuta"
             />
             <div
-              v-if="!minutaHabilitada && form.tipo"
+              v-if="!minutaHabilitada"
               style="font-size: var(--text-xs); color: var(--text-muted); margin-top: -12px"
             >
-              Disponível apenas para Contrato CPR, CPRF, NC e CCB nesta versão.
-            </div>
-            <div
-              v-else-if="!form.tipo"
-              style="font-size: var(--text-xs); color: var(--text-muted); margin-top: -12px"
-            >
-              Selecione o tipo do título (CPR, CPRF, NC ou CCB) em Dados do Título para habilitar a geração de minuta.
+              {{ minutaDisabledHint }}
             </div>
 
             <BentoBox title="Dados do Título" :icon="Tag">
