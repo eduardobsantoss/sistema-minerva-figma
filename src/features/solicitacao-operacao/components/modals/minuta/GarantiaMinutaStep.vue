@@ -53,8 +53,15 @@ import {
 import PessoaNaturezaFields from './PessoaNaturezaFields.vue';
 import EnderecosLocacaoFields from './EnderecosLocacaoFields.vue';
 import ConfigurarConstituicaoGarantiaModal from './ConfigurarConstituicaoGarantiaModal.vue';
+import DocGroup from '../../novo-pedido/DocGroup.vue';
 
 const garantias = defineModel<GarantiaMinuta[]>('garantias', { default: () => [] });
+
+const RELACAO_ESTOQUE_DOC = {
+  id: 'relacao-estoque',
+  nome: 'Relação do Estoque Detalhado',
+  obrigatorio: true,
+} as const;
 
 const possuiGarantias = ref(true);
 const showNova = ref(false);
@@ -147,6 +154,7 @@ function hydrateGarantia(g: GarantiaMinuta) {
       }))
     : [];
   form.percentualUsado = (g.percentualUsado === 50 || g.percentualUsado === 100 ? g.percentualUsado : 0) as 0 | 50 | 100;
+  form.relacaoEstoqueDetalhadoEnviado = !!g.relacaoEstoqueDetalhadoEnviado;
   form.constituicao = g.constituicao
     ? { ...emptyConstituicaoGarantia(), ...JSON.parse(JSON.stringify(g.constituicao)) }
     : emptyConstituicaoGarantia();
@@ -269,8 +277,14 @@ function removeEstoque(i: number) {
   form.estoques.splice(i, 1);
 }
 
+const canCadastrar = computed(() => {
+  if (!form.tipo || !form.valor) return false;
+  if (isGarantiaEstoque(form.tipo) && !form.relacaoEstoqueDetalhadoEnviado) return false;
+  return true;
+});
+
 function cadastrar() {
-  if (!form.tipo || !form.valor) return;
+  if (!canCadastrar.value) return;
   const payload = JSON.parse(JSON.stringify(form)) as GarantiaMinuta;
   if (editingIndex.value != null) {
     const next = [...garantias.value];
@@ -733,6 +747,13 @@ function globalIndex(pageIdx: number) {
                   />
                 </StepGrid>
               </BentoBox>
+
+              <DocGroup
+                title="Anexos do estoque"
+                :docs="[RELACAO_ESTOQUE_DOC]"
+                :doc-files="{ [RELACAO_ESTOQUE_DOC.id]: form.relacaoEstoqueDetalhadoEnviado }"
+                @toggle-doc="form.relacaoEstoqueDetalhadoEnviado = !form.relacaoEstoqueDetalhadoEnviado"
+              />
             </template>
 
             <template v-if="showAtivosBiologicos">
@@ -1459,14 +1480,14 @@ function globalIndex(pageIdx: number) {
               padding: '0 24px',
               border: 'none',
               borderRadius: 'var(--radius-lg)',
-              cursor: form.tipo && form.valor ? 'pointer' : 'not-allowed',
+              cursor: canCadastrar ? 'pointer' : 'not-allowed',
               fontWeight: 'var(--weight-bold)',
               fontSize: 'var(--text-xs)',
               letterSpacing: '0.08em',
-              background: form.tipo && form.valor ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
-              color: form.tipo && form.valor ? '#fff' : 'var(--text-disabled)',
+              background: canCadastrar ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
+              color: canCadastrar ? '#fff' : 'var(--text-disabled)',
             }"
-            :disabled="!form.tipo || !form.valor"
+            :disabled="!canCadastrar"
             @click="cadastrar"
           >
             {{ editingIndex != null ? 'SALVAR' : 'CADASTRAR' }}

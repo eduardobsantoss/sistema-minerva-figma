@@ -316,6 +316,8 @@ export const GARANTIA_ANEXO_TEMPLATES: Omit<GarantiaAnexo, 'enviado'>[] = [
   { id: 'contrato-servicos', nome: 'Contrato de Prestação de Serviços', obrigatorio: false },
 ];
 
+export const RELACAO_ESTOQUE_ANEXO_ID = 'relacao-estoque';
+
 export const TIPO_GARANTIA_OPERACAO_OPTS = [
   'AF. Estoque',
   'Penhor de Estoque',
@@ -328,8 +330,41 @@ export const TIPO_GARANTIA_OPERACAO_OPTS = [
   'Caução',
 ];
 
-export function emptyGarantiaAnexos(): GarantiaAnexo[] {
-  return GARANTIA_ANEXO_TEMPLATES.map((d) => ({ ...d, enviado: false }));
+export function isTipoGarantiaEstoqueOperacao(tipo: string): boolean {
+  return tipo === 'AF. Estoque' || tipo === 'Penhor de Estoque';
+}
+
+export function emptyGarantiaAnexos(tipo = ''): GarantiaAnexo[] {
+  return garantiaAnexosParaTipo(tipo);
+}
+
+/**
+ * Anexos do cadastro/edição de garantia conforme o tipo.
+ * Relação do Estoque Detalhado só para AF. Estoque / Penhor de Estoque (obrigatório).
+ */
+export function garantiaAnexosParaTipo(
+  tipo: string,
+  existing: GarantiaAnexo[] = [],
+): GarantiaAnexo[] {
+  const estoque = isTipoGarantiaEstoqueOperacao(tipo);
+  const byId = new Map(existing.map((a) => [a.id, a]));
+
+  const list = GARANTIA_ANEXO_TEMPLATES.filter((t) => {
+    if (t.id === RELACAO_ESTOQUE_ANEXO_ID) return estoque;
+    return true;
+  }).map((t) => {
+    const prev = byId.get(t.id);
+    const obrigatorio =
+      t.id === RELACAO_ESTOQUE_ANEXO_ID ? estoque : t.obrigatorio;
+    return {
+      id: t.id,
+      nome: t.nome,
+      obrigatorio,
+      enviado: prev?.enviado ?? false,
+    };
+  });
+
+  return sortGarantiaAnexos(list);
 }
 
 /** Garante obrigatórios antes dos opcionais (ex.: dados legados fora de ordem). */

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown } from 'lucide-vue-next';
+import { ChevronDown, Info } from 'lucide-vue-next';
 import FieldLabel from './FieldLabel.vue';
 
 defineProps<{
@@ -7,6 +7,8 @@ defineProps<{
   options: string[];
   span?: number;
   placeholder?: string;
+  hint?: string;
+  disabled?: boolean;
 }>();
 
 const emit = defineEmits<{ change: [v: string] }>();
@@ -15,28 +17,40 @@ const model = defineModel<string>();
 
 <template>
   <div :style="{ gridColumn: span ? `span ${span}` : undefined }">
-    <FieldLabel v-if="label">{{ label }}</FieldLabel>
+    <div v-if="label" class="flex items-center" style="gap: 6px; margin-bottom: 6px">
+      <FieldLabel style="margin-bottom: 0">{{ label }}</FieldLabel>
+      <span
+        v-if="hint"
+        :title="hint"
+        class="flex items-center justify-center"
+        style="color: var(--text-muted); cursor: help; flex-shrink: 0"
+      >
+        <Info :size="12" :stroke-width="2.25" />
+      </span>
+    </div>
     <div style="position: relative">
       <select
         v-model="model"
-        style="
-          height: 40px;
-          padding-left: 14px;
-          padding-right: 40px;
-          background: var(--surface-card);
-          border-width: 1px;
-          border-style: solid;
-          border-color: var(--border-default);
-          border-radius: var(--radius-md);
-          outline: none;
-          font-size: var(--text-sm);
-          color: var(--text-strong);
-          width: 100%;
-          appearance: none;
-        "
+        :disabled="disabled"
+        :style="{
+          height: '40px',
+          paddingLeft: '14px',
+          paddingRight: '40px',
+          background: disabled ? 'var(--surface-sunken)' : 'var(--surface-card)',
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          borderColor: 'var(--border-default)',
+          borderRadius: 'var(--radius-md)',
+          outline: 'none',
+          fontSize: 'var(--text-sm)',
+          color: disabled ? 'var(--text-muted)' : 'var(--text-strong)',
+          width: '100%',
+          appearance: 'none',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+        }"
         @change="emit('change', ($event.target as HTMLSelectElement).value)"
       >
-        <option v-if="placeholder" value="" disabled selected>{{ placeholder }}</option>
+        <option v-if="placeholder" value="" disabled>{{ placeholder }}</option>
         <option v-for="o in options" :key="o" :value="o">{{ o }}</option>
       </select>
       <ChevronDown

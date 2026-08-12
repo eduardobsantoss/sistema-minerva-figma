@@ -1016,6 +1016,8 @@ export interface GarantiaMinuta {
   nomeContratado: string;
   // Estoques
   estoques: EstoqueItem[];
+  /** Anexo Relação do Estoque Detalhado (AF. Estoque / Penhor de Estoque). */
+  relacaoEstoqueDetalhadoEnviado: boolean;
   // Relatório
   dataRelatorio: string;
   periodicidadeRelatorio: string;
@@ -1225,6 +1227,7 @@ export function emptyGarantiaMinuta(): GarantiaMinuta {
     nomeContratante: '',
     nomeContratado: '',
     estoques: [],
+    relacaoEstoqueDetalhadoEnviado: false,
     dataRelatorio: '',
     periodicidadeRelatorio: '',
     dataPrimeiraAtualizacao: '',

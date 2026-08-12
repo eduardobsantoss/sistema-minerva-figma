@@ -4,6 +4,7 @@ import { X } from 'lucide-vue-next';
 import {
   TIPO_GARANTIA_OPERACAO_OPTS,
   emptyGarantiaAnexos,
+  garantiaAnexosParaTipo,
   sortGarantiaAnexos,
   formatValorGarantia,
   type GarantiaOperacao,
@@ -44,13 +45,21 @@ function hydrate(g: GarantiaOperacao | null | undefined) {
   form.tipo = g.tipo;
   form.nome = g.nome;
   form.valor = formatValorGarantia(g.valor);
-  anexos.value = g.anexos.length
-    ? sortGarantiaAnexos(g.anexos.map((a) => ({ ...a })))
-    : emptyGarantiaAnexos();
+  anexos.value = garantiaAnexosParaTipo(
+    g.tipo,
+    g.anexos.map((a) => ({ ...a })),
+  );
   showAnexos.value = true;
 }
 
 watch(() => props.garantia, (g) => hydrate(g), { immediate: true });
+
+watch(
+  () => form.tipo,
+  (tipo) => {
+    anexos.value = garantiaAnexosParaTipo(tipo, anexos.value);
+  },
+);
 
 const docsForGroup = computed(() =>
   anexos.value.map((a) => ({ id: a.id, nome: a.nome, obrigatorio: a.obrigatorio })),

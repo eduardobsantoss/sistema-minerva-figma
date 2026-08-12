@@ -1,5 +1,8 @@
 <script setup lang="ts">
-defineProps<{ label: string; on: boolean; hint?: string }>();
+withDefaults(
+  defineProps<{ label: string; on: boolean; hint?: string; disabled?: boolean }>(),
+  { disabled: false },
+);
 const emit = defineEmits<{ toggle: [] }>();
 </script>
 
@@ -11,20 +14,21 @@ const emit = defineEmits<{ toggle: [] }>();
       borderRadius: 'var(--radius-lg)',
       borderWidth: '1px',
       borderStyle: 'solid',
-      borderColor: on ? 'var(--success-base)' : 'var(--border-default)',
-      background: on ? 'var(--success-light)' : 'var(--surface-card)',
+      borderColor: on && !disabled ? 'var(--success-base)' : 'var(--border-default)',
+      background: on && !disabled ? 'var(--success-light)' : 'var(--surface-card)',
       transition: 'all var(--duration-base)',
-      cursor: 'pointer',
+      cursor: disabled ? 'not-allowed' : 'pointer',
       gap: '12px',
+      opacity: disabled ? 0.55 : 1,
     }"
-    @click="emit('toggle')"
+    @click="!disabled && emit('toggle')"
   >
     <div style="min-width: 0">
       <div
         :style="{
           fontSize: 'var(--text-sm)',
-          color: on ? 'var(--success-dark)' : 'var(--text-default)',
-          fontWeight: on ? 'var(--weight-semibold)' : 'var(--weight-regular)',
+          color: on && !disabled ? 'var(--success-dark)' : 'var(--text-default)',
+          fontWeight: on && !disabled ? 'var(--weight-semibold)' : 'var(--weight-regular)',
           userSelect: 'none',
           lineHeight: '1.4',
         }"
@@ -35,13 +39,16 @@ const emit = defineEmits<{ toggle: [] }>();
     </div>
     <div
       style="width: 44px; height: 24px; border-radius: 9999px; position: relative; flex-shrink: 0"
-      :style="{ background: on ? 'var(--success-base)' : 'var(--border-default)', transition: 'background var(--duration-base)' }"
+      :style="{
+        background: on && !disabled ? 'var(--success-base)' : 'var(--border-default)',
+        transition: 'background var(--duration-base)',
+      }"
     >
       <span
         :style="{
           position: 'absolute',
           top: '3px',
-          left: on ? '23px' : '3px',
+          left: on && !disabled ? '23px' : '3px',
           width: '18px',
           height: '18px',
           borderRadius: '9999px',
