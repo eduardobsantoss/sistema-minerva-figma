@@ -77,6 +77,11 @@ export interface NewCraOperacaoData {
   benefCidade: string;
   benefEstado: string;
   titularConta: string;
+  /** Configuração de cobrança */
+  boletagemImediata: boolean;
+  boletagemAutomatica: boolean;
+  notificarCessaoSemBoleto: boolean;
+  diasParaBoletar: string;
   // Carteira de registro
   registradora: string;
   idCarteira: string;
@@ -98,7 +103,7 @@ const steps: Step[] = [
   { key: 'veiculo',  label: 'Veículo',     icon: Settings,          hint: 'Configurações do veículo' },
   { key: 'config',   label: 'Adicionais',  icon: SlidersHorizontal, hint: 'Configurações adicionais' },
   { key: 'limites',  label: 'Limites',     icon: Percent,           hint: 'Configuração de limites' },
-  { key: 'cobranca', label: 'Cobrança',    icon: Wallet,            hint: 'Carteira de cobrança' },
+  { key: 'cobranca', label: 'Cobrança',    icon: Wallet,            hint: 'Carteira, beneficiário e boletagem' },
   { key: 'registro', label: 'Registro',    icon: Network,           hint: 'Carteira de registro' },
   { key: 'pdd',      label: 'PDD',         icon: AlertTriangle,     hint: 'Parametrização de PDD' },
   { key: 'grupos',   label: 'Grupos',      icon: Layers,            hint: 'Seleção de grupos empresariais' },
@@ -158,9 +163,47 @@ const form = ref<NewCraOperacaoData>({
   benefCnpj: '', benefNome: '', benefCep: '', benefEndereco: '',
   benefNumero: '', benefComplemento: '', benefBairro: '', benefCidade: '', benefEstado: '',
   titularConta: '',
+  boletagemImediata: false,
+  boletagemAutomatica: false,
+  notificarCessaoSemBoleto: false,
+  diasParaBoletar: '',
   registradora: '', idCarteira: '', apiToken: '', apiSecret: '',
 });
 const grupoQ = ref('');
+
+const boletagemImediataHint =
+  'Boleta títulos elegíveis assim que a operação é concluída. Quando ativa, desabilita boletagem automática e dias para boletar.';
+const boletagemAutomaticaHint =
+  'Agenda a boletagem após o prazo em dias. Exige carteira Kobana configurada. Não pode ser usada junto com boletagem imediata.';
+const notificarCessaoSemBoletoHint =
+  'Quando ativo, permite enviar a notificação de cessão mesmo sem boleto gerado nos títulos. Títulos vencidos continuam bloqueando o envio.';
+
+const cobrancaBanner = computed(() => {
+  if (form.value.boletagemImediata) {
+    return 'Boletagem imediata ativa: títulos elegíveis serão boletados assim que a operação for concluída. Boletagem automática e dias para boletar ficam desabilitados.';
+  }
+  if (form.value.boletagemAutomatica) {
+    return 'Boletagem automática ativa: a boletagem será agendada após o prazo em dias. Exige carteira Kobana configurada.';
+  }
+  return 'Modo manual: nenhuma boletagem automática ou imediata será aplicada. Os títulos precisarão ser boletados manualmente.';
+});
+
+function toggleBoletagemImediata() {
+  if (form.value.boletagemAutomatica) return;
+  form.value.boletagemImediata = !form.value.boletagemImediata;
+  if (form.value.boletagemImediata) {
+    form.value.boletagemAutomatica = false;
+    form.value.diasParaBoletar = '';
+  }
+}
+
+function toggleBoletagemAutomatica() {
+  if (form.value.boletagemImediata) return;
+  form.value.boletagemAutomatica = !form.value.boletagemAutomatica;
+  if (form.value.boletagemAutomatica) {
+    form.value.boletagemImediata = false;
+  }
+}
 
 // Step Limites — 4 sub-tabs
 type LimitTab = 'concentracao' | 'totalizadores' | 'topCedente' | 'topSacado';
@@ -647,6 +690,57 @@ function handleCreate() {
               </StepGrid>
             </div>
           </div>
+
+          <div>
+            <SectionTitle :icon="Wallet">Configurações de Cobrança</SectionTitle>
+            <div
+              class="flex items-start"
+              style="
+                gap: 10px;
+                padding: 12px 14px;
+                margin-bottom: 16px;
+                background: var(--info-bg, #e8f4f8);
+                border: 1px solid var(--info-border, #b7d7e8);
+                border-radius: var(--radius-lg);
+                color: var(--gci-base);
+              "
+            >
+              <Info :size="16" :stroke-width="2.25" style="flex-shrink: 0; margin-top: 1px" />
+              <p style="margin: 0; font-size: var(--text-sm); line-height: 1.45; color: var(--text-default)">
+                {{ cobrancaBanner }}
+              </p>
+            </div>
+            <div class="flex flex-col" style="gap: 12px">
+              <ToggleRow
+                label="Boletagem imediata"
+                :hint="boletagemImediataHint"
+                :on="form.boletagemImediata"
+                :disabled="form.boletagemAutomatica"
+                @toggle="toggleBoletagemImediata"
+              />
+              <ToggleRow
+                label="Boletagem automática"
+                :hint="boletagemAutomaticaHint"
+                :on="form.boletagemAutomatica"
+                :disabled="form.boletagemImediata"
+                @toggle="toggleBoletagemAutomatica"
+              />
+              <ToggleRow
+                label="Notificar cessão sem boleto"
+                :hint="notificarCessaoSemBoletoHint"
+                :on="form.notificarCessaoSemBoleto"
+                @toggle="form.notificarCessaoSemBoleto = !form.notificarCessaoSemBoleto"
+              />
+              <FormField
+                label="Dias para boletar"
+                placeholder="—"
+                type="number"
+                :span="12"
+                :disabled="form.boletagemImediata"
+                v-model="form.diasParaBoletar"
+              />
+            </div>
+          </div>
         </div>
 
         <!-- Step 6 — Carteira de registro -->
@@ -808,6 +902,10 @@ function handleCreate() {
                 label="Beneficiário Final (Cobrança)"
                 :value="beneficiarioFinalLabel || '—'"
               />
+              <SummaryItem label="Boletagem imediata" :value="form.boletagemImediata ? 'Sim' : 'Não'" />
+              <SummaryItem label="Boletagem automática" :value="form.boletagemAutomatica ? 'Sim' : 'Não'" />
+              <SummaryItem label="Notificar cessão sem boleto" :value="form.notificarCessaoSemBoleto ? 'Sim' : 'Não'" />
+              <SummaryItem label="Dias para boletar" :value="form.diasParaBoletar || '—'" />
             </div>
           </SectionGroup>
 
