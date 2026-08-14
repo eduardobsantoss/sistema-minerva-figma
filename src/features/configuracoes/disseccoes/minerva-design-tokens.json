@@ -451,6 +451,10 @@
     "declaration": "cubic-bezier(0, 0, 0.2, 1)",
     "resolved": "cubic-bezier(0, 0, 0.2, 1)"
   },
+  "--z-toast": {
+    "declaration": "500",
+    "resolved": "500"
+  },
   "--sidebar-width-expanded": {
     "declaration": "280px",
     "resolved": "280px"

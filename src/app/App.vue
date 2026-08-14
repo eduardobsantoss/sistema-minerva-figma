@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { LoginScreen } from '@/features/auth';
+import { ToastHost } from '@/components/feedback';
 import ModulesScreen from './ModulesScreen.vue';
 
 // If a ?view= param is present, skip the login screen for capture purposes
@@ -14,4 +15,5 @@ const screen = ref<'login' | 'modules'>(SKIP_LOGIN ? 'modules' : 'login');
     <LoginScreen v-if="screen === 'login'" @submit="screen = 'modules'" />
     <ModulesScreen v-else />
   </div>
+  <ToastHost />
 </template>

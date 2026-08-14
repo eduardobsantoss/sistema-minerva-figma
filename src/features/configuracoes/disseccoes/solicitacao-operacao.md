@@ -1,9 +1,5 @@
 # Solicitação de Operação
 
-> **Atalho para devs — Minuta / Nova Garantia**  
-> Spec de campos e regras (separada por tipo): [Minuta / Nova Garantia — referência](#minuta--nova-garantia--referência-para-devs)  
-> Código dump do step: [`GarantiaMinutaStep`](#garantiaminutastep) · helpers em `minutaData.ts` · UI compartilhada `PessoaNaturezaFields` / `SpouseFields` / `EnderecosLocacaoFields`
-
 ## Lista
 
 ### SolicitacaoScreen
@@ -79,6 +75,7 @@ function buildFromForm(data: NewPedidoData): Solicitacao {
     taxa: parseFloat((data.taxaOperacao || '').replace(',', '.')) || 0,
     gerente: data.gerenteComercial || '—',
     atendente: '',
+    unidadeNegocio: data.unidadeNegocio || undefined,
   };
 }
 
@@ -424,7 +421,7 @@ function handleClear() {
 
   <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 14px">
     <div style="grid-column: 1 / -1">
-      <div :style="labelStyle">ID do Pedido</div>
+      <div :style="labelStyle">ID da Solicitação</div>
       <input v-model="draft.idPedido" placeholder="Buscar por ID" :style="inputStyle" />
     </div>
 
@@ -437,7 +434,7 @@ function handleClear() {
     </div>
 
     <div>
-      <div :style="labelStyle">Tipo de pedido</div>
+      <div :style="labelStyle">Tipo de solicitação</div>
       <select v-model="draft.tipoPedido" :style="inputStyle">
         <option value="">Todos</option>
         <option v-for="opt in tiposPedido" :key="opt" :value="opt">{{ opt }}</option>
@@ -466,7 +463,7 @@ function handleClear() {
     </div>
 
     <div>
-      <div :style="labelStyle">Requerente do pedido</div>
+      <div :style="labelStyle">Requerente da solicitação</div>
       <select v-model="draft.requerente" :style="inputStyle">
         <option value="">Todos</option>
         <option v-for="opt in requerentes" :key="opt" :value="opt">{{ opt }}</option>
@@ -1432,7 +1429,7 @@ function pushHistorico(acao: string) {
 
 function onVincularVeiculo(veiculo: string) {
   props.solicitacao.veiculo = veiculo;
-  pushHistorico(`vinculou o pedido de operação ao ${veiculo}`);
+  pushHistorico(`vinculou a solicitação de operação ao ${veiculo}`);
 }
 
 function onTransferirSolicitacao(veiculo: string) {
@@ -1450,7 +1447,7 @@ function onTransferirConta(payload: { id: string; label: string }) {
       : conta.agencia;
     props.solicitacao.conta = conta.digitoConta ? `${conta.conta}-${conta.digitoConta}` : conta.conta;
   }
-  pushHistorico(`transferiu a conta bancária do pedido para ${payload.label}`);
+  pushHistorico(`transferiu a conta bancária da solicitação para ${payload.label}`);
 }
 
 function onMesclarAtivos(payload: {
@@ -1462,7 +1459,7 @@ function onMesclarAtivos(payload: {
   const qtd = ids.size;
   det.ativos = det.ativos.filter((a) => !ids.has(a.id));
   const modo = payload.moverTodos ? 'todos os ativos' : `${qtd} ativo(s)`;
-  pushHistorico(`mesclou ${modo} para o pedido ${payload.pedidoDestinoId}`);
+  pushHistorico(`mesclou ${modo} para a solicitação ${payload.pedidoDestinoId}`);
 }
 
 function onGerarBoletim() {
@@ -1808,9 +1805,10 @@ import {
   ScrollText,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
+import { isTipoNc } from '../../data/minutaData';
 
 const props = defineProps<{
-  /** Tipo de contrato do pedido (ex.: NC, CCB) — controla ações condicionais. */
+  /** Tipo de contrato da solicitação (ex.: NC, CCB) — controla ações condicionais. */
   tipoContrato?: string;
 }>();
 
@@ -1848,10 +1846,7 @@ type ActionItem = {
   when?: () => boolean;
 };
 
-const isNc = computed(() => {
-  const t = (props.tipoContrato ?? '').toUpperCase();
-  return t === 'NC' || t.includes('NOTA COMERCIAL') || t.includes('CONTRATO NC');
-});
+const isNc = computed(() => isTipoNc(props.tipoContrato ?? ''));
 
 const isCcb = computed(() => {
   const t = (props.tipoContrato ?? '').toUpperCase();
@@ -1877,7 +1872,7 @@ const secondary = computed<ActionItem[]>(() =>
       action: 'gerarTermoEndosso' as const,
       when: () => isCcb.value,
     },
-    { label: 'Mesclar ativos entre pedidos', icon: Layers, action: 'mesclarAtivos' as const },
+    { label: 'Mesclar ativos entre solicitações', icon: Layers, action: 'mesclarAtivos' as const },
     { label: 'Transferir conta bancária', icon: Wallet, action: 'transferirConta' as const },
   ].filter((a) => !a.when || a.when()),
 );
@@ -3113,6 +3108,9 @@ const TABS: { key: Tab; label: string; icon: Component }[] = [
 ];
 
 const tone = computed(() => TONE_SITUACAO[props.ativo.situacao]);
+const showValorHero = computed(
+  () => props.ativo.tipo === 'NP' || !!props.ativo.minuta?.confina,
+);
 </script>
 
 <template>
@@ -3144,10 +3142,29 @@ const tone = computed(() => TONE_SITUACAO[props.ativo.situacao]);
           Lastro {{ ativo.lastro }} · {{ ativo.cedenteNome }} → {{ ativo.sacadoNome }}
         </p>
       </div>
-      <div style="text-align: right; flex-shrink: 0">
+      <div v-if="!showValorHero" style="text-align: right; flex-shrink: 0">
         <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase">Valor nominal</div>
         <div style="font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums; letter-spacing: -0.02em">
           {{ brl(ativo.valorTotal) }}
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="showValorHero"
+      class="relative overflow-hidden flex items-center"
+      style="background: var(--gci-base); border-radius: var(--radius-xl); padding: 28px 32px; color: #fff; box-shadow: 0 20px 40px -20px rgba(8,60,74,0.40)"
+    >
+      <div style="position: absolute; top: -100px; right: -100px; width: 320px; height: 320px; border-radius: 9999px; background: rgba(255,255,255,0.04)" />
+      <div style="flex: 1; position: relative; z-index: 1">
+        <div style="font-size: 11px; font-weight: var(--weight-bold); letter-spacing: 0.18em; color: var(--agro-base); text-transform: uppercase; margin-bottom: 10px">
+          Valor Nominal do Título
+        </div>
+        <div style="font-size: 36px; font-weight: var(--weight-bold); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1">
+          {{ brl(ativo.valorTotal) }}
+        </div>
+        <div style="font-size: var(--text-xs); color: rgba(255,255,255,0.65); margin-top: 8px">
+          Tipo: {{ ativo.tipo }} · Emissão: {{ ativo.emissao || '—' }} · Vencimento: {{ ativo.vencimento || '—' }}
         </div>
       </div>
     </div>
@@ -6740,7 +6757,7 @@ function goNext() {
       >
         <div>
           <h2 style="font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.01em">
-            Novo Pedido de Operação
+            Nova Solicitação de Operação
           </h2>
           <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
             {{ step.hint }} · Etapa {{ stepIdx + 1 }} de {{ steps.length }}
@@ -6969,7 +6986,7 @@ const TIPO_OPERACAO_OPTS = [
   'Contrato CPRF',
   'Contrato CDCA',
 ];
-const TIPO_CONTRATO_OPTS = ['CCB', 'CPR-F', 'CDCA', 'CDA-WA', 'NCE'];
+const TIPO_CONTRATO_OPTS = ['CCB', 'CPR-F', 'CDCA', 'CDA-WA', 'NC', 'NCE'];
 const UNIDADE_OPTS = ['Ceres Trading', 'Ceres Confina', 'Ceres Investimentos'];
 const GERENTE_OPTS = ['Ana Martins', 'Carlos Eduardo', 'Fernanda Lima', 'Roberto Alves'];
 const FUNDO_OPTS = ['CRA Semeagro', 'CRA Ceres Agro', 'CRA BTG Agro', 'FIDC Boa Safra'];
@@ -8405,7 +8422,7 @@ import {
   brl, UF_OPTIONS, PAISES_DDI, buscarSacadoCadastrado,
   type ContratoAtivo, type ParcelaAtivo, type ParteRelacionada,
 } from '../../data/operacaoData';
-import { isTipoMinutaDisponivel, categoriaMinuta } from '../../data/minutaData';
+import { isTipoMinutaDisponivel, categoriaMinuta, isTipoNp, UNIDADE_CONFINA } from '../../data/minutaData';
 import { BentoBox, BentoGrid, FormField, SelectField, EmptyState, ToggleRow, AddButton } from './adicionar-contrato';
 import { MinutaWizard } from './minuta';
 
@@ -8510,19 +8527,32 @@ watch(() => form.sacadoDocumento, (doc) => {
   if (found) form.sacadoNome = found.nome;
 });
 
-const minutaHabilitada = computed(() => isTipoMinutaDisponivel(form.tipo));
+const minutaHabilitada = computed(() =>
+  isTipoMinutaDisponivel(form.tipo, props.unidadeNegocio),
+);
 const showWizard = computed(() => form.gerarMinuta && minutaHabilitada.value);
+const gerarLabel = computed(() => (isTipoNp(form.tipo) ? 'Gerar termo' : 'Gerar minuta'));
 const wizardSubtitle = computed(() => {
   const cat = categoriaMinuta(form.tipo);
+  if (cat === 'NP') return 'Geração de termo Nota Promissória (Confina)';
   if (cat === 'NC') return 'Geração de minuta Nota Comercial';
   if (cat === 'CCB') return 'Geração de minuta CCB';
   return 'Geração de minuta CPR / CPR-F';
 });
+const minutaDisabledHint = computed(() => {
+  if (!form.tipo) {
+    return 'Selecione o tipo do título (CPR, CPRF, NC, CCB ou NP) em Dados do Título para habilitar a geração.';
+  }
+  if (isTipoNp(form.tipo) && props.unidadeNegocio !== UNIDADE_CONFINA) {
+    return `Disponível para Contrato NP apenas quando a unidade de negócio for ${UNIDADE_CONFINA}.`;
+  }
+  return 'Disponível apenas para Contrato CPR, CPRF, NC, CCB e NP (Confina) nesta versão.';
+});
 
 watch(
-  () => form.tipo,
-  (t) => {
-    if (!isTipoMinutaDisponivel(t) && form.gerarMinuta) {
+  () => [form.tipo, props.unidadeNegocio] as const,
+  ([t]) => {
+    if (!isTipoMinutaDisponivel(t, props.unidadeNegocio) && form.gerarMinuta) {
       form.gerarMinuta = false;
     }
   },
@@ -8712,22 +8742,16 @@ function toggleGerarMinuta() {
         <div style="flex: 1; overflow-y: auto; padding: 32px">
           <div class="flex flex-col" style="gap: 24px">
             <ToggleRow
-              label="Gerar minuta"
+              :label="gerarLabel"
               :on="form.gerarMinuta"
               :disabled="!minutaHabilitada"
               @toggle="toggleGerarMinuta"
             />
             <div
-              v-if="!minutaHabilitada && form.tipo"
+              v-if="!minutaHabilitada"
               style="font-size: var(--text-xs); color: var(--text-muted); margin-top: -12px"
             >
-              Disponível apenas para Contrato CPR, CPRF, NC e CCB nesta versão.
-            </div>
-            <div
-              v-else-if="!form.tipo"
-              style="font-size: var(--text-xs); color: var(--text-muted); margin-top: -12px"
-            >
-              Selecione o tipo do título (CPR, CPRF, NC ou CCB) em Dados do Título para habilitar a geração de minuta.
+              {{ minutaDisabledHint }}
             </div>
 
             <BentoBox title="Dados do Título" :icon="Tag">
@@ -9274,6 +9298,7 @@ import { X } from 'lucide-vue-next';
 import {
   TIPO_GARANTIA_OPERACAO_OPTS,
   emptyGarantiaAnexos,
+  garantiaAnexosParaTipo,
   sortGarantiaAnexos,
   formatValorGarantia,
   type GarantiaOperacao,
@@ -9314,13 +9339,21 @@ function hydrate(g: GarantiaOperacao | null | undefined) {
   form.tipo = g.tipo;
   form.nome = g.nome;
   form.valor = formatValorGarantia(g.valor);
-  anexos.value = g.anexos.length
-    ? sortGarantiaAnexos(g.anexos.map((a) => ({ ...a })))
-    : emptyGarantiaAnexos();
+  anexos.value = garantiaAnexosParaTipo(
+    g.tipo,
+    g.anexos.map((a) => ({ ...a })),
+  );
   showAnexos.value = true;
 }
 
 watch(() => props.garantia, (g) => hydrate(g), { immediate: true });
+
+watch(
+  () => form.tipo,
+  (tipo) => {
+    anexos.value = garantiaAnexosParaTipo(tipo, anexos.value);
+  },
+);
 
 const docsForGroup = computed(() =>
   anexos.value.map((a) => ({ id: a.id, nome: a.nome, obrigatorio: a.obrigatorio })),
@@ -11178,7 +11211,7 @@ function confirmar() {
             Vincular a um veículo de operação
           </h2>
           <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Selecione o veículo ao qual este pedido será vinculado
+            Selecione o veículo ao qual esta solicitação será vinculada
           </p>
         </div>
         <button
@@ -11431,7 +11464,7 @@ function confirmar() {
             Transferir conta bancária
           </h2>
           <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Defina a conta bancária de destino deste pedido
+            Defina a conta bancária de destino desta solicitação
           </p>
         </div>
         <button
@@ -11598,10 +11631,10 @@ function confirmar() {
       <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
         <div>
           <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
-            Mesclar ativos entre pedidos
+            Mesclar ativos entre solicitações
           </h2>
           <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Transfira ativos deste pedido para outro pedido de destino
+            Transfira ativos desta solicitação para outra solicitação de destino
           </p>
         </div>
         <button
@@ -11617,7 +11650,7 @@ function confirmar() {
       <div style="flex: 1; overflow-y: auto; padding: 24px 28px" class="flex flex-col" :style="{ gap: '20px' }">
         <StepGrid>
           <SelectField
-            label="Pedido de destino"
+            label="Solicitação de destino"
             :options="PEDIDO_OPTS"
             placeholder="Selecione"
             :span="12"
@@ -11626,7 +11659,7 @@ function confirmar() {
         </StepGrid>
 
         <ToggleRow
-          label="Mover todos os ativos do pedido origem"
+          label="Mover todos os ativos da solicitação origem"
           :on="moverTodos"
           compact
           @toggle="moverTodos = !moverTodos"
@@ -13657,6 +13690,9 @@ import {
   BookOpen,
   Forward,
   Percent,
+  Info,
+  PawPrint,
+  Receipt,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import type { ParteRelacionada, ParcelaAtivo } from '../../../data/operacaoData';
@@ -13674,7 +13710,13 @@ import InformacaoPagamentoStep from './InformacaoPagamentoStep.vue';
 import BoletimSubscricaoStep from './BoletimSubscricaoStep.vue';
 import EndossatarioStep from './EndossatarioStep.vue';
 import CetStep from './CetStep.vue';
+import ConfinaOperacaoStep from './ConfinaOperacaoStep.vue';
+import ConfinaPromissoriaStep from './ConfinaPromissoriaStep.vue';
+import ConfinaAnimaisStep from './ConfinaAnimaisStep.vue';
+import ConfinaNotasStep from './ConfinaNotasStep.vue';
+import ConfinaParceiroStep from './ConfinaParceiroStep.vue';
 import ParteRelacionadaModal from '../ParteRelacionadaModal.vue';
+import { simulatePromissoryNote } from '@/features/cra/data/simuladorData';
 import {
   categoriaMinuta,
   templatesDisponiveis,
@@ -13686,6 +13728,10 @@ import {
   emptyBoletimSubscricao,
   emptyCetForm,
   emptyCessaoForm,
+  emptyConfinaOperacao,
+  emptyConfinaPromissoria,
+  emptyConfinaAnimais,
+  emptyConfinaParceiro,
   type PessoaMinuta,
   type ProdutoMinuta,
   type AvalistaMinutaRow,
@@ -13696,6 +13742,7 @@ import {
   type BoletimSubscricao,
   type CetForm,
   type EmissaoMinuta,
+  type ConfinaNotaFiscal,
 } from '../../../data/minutaData';
 
 const props = withDefaults(
@@ -13735,6 +13782,15 @@ const showBoletim = computed(
 type StepDef = { key: string; label: string; icon: Component };
 
 const steps = computed<StepDef[]>(() => {
+  if (categoria.value === 'NP') {
+    return [
+      { key: 'confina-operacao', label: 'Dados da Operação', icon: Info },
+      { key: 'confina-promissoria', label: 'Promissória', icon: FileText },
+      { key: 'confina-animais', label: 'Animais', icon: PawPrint },
+      { key: 'confina-notas', label: 'Notas Fiscais', icon: Receipt },
+      { key: 'confina-parceiro', label: 'Parceiro e Testemunhas', icon: Users },
+    ];
+  }
   if (categoria.value === 'NC') {
     const list: StepDef[] = [
       { key: 'emitente', label: 'Emissora', icon: User },
@@ -13792,15 +13848,25 @@ watch(
   },
 );
 
-const gerarViaNaoNegociavel = ref(categoria.value !== 'NC');
+const gerarViaNaoNegociavel = ref(categoria.value !== 'NC' && categoria.value !== 'NP');
 watch(categoria, (c) => {
-  if (c === 'NC') gerarViaNaoNegociavel.value = false;
+  if (c === 'NC' || c === 'NP') gerarViaNaoNegociavel.value = false;
   else if (!gerarViaNaoNegociavel.value) gerarViaNaoNegociavel.value = true;
 });
 
 const topBarCols = computed(() =>
-  categoria.value === 'NC' ? '1fr 1.5fr' : '1fr 1.5fr 1fr',
+  categoria.value === 'NC' || categoria.value === 'NP' ? '1fr 1.5fr' : '1fr 1.5fr 1fr',
 );
+
+const gerarToggleLabel = computed(() =>
+  categoria.value === 'NP' ? 'Gerar termo' : 'Gerar minuta',
+);
+
+const confinaOperacao = ref(emptyConfinaOperacao());
+const confinaPromissoria = ref(emptyConfinaPromissoria());
+const confinaAnimais = ref(emptyConfinaAnimais());
+const confinaNotas = ref<ConfinaNotaFiscal[]>([]);
+const confinaParceiro = ref(emptyConfinaParceiro());
 
 const emitenteForm = ref<PessoaMinuta>(
   emptyPessoaMinuta(categoria.value === 'NC' ? 'JURIDICA' : 'FISICA'),
@@ -13864,6 +13930,7 @@ const garantias = ref<GarantiaMinuta[]>([]);
 
 const tipoTituloLabel = computed(() => {
   const cat = categoria.value;
+  if (cat === 'NP') return 'NP';
   if (cat === 'NC') return 'NC';
   if (cat === 'CCB') return 'CCB';
   const t = props.tipo.toUpperCase();
@@ -13953,9 +14020,62 @@ function onAddParte(parte: ParteRelacionada) {
   showParteModal.value = false;
 }
 
+function parseConfinaNum(v: string) {
+  return Number(String(v).replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+}
+
+function confinaValorNominal() {
+  const op = confinaOperacao.value;
+  const qty = parseConfinaNum(op.quantidadeAnimais);
+  const unit = parseConfinaNum(op.valorUnitarioArroba);
+  const weight = parseConfinaNum(op.pesoLoteArroba);
+  const rate = parseConfinaNum(op.taxaJuros);
+  if (!qty || !unit || !weight) return props.valorOperacao;
+  return simulatePromissoryNote({
+    animalsQuantity: qty,
+    unitValue: unit,
+    batchWeightInArroba: weight,
+    rate,
+    issueDate: op.emissao,
+    dueDate: op.vencimento,
+  }).valorNominal;
+}
+
 function buildMinuta(): MinutaResumo {
   const base = emptyMinutaResumo(props.tipo);
   const cat = categoria.value;
+
+  if (cat === 'NP') {
+    return {
+      ...base,
+      template: templateSel.value,
+      gerarViaNaoNegociavel: false,
+      emitentes: [],
+      credora: null,
+      credoraPadrao: '',
+      avalistas: [],
+      possuiAvalistas: false,
+      emissao: { uf: '', cidade: '' },
+      produtos: [],
+      garantias: [],
+      confina: {
+        operacao: { ...confinaOperacao.value },
+        promissoria: { ...confinaPromissoria.value },
+        animais: {
+          ...confinaAnimais.value,
+          infos: confinaAnimais.value.infos.map((i) => ({ ...i })),
+        },
+        notas: confinaNotas.value.map((n) => ({
+          ...n,
+          gtas: n.gtas.map((g) => ({ ...g })),
+        })),
+        parceiro: {
+          ...confinaParceiro.value,
+          testemunhas: confinaParceiro.value.testemunhas.map((t) => ({ ...t })),
+        },
+      },
+    };
+  }
 
   const emissaoPayload: EmissaoMinuta =
     cat === 'CCB'
@@ -13996,6 +14116,25 @@ function buildMinuta(): MinutaResumo {
 }
 
 function handleSubmit() {
+  if (categoria.value === 'NP') {
+    const outorgado = confinaOperacao.value.outorgado;
+    const [docPart, ...nomeParts] = outorgado.split(' - ');
+    const sacadoDocumento = nomeParts.length ? docPart.trim() : '';
+    const sacadoNome = nomeParts.length ? nomeParts.join(' - ').trim() : outorgado;
+    emit('create', {
+      numero: confinaPromissoria.value.numeroTitulo || confinaOperacao.value.grupoEmpresarial || 'NP',
+      tipo: 'NP',
+      emissao: confinaOperacao.value.emissao,
+      vencimento: confinaOperacao.value.vencimento,
+      valorTotal: confinaValorNominal(),
+      sacadoNome,
+      sacadoDocumento,
+      parcelas: [],
+      minuta: buildMinuta(),
+    });
+    return;
+  }
+
   emit('create', {
     numero: tituloForm.value.numero,
     tipo: tituloForm.value.tipo,
@@ -14010,6 +14149,7 @@ function handleSubmit() {
 }
 
 const subtitleByCat = computed(() => {
+  if (categoria.value === 'NP') return 'Geração de termo Nota Promissória (Confina)';
   if (categoria.value === 'NC') return 'Geração de minuta Nota Comercial';
   if (categoria.value === 'CCB') return 'Geração de minuta CCB';
   return 'Geração de minuta CPR / CPR-F';
@@ -14029,7 +14169,7 @@ const subtitleByCat = computed(() => {
       }"
     >
       <ToggleRow
-        label="Gerar minuta"
+        :label="gerarToggleLabel"
         :on="gerarMinuta"
         compact
         @toggle="emit('update:gerarMinuta', !gerarMinuta)"
@@ -14042,7 +14182,7 @@ const subtitleByCat = computed(() => {
         :disabled="templateDisabled"
       />
       <ToggleRow
-        v-if="categoria !== 'NC'"
+        v-if="categoria !== 'NC' && categoria !== 'NP'"
         label="Gerar via não negociável"
         :on="gerarViaNaoNegociavel"
         compact
@@ -14053,8 +14193,32 @@ const subtitleByCat = computed(() => {
     <MinutaStepper :steps="steps" :current="stepIdx" @select="selectStep" />
 
     <div style="flex: 1; overflow-y: auto; padding: 32px">
+      <ConfinaOperacaoStep
+        v-if="currentKey === 'confina-operacao'"
+        v-model="confinaOperacao"
+      />
+      <ConfinaPromissoriaStep
+        v-else-if="currentKey === 'confina-promissoria'"
+        v-model="confinaPromissoria"
+        :operacao="confinaOperacao"
+      />
+      <ConfinaAnimaisStep
+        v-else-if="currentKey === 'confina-animais'"
+        v-model="confinaAnimais"
+        :operacao="confinaOperacao"
+      />
+      <ConfinaNotasStep
+        v-else-if="currentKey === 'confina-notas'"
+        v-model:notas="confinaNotas"
+        :operacao="confinaOperacao"
+      />
+      <ConfinaParceiroStep
+        v-else-if="currentKey === 'confina-parceiro'"
+        v-model="confinaParceiro"
+        :operacao="confinaOperacao"
+      />
       <EmitenteStep
-        v-if="currentKey === 'emitente'"
+        v-else-if="currentKey === 'emitente'"
         v-model:emitentes="emitentes"
         v-model:form="emitenteForm"
         v-model:doc-busca="emitenteDocBusca"
@@ -15310,12 +15474,13 @@ function limparPadrao() {
 ```vue
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import { Trash2, Package } from 'lucide-vue-next';
-import { UF_OPTIONS, brl } from '../../../data/operacaoData';
-import { StepGrid, FormField, SelectField, AddButton, EmptyState } from '../adicionar-contrato';
+import { Trash2, Package, Truck } from 'lucide-vue-next';
+import { UF_OPTIONS, PAISES_DDI, brl } from '../../../data/operacaoData';
+import { BentoBox, StepGrid, FormField, SelectField, AddButton, EmptyState } from '../adicionar-contrato';
 import {
   PRODUTO_TIPO_OPTS,
   UNIDADE_MEDIDA_OPTS,
+  RESPONSAVEL_TRANSPORTE_OPTS,
   cidadesDaUf,
   emptyProdutoMinuta,
   type ProdutoMinuta,
@@ -15324,6 +15489,7 @@ import {
 const produtos = defineModel<ProdutoMinuta[]>('produtos', { default: () => [] });
 const form = defineModel<ProdutoMinuta>('form', { required: true });
 
+const PAIS_OPTS = PAISES_DDI.map((p) => p.pais);
 const cidadeProducaoOpts = computed(() => cidadesDaUf(form.value.estadoProducao));
 const cidadeRegistroOpts = computed(() => cidadesDaUf(form.value.ufRegistro));
 const ufOpts = computed(() => ['MG', 'SP', 'MT', 'GO', 'PR', 'MS', 'BA', 'TO'].filter((u) => UF_OPTIONS.includes(u)));
@@ -15390,6 +15556,42 @@ function fmtValor(v: string) {
         v-model="form.cidadeRegistro"
       />
     </StepGrid>
+
+    <BentoBox title="Entrega - Recebimento/Retirada" :icon="Truck">
+      <StepGrid>
+        <FormField label="CPF/CNPJ do local de entrega" placeholder="—" :span="3" v-model="form.docLocalEntrega" />
+        <FormField label="Nome do local de entrega" placeholder="—" :span="3" v-model="form.nomeLocalEntrega" />
+        <FormField
+          label="Data inicial de entrega"
+          placeholder="dd/mm/aaaa"
+          required
+          :span="3"
+          v-model="form.dataInicialEntrega"
+        />
+        <FormField
+          label="Data de vencimento"
+          placeholder="dd/mm/aaaa"
+          required
+          :span="3"
+          v-model="form.dataVencimento"
+        />
+        <SelectField
+          label="Responsável pelo transporte"
+          :options="RESPONSAVEL_TRANSPORTE_OPTS"
+          placeholder="Selecione"
+          :span="12"
+          v-model="form.responsavelTransporte"
+        />
+        <FormField label="CEP" placeholder="—" :span="4" v-model="form.cep" />
+        <FormField label="Localidade" placeholder="—" :span="8" v-model="form.localidade" />
+        <FormField label="Número" placeholder="—" :span="4" v-model="form.numero" />
+        <FormField label="Bairro" placeholder="—" :span="8" v-model="form.bairro" />
+        <FormField label="Informações adicionais" placeholder="—" :span="12" v-model="form.infoAdicionais" />
+        <FormField label="Cidade" placeholder="—" :span="12" v-model="form.cidade" />
+        <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="6" v-model="form.estado" />
+        <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="6" v-model="form.pais" />
+      </StepGrid>
+    </BentoBox>
 
     <div class="flex justify-end">
       <AddButton @click="addProduto">Adicionar produto</AddButton>
@@ -15866,247 +16068,12 @@ function gerarPagamentosAutomaticos() {
 </template>
 ```
 
-## Minuta / Nova Garantia — referência para devs
-
-> Fluxo: **Solicitação → Ativos → Adicionar Contrato → Gerar Minuta → etapa Garantia → Nova Garantia**  
-> Fontes: `GarantiaMinutaStep.vue`, `PessoaNaturezaFields.vue`, `SpouseFields.vue`, `EnderecosLocacaoFields.vue`, `minutaData.ts`  
-> Handoff complementar: `docs/handoff/solicitacao/adicionar-contrato.md` §7.6
-
----
-
-### Arquivos
-
-| Arquivo | Papel |
-|---|---|
-| `components/modals/minuta/GarantiaMinutaStep.vue` | Modal Nova Garantia + lista de garantias |
-| `components/modals/minuta/PessoaNaturezaFields.vue` | PF/PJ do proprietário (garantia e imóvel locado/arrendado) |
-| `components/modals/minuta/SpouseFields.vue` | Bloco do cônjuge (usado nas garantias **sem** data de nascimento) |
-| `components/modals/minuta/EnderecosLocacaoFields.vue` | Lista de endereços (tipos que usam “Adicionar endereço”) |
-| `data/minutaData.ts` | `TIPO_GARANTIA_MINUTA_OPTS`, helpers `isGarantia*`, `codigoGarantiaBackend`, tipos |
-
----
-
-### Catálogo de tipos (`TIPO_GARANTIA_MINUTA_OPTS`)
-
-**Disponíveis hoje**
-
-| Label UI | Helper | Código back-end (`codigoGarantiaBackend`) |
-|---|---|---|
-| AF. Estoque | `isGarantiaEstoque` | label |
-| Penhor de Estoque | `isGarantiaEstoque` (mesmo form que AF. Estoque) | label |
-| AF. Ativos Biológicos | `isGarantiaAtivosBiologicos` | label |
-| AF. Lavoura | `isGarantiaLavoura` | `agricola` |
-| AF. Imóvel | `isGarantiaImovel` | `imovel` |
-| AF. Bens Móveis | `isGarantiaBensMoveis` | `bens_moveis` |
-| Cessão Fiduciária de Direitos Creditórios (DUPLICATAS) | `isGarantiaCessaoDuplicatas` | `cessao_fiduciaria_duplicatas` |
-| Cessão Fiduciária de Direitos Creditórios (CONTRATO) | `isGarantiaCessaoContrato` | `cessao_fiduciaria_contrato` |
-
-**Fora do catálogo por enquanto** (não listar no select): Alienação Fiduciária · Hipoteca · Penhor · Fiança · Cessão Fiduciária (genérica) · Aval · Caução.
-
-Todos os tipos acima entram em `isGarantiaFormularioEspecifico` → **sem** testemunhas / obrigação / forma do produto / constituir garantia.
-
----
-
-### Regras de cabeçalho (todas as garantias)
-
-| Situação | Campos visíveis |
-|---|---|
-| Nenhum tipo selecionado | Só **Tipo** + **Valor** (ocultar Nº testemunhas e Obrigação/vínculo) |
-| Tipo específico (`isGarantiaFormularioEspecifico`) | Tipo + Valor; **sem** descrição, instrumento particular, testemunhas, obrigação, forma produto, constituir |
-| Tipo genérico (hoje não há no select) | Tipo + Valor + testemunhas + obrigação + (forma produto se estoque) + constituir |
-
-Cadastro: botão habilitado com `form.tipo` + `form.valor`.
-
----
-
-### Tabela da step Garantia (após cadastrar)
-
-| Coluna / UI | Detalhe |
-|---|---|
-| Tipo · Valor · Instr. particular · Constituir · Testemunhas | Dados da garantia |
-| **Uso** | Mini barra + `%` (`percentualUsado`: tipicamente **0 / 50 / 100**) — à esquerda do botão de ação |
-| **Ação** | Ícone de configuração (`Settings2`) — **não há lixeira** |
-| Clique na linha | Abre edição da garantia (modal Nova/Editar) |
-| Clique na ação | Abre **Configurar constituição da garantia** |
-
-Arquivo do modal: `ConfigurarConstituicaoGarantiaModal.vue`  
-Estado: `garantia.constituicao` (`ConstituicaoGarantiaConfig`) + sync de `instrumentoParticular` / `constituirGarantia` / contagem de testemunhas na linha.
-
-#### Modal — Configurar constituição da garantia
-
-| Estado dos toggles | Conteúdo |
-|---|---|
-| Instrumento Particular: **Não** | Seção **Cessão vinculada** → select Cessão; ao selecionar, card com **Total valor de compra** · **Total valor nominal** · **Quantidade** (título(s)) |
-| Instrumento Particular: **Sim** | **Dados do cedente**: Cedente · Representante legal do grupo · (se cedente) Contato · Endereço |
-| Constituir garantia: **Sim** | **Fiduciária** (select padrão + PJ) · Representante Legal · Contato · Endereço · **Obrigação garantida** |
-| Instrumento **ou** Constituir | Toggle **Possui testemunhas** → lista (CPF · Nome* · E-mail*) + **Adicionar testemunha** |
-
-**Fiduciária PJ — Representante Legal** (mesmas regras das garantias): CPF · Nome · Nacionalidade · Profissão · Estado civil · E-mail · Telefone — **sem** RG / inscrição rural / data nascimento.  
-**Contato da fiduciária** (empresa): E-mail · DDI · Telefone.  
-**Obrigação garantida:** Instrumento (Nome) · Documento (CNPJ) · Compradora · Vendedora · Fiador(es) · Local · Data* · Produto · Quantidade · Valor da obrigação.
-
-Footer: **SALVAR**.
-
----
-
-### Pessoa Física / Jurídica — regras compartilhadas
-
-Usado em: **Proprietário da garantia** e **Proprietário do imóvel locado/arrendado** (`PessoaNaturezaFields`).
-
-#### Pessoa Física
-
-| Campo | Salva? |
-|---|---|
-| CPF, Nome, RG | sim |
-| Nacionalidade, Data nascimento, Profissão | sim |
-| Estado civil | sim — opts **sem** União Estável (`ESTADO_CIVIL_GARANTIA_OPTS`) |
-| Regime | sim — só se Casado(a); **sem** Separação Obrigatória de Bens |
-| Data do casamento | sim — **só** quando o bloco do cônjuge aparece |
-| E-mail | **não** |
-| Inscrição do produtor rural | **não** |
-| Órgão emissor do RG | **não** |
-
-**Cônjuge** (`SpouseFields`, só se Casado + regime ≠ separação):
-
-| Campo | Ordem / nota |
-|---|---|
-| CPF do cônjuge | 1º (doc antes do nome) |
-| Nome completo do cônjuge | 2º |
-| RG, Nacionalidade, Profissão | sim |
-| Data de nascimento do cônjuge | **não** (`mostrar-data-nascimento="false"`) |
-
-#### Pessoa Jurídica
-
-| Bloco | Campos | Não salva / não exibe |
-|---|---|---|
-| Empresa | CNPJ, Razão social, Nome fantasia, Data abertura, Tipo, Porte, Atividade, Natureza jurídica, Inscrição municipal, Inscrição estadual | **E-mail da empresa** |
-| Representante Legal | CPF, Nome, Nacionalidade, Profissão, **Estado civil**, **E-mail**, **Telefone** | RG · Inscrição produtor rural · Data de nascimento |
-
----
-
-### Por tipo de garantia
-
-#### AF. Estoque / Penhor de Estoque
-
-> Mesmo formulário (`isGarantiaEstoque`). Penhor de Estoque = AF. Estoque.
-
-| Seção | Campos |
-|---|---|
-| Cabeçalho | Tipo · Valor |
-| Contrato | Número do contrato de estoque (terceiro) |
-| Estoque de formação | Nome imóvel · Matrícula · Zona · Tipo · Área total afetada · Unidade · Cartório · UF registro · Cidade registro |
-| Imóvel locado | Toggle → (se on) Tipo locação · Data início · Prazo indeterminado · Data término · Proprietário locado (`PessoaNaturezaFields`) · Partes |
-| Endereço da locação | **Sempre visível** (endereço único no form, sem lista): CEP · Localidade · Número · Bairro · Info · Cidade · Estado · País |
-| Proprietário da garantia | `PessoaNaturezaFields` |
-| Estoques | Botão **Adicionar dados do estoque** → tabela Propriedade \| Proprietário (empty: “Não foi encontrado nenhum resultado.”) |
-| Relatório | Data do relatório* · Periodicidade · Data da primeira atualização* |
-
----
-
-#### AF. Ativos Biológicos
-
-| Seção | Campos |
-|---|---|
-| Cabeçalho | Tipo · Valor |
-| Animais | Quantidade · Categoria · Peso médio · Unidade de medida (peso) |
-| Local de formação | Nome imóvel · Matrícula · Zona · Tipo · Área · Unidade · Cartório · UF · Cidade |
-| Imóvel arrendado | Toggle → Locação · Proprietário arrendado (`PessoaNaturezaFields`) · Partes |
-| Endereços da locação | `EnderecosLocacaoFields` (draft + **Adicionar endereço** → lista) |
-| Proprietário da garantia | `PessoaNaturezaFields` |
-
----
-
-#### AF. Lavoura (back-end `agricola`)
-
-| Seção | Campos |
-|---|---|
-| Cabeçalho | Tipo · Valor |
-| Área / safra | Tamanho de área · Unidade · Ano da safra |
-| Produto | Produto · Quantidade · Unidade · Preço unitário |
-| Local de formação | Nome da fazenda · Matrícula · Zona · Tipo · Área afetada · Unidade · Cartório · UF · Cidade |
-| Imóvel arrendado | Toggle → Locação · Proprietário arrendado · Partes |
-| Endereços da locação | `EnderecosLocacaoFields` |
-| Proprietário da garantia | `PessoaNaturezaFields` |
-
----
-
-#### AF. Imóvel (back-end `imovel`)
-
-| Seção | Campos |
-|---|---|
-| Cabeçalho | Tipo · Valor |
-| Imóvel | Nome · Matrícula · Zona · Tipo · Área afetada · Unidade · Cartório · UF · Cidade |
-| Opcionais | **CAR** · **NIRF** · **CCIR** · **CCIR Ano** · **SIGEF/INCRA** · **Possui seguro** (toggle) |
-| Imóvel arrendado | Toggle → Locação · Proprietário arrendado · Partes |
-| Endereços da locação | `EnderecosLocacaoFields` |
-| Proprietário da garantia | `PessoaNaturezaFields` |
-
----
-
-#### AF. Bens Móveis (back-end `bens_moveis`)
-
-| Seção | Campos |
-|---|---|
-| Cabeçalho | Tipo · Valor |
-| Dados do bem (draft) | Descrição · Preço unitário · Quantidade · Marca · Modelo · Ano fabricação · Nº série · Matrícula |
-| Local de armazenamento | CEP · Localidade · Número · Bairro · Info · Cidade · Estado · País |
-| Dados de registro | Cartório · UF · Cidade registro |
-| Proprietário da garantia | `PessoaNaturezaFields` |
-| Documentos | **Textarea** com descrição livre do documento (+ contador de caracteres) — **não** é select multi |
-| Lista | **Adicionar bem** → tabela Descrição \| Marca/Modelo \| Ano \| Proprietário |
-
----
-
-#### Cessão Fiduciária (DUPLICATAS)
-
-| Seção | Campos |
-|---|---|
-| Cabeçalho | Tipo · Valor |
-| Contrato | Tipo de contrato* · Data emissão* · Data vencimento* · Descrição* (textarea + contador) |
-| Cedente | CPF/CNPJ* · Nome/Razão social* |
-| Sacado | CPF/CNPJ* · Nome/Razão social* |
-| Opcionais | Toggle → % equivalente CPRF · Banco · Conta Escrow · Agência Escrow · Titular |
-
----
-
-#### Cessão Fiduciária (CONTRATO)
-
-| Seção | Campos |
-|---|---|
-| Cabeçalho | Tipo · Valor |
-| Contrato | Tipo de título* · Tipo de contrato* · Data emissão* · Data vencimento* · Descrição* |
-| Cedente | CPF/CNPJ* · Nome/Razão social* |
-| Sacado | CPF/CNPJ* · Nome/Razão social* · endereço completo (CEP… País) |
-| Opcionais | Nada obrigatório abaixo do toggle: Data assinatura · Representantes (→ tabela) · dados Escrow |
-
----
-
-### Constantes úteis (`minutaData.ts`)
-
-```ts
-ESTADO_CIVIL_GARANTIA_OPTS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)']; // sem União Estável
-REGIME_CASAMENTO_OPTS = [
-  'Comunhão Parcial de Bens',
-  'Comunhão Universal de Bens',
-  'Separação Total de Bens', // não exige cônjuge
-  'Participação Final nos Aquestos',
-]; // sem Separação Obrigatória
-ZONA_OPTS = ['Rural', 'Urbana'];
-TIPO_IMOVEL_OPTS = ['Fazenda', 'Armazém', 'Galpão', 'Silo'];
-TIPO_LOCACAO_OPTS = ['Arrendamento', 'Comodato', 'Parceria Agrícola'];
-PERIODICIDADE_RELATORIO_OPTS = ['Mensal', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'];
-```
-
----
-
 ### GarantiaMinutaStep
-
-> Abaixo: dump do componente (pode estar desatualizado vs. a spec acima — **priorize a referência desta seção**).
 
 ```vue
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
-import { X, Trash2, Shield, Home, Scale } from 'lucide-vue-next';
+import { X, Trash2, Shield, Home, Scale, User, Settings2 } from 'lucide-vue-next';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { UF_OPTIONS, PAISES_DDI } from '../../../data/operacaoData';
@@ -16118,6 +16085,7 @@ import {
   ToggleRow,
   AddButton,
   EmptyState,
+  FieldLabel,
 } from '../adicionar-contrato';
 import {
   TIPO_GARANTIA_MINUTA_OPTS,
@@ -16126,43 +16094,195 @@ import {
   TIPO_IMOVEL_OPTS,
   TIPO_LOCACAO_OPTS,
   UNIDADE_MEDIDA_OPTS,
+  UNIDADE_PESO_ANIMAL_OPTS,
+  CATEGORIA_ANIMAL_OPTS,
+  PRODUTO_TIPO_OPTS,
+  TIPO_CONTRATO_CESSAO_OPTS,
+  TIPO_TITULO_CESSAO_OPTS,
+  BANCO_OPTS,
   PERIODICIDADE_RELATORIO_OPTS,
   cidadesDaUf,
   emptyGarantiaMinuta,
+  emptyPessoaMinuta,
+  emptyEnderecoLocacaoItem,
+  emptyBemMovelDraft,
   isGarantiaEstoque,
+  isGarantiaAtivosBiologicos,
+  isGarantiaLavoura,
+  isGarantiaImovel,
+  isGarantiaBensMoveis,
+  isGarantiaCessaoDuplicatas,
+  isGarantiaCessaoContrato,
+  isGarantiaFormularioEspecifico,
   isGarantiaComFormaProduto,
   type GarantiaMinuta,
+  type PessoaMinuta,
   type EstoqueItem,
+  type EnderecoLocacaoItem,
+  type BemMovelItem,
+  type ConstitucaoGarantiaConfig,
+  emptyConstituicaoGarantia,
 } from '../../../data/minutaData';
+import PessoaNaturezaFields from './PessoaNaturezaFields.vue';
+import EnderecosLocacaoFields from './EnderecosLocacaoFields.vue';
+import ConfigurarConstituicaoGarantiaModal from './ConfigurarConstituicaoGarantiaModal.vue';
+import DocGroup from '../../novo-pedido/DocGroup.vue';
 
 const garantias = defineModel<GarantiaMinuta[]>('garantias', { default: () => [] });
+
+const RELACAO_ESTOQUE_DOC = {
+  id: 'relacao-estoque',
+  nome: 'Relação do Estoque Detalhado',
+  obrigatorio: true,
+} as const;
 
 const possuiGarantias = ref(true);
 const showNova = ref(false);
 const editingIndex = ref<number | null>(null);
+const showConstituicao = ref(false);
+const constituicaoIndex = ref<number | null>(null);
 const form = reactive<GarantiaMinuta>(emptyGarantiaMinuta());
 const estoqueDraft = reactive({ propriedade: '', proprietario: '' });
+const enderecoDraft = reactive<EnderecoLocacaoItem>(emptyEnderecoLocacaoItem());
+const representanteDraft = ref('');
+const bemDraft = reactive(emptyBemMovelDraft());
+const documentosBemLen = computed(() => bemDraft.documentos?.length ?? 0);
 
 const PAIS_OPTS = PAISES_DDI.map((p) => p.pais);
-const NATUREZA_OPTS = ['Pessoa Física', 'Pessoa Jurídica'];
 const ufOpts = computed(() => ['MG', 'SP', 'MT', 'GO', 'PR', 'MS', 'BA', 'TO'].filter((u) => UF_OPTIONS.includes(u)));
 const cidadeRegistroOpts = computed(() => cidadesDaUf(form.ufRegistro));
-const cidadeEnderecoOpts = computed(() => cidadesDaUf(form.estado));
+const cidadeSacadoOpts = computed(() => cidadesDaUf(form.sacadoEstado));
+const cidadeBemRegistroOpts = computed(() => cidadesDaUf(bemDraft.ufRegistro));
 const showEstoque = computed(() => isGarantiaEstoque(form.tipo));
-const showFormaProduto = computed(() => isGarantiaComFormaProduto(form.tipo));
+const showAtivosBiologicos = computed(() => isGarantiaAtivosBiologicos(form.tipo));
+const showLavoura = computed(() => isGarantiaLavoura(form.tipo));
+const showImovel = computed(() => isGarantiaImovel(form.tipo));
+const showBensMoveis = computed(() => isGarantiaBensMoveis(form.tipo));
+const showCessaoDuplicatas = computed(() => isGarantiaCessaoDuplicatas(form.tipo));
+const showCessaoContrato = computed(() => isGarantiaCessaoContrato(form.tipo));
+const hideCamposGerais = computed(() => isGarantiaFormularioEspecifico(form.tipo));
+/** Campos genéricos (testemunhas, obrigação…) só com tipo padrão selecionado */
+const showCamposPadraoGarantia = computed(() => !!form.tipo && !hideCamposGerais.value);
+/** Tipos específicos: cabeçalho só tipo + valor (sem descrição / instrumento) */
+const hideCabecalhoExtra = computed(
+  () =>
+    showEstoque.value ||
+    showAtivosBiologicos.value ||
+    showLavoura.value ||
+    showImovel.value ||
+    showBensMoveis.value ||
+    showCessaoDuplicatas.value ||
+    showCessaoContrato.value,
+);
+const showFormaProduto = computed(() => isGarantiaComFormaProduto(form.tipo) && showCamposPadraoGarantia.value);
+const descricaoContratoLen = computed(() => form.descricaoContrato?.length ?? 0);
 
-const naturezaLocado = computed({
-  get: () => (form.tipoPessoaLocado === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica'),
-  set: (v: string) => {
-    form.tipoPessoaLocado = v === 'Pessoa Física' ? 'FISICA' : 'JURIDICA';
-  },
-});
-const naturezaProprietario = computed({
-  get: () => (form.tipoPessoaProprietario === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica'),
-  set: (v: string) => {
-    form.tipoPessoaProprietario = v === 'Pessoa Física' ? 'FISICA' : 'JURIDICA';
-  },
-});
+function nomePessoa(p: PessoaMinuta) {
+  return p.tipoPessoa === 'FISICA' ? p.nome : p.razaoSocial || p.nomeFantasia || '';
+}
+
+function hydratePessoa(raw: Partial<PessoaMinuta> | undefined, fallbackTipo: 'FISICA' | 'JURIDICA' = 'FISICA'): PessoaMinuta {
+  const base = emptyPessoaMinuta(raw?.tipoPessoa ?? fallbackTipo);
+  if (!raw) return base;
+  return {
+    ...base,
+    ...JSON.parse(JSON.stringify(raw)),
+    representante: {
+      ...base.representante!,
+      ...(raw.representante ?? {}),
+    },
+    conjuge: {
+      ...base.conjuge!,
+      ...(raw.conjuge ?? {}),
+    },
+  };
+}
+
+function hydrateGarantia(g: GarantiaMinuta) {
+  const base = emptyGarantiaMinuta();
+  const raw = g as GarantiaMinuta & {
+    tipoPessoaLocado?: string;
+    tipoPessoaProprietario?: string;
+    proprietarioLocado?: PessoaMinuta;
+    proprietarioGarantia?: PessoaMinuta;
+  };
+  Object.assign(form, base, JSON.parse(JSON.stringify(g)));
+  form.proprietarioLocado = hydratePessoa(
+    raw.proprietarioLocado,
+    raw.tipoPessoaLocado === 'JURIDICA' ? 'JURIDICA' : 'FISICA',
+  );
+  form.proprietarioGarantia = hydratePessoa(
+    raw.proprietarioGarantia,
+    raw.tipoPessoaProprietario === 'JURIDICA' ? 'JURIDICA' : 'FISICA',
+  );
+  form.estoques = Array.isArray(g.estoques) ? JSON.parse(JSON.stringify(g.estoques)) : [];
+  form.enderecosLocacao = Array.isArray(g.enderecosLocacao)
+    ? JSON.parse(JSON.stringify(g.enderecosLocacao))
+    : [];
+  form.representantes = Array.isArray(g.representantes) ? JSON.parse(JSON.stringify(g.representantes)) : [];
+  form.bensMoveis = Array.isArray(g.bensMoveis)
+    ? JSON.parse(JSON.stringify(g.bensMoveis)).map((b: BemMovelItem & { documentos?: string | string[] }) => ({
+        ...b,
+        documentos: Array.isArray(b.documentos) ? b.documentos.join('\n') : b.documentos || '',
+      }))
+    : [];
+  form.percentualUsado = (g.percentualUsado === 50 || g.percentualUsado === 100 ? g.percentualUsado : 0) as 0 | 50 | 100;
+  form.relacaoEstoqueDetalhadoEnviado = !!g.relacaoEstoqueDetalhadoEnviado;
+  form.constituicao = g.constituicao
+    ? { ...emptyConstituicaoGarantia(), ...JSON.parse(JSON.stringify(g.constituicao)) }
+    : emptyConstituicaoGarantia();
+  // Migra endereço único legado → lista
+  if (
+    form.enderecosLocacao.length === 0 &&
+    (g.cep || g.localidade || g.cidade || g.numero || g.bairro)
+  ) {
+    form.enderecosLocacao = [
+      {
+        cep: g.cep || '',
+        localidade: g.localidade || '',
+        numero: g.numero || '',
+        bairro: g.bairro || '',
+        infoAdicionais: g.infoAdicionais || '',
+        cidade: g.cidade || '',
+        estado: g.estado || '',
+        pais: g.pais || 'Brasil',
+      },
+    ];
+  }
+}
+
+function resetEnderecoDraft() {
+  Object.assign(enderecoDraft, emptyEnderecoLocacaoItem());
+}
+
+function resetBemDraft() {
+  Object.assign(bemDraft, emptyBemMovelDraft());
+}
+
+function addRepresentante() {
+  const nome = representanteDraft.value.trim();
+  if (!nome) return;
+  form.representantes.push(nome);
+  representanteDraft.value = '';
+}
+
+function removeRepresentante(i: number) {
+  form.representantes.splice(i, 1);
+}
+
+function addBemMovel() {
+  if (!bemDraft.descricao.trim()) return;
+  const item: BemMovelItem = {
+    ...JSON.parse(JSON.stringify(bemDraft)),
+    proprietario: nomePessoa(form.proprietarioGarantia) || '—',
+  };
+  form.bensMoveis.push(item);
+  resetBemDraft();
+}
+
+function removeBemMovel(i: number) {
+  form.bensMoveis.splice(i, 1);
+}
 
 watch(
   () => form.ufRegistro,
@@ -16173,27 +16293,41 @@ watch(
   },
 );
 watch(
-  () => form.estado,
+  () => form.sacadoEstado,
   () => {
-    if (form.cidade && !cidadeEnderecoOpts.value.includes(form.cidade)) {
-      form.cidade = '';
+    if (form.sacadoCidade && !cidadeSacadoOpts.value.includes(form.sacadoCidade)) {
+      form.sacadoCidade = '';
+    }
+  },
+);
+watch(
+  () => bemDraft.ufRegistro,
+  () => {
+    if (bemDraft.cidadeRegistro && !cidadeBemRegistroOpts.value.includes(bemDraft.cidadeRegistro)) {
+      bemDraft.cidadeRegistro = '';
     }
   },
 );
 
 function openNova() {
   editingIndex.value = null;
-  Object.assign(form, emptyGarantiaMinuta());
+  hydrateGarantia(emptyGarantiaMinuta());
   estoqueDraft.propriedade = '';
   estoqueDraft.proprietario = '';
+  representanteDraft.value = '';
+  resetEnderecoDraft();
+  resetBemDraft();
   showNova.value = true;
 }
 
 function openEdit(i: number) {
   editingIndex.value = i;
-  Object.assign(form, JSON.parse(JSON.stringify(garantias.value[i])));
+  hydrateGarantia(garantias.value[i]);
   estoqueDraft.propriedade = '';
   estoqueDraft.proprietario = '';
+  representanteDraft.value = '';
+  resetEnderecoDraft();
+  resetBemDraft();
   showNova.value = true;
 }
 
@@ -16201,7 +16335,11 @@ function addEstoque() {
   if (!estoqueDraft.propriedade && !form.nomeImovel) return;
   const item: EstoqueItem = {
     propriedade: estoqueDraft.propriedade || form.nomeImovel,
-    proprietario: estoqueDraft.proprietario || form.nomeContratante || '—',
+    proprietario:
+      estoqueDraft.proprietario ||
+      nomePessoa(form.proprietarioGarantia) ||
+      form.nomeContratante ||
+      '—',
   };
   form.estoques.push(item);
   estoqueDraft.propriedade = '';
@@ -16212,8 +16350,14 @@ function removeEstoque(i: number) {
   form.estoques.splice(i, 1);
 }
 
+const canCadastrar = computed(() => {
+  if (!form.tipo || !form.valor) return false;
+  if (isGarantiaEstoque(form.tipo) && !form.relacaoEstoqueDetalhadoEnviado) return false;
+  return true;
+});
+
 function cadastrar() {
-  if (!form.tipo || !form.valor) return;
+  if (!canCadastrar.value) return;
   const payload = JSON.parse(JSON.stringify(form)) as GarantiaMinuta;
   if (editingIndex.value != null) {
     const next = [...garantias.value];
@@ -16226,8 +16370,35 @@ function cadastrar() {
   editingIndex.value = null;
 }
 
-function removeGarantia(i: number) {
-  garantias.value = garantias.value.filter((_, idx) => idx !== i);
+function openConstituicao(i: number) {
+  constituicaoIndex.value = i;
+  showConstituicao.value = true;
+}
+
+function saveConstituicao(config: ConstitucaoGarantiaConfig) {
+  if (constituicaoIndex.value == null) return;
+  const next = [...garantias.value];
+  const g = { ...next[constituicaoIndex.value] };
+  g.constituicao = config;
+  g.instrumentoParticular = config.instrumentoParticular;
+  g.constituirGarantia = config.constituirGarantia;
+  g.numeroTestemunhas = config.possuiTestemunhas
+    ? String(config.testemunhas.length || 0)
+    : g.numeroTestemunhas;
+  next[constituicaoIndex.value] = g;
+  garantias.value = next;
+  showConstituicao.value = false;
+  constituicaoIndex.value = null;
+}
+
+const garantiaConstituicao = computed(() =>
+  constituicaoIndex.value != null ? garantias.value[constituicaoIndex.value] ?? null : null,
+);
+
+function usoBarColor(pct: number) {
+  if (pct >= 100) return 'var(--success-base, #16a34a)';
+  if (pct >= 50) return 'var(--warning-base, #f59e0b)';
+  return 'var(--neutral-300, #cbd5e1)';
 }
 
 const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
@@ -16254,13 +16425,13 @@ function globalIndex(pageIdx: number) {
         v-if="garantias.length === 0"
         :icon="Shield"
         title="Nenhuma garantia adicionada"
-        hint="Clique em Adicionar garantia para cadastrar AF, Hipoteca, Penhor, Fiança e demais tipos."
+        hint="Clique em Adicionar garantia para cadastrar AF. Estoque, Lavoura, Imóvel e demais tipos disponíveis."
       />
       <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
         <div
           class="grid"
           style="
-            grid-template-columns: 1.3fr 0.9fr 0.9fr 0.9fr 0.7fr auto;
+            grid-template-columns: minmax(120px, 1.1fr) minmax(96px, 0.7fr) 96px minmax(90px, 0.75fr) minmax(80px, 0.65fr) minmax(72px, 0.55fr) 40px;
             padding: 10px 14px;
             background: var(--surface-sunken);
             font-size: 10px;
@@ -16268,10 +16439,13 @@ function globalIndex(pageIdx: number) {
             letter-spacing: 0.1em;
             color: var(--text-muted);
             text-transform: uppercase;
+            column-gap: 12px;
+            align-items: center;
           "
         >
           <div>Tipo</div>
           <div>Valor</div>
+          <div>Uso</div>
           <div>Instr. particular</div>
           <div>Constituir</div>
           <div>Testemunhas</div>
@@ -16282,25 +16456,60 @@ function globalIndex(pageIdx: number) {
           :key="pageIdx"
           class="grid items-center"
           style="
-            grid-template-columns: 1.3fr 0.9fr 0.9fr 0.9fr 0.7fr auto;
-            padding: 10px 14px;
+            grid-template-columns: minmax(120px, 1.1fr) minmax(96px, 0.7fr) 96px minmax(90px, 0.75fr) minmax(80px, 0.65fr) minmax(72px, 0.55fr) 40px;
+            padding: 12px 14px;
             border-top: 1px solid var(--border-default);
             font-size: var(--text-sm);
             cursor: pointer;
+            column-gap: 12px;
           "
           @click="openEdit(globalIndex(pageIdx))"
         >
-          <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ g.tipo }}</div>
-          <div>{{ g.valor || '—' }}</div>
+          <div style="font-weight: var(--weight-semibold); color: var(--text-strong); min-width: 0">{{ g.tipo }}</div>
+          <div style="font-variant-numeric: tabular-nums; color: var(--text-strong)">{{ g.valor || '—' }}</div>
+          <div class="flex items-center" style="gap: 6px">
+            <div
+              style="
+                width: 40px;
+                height: 6px;
+                border-radius: 999px;
+                background: var(--neutral-200);
+                overflow: hidden;
+                flex-shrink: 0;
+              "
+              :title="`${g.percentualUsado ?? 0}% usado`"
+            >
+              <div
+                :style="{
+                  width: `${g.percentualUsado ?? 0}%`,
+                  height: '100%',
+                  background: usoBarColor(g.percentualUsado ?? 0),
+                }"
+              />
+            </div>
+            <span style="font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums">
+              {{ g.percentualUsado ?? 0 }}%
+            </span>
+          </div>
           <div>{{ g.instrumentoParticular ? 'Sim' : 'Não' }}</div>
           <div>{{ g.constituirGarantia ? 'Sim' : 'Não' }}</div>
           <div>{{ g.numeroTestemunhas || '—' }}</div>
           <button
-            aria-label="Remover"
-            style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
-            @click.stop="removeGarantia(globalIndex(pageIdx))"
+            aria-label="Configurar constituição"
+            title="Configurar constituição da garantia"
+            class="flex items-center justify-center"
+            style="
+              width: 32px;
+              height: 32px;
+              border: 1px solid var(--border-default);
+              border-radius: var(--radius-lg);
+              background: var(--surface-card);
+              cursor: pointer;
+              color: var(--text-muted);
+            "
+            @click.stop="openConstituicao(globalIndex(pageIdx))"
           >
-            <Trash2 :size="14" />
+            <Settings2 :size="15" />
           </button>
         </div>
         <TablePagination
@@ -16374,11 +16583,38 @@ function globalIndex(pageIdx: number) {
             <BentoBox title="Dados da garantia" :icon="Scale">
               <div class="flex flex-col" style="gap: 14px">
                 <StepGrid>
-                  <SelectField label="Tipo de garantia" :options="TIPO_GARANTIA_MINUTA_OPTS" placeholder="Selecione" required :span="5" v-model="form.tipo" />
-                  <FormField label="Valor da garantia" placeholder="R$ 0,00" required currency :span="3" v-model="form.valor" />
-                  <FormField label="Nº de testemunhas" placeholder="—" :span="4" v-model="form.numeroTestemunhas" />
-                  <FormField label="Descrição" placeholder="—" :span="12" v-model="form.descricao" />
-                  <FormField label="Obrigação garantida / vínculo com o título" placeholder="—" required :span="8" v-model="form.obrigacaoGarantida" />
+                  <SelectField
+                    label="Tipo de garantia"
+                    :options="TIPO_GARANTIA_MINUTA_OPTS"
+                    placeholder="Selecione"
+                    required
+                    :span="showCamposPadraoGarantia ? 5 : 7"
+                    v-model="form.tipo"
+                  />
+                  <FormField
+                    label="Valor da garantia"
+                    placeholder="R$ 0,00"
+                    required
+                    currency
+                    :span="showCamposPadraoGarantia ? 3 : 5"
+                    v-model="form.valor"
+                  />
+                  <FormField
+                    v-if="showCamposPadraoGarantia"
+                    label="Nº de testemunhas"
+                    placeholder="—"
+                    :span="4"
+                    v-model="form.numeroTestemunhas"
+                  />
+                  <FormField v-if="!hideCabecalhoExtra" label="Descrição" placeholder="—" :span="12" v-model="form.descricao" />
+                  <FormField
+                    v-if="showCamposPadraoGarantia"
+                    label="Obrigação garantida / vínculo com o título"
+                    placeholder="—"
+                    required
+                    :span="8"
+                    v-model="form.obrigacaoGarantida"
+                  />
                   <SelectField
                     v-if="showFormaProduto"
                     label="Forma do produto"
@@ -16389,11 +16625,13 @@ function globalIndex(pageIdx: number) {
                   />
                 </StepGrid>
                 <ToggleRow
+                  v-if="!hideCabecalhoExtra"
                   label="É instrumento particular"
                   :on="form.instrumentoParticular"
                   @toggle="form.instrumentoParticular = !form.instrumentoParticular"
                 />
                 <ToggleRow
+                  v-if="showCamposPadraoGarantia"
                   label="Vai constituir garantia"
                   :on="form.constituirGarantia"
                   @toggle="form.constituirGarantia = !form.constituirGarantia"
@@ -16401,7 +16639,7 @@ function globalIndex(pageIdx: number) {
               </div>
             </BentoBox>
 
-            <BentoBox v-if="form.constituirGarantia" title="Constituição da garantia" :icon="Scale">
+            <BentoBox v-if="showCamposPadraoGarantia && form.constituirGarantia" title="Constituição da garantia" :icon="Scale">
               <StepGrid>
                 <FormField label="Órgão / cartório de registro" placeholder="—" required :span="6" v-model="form.cartorioConstituicao" />
                 <FormField label="Data prevista de constituição" placeholder="dd/mm/aaaa" required :span="6" v-model="form.dataPrevistaConstituicao" />
@@ -16410,57 +16648,77 @@ function globalIndex(pageIdx: number) {
             </BentoBox>
 
             <template v-if="showEstoque">
-              <BentoBox title="Estoque de formação" :icon="Home">
+              <StepGrid>
+                <FormField
+                  label="Número do contrato de estoque (terceiro)"
+                  placeholder="—"
+                  :span="12"
+                  v-model="form.numeroContratoEstoque"
+                />
+              </StepGrid>
+
+              <BentoBox title="Informações do estoque de formação" :icon="Home">
                 <div class="flex flex-col" style="gap: 14px">
                   <StepGrid>
-                    <FormField label="Nome do imóvel" placeholder="—" :span="6" v-model="form.nomeImovel" />
-                    <FormField label="Matrícula" placeholder="—" :span="6" v-model="form.matricula" />
+                    <FormField label="Nome do imóvel" placeholder="—" :span="3" v-model="form.nomeImovel" />
+                    <FormField label="Matrícula" placeholder="—" :span="3" v-model="form.matricula" />
                     <SelectField label="Zona" :options="ZONA_OPTS" placeholder="Selecione" :span="3" v-model="form.zona" />
                     <SelectField label="Tipo" :options="TIPO_IMOVEL_OPTS" placeholder="Selecione" :span="3" v-model="form.tipoImovel" />
                     <FormField label="Área total afetada" placeholder="—" :span="3" v-model="form.areaTotal" />
-                    <SelectField label="Unidade de medida" :options="UNIDADE_MEDIDA_OPTS" placeholder="Selecione" :span="3" v-model="form.unidadeMedidaArea" />
-                    <FormField label="Cartório de registro" placeholder="—" :span="4" v-model="form.cartorioRegistro" />
-                    <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="4" v-model="form.ufRegistro" />
+                    <SelectField
+                      label="Unidade de medida"
+                      :options="UNIDADE_MEDIDA_OPTS"
+                      placeholder="Selecione"
+                      :span="3"
+                      v-model="form.unidadeMedidaArea"
+                    />
+                    <FormField label="Cartório de registro" placeholder="—" :span="3" v-model="form.cartorioRegistro" />
+                    <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="3" v-model="form.ufRegistro" />
                     <SelectField
                       label="Cidade de registro"
                       :options="cidadeRegistroOpts"
                       placeholder="Selecione"
-                      :span="4"
+                      :span="3"
                       :disabled="!form.ufRegistro"
                       v-model="form.cidadeRegistro"
                     />
                   </StepGrid>
 
-                  <ToggleRow label="Imóvel locado" :on="form.imovelLocado" compact @toggle="form.imovelLocado = !form.imovelLocado" />
+                  <ToggleRow label="Imóvel locado" :on="form.imovelLocado" @toggle="form.imovelLocado = !form.imovelLocado" />
 
                   <template v-if="form.imovelLocado">
                     <BentoBox title="Informações da locação">
-                      <StepGrid>
-                        <SelectField label="Tipo de Locação" :options="TIPO_LOCACAO_OPTS" placeholder="Selecione" required :span="4" v-model="form.tipoLocacao" />
-                        <FormField label="Data de início" placeholder="dd/mm/aaaa" required :span="4" v-model="form.dataInicio" />
-                        <div style="grid-column: span 4; align-self: end">
-                          <ToggleRow
-                            label="Prazo indeterminado"
-                            :on="form.prazoIndeterminado"
-                            compact
-                            @toggle="form.prazoIndeterminado = !form.prazoIndeterminado"
+                      <div class="flex flex-col" style="gap: 14px">
+                        <StepGrid>
+                          <SelectField
+                            label="Tipo de Locação"
+                            :options="TIPO_LOCACAO_OPTS"
+                            placeholder="Selecione"
+                            required
+                            :span="6"
+                            v-model="form.tipoLocacao"
                           />
-                        </div>
-                        <FormField
-                          v-if="!form.prazoIndeterminado"
-                          label="Data de término"
-                          placeholder="dd/mm/aaaa"
-                          required
-                          :span="4"
-                          v-model="form.dataTermino"
+                          <FormField label="Data de início" placeholder="dd/mm/aaaa" required :span="6" v-model="form.dataInicio" />
+                        </StepGrid>
+                        <ToggleRow
+                          label="Prazo indeterminado"
+                          :on="form.prazoIndeterminado"
+                          @toggle="form.prazoIndeterminado = !form.prazoIndeterminado"
                         />
-                      </StepGrid>
+                        <StepGrid v-if="!form.prazoIndeterminado">
+                          <FormField
+                            label="Data de término"
+                            placeholder="dd/mm/aaaa"
+                            required
+                            :span="6"
+                            v-model="form.dataTermino"
+                          />
+                        </StepGrid>
+                      </div>
                     </BentoBox>
 
                     <BentoBox title="Proprietário do imóvel locado">
-                      <StepGrid>
-                        <SelectField label="Natureza" :options="NATUREZA_OPTS" :span="4" v-model="naturezaLocado" />
-                      </StepGrid>
+                      <PessoaNaturezaFields v-model="form.proprietarioLocado" />
                     </BentoBox>
 
                     <BentoBox title="Partes">
@@ -16473,26 +16731,21 @@ function globalIndex(pageIdx: number) {
                 </div>
               </BentoBox>
 
-              <StepGrid>
-                <FormField label="Número" placeholder="—" :span="3" v-model="form.numero" />
-                <FormField label="Bairro" placeholder="—" :span="4" v-model="form.bairro" />
-                <FormField label="Informações adicionais" placeholder="—" :span="5" v-model="form.infoAdicionais" />
-                <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="3" v-model="form.estado" />
-                <SelectField
-                  label="Cidade"
-                  :options="cidadeEnderecoOpts"
-                  placeholder="Selecione"
-                  :span="5"
-                  :disabled="!form.estado"
-                  v-model="form.cidade"
-                />
-                <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="4" v-model="form.pais" />
-              </StepGrid>
-
-              <BentoBox title="Informações do proprietário da garantia">
+              <BentoBox title="Informações do endereço da locação" :icon="Home">
                 <StepGrid>
-                  <SelectField label="Natureza" :options="NATUREZA_OPTS" :span="4" v-model="naturezaProprietario" />
+                  <FormField label="CEP" placeholder="—" :span="4" v-model="form.cep" />
+                  <FormField label="Localidade" placeholder="—" :span="8" v-model="form.localidade" />
+                  <FormField label="Número" placeholder="—" :span="4" v-model="form.numero" />
+                  <FormField label="Bairro" placeholder="—" :span="8" v-model="form.bairro" />
+                  <FormField label="Informações adicionais" placeholder="—" :span="12" v-model="form.infoAdicionais" />
+                  <FormField label="Cidade" placeholder="—" :span="12" v-model="form.cidade" />
+                  <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="6" v-model="form.estado" />
+                  <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="6" v-model="form.pais" />
                 </StepGrid>
+              </BentoBox>
+
+              <BentoBox title="Informações do proprietário da garantia" :icon="User">
+                <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
               </BentoBox>
 
               <div class="flex justify-end">
@@ -16500,8 +16753,11 @@ function globalIndex(pageIdx: number) {
               </div>
 
               <BentoBox title="Estoques">
-                <div v-if="form.estoques.length === 0" style="padding: 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)">
-                  Nenhum estoque adicionado.
+                <div
+                  v-if="form.estoques.length === 0"
+                  style="padding: 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+                >
+                  Não foi encontrado nenhum resultado.
                 </div>
                 <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
                   <div
@@ -16555,9 +16811,730 @@ function globalIndex(pageIdx: number) {
                     :span="4"
                     v-model="form.periodicidadeRelatorio"
                   />
-                  <FormField label="Data da primeira atualização" placeholder="dd/mm/aaaa" required :span="4" v-model="form.dataPrimeiraAtualizacao" />
+                  <FormField
+                    label="Data da primeira atualização"
+                    placeholder="dd/mm/aaaa"
+                    required
+                    :span="4"
+                    v-model="form.dataPrimeiraAtualizacao"
+                  />
                 </StepGrid>
               </BentoBox>
+
+              <DocGroup
+                title="Anexos do estoque"
+                :docs="[RELACAO_ESTOQUE_DOC]"
+                :doc-files="{ [RELACAO_ESTOQUE_DOC.id]: form.relacaoEstoqueDetalhadoEnviado }"
+                @toggle-doc="form.relacaoEstoqueDetalhadoEnviado = !form.relacaoEstoqueDetalhadoEnviado"
+              />
+            </template>
+
+            <template v-if="showAtivosBiologicos">
+              <StepGrid>
+                <FormField label="Quantidade de animais" placeholder="—" :span="3" v-model="form.quantidadeAnimais" />
+                <SelectField
+                  label="Categoria"
+                  :options="CATEGORIA_ANIMAL_OPTS"
+                  placeholder="Selecione"
+                  :span="3"
+                  v-model="form.categoriaAnimal"
+                />
+                <FormField label="Peso médio" placeholder="—" :span="3" v-model="form.pesoMedio" />
+                <SelectField
+                  label="Unidade de medida"
+                  :options="UNIDADE_PESO_ANIMAL_OPTS"
+                  placeholder="Selecione"
+                  :span="3"
+                  v-model="form.unidadeMedidaPeso"
+                />
+              </StepGrid>
+
+              <BentoBox title="Informações do local de formação" :icon="Home">
+                <div class="flex flex-col" style="gap: 14px">
+                  <StepGrid>
+                    <FormField label="Nome do imóvel" placeholder="—" :span="6" v-model="form.nomeImovel" />
+                    <FormField label="Matrícula" placeholder="—" :span="6" v-model="form.matricula" />
+                    <SelectField label="Zona" :options="ZONA_OPTS" placeholder="Selecione" :span="3" v-model="form.zona" />
+                    <SelectField label="Tipo" :options="TIPO_IMOVEL_OPTS" placeholder="Selecione" :span="3" v-model="form.tipoImovel" />
+                    <FormField label="Área total afetada" placeholder="—" :span="3" v-model="form.areaTotal" />
+                    <SelectField
+                      label="Unidade de medida"
+                      :options="UNIDADE_MEDIDA_OPTS"
+                      placeholder="Selecione"
+                      :span="3"
+                      v-model="form.unidadeMedidaArea"
+                    />
+                    <FormField label="Cartório de registro" placeholder="—" :span="4" v-model="form.cartorioRegistro" />
+                    <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="4" v-model="form.ufRegistro" />
+                    <SelectField
+                      label="Cidade de registro"
+                      :options="cidadeRegistroOpts"
+                      placeholder="Selecione"
+                      :span="4"
+                      :disabled="!form.ufRegistro"
+                      v-model="form.cidadeRegistro"
+                    />
+                  </StepGrid>
+
+                  <ToggleRow
+                    label="Imóvel arrendado"
+                    :on="form.imovelLocado"
+                    @toggle="form.imovelLocado = !form.imovelLocado"
+                  />
+
+                  <template v-if="form.imovelLocado">
+                    <BentoBox title="Informações da locação">
+                      <div class="flex flex-col" style="gap: 14px">
+                        <StepGrid>
+                          <SelectField
+                            label="Tipo de Locação"
+                            :options="TIPO_LOCACAO_OPTS"
+                            placeholder="Selecione"
+                            required
+                            :span="6"
+                            v-model="form.tipoLocacao"
+                          />
+                          <FormField label="Data de início" placeholder="dd/mm/aaaa" required :span="6" v-model="form.dataInicio" />
+                        </StepGrid>
+                        <ToggleRow
+                          label="Prazo indeterminado"
+                          :on="form.prazoIndeterminado"
+                          @toggle="form.prazoIndeterminado = !form.prazoIndeterminado"
+                        />
+                        <StepGrid v-if="!form.prazoIndeterminado">
+                          <FormField
+                            label="Data de término"
+                            placeholder="dd/mm/aaaa"
+                            required
+                            :span="6"
+                            v-model="form.dataTermino"
+                          />
+                        </StepGrid>
+                      </div>
+                    </BentoBox>
+
+                    <BentoBox title="Proprietário do imóvel arrendado">
+                      <PessoaNaturezaFields v-model="form.proprietarioLocado" />
+                    </BentoBox>
+
+                    <BentoBox title="Partes">
+                      <StepGrid>
+                        <FormField label="Nome do contratante" placeholder="—" :span="6" v-model="form.nomeContratante" />
+                        <FormField label="Nome do contratado" placeholder="—" :span="6" v-model="form.nomeContratado" />
+                      </StepGrid>
+                    </BentoBox>
+                  </template>
+                </div>
+              </BentoBox>
+
+              <BentoBox title="Endereços da locação" :icon="Home">
+                <EnderecosLocacaoFields v-model:lista="form.enderecosLocacao" v-model:draft="enderecoDraft" />
+              </BentoBox>
+
+              <BentoBox title="Informações do proprietário da garantia">
+                <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
+              </BentoBox>
+            </template>
+
+            <template v-if="showLavoura">
+              <StepGrid>
+                <FormField label="Tamanho de área" placeholder="—" :span="4" v-model="form.tamanhoArea" />
+                <SelectField
+                  label="Unidade de medida"
+                  :options="UNIDADE_MEDIDA_OPTS"
+                  placeholder="Selecione"
+                  :span="4"
+                  v-model="form.unidadeMedidaTamanhoArea"
+                />
+                <FormField label="Ano da safra" placeholder="—" :span="4" v-model="form.anoSafra" />
+              </StepGrid>
+
+              <BentoBox title="Informações do produto" :icon="Scale">
+                <StepGrid>
+                  <SelectField
+                    label="Produto"
+                    :options="PRODUTO_TIPO_OPTS"
+                    placeholder="Selecione"
+                    :span="3"
+                    v-model="form.produto"
+                  />
+                  <FormField label="Quantidade" placeholder="—" :span="3" v-model="form.quantidadeProduto" />
+                  <SelectField
+                    label="Unidade de medida"
+                    :options="UNIDADE_MEDIDA_OPTS"
+                    placeholder="Selecione"
+                    :span="3"
+                    v-model="form.unidadeMedidaProduto"
+                  />
+                  <FormField
+                    label="Preço unitário"
+                    placeholder="R$ 0,00"
+                    currency
+                    :span="3"
+                    v-model="form.precoUnitario"
+                  />
+                </StepGrid>
+              </BentoBox>
+
+              <BentoBox title="Informações do local de formação" :icon="Home">
+                <div class="flex flex-col" style="gap: 14px">
+                  <StepGrid>
+                    <FormField label="Nome da fazenda" placeholder="—" :span="6" v-model="form.nomeImovel" />
+                    <FormField label="Matrícula" placeholder="—" :span="6" v-model="form.matricula" />
+                    <SelectField label="Zona" :options="ZONA_OPTS" placeholder="Selecione" :span="3" v-model="form.zona" />
+                    <SelectField label="Tipo" :options="TIPO_IMOVEL_OPTS" placeholder="Selecione" :span="3" v-model="form.tipoImovel" />
+                    <FormField label="Área total afetada" placeholder="—" :span="3" v-model="form.areaTotal" />
+                    <SelectField
+                      label="Unidade de medida"
+                      :options="UNIDADE_MEDIDA_OPTS"
+                      placeholder="Selecione"
+                      :span="3"
+                      v-model="form.unidadeMedidaArea"
+                    />
+                    <FormField label="Cartório de registro" placeholder="—" :span="4" v-model="form.cartorioRegistro" />
+                    <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="4" v-model="form.ufRegistro" />
+                    <SelectField
+                      label="Cidade de registro"
+                      :options="cidadeRegistroOpts"
+                      placeholder="Selecione"
+                      :span="4"
+                      :disabled="!form.ufRegistro"
+                      v-model="form.cidadeRegistro"
+                    />
+                  </StepGrid>
+
+                  <ToggleRow
+                    label="Imóvel arrendado"
+                    :on="form.imovelLocado"
+                    @toggle="form.imovelLocado = !form.imovelLocado"
+                  />
+
+                  <template v-if="form.imovelLocado">
+                    <BentoBox title="Informações da locação">
+                      <div class="flex flex-col" style="gap: 14px">
+                        <StepGrid>
+                          <SelectField
+                            label="Tipo de Locação"
+                            :options="TIPO_LOCACAO_OPTS"
+                            placeholder="Selecione"
+                            required
+                            :span="6"
+                            v-model="form.tipoLocacao"
+                          />
+                          <FormField label="Data de início" placeholder="dd/mm/aaaa" required :span="6" v-model="form.dataInicio" />
+                        </StepGrid>
+                        <ToggleRow
+                          label="Prazo indeterminado"
+                          :on="form.prazoIndeterminado"
+                          @toggle="form.prazoIndeterminado = !form.prazoIndeterminado"
+                        />
+                        <StepGrid v-if="!form.prazoIndeterminado">
+                          <FormField
+                            label="Data de término"
+                            placeholder="dd/mm/aaaa"
+                            required
+                            :span="6"
+                            v-model="form.dataTermino"
+                          />
+                        </StepGrid>
+                      </div>
+                    </BentoBox>
+
+                    <BentoBox title="Proprietário do imóvel arrendado">
+                      <PessoaNaturezaFields v-model="form.proprietarioLocado" />
+                    </BentoBox>
+
+                    <BentoBox title="Partes">
+                      <StepGrid>
+                        <FormField label="Nome do contratante" placeholder="—" :span="6" v-model="form.nomeContratante" />
+                        <FormField label="Nome do contratado" placeholder="—" :span="6" v-model="form.nomeContratado" />
+                      </StepGrid>
+                    </BentoBox>
+                  </template>
+                </div>
+              </BentoBox>
+
+              <BentoBox title="Endereços da locação" :icon="Home">
+                <EnderecosLocacaoFields v-model:lista="form.enderecosLocacao" v-model:draft="enderecoDraft" />
+              </BentoBox>
+
+              <BentoBox title="Informações do proprietário da garantia">
+                <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
+              </BentoBox>
+            </template>
+
+            <template v-if="showImovel">
+              <BentoBox title="Informações do imóvel" :icon="Home">
+                <div class="flex flex-col" style="gap: 14px">
+                  <StepGrid>
+                    <FormField label="Nome do imóvel" placeholder="—" :span="6" v-model="form.nomeImovel" />
+                    <FormField label="Matrícula" placeholder="—" :span="6" v-model="form.matricula" />
+                    <SelectField label="Zona" :options="ZONA_OPTS" placeholder="Selecione" :span="3" v-model="form.zona" />
+                    <SelectField label="Tipo" :options="TIPO_IMOVEL_OPTS" placeholder="Selecione" :span="3" v-model="form.tipoImovel" />
+                    <FormField label="Área total afetada" placeholder="—" :span="3" v-model="form.areaTotal" />
+                    <SelectField
+                      label="Unidade de medida"
+                      :options="UNIDADE_MEDIDA_OPTS"
+                      placeholder="Selecione"
+                      :span="3"
+                      v-model="form.unidadeMedidaArea"
+                    />
+                    <FormField label="Cartório de registro" placeholder="—" :span="4" v-model="form.cartorioRegistro" />
+                    <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="4" v-model="form.ufRegistro" />
+                    <SelectField
+                      label="Cidade de registro"
+                      :options="cidadeRegistroOpts"
+                      placeholder="Selecione"
+                      :span="4"
+                      :disabled="!form.ufRegistro"
+                      v-model="form.cidadeRegistro"
+                    />
+                    <FormField label="CAR (Cadastro Ambiental Rural)" placeholder="—" :span="4" v-model="form.car" />
+                    <FormField label="NIRF (Número do Imóvel na Receita Federal)" placeholder="—" :span="4" v-model="form.nirf" />
+                    <FormField label="CCIR (Certificado de Cadastro de Imóvel Rural)" placeholder="—" :span="4" v-model="form.ccir" />
+                    <FormField label="CCIR Ano" placeholder="—" :span="3" v-model="form.ccirAno" />
+                    <FormField label="SIGEF/INCRA" placeholder="—" :span="5" v-model="form.sigefIncra" />
+                  </StepGrid>
+
+                  <ToggleRow
+                    label="Possui seguro"
+                    :on="form.possuiSeguro"
+                    @toggle="form.possuiSeguro = !form.possuiSeguro"
+                  />
+                </div>
+              </BentoBox>
+
+              <BentoBox title="Informações do proprietário da garantia">
+                <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
+              </BentoBox>
+            </template>
+
+            <template v-if="showBensMoveis">
+              <BentoBox title="Dados do bem" :icon="Scale">
+                <StepGrid>
+                  <FormField label="Descrição" placeholder="—" :span="6" v-model="bemDraft.descricao" />
+                  <FormField label="Preço unitário" placeholder="R$ 0,00" :span="3" v-model="bemDraft.precoUnitario" />
+                  <FormField label="Quantidade" placeholder="—" :span="3" v-model="bemDraft.quantidade" />
+                  <FormField label="Marca" placeholder="—" :span="3" v-model="bemDraft.marca" />
+                  <FormField label="Modelo" placeholder="—" :span="3" v-model="bemDraft.modelo" />
+                  <FormField label="Ano de fabricação" placeholder="—" :span="3" v-model="bemDraft.anoFabricacao" />
+                  <FormField label="Número de série" placeholder="—" :span="3" v-model="bemDraft.numeroSerie" />
+                  <FormField label="Matrícula" placeholder="—" :span="3" v-model="bemDraft.matricula" />
+                </StepGrid>
+              </BentoBox>
+
+              <BentoBox title="Local de armazenamento" :icon="Home">
+                <StepGrid>
+                  <FormField label="CEP" placeholder="—" :span="4" v-model="bemDraft.cep" />
+                  <FormField label="Localidade" placeholder="—" :span="8" v-model="bemDraft.localidade" />
+                  <FormField label="Número" placeholder="—" :span="4" v-model="bemDraft.numero" />
+                  <FormField label="Bairro" placeholder="—" :span="8" v-model="bemDraft.bairro" />
+                  <FormField label="Informações adicionais" placeholder="—" :span="12" v-model="bemDraft.infoAdicionais" />
+                  <FormField label="Cidade" placeholder="—" :span="12" v-model="bemDraft.cidade" />
+                  <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="6" v-model="bemDraft.estado" />
+                  <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="6" v-model="bemDraft.pais" />
+                </StepGrid>
+              </BentoBox>
+
+              <BentoBox title="Dados de registro" :icon="Scale">
+                <StepGrid>
+                  <FormField label="Cartório de registro" placeholder="—" :span="4" v-model="bemDraft.cartorioRegistro" />
+                  <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="4" v-model="bemDraft.ufRegistro" />
+                  <SelectField
+                    label="Cidade de registro"
+                    :options="cidadeBemRegistroOpts"
+                    placeholder="Selecione"
+                    :span="4"
+                    :disabled="!bemDraft.ufRegistro"
+                    v-model="bemDraft.cidadeRegistro"
+                  />
+                </StepGrid>
+              </BentoBox>
+
+              <BentoBox title="Informações do proprietário da garantia" :icon="User">
+                <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
+              </BentoBox>
+
+              <BentoBox title="Documentos" :icon="Shield">
+                <div>
+                  <FieldLabel>Documentos</FieldLabel>
+                  <div style="position: relative">
+                    <textarea
+                      v-model="bemDraft.documentos"
+                      placeholder="Descreva o documento…"
+                      rows="3"
+                      :style="{
+                        width: '100%',
+                        padding: '12px 14px',
+                        paddingBottom: '28px',
+                        background: 'var(--surface-card)',
+                        border: '1px solid var(--border-default)',
+                        borderRadius: 'var(--radius-lg)',
+                        outline: 'none',
+                        fontSize: 'var(--text-sm)',
+                        color: 'var(--text-strong)',
+                        resize: 'vertical',
+                        fontFamily: 'inherit',
+                      }"
+                    />
+                    <span
+                      style="
+                        position: absolute;
+                        right: 12px;
+                        bottom: 12px;
+                        font-size: 11px;
+                        color: var(--text-muted);
+                      "
+                    >{{ documentosBemLen }}</span>
+                  </div>
+                </div>
+              </BentoBox>
+
+              <div class="flex justify-end">
+                <AddButton @click="addBemMovel">Adicionar bem</AddButton>
+              </div>
+
+              <BentoBox title="Bens adicionados" :icon="Scale">
+                <div
+                  v-if="form.bensMoveis.length === 0"
+                  style="padding: 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+                >
+                  Não foi encontrado nenhum resultado.
+                </div>
+                <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+                  <div
+                    class="grid"
+                    style="
+                      grid-template-columns: 1.4fr 1fr 0.6fr 1fr auto;
+                      padding: 10px 14px;
+                      background: var(--surface-sunken);
+                      font-size: 10px;
+                      font-weight: var(--weight-bold);
+                      letter-spacing: 0.12em;
+                      color: var(--text-muted);
+                      text-transform: uppercase;
+                    "
+                  >
+                    <div>Descrição</div>
+                    <div>Marca / Modelo</div>
+                    <div>Ano</div>
+                    <div>Proprietário</div>
+                    <div />
+                  </div>
+                  <div
+                    v-for="(b, i) in form.bensMoveis"
+                    :key="i"
+                    class="grid items-center"
+                    style="
+                      grid-template-columns: 1.4fr 1fr 0.6fr 1fr auto;
+                      padding: 10px 14px;
+                      border-top: 1px solid var(--border-default);
+                      font-size: var(--text-sm);
+                    "
+                  >
+                    <div>{{ b.descricao || '—' }}</div>
+                    <div>{{ [b.marca, b.modelo].filter(Boolean).join(' / ') || '—' }}</div>
+                    <div>{{ b.anoFabricacao || '—' }}</div>
+                    <div>{{ b.proprietario || '—' }}</div>
+                    <button
+                      aria-label="Remover"
+                      style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
+                      @click="removeBemMovel(i)"
+                    >
+                      <Trash2 :size="14" />
+                    </button>
+                  </div>
+                </div>
+              </BentoBox>
+            </template>
+
+            <template v-if="showCessaoDuplicatas">
+              <StepGrid>
+                <SelectField
+                  label="Tipo de contrato"
+                  :options="TIPO_CONTRATO_CESSAO_OPTS"
+                  placeholder="Selecione"
+                  required
+                  :span="4"
+                  v-model="form.tipoContrato"
+                />
+                <FormField
+                  label="Data de emissão"
+                  placeholder="dd/mm/aaaa"
+                  required
+                  :span="4"
+                  v-model="form.dataEmissaoContrato"
+                />
+                <FormField
+                  label="Data de vencimento"
+                  placeholder="dd/mm/aaaa"
+                  required
+                  :span="4"
+                  v-model="form.dataVencimentoContrato"
+                />
+              </StepGrid>
+
+              <div>
+                <FieldLabel>Descrição do contrato</FieldLabel>
+                <div style="position: relative">
+                  <textarea
+                    v-model="form.descricaoContrato"
+                    placeholder="—"
+                    rows="4"
+                    :style="{
+                      width: '100%',
+                      padding: '12px 14px',
+                      paddingBottom: '28px',
+                      background: 'var(--surface-card)',
+                      border: '1px solid var(--border-default)',
+                      borderRadius: 'var(--radius-lg)',
+                      outline: 'none',
+                      fontSize: 'var(--text-sm)',
+                      color: 'var(--text-strong)',
+                      resize: 'vertical',
+                      fontFamily: 'inherit',
+                    }"
+                  />
+                  <span
+                    style="
+                      position: absolute;
+                      right: 12px;
+                      bottom: 12px;
+                      font-size: 11px;
+                      color: var(--text-muted);
+                    "
+                  >{{ descricaoContratoLen }}</span>
+                </div>
+              </div>
+
+              <BentoBox title="Cedente" :icon="User">
+                <StepGrid>
+                  <FormField label="CPF/CNPJ" placeholder="—" required :span="6" v-model="form.cedenteDocumento" />
+                  <FormField label="Nome/Razão social" placeholder="—" required :span="6" v-model="form.cedenteNome" />
+                </StepGrid>
+              </BentoBox>
+
+              <BentoBox title="Sacado" :icon="User">
+                <StepGrid>
+                  <FormField label="CPF/CNPJ" placeholder="—" required :span="6" v-model="form.sacadoDocumento" />
+                  <FormField label="Nome/Razão social" placeholder="—" required :span="6" v-model="form.sacadoNome" />
+                </StepGrid>
+              </BentoBox>
+
+              <ToggleRow
+                label="Cadastrar campos opcionais"
+                :on="form.cadastrarCamposOpcionais"
+                @toggle="form.cadastrarCamposOpcionais = !form.cadastrarCamposOpcionais"
+              />
+
+              <template v-if="form.cadastrarCamposOpcionais">
+                <BentoBox title="Informações adicionais">
+                  <StepGrid>
+                    <FormField
+                      label="Porcentagem equivalente sobre a CPRF %"
+                      placeholder="—"
+                      :span="6"
+                      v-model="form.pctEquivalenteCprf"
+                    />
+                  </StepGrid>
+                </BentoBox>
+
+                <BentoBox title="Informações bancárias">
+                  <StepGrid>
+                    <SelectField
+                      label="Banco"
+                      :options="BANCO_OPTS"
+                      placeholder="Selecione"
+                      :span="6"
+                      v-model="form.bancoEscrow"
+                    />
+                    <FormField label="Conta Escrow" placeholder="—" :span="3" v-model="form.contaEscrow" />
+                    <FormField label="Agência Escrow" placeholder="—" :span="3" v-model="form.agenciaEscrow" />
+                    <FormField label="Titular" placeholder="—" :span="12" v-model="form.titularEscrow" />
+                  </StepGrid>
+                </BentoBox>
+              </template>
+            </template>
+
+            <template v-if="showCessaoContrato">
+              <StepGrid>
+                <SelectField
+                  label="Tipo de título"
+                  :options="TIPO_TITULO_CESSAO_OPTS"
+                  placeholder="Selecione"
+                  required
+                  :span="3"
+                  v-model="form.tipoTitulo"
+                />
+                <SelectField
+                  label="Tipo de contrato"
+                  :options="TIPO_CONTRATO_CESSAO_OPTS"
+                  placeholder="Selecione"
+                  required
+                  :span="3"
+                  v-model="form.tipoContrato"
+                />
+                <FormField
+                  label="Data de emissão"
+                  placeholder="dd/mm/aaaa"
+                  required
+                  :span="3"
+                  v-model="form.dataEmissaoContrato"
+                />
+                <FormField
+                  label="Data de vencimento"
+                  placeholder="dd/mm/aaaa"
+                  required
+                  :span="3"
+                  v-model="form.dataVencimentoContrato"
+                />
+              </StepGrid>
+
+              <div>
+                <FieldLabel>Descrição do contrato</FieldLabel>
+                <div style="position: relative">
+                  <textarea
+                    v-model="form.descricaoContrato"
+                    placeholder="—"
+                    rows="4"
+                    :style="{
+                      width: '100%',
+                      padding: '12px 14px',
+                      paddingBottom: '28px',
+                      background: 'var(--surface-card)',
+                      border: '1px solid var(--border-default)',
+                      borderRadius: 'var(--radius-lg)',
+                      outline: 'none',
+                      fontSize: 'var(--text-sm)',
+                      color: 'var(--text-strong)',
+                      resize: 'vertical',
+                      fontFamily: 'inherit',
+                    }"
+                  />
+                  <span
+                    style="
+                      position: absolute;
+                      right: 12px;
+                      bottom: 12px;
+                      font-size: 11px;
+                      color: var(--text-muted);
+                    "
+                  >{{ descricaoContratoLen }}</span>
+                </div>
+              </div>
+
+              <BentoBox title="Cedente" :icon="User">
+                <StepGrid>
+                  <FormField label="CPF/CNPJ" placeholder="—" required :span="6" v-model="form.cedenteDocumento" />
+                  <FormField label="Nome/Razão social" placeholder="—" required :span="6" v-model="form.cedenteNome" />
+                </StepGrid>
+              </BentoBox>
+
+              <BentoBox title="Sacado" :icon="User">
+                <StepGrid>
+                  <FormField label="CPF/CNPJ" placeholder="—" required :span="6" v-model="form.sacadoDocumento" />
+                  <FormField label="Nome/Razão social" placeholder="—" required :span="6" v-model="form.sacadoNome" />
+                  <FormField label="CEP" placeholder="—" :span="3" v-model="form.sacadoCep" />
+                  <FormField label="Localidade" placeholder="—" :span="6" v-model="form.sacadoLocalidade" />
+                  <FormField label="Número" placeholder="—" :span="3" v-model="form.sacadoNumero" />
+                  <FormField label="Bairro" placeholder="—" :span="4" v-model="form.sacadoBairro" />
+                  <FormField label="Informações adicionais" placeholder="—" :span="8" v-model="form.sacadoInfoAdicionais" />
+                  <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="3" v-model="form.sacadoEstado" />
+                  <SelectField
+                    label="Cidade"
+                    :options="cidadeSacadoOpts"
+                    placeholder="Selecione"
+                    :span="5"
+                    :disabled="!form.sacadoEstado"
+                    v-model="form.sacadoCidade"
+                  />
+                  <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="4" v-model="form.sacadoPais" />
+                </StepGrid>
+              </BentoBox>
+
+              <ToggleRow
+                label="Cadastrar campos opcionais"
+                :on="form.cadastrarCamposOpcionais"
+                @toggle="form.cadastrarCamposOpcionais = !form.cadastrarCamposOpcionais"
+              />
+
+              <template v-if="form.cadastrarCamposOpcionais">
+                <BentoBox title="Informações adicionais">
+                  <StepGrid>
+                    <FormField label="Data da assinatura" placeholder="dd/mm/aaaa" :span="4" v-model="form.dataAssinatura" />
+                  </StepGrid>
+                </BentoBox>
+
+                <BentoBox title="Representantes" :icon="User">
+                  <div class="flex flex-col" style="gap: 14px">
+                    <div class="flex items-end" style="gap: 12px">
+                      <div style="flex: 1">
+                        <FormField label="Nome" placeholder="—" :span="12" v-model="representanteDraft" />
+                      </div>
+                      <AddButton @click="addRepresentante">Cadastrar representante</AddButton>
+                    </div>
+                    <div
+                      v-if="form.representantes.length === 0"
+                      style="padding: 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+                    >
+                      Nenhum representante adicionado.
+                    </div>
+                    <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+                      <div
+                        class="grid"
+                        style="
+                          grid-template-columns: 1fr auto;
+                          padding: 10px 14px;
+                          background: var(--surface-sunken);
+                          font-size: 10px;
+                          font-weight: var(--weight-bold);
+                          letter-spacing: 0.12em;
+                          color: var(--text-muted);
+                          text-transform: uppercase;
+                        "
+                      >
+                        <div>Representante</div>
+                        <div />
+                      </div>
+                      <div
+                        v-for="(nome, i) in form.representantes"
+                        :key="i"
+                        class="grid items-center"
+                        style="
+                          grid-template-columns: 1fr auto;
+                          padding: 10px 14px;
+                          border-top: 1px solid var(--border-default);
+                          font-size: var(--text-sm);
+                        "
+                      >
+                        <div>{{ nome }}</div>
+                        <button
+                          aria-label="Remover"
+                          style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
+                          @click="removeRepresentante(i)"
+                        >
+                          <Trash2 :size="14" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </BentoBox>
+
+                <BentoBox title="Informações bancárias">
+                  <StepGrid>
+                    <SelectField
+                      label="Banco"
+                      :options="BANCO_OPTS"
+                      placeholder="Selecione"
+                      :span="3"
+                      v-model="form.bancoEscrow"
+                    />
+                    <FormField label="Conta Escrow" placeholder="—" :span="3" v-model="form.contaEscrow" />
+                    <FormField label="Agência Escrow" placeholder="—" :span="3" v-model="form.agenciaEscrow" />
+                    <FormField label="Titular" placeholder="—" :span="3" v-model="form.titularEscrow" />
+                  </StepGrid>
+                </BentoBox>
+              </template>
             </template>
           </div>
         </div>
@@ -16576,14 +17553,14 @@ function globalIndex(pageIdx: number) {
               padding: '0 24px',
               border: 'none',
               borderRadius: 'var(--radius-lg)',
-              cursor: form.tipo && form.valor ? 'pointer' : 'not-allowed',
+              cursor: canCadastrar ? 'pointer' : 'not-allowed',
               fontWeight: 'var(--weight-bold)',
               fontSize: 'var(--text-xs)',
               letterSpacing: '0.08em',
-              background: form.tipo && form.valor ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
-              color: form.tipo && form.valor ? '#fff' : 'var(--text-disabled)',
+              background: canCadastrar ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
+              color: canCadastrar ? '#fff' : 'var(--text-disabled)',
             }"
-            :disabled="!form.tipo || !form.valor"
+            :disabled="!canCadastrar"
             @click="cadastrar"
           >
             {{ editingIndex != null ? 'SALVAR' : 'CADASTRAR' }}
@@ -16591,6 +17568,13 @@ function globalIndex(pageIdx: number) {
         </div>
       </div>
     </div>
+
+    <ConfigurarConstituicaoGarantiaModal
+      :open="showConstituicao"
+      :garantia="garantiaConstituicao"
+      @close="showConstituicao = false; constituicaoIndex = null"
+      @save="saveConstituicao"
+    />
   </div>
 </template>
 ```
@@ -17164,8 +18148,8 @@ import { BentoBox, StepGrid, FormField, SelectField } from '../adicionar-contrat
 import { NACIONALIDADE_OPTS, type ConjugeMinuta } from '../../../data/minutaData';
 
 withDefaults(
-  defineProps<{ disabled?: boolean }>(),
-  { disabled: false },
+  defineProps<{ disabled?: boolean; mostrarDataNascimento?: boolean }>(),
+  { disabled: false, mostrarDataNascimento: true },
 );
 
 const conjuge = defineModel<ConjugeMinuta>({ required: true });
@@ -17174,10 +18158,18 @@ const conjuge = defineModel<ConjugeMinuta>({ required: true });
 <template>
   <BentoBox title="Dados do cônjuge" :icon="Users">
     <StepGrid>
-      <FormField label="Nome completo do cônjuge" placeholder="—" required :span="5" :disabled="disabled" v-model="conjuge.nome" />
       <FormField label="CPF do cônjuge" placeholder="000.000.000-00" required :span="3" :disabled="disabled" v-model="conjuge.cpf" />
+      <FormField label="Nome completo do cônjuge" placeholder="—" required :span="5" :disabled="disabled" v-model="conjuge.nome" />
       <FormField label="RG do cônjuge" placeholder="—" :span="4" :disabled="disabled" v-model="conjuge.rg" />
-      <FormField label="Data de nascimento do cônjuge" placeholder="dd/mm/aaaa" required :span="4" :disabled="disabled" v-model="conjuge.dataNascimento" />
+      <FormField
+        v-if="mostrarDataNascimento"
+        label="Data de nascimento do cônjuge"
+        placeholder="dd/mm/aaaa"
+        required
+        :span="4"
+        :disabled="disabled"
+        v-model="conjuge.dataNascimento"
+      />
       <SelectField
         label="Nacionalidade do cônjuge"
         :options="NACIONALIDADE_OPTS"
@@ -20316,7 +21308,7 @@ function handleAtualizar() {
       >
         <div class="flex items-end" style="gap: 12px; flex-wrap: wrap">
           <div style="flex: 1; min-width: 240px">
-            <div :style="labelStyle">Tipo de Pedido</div>
+            <div :style="labelStyle">Tipo de Solicitação</div>
             <select v-model="newRequestTypeId" :style="inputStyle">
               <option value="">Selecione</option>
               <option v-for="t in TIPO_PEDIDO_OPTS" :key="t.value" :value="t.value">
@@ -20380,7 +21372,7 @@ function handleAtualizar() {
             text-transform: uppercase;
           "
         >
-          <div>Tipo de Pedido</div>
+          <div>Tipo de Solicitação</div>
           <div>Qtd. veículos</div>
           <div style="text-align: right">Remover</div>
         </div>
@@ -20637,6 +21629,1550 @@ function handleAtualizar() {
         </div>
       </div>
     </div>
+  </div>
+</template>
+```
+
+## Outros
+
+### ConfigurarConstituicaoGarantiaModal
+
+```vue
+<script setup lang="ts">
+import { computed, reactive, watch } from 'vue';
+import { X, Trash2, User, Mail, MapPin } from 'lucide-vue-next';
+import { UF_OPTIONS, PAISES_DDI } from '../../../data/operacaoData';
+import {
+  BentoBox,
+  StepGrid,
+  FormField,
+  SelectField,
+  ToggleRow,
+  AddButton,
+} from '../adicionar-contrato';
+import {
+  ESTADO_CIVIL_GARANTIA_OPTS,
+  NACIONALIDADE_OPTS,
+  FIDUCIARIA_PADRAO_OPTS,
+  CESSAO_VINCULADA_OPTS,
+  MOCK_CLIENTES_MINUTA,
+  cessaoVinculadaPorLabel,
+  emptyConstituicaoGarantia,
+  emptyTestemunhaConstituicao,
+  emptyPessoaMinuta,
+  type ConstitucaoGarantiaConfig,
+  type GarantiaMinuta,
+} from '../../../data/minutaData';
+
+const props = defineProps<{
+  open: boolean;
+  garantia: GarantiaMinuta | null;
+}>();
+
+const emit = defineEmits<{
+  close: [];
+  save: [config: ConstitucaoGarantiaConfig];
+}>();
+
+const form = reactive<ConstituicaoGarantiaConfig>(emptyConstituicaoGarantia());
+
+const DDI_LABELS = PAISES_DDI.map((p) => `${p.pais} (${p.ddi})`);
+const PAIS_OPTS = PAISES_DDI.map((p) => p.pais);
+
+const cedenteOpts = computed(() =>
+  MOCK_CLIENTES_MINUTA.map((c) => `${c.documento} - ${c.nome || c.razaoSocial || ''}`),
+);
+
+const contatoOpts = computed(() => {
+  if (!form.cedenteDoc) return [] as string[];
+  return ['E-mail principal', 'E-mail financeiro', 'Telefone comercial'];
+});
+
+const enderecoOpts = computed(() => {
+  if (!form.cedenteDoc) return [] as string[];
+  return ['Endereço principal', 'Endereço de cobrança'];
+});
+
+const representanteGrupoOpts = computed(() =>
+  MOCK_CLIENTES_MINUTA.filter((c) => c.tipoPessoa === 'FISICA').map(
+    (c) => `${c.documento} - ${c.nome}`,
+  ),
+);
+
+const cessaoResumo = computed(() =>
+  form.cessaoVinculada ? cessaoVinculadaPorLabel(form.cessaoVinculada) : undefined,
+);
+
+const ddiModel = computed({
+  get: () => {
+    const ddi = form.fiduciaria.ddi || '+55';
+    const hit = PAISES_DDI.find((p) => p.ddi === ddi);
+    return hit ? `${hit.pais} (${hit.ddi})` : `Brasil (${ddi})`;
+  },
+  set: (v: string) => {
+    const m = v.match(/\(([^)]+)\)/);
+    form.fiduciaria.ddi = m?.[1] || '+55';
+  },
+});
+
+watch(
+  () => [props.open, props.garantia] as const,
+  ([open, g]) => {
+    if (!open || !g) return;
+    const base = emptyConstituicaoGarantia();
+    const raw = g.constituicao ? JSON.parse(JSON.stringify(g.constituicao)) : {};
+    Object.assign(form, base, raw, {
+      instrumentoParticular: g.constituicao?.instrumentoParticular ?? g.instrumentoParticular ?? false,
+      constituirGarantia: g.constituicao?.constituirGarantia ?? g.constituirGarantia ?? false,
+      fiduciaria: {
+        ...emptyPessoaMinuta('JURIDICA'),
+        ...(raw.fiduciaria ?? {}),
+        representante: {
+          ...emptyPessoaMinuta('JURIDICA').representante!,
+          ...(raw.fiduciaria?.representante ?? {}),
+        },
+      },
+      testemunhas: Array.isArray(raw.testemunhas) ? raw.testemunhas : [],
+      obrigacao: { ...base.obrigacao, ...(raw.obrigacao ?? {}) },
+    });
+  },
+  { immediate: true },
+);
+
+function addTestemunha() {
+  form.testemunhas.push(emptyTestemunhaConstituicao());
+}
+
+function removeTestemunha(i: number) {
+  form.testemunhas.splice(i, 1);
+}
+
+function salvar() {
+  emit('save', JSON.parse(JSON.stringify(form)) as ConstitucaoGarantiaConfig);
+}
+</script>
+
+<template>
+  <div
+    v-if="open"
+    style="
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 60, 74, 0.55);
+      backdrop-filter: blur(8px);
+      z-index: 560;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    "
+    @click.self="emit('close')"
+  >
+    <div
+      style="
+        background: var(--surface-card);
+        border-radius: var(--radius-xl);
+        width: 100%;
+        max-width: 860px;
+        height: 85vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+      "
+      @click.stop
+    >
+      <div class="flex items-start justify-between" style="padding: 24px 32px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h2 style="font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Configurar constituição da garantia
+          </h2>
+          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            Instrumento particular, constituição, cessão vinculada e testemunhas
+          </p>
+        </div>
+        <button
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-default);
+            background: var(--surface-card);
+            cursor: pointer;
+            color: var(--text-muted);
+          "
+          @click="emit('close')"
+        >
+          <X :size="18" />
+        </button>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; padding: 32px">
+        <div class="flex flex-col" style="gap: 20px">
+          <ToggleRow
+            :label="`Instrumento Particular: ${form.instrumentoParticular ? 'Sim' : 'Não'}`"
+            :on="form.instrumentoParticular"
+            @toggle="form.instrumentoParticular = !form.instrumentoParticular"
+          />
+          <ToggleRow
+            :label="`Constituir garantia: ${form.constituirGarantia ? 'Sim' : 'Não'}`"
+            :on="form.constituirGarantia"
+            @toggle="form.constituirGarantia = !form.constituirGarantia"
+          />
+
+          <!-- Instrumento particular OFF → Cessão vinculada -->
+          <template v-if="!form.instrumentoParticular">
+            <BentoBox title="Cessão vinculada">
+              <div class="flex flex-col" style="gap: 14px">
+                <StepGrid>
+                  <SelectField
+                    label="Cessão"
+                    :options="CESSAO_VINCULADA_OPTS"
+                    placeholder="Selecione"
+                    :span="12"
+                    v-model="form.cessaoVinculada"
+                  />
+                </StepGrid>
+                <div
+                  v-if="cessaoResumo"
+                  class="grid"
+                  style="
+                    grid-template-columns: 1fr 1fr 1fr;
+                    gap: 16px;
+                    padding: 14px 16px;
+                    border: 1px solid var(--border-default);
+                    border-radius: var(--radius-lg);
+                    background: var(--surface-sunken);
+                  "
+                >
+                  <div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px">Total valor de compra</div>
+                    <div
+                      style="
+                        font-size: var(--text-sm);
+                        font-weight: var(--weight-bold);
+                        color: var(--text-strong);
+                        font-variant-numeric: tabular-nums;
+                      "
+                    >
+                      {{ cessaoResumo.totalValorCompra }}
+                    </div>
+                  </div>
+                  <div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px">Total valor nominal</div>
+                    <div
+                      style="
+                        font-size: var(--text-sm);
+                        font-weight: var(--weight-bold);
+                        color: var(--text-strong);
+                        font-variant-numeric: tabular-nums;
+                      "
+                    >
+                      {{ cessaoResumo.totalValorNominal }}
+                    </div>
+                  </div>
+                  <div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px">Quantidade</div>
+                    <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+                      {{ cessaoResumo.quantidadeTitulos }} título(s)
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </BentoBox>
+          </template>
+
+          <!-- Instrumento particular ON → Dados do cedente -->
+          <template v-else>
+            <BentoBox title="Dados do cedente" :icon="User">
+              <StepGrid>
+                <SelectField
+                  label="Cedente"
+                  :options="cedenteOpts"
+                  placeholder="Selecione"
+                  :span="6"
+                  v-model="form.cedenteDoc"
+                />
+                <SelectField
+                  label="Representante legal do grupo"
+                  :options="representanteGrupoOpts"
+                  placeholder="Selecione"
+                  :span="6"
+                  v-model="form.representanteLegalGrupo"
+                />
+                <SelectField
+                  v-if="form.cedenteDoc"
+                  label="Contato do cedente"
+                  :options="contatoOpts"
+                  placeholder="Selecione"
+                  :span="6"
+                  v-model="form.contatoCedente"
+                />
+                <SelectField
+                  v-if="form.cedenteDoc"
+                  label="Endereço do cedente"
+                  :options="enderecoOpts"
+                  placeholder="Selecione"
+                  :span="6"
+                  v-model="form.enderecoCedente"
+                />
+              </StepGrid>
+            </BentoBox>
+          </template>
+
+          <!-- Constituir garantia ON → Fiduciária + obrigação -->
+          <template v-if="form.constituirGarantia">
+            <BentoBox title="Fiduciária">
+              <StepGrid>
+                <SelectField
+                  label="Selecione a fiduciária padrão"
+                  :options="FIDUCIARIA_PADRAO_OPTS"
+                  placeholder="Selecione"
+                  :span="12"
+                  v-model="form.fiduciariaPadrao"
+                />
+                <FormField label="CNPJ" placeholder="—" :span="4" v-model="form.fiduciaria.cnpj!" />
+                <FormField label="Razão social" placeholder="—" :span="5" v-model="form.fiduciaria.razaoSocial!" />
+                <FormField label="Nome Fantasia" placeholder="—" :span="3" v-model="form.fiduciaria.nomeFantasia!" />
+                <FormField label="Data de abertura" placeholder="dd/mm/aaaa" :span="4" v-model="form.fiduciaria.dataAbertura!" />
+                <FormField label="Tipo" placeholder="—" :span="4" v-model="form.fiduciaria.tipoEmpresa!" />
+                <FormField label="Porte" placeholder="—" :span="4" v-model="form.fiduciaria.porte!" />
+                <FormField label="Atividade principal" placeholder="—" :span="4" v-model="form.fiduciaria.atividadePrincipal!" />
+                <FormField label="Natureza jurídica" placeholder="—" :span="4" v-model="form.fiduciaria.naturezaJuridica!" />
+                <FormField label="Inscrição municipal" placeholder="—" :span="4" v-model="form.fiduciaria.inscricaoMunicipal!" />
+                <FormField label="Inscrição estadual" placeholder="—" :span="4" v-model="form.fiduciaria.inscricaoEstadual!" />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Representante Legal" :icon="User">
+              <StepGrid>
+                <FormField label="CPF" placeholder="—" :span="3" v-model="form.fiduciaria.representante!.cpf" />
+                <FormField label="Nome" placeholder="—" :span="5" v-model="form.fiduciaria.representante!.nome" />
+                <SelectField
+                  label="Nacionalidade"
+                  :options="NACIONALIDADE_OPTS"
+                  placeholder="Selecione"
+                  :span="4"
+                  v-model="form.fiduciaria.representante!.nacionalidade"
+                />
+                <FormField label="Profissão" placeholder="—" :span="4" v-model="form.fiduciaria.representante!.profissao" />
+                <SelectField
+                  label="Estado Civil"
+                  :options="ESTADO_CIVIL_GARANTIA_OPTS"
+                  placeholder="Selecione"
+                  :span="4"
+                  v-model="form.fiduciaria.representante!.estadoCivil"
+                />
+                <FormField label="E-mail" placeholder="—" :span="4" v-model="form.fiduciaria.representante!.email" />
+                <FormField label="Telefone" placeholder="—" :span="4" v-model="form.fiduciaria.representante!.telefone" />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Contato" :icon="Mail">
+              <StepGrid>
+                <FormField label="E-mail" placeholder="—" :span="5" v-model="form.fiduciaria.email!" />
+                <SelectField label="DDI" :options="DDI_LABELS" :span="3" v-model="ddiModel" />
+                <FormField label="Telefone" placeholder="—" :span="4" v-model="form.fiduciaria.telefone!" />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Endereço" :icon="MapPin">
+              <StepGrid>
+                <FormField label="CEP" placeholder="—" :span="4" v-model="form.fiduciaria.cep!" />
+                <FormField label="Localidade" placeholder="—" :span="8" v-model="form.fiduciaria.localidade!" />
+                <FormField label="Número" placeholder="—" :span="4" v-model="form.fiduciaria.numero!" />
+                <FormField label="Bairro" placeholder="—" :span="8" v-model="form.fiduciaria.bairro!" />
+                <FormField label="Informações adicionais" placeholder="—" :span="12" v-model="form.fiduciaria.infoAdicionais!" />
+                <FormField label="Cidade" placeholder="—" :span="12" v-model="form.fiduciaria.cidade!" />
+                <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="6" v-model="form.fiduciaria.estado!" />
+                <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="6" v-model="form.fiduciaria.pais!" />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Obrigação garantida">
+              <StepGrid>
+                <FormField label="Instrumento (Nome)" placeholder="—" :span="6" v-model="form.obrigacao.instrumentoNome" />
+                <FormField
+                  label="Documento do instrumento (CNPJ)"
+                  placeholder="—"
+                  :span="6"
+                  v-model="form.obrigacao.documentoInstrumento"
+                />
+                <FormField label="Compradora" placeholder="—" :span="4" v-model="form.obrigacao.compradora" />
+                <FormField label="Vendedora" placeholder="—" :span="4" v-model="form.obrigacao.vendedora" />
+                <FormField label="Fiador(es)" placeholder="—" :span="4" v-model="form.obrigacao.fiadores" />
+                <FormField label="Local" placeholder="—" :span="3" v-model="form.obrigacao.local" />
+                <FormField label="Data" placeholder="dd/mm/aaaa" required :span="3" v-model="form.obrigacao.data" />
+                <FormField label="Produto" placeholder="—" :span="3" v-model="form.obrigacao.produto" />
+                <FormField label="Quantidade" placeholder="—" :span="3" v-model="form.obrigacao.quantidade" />
+                <FormField
+                  label="Valor da obrigação garantida"
+                  placeholder="R$ 0,00"
+                  currency
+                  :span="6"
+                  v-model="form.obrigacao.valor"
+                />
+              </StepGrid>
+            </BentoBox>
+          </template>
+
+          <!-- Testemunhas: quando instrumento particular ou constituir -->
+          <template v-if="form.instrumentoParticular || form.constituirGarantia">
+            <ToggleRow
+              label="Possui testemunhas"
+              :on="form.possuiTestemunhas"
+              @toggle="form.possuiTestemunhas = !form.possuiTestemunhas"
+            />
+
+            <BentoBox v-if="form.possuiTestemunhas" title="Testemunhas" :icon="User">
+              <div class="flex flex-col" style="gap: 14px">
+                <div class="flex justify-end">
+                  <AddButton @click="addTestemunha">Adicionar testemunha</AddButton>
+                </div>
+
+                <div
+                  v-if="form.testemunhas.length === 0"
+                  style="padding: 12px 0; font-size: var(--text-sm); color: var(--text-muted); text-align: center"
+                >
+                  Nenhuma testemunha adicionada.
+                </div>
+
+                <div
+                  v-for="(t, i) in form.testemunhas"
+                  :key="i"
+                  class="grid items-end"
+                  style="grid-template-columns: 1fr 1.2fr 1.2fr auto; gap: 12px"
+                >
+                  <FormField label="CPF" placeholder="—" :span="12" v-model="t.cpf" />
+                  <FormField label="Nome" placeholder="—" required :span="12" v-model="t.nome" />
+                  <FormField label="E-mail" placeholder="—" required :span="12" v-model="t.email" />
+                  <button
+                    aria-label="Remover testemunha"
+                    style="width: 36px; height: 36px; border: none; background: none; cursor: pointer; color: var(--danger-base); margin-bottom: 2px"
+                    @click="removeTestemunha(i)"
+                  >
+                    <Trash2 :size="16" />
+                  </button>
+                </div>
+              </div>
+            </BentoBox>
+          </template>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end" style="gap: 12px; padding: 16px 32px; border-top: 1px solid var(--border-default)">
+        <button
+          style="
+            height: 44px;
+            padding: 0 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-weight: var(--weight-semibold);
+            font-size: var(--text-sm);
+          "
+          @click="emit('close')"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          style="
+            height: 44px;
+            padding: 0 24px;
+            border: none;
+            border-radius: var(--radius-lg);
+            background: var(--action-primary-bg);
+            color: #fff;
+            font-size: var(--text-xs);
+            font-weight: var(--weight-bold);
+            letter-spacing: 0.08em;
+            cursor: pointer;
+          "
+          @click="salvar"
+        >
+          SALVAR
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+### ConfinaAnimaisStep
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import { Trash2, PawPrint } from 'lucide-vue-next';
+import { BentoBox, StepGrid, FormField, SelectField, AddButton, EmptyState } from '../adicionar-contrato';
+import {
+  CONFINA_CATEGORIA_ANIMAL_OPTS,
+  CONFINA_RACA_OPTS,
+  CONFINA_TIPO_ANIMAL_OPTS,
+  CONFINA_IDADE_RANGE_OPTS,
+  emptyConfinaInfoAnimal,
+  type ConfinaAnimaisForm,
+  type ConfinaOperacaoForm,
+  type ConfinaInfoAnimal,
+} from '../../../data/minutaData';
+import ConfinaPreviaSimulacao from './ConfinaPreviaSimulacao.vue';
+
+const form = defineModel<ConfinaAnimaisForm>({ required: true });
+defineProps<{ operacao: ConfinaOperacaoForm }>();
+
+const draft = ref<ConfinaInfoAnimal>(emptyConfinaInfoAnimal());
+
+function addTipo() {
+  if (!draft.value.tipo || !draft.value.quantidade) return;
+  form.value.infos = [...form.value.infos, { ...draft.value }];
+  draft.value = emptyConfinaInfoAnimal();
+}
+
+function removeTipo(i: number) {
+  form.value.infos = form.value.infos.filter((_, idx) => idx !== i);
+}
+</script>
+
+<template>
+  <div class="flex flex-col" style="gap: 20px">
+    <StepGrid>
+      <SelectField
+        label="Categoria"
+        :options="[...CONFINA_CATEGORIA_ANIMAL_OPTS]"
+        placeholder="Selecione"
+        :span="4"
+        v-model="form.categoria"
+      />
+      <SelectField
+        label="Raça"
+        :options="[...CONFINA_RACA_OPTS]"
+        placeholder="Selecione"
+        :span="4"
+        v-model="form.raca"
+      />
+      <FormField
+        label="Peso Mínimo Individual (Arroba)"
+        placeholder="0"
+        :span="4"
+        v-model="form.pesoMinIndividualArroba"
+      />
+      <FormField label="Peso do Lote em arroba" placeholder="0" :span="6" v-model="form.pesoLoteArroba" />
+      <FormField label="Peso do Lote em Kg" placeholder="0" :span="6" v-model="form.pesoLoteKg" />
+    </StepGrid>
+
+    <BentoBox title="Informações adicionais dos animais" :icon="PawPrint">
+      <div class="flex flex-col" style="gap: 14px">
+        <StepGrid>
+          <SelectField
+            label="Tipo de Animal"
+            :options="[...CONFINA_TIPO_ANIMAL_OPTS]"
+            placeholder="Selecione"
+            :span="4"
+            v-model="draft.tipo"
+          />
+          <SelectField
+            label="Idade (Range médio)"
+            :options="[...CONFINA_IDADE_RANGE_OPTS]"
+            placeholder="Selecione"
+            :span="4"
+            v-model="draft.idade"
+          />
+          <FormField label="Quantidade" placeholder="0" :span="4" v-model="draft.quantidade" />
+        </StepGrid>
+        <div class="flex justify-end">
+          <AddButton :disabled="!draft.tipo || !draft.quantidade" @click="addTipo">
+            Adicionar tipo
+          </AddButton>
+        </div>
+
+        <EmptyState
+          v-if="form.infos.length === 0"
+          :icon="PawPrint"
+          title="Nenhum tipo adicionado"
+          hint="Preencha tipo e quantidade e clique em Adicionar tipo."
+        />
+        <div
+          v-else
+          style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-card)"
+        >
+          <div
+            class="grid"
+            style="
+              grid-template-columns: 1.2fr 1fr 0.8fr auto;
+              padding: 10px 14px;
+              background: var(--surface-sunken);
+              font-size: 10px;
+              font-weight: var(--weight-bold);
+              letter-spacing: 0.12em;
+              color: var(--text-muted);
+              text-transform: uppercase;
+            "
+          >
+            <div>Tipo do Animal</div>
+            <div>Idade (Range Médio)</div>
+            <div>Quantidade</div>
+            <div />
+          </div>
+          <div
+            v-for="(info, i) in form.infos"
+            :key="i"
+            class="grid items-center"
+            style="
+              grid-template-columns: 1.2fr 1fr 0.8fr auto;
+              padding: 10px 14px;
+              border-top: 1px solid var(--border-default);
+              font-size: var(--text-sm);
+            "
+          >
+            <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ info.tipo }}</div>
+            <div>{{ info.idade || '—' }}</div>
+            <div style="font-variant-numeric: tabular-nums">{{ info.quantidade }}</div>
+            <button
+              type="button"
+              aria-label="Remover"
+              class="flex items-center justify-center"
+              style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
+              @click="removeTipo(i)"
+            >
+              <Trash2 :size="14" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </BentoBox>
+
+    <ConfinaPreviaSimulacao :operacao="operacao" />
+  </div>
+</template>
+```
+
+### ConfinaNotasStep
+
+```vue
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { Trash2, Receipt, FileSpreadsheet } from 'lucide-vue-next';
+import { brl } from '../../../data/operacaoData';
+import { BentoBox, StepGrid, FormField, AddButton, EmptyState } from '../adicionar-contrato';
+import {
+  emptyConfinaNotaDraft,
+  type ConfinaNotaFiscal,
+  type ConfinaOperacaoForm,
+  type ConfinaGta,
+} from '../../../data/minutaData';
+import ConfinaPreviaSimulacao from './ConfinaPreviaSimulacao.vue';
+
+const notas = defineModel<ConfinaNotaFiscal[]>('notas', { default: () => [] });
+defineProps<{ operacao: ConfinaOperacaoForm }>();
+
+const draft = ref(emptyConfinaNotaDraft());
+const importMsg = ref('');
+
+const nfOk = computed(() => {
+  const n = draft.value.numero.trim();
+  const v = draft.value.valorTotal.trim();
+  const d = draft.value.dataEmissao.trim();
+  const valorVazio = !v || v === 'R$ 0,00';
+  return !!n && !valorVazio && !!d;
+});
+
+const pendingGta = computed<ConfinaGta | null>(() => {
+  const numero = draft.value.gtaNumero.trim();
+  const quantidade = draft.value.gtaQuantidade.trim();
+  if (!numero || !quantidade) return null;
+  return { numero, quantidade };
+});
+
+const gtasEfetivas = computed(() => {
+  const list = [...draft.value.gtas];
+  if (pendingGta.value) list.push(pendingGta.value);
+  return list;
+});
+
+const canAddNota = computed(() => nfOk.value && gtasEfetivas.value.length >= 1);
+
+const addNotaHint = computed(() => {
+  if (canAddNota.value) return '';
+  const missing: string[] = [];
+  if (!draft.value.numero.trim()) missing.push('número da nota');
+  if (!draft.value.valorTotal.trim() || draft.value.valorTotal === 'R$ 0,00') missing.push('valor total');
+  if (!draft.value.dataEmissao.trim()) missing.push('data de emissão');
+  if (gtasEfetivas.value.length < 1) missing.push('ao menos uma GTA');
+  return `Preencha: ${missing.join(', ')}.`;
+});
+
+function addGta() {
+  if (!pendingGta.value) return;
+  draft.value.gtas = [...draft.value.gtas, pendingGta.value];
+  draft.value.gtaNumero = '';
+  draft.value.gtaQuantidade = '';
+}
+
+function removeGtaDraft(i: number) {
+  draft.value.gtas = draft.value.gtas.filter((_, idx) => idx !== i);
+}
+
+function addNota() {
+  if (!canAddNota.value) return;
+  const gtas = gtasEfetivas.value.map((g) => ({ ...g }));
+  notas.value = [
+    ...notas.value,
+    {
+      numero: draft.value.numero.trim(),
+      valorTotal: draft.value.valorTotal,
+      dataEmissao: draft.value.dataEmissao.trim(),
+      gtas,
+    },
+  ];
+  draft.value = emptyConfinaNotaDraft();
+  importMsg.value = '';
+}
+
+function removeNota(i: number) {
+  notas.value = notas.value.filter((_, idx) => idx !== i);
+}
+
+function qtdTotal(n: ConfinaNotaFiscal) {
+  return n.gtas.reduce((acc, g) => acc + (Number(g.quantidade) || 0), 0);
+}
+
+function fmtValor(v: string) {
+  if (v.startsWith('R$')) return v;
+  const n = Number(String(v).replace(/[^\d,.-]/g, '').replace(',', '.'));
+  return Number.isFinite(n) ? brl(n) : v || '—';
+}
+
+function importarExcel() {
+  const mock: ConfinaNotaFiscal = {
+    numero: `NF-${1000 + notas.value.length + 1}`,
+    valorTotal: 'R$ 34.234,24',
+    dataEmissao: '11/08/2026',
+    gtas: [
+      { numero: 'GTA-1001', quantidade: '120' },
+      { numero: 'GTA-1002', quantidade: '80' },
+    ],
+  };
+  notas.value = [...notas.value, mock];
+  importMsg.value = 'Importação simulada: 1 nota fiscal adicionada.';
+}
+</script>
+
+<template>
+  <div class="flex flex-col" style="gap: 20px">
+    <BentoBox title="Informações das notas fiscais" :icon="Receipt">
+      <div class="flex flex-col" style="gap: 16px">
+        <div class="flex items-center justify-between" style="gap: 12px">
+          <p style="margin: 0; font-size: var(--text-sm); color: var(--text-muted)">
+            Preencha a nota e as GTAs do rascunho; a GTA ainda nos campos é incluída ao adicionar a nota.
+          </p>
+          <button
+            type="button"
+            class="flex items-center"
+            style="
+              gap: 8px;
+              height: 40px;
+              padding: 0 16px;
+              background: var(--surface-card);
+              border: 1px solid var(--border-default);
+              border-radius: var(--radius-lg);
+              cursor: pointer;
+              font-weight: var(--weight-bold);
+              font-size: var(--text-xs);
+              letter-spacing: 0.04em;
+              color: var(--gci-base);
+              white-space: nowrap;
+            "
+            @click="importarExcel"
+          >
+            <FileSpreadsheet :size="14" />
+            Importar Excel
+          </button>
+        </div>
+        <p
+          v-if="importMsg"
+          style="margin: 0; font-size: var(--text-xs); color: var(--success-base); font-weight: var(--weight-semibold)"
+        >
+          {{ importMsg }}
+        </p>
+
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase">
+          Dados da nota fiscal
+        </div>
+        <StepGrid>
+          <FormField label="Número da nota fiscal" placeholder="—" :span="4" v-model="draft.numero" />
+          <FormField label="Valor total da nota" currency :span="4" v-model="draft.valorTotal" />
+          <FormField label="Data de emissão" placeholder="dd/mm/aaaa" :span="4" v-model="draft.dataEmissao" />
+        </StepGrid>
+
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase">
+          GTAs / TTAs
+        </div>
+        <StepGrid>
+          <FormField label="Número da GTA" placeholder="—" :span="5" v-model="draft.gtaNumero" />
+          <FormField label="Quantidade de animais" placeholder="0" :span="4" v-model="draft.gtaQuantidade" />
+          <div style="grid-column: span 3; display: flex; align-items: flex-end">
+            <AddButton
+              full-width
+              :disabled="!pendingGta"
+              @click="addGta"
+            >
+              Adicionar GTA
+            </AddButton>
+          </div>
+        </StepGrid>
+
+        <div
+          v-if="draft.gtas.length > 0"
+          style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-card)"
+        >
+          <div
+            class="grid"
+            style="
+              grid-template-columns: 1.2fr 1fr auto;
+              padding: 8px 14px;
+              background: var(--surface-sunken);
+              font-size: 10px;
+              font-weight: var(--weight-bold);
+              letter-spacing: 0.12em;
+              color: var(--text-muted);
+              text-transform: uppercase;
+            "
+          >
+            <div>GTA</div>
+            <div>Quantidade</div>
+            <div />
+          </div>
+          <div
+            v-for="(g, i) in draft.gtas"
+            :key="i"
+            class="grid items-center"
+            style="
+              grid-template-columns: 1.2fr 1fr auto;
+              padding: 8px 14px;
+              border-top: 1px solid var(--border-default);
+              font-size: var(--text-sm);
+            "
+          >
+            <div style="font-weight: var(--weight-semibold)">{{ g.numero }}</div>
+            <div style="font-variant-numeric: tabular-nums">{{ g.quantidade }}</div>
+            <button
+              type="button"
+              aria-label="Remover GTA"
+              class="flex items-center justify-center"
+              style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
+              @click="removeGtaDraft(i)"
+            >
+              <Trash2 :size="14" />
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-col items-end" style="gap: 6px">
+          <AddButton :disabled="!canAddNota" @click="addNota">Adicionar nota fiscal</AddButton>
+          <span v-if="addNotaHint" style="font-size: var(--text-xs); color: var(--text-muted)">
+            {{ addNotaHint }}
+          </span>
+        </div>
+      </div>
+    </BentoBox>
+
+    <EmptyState
+      v-if="notas.length === 0"
+      :icon="Receipt"
+      title="Nenhuma nota fiscal adicionada"
+      hint="Preencha os dados acima e clique em Adicionar nota fiscal."
+    />
+    <div
+      v-else
+      style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden"
+    >
+      <div
+        class="grid"
+        style="
+          grid-template-columns: 1fr 0.8fr 1.1fr 1fr 0.8fr auto;
+          padding: 10px 14px;
+          background: var(--surface-sunken);
+          font-size: 10px;
+          font-weight: var(--weight-bold);
+          letter-spacing: 0.12em;
+          color: var(--text-muted);
+          text-transform: uppercase;
+        "
+      >
+        <div>Nota Fiscal</div>
+        <div>GTAs</div>
+        <div>Valor total da nota</div>
+        <div>Data da nota</div>
+        <div>Quantidade</div>
+        <div />
+      </div>
+      <div
+        v-for="(n, i) in notas"
+        :key="i"
+        class="grid items-center"
+        style="
+          grid-template-columns: 1fr 0.8fr 1.1fr 1fr 0.8fr auto;
+          padding: 10px 14px;
+          border-top: 1px solid var(--border-default);
+          font-size: var(--text-sm);
+        "
+      >
+        <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ n.numero }}</div>
+        <div style="color: var(--gci-base); font-weight: var(--weight-semibold)">
+          {{ n.gtas.length }} GTA{{ n.gtas.length === 1 ? '' : 's' }}
+        </div>
+        <div style="font-variant-numeric: tabular-nums">{{ fmtValor(n.valorTotal) }}</div>
+        <div>{{ n.dataEmissao }}</div>
+        <div style="font-variant-numeric: tabular-nums">{{ qtdTotal(n) }}</div>
+        <button
+          type="button"
+          aria-label="Remover nota"
+          class="flex items-center justify-center"
+          style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
+          @click="removeNota(i)"
+        >
+          <Trash2 :size="14" />
+        </button>
+      </div>
+    </div>
+
+    <ConfinaPreviaSimulacao :operacao="operacao" />
+  </div>
+</template>
+```
+
+### ConfinaOperacaoStep
+
+```vue
+<script setup lang="ts">
+import { StepGrid, FormField, SelectField } from '../adicionar-contrato';
+import {
+  CONFINA_BASE_DIAS_OPTS,
+  CONFINA_GRUPO_OPTS,
+  CONFINA_OUTORGADO_OPTS,
+  type ConfinaOperacaoForm,
+} from '../../../data/minutaData';
+import ConfinaPreviaSimulacao from './ConfinaPreviaSimulacao.vue';
+
+const form = defineModel<ConfinaOperacaoForm>({ required: true });
+</script>
+
+<template>
+  <div class="flex flex-col" style="gap: 20px">
+    <StepGrid>
+      <SelectField
+        label="Insira o grupo empresarial"
+        :options="[...CONFINA_GRUPO_OPTS]"
+        placeholder="Selecione"
+        :span="6"
+        v-model="form.grupoEmpresarial"
+      />
+      <SelectField
+        label="Insira o doc. do outorgado"
+        :options="[...CONFINA_OUTORGADO_OPTS]"
+        placeholder="Selecione"
+        :span="6"
+        v-model="form.outorgado"
+      />
+      <FormField label="Quantidade de animais" placeholder="0" :span="4" v-model="form.quantidadeAnimais" />
+      <FormField label="Valor unitário no dia (Arroba)" placeholder="0" :span="4" v-model="form.valorUnitarioArroba" />
+      <FormField label="Peso do lote (Arroba)" placeholder="0" :span="4" v-model="form.pesoLoteArroba" />
+      <FormField label="Taxa de Juros" placeholder="0" :span="4" v-model="form.taxaJuros" />
+      <FormField label="Emissão" placeholder="dd/mm/aaaa" :span="4" v-model="form.emissao" />
+      <FormField label="Vencimento" placeholder="dd/mm/aaaa" :span="4" v-model="form.vencimento" />
+      <SelectField
+        label="Base de cálculo (dias)"
+        :options="[...CONFINA_BASE_DIAS_OPTS]"
+        placeholder="Selecione"
+        :span="12"
+        v-model="form.baseCalculoDias"
+      />
+    </StepGrid>
+
+    <ConfinaPreviaSimulacao :operacao="form" />
+  </div>
+</template>
+```
+
+### ConfinaParceiroStep
+
+```vue
+<script setup lang="ts">
+import { Plus, Minus } from 'lucide-vue-next';
+import { BentoBox, StepGrid, FormField, SelectField } from '../adicionar-contrato';
+import {
+  CONFINA_FAZENDA_OPTS,
+  CONFINA_POSICAO_ANEXO_OPTS,
+  type ConfinaParceiroForm,
+  type ConfinaOperacaoForm,
+} from '../../../data/minutaData';
+import ConfinaPreviaSimulacao from './ConfinaPreviaSimulacao.vue';
+
+const form = defineModel<ConfinaParceiroForm>({ required: true });
+defineProps<{ operacao: ConfinaOperacaoForm }>();
+
+function addTestemunha() {
+  form.value.testemunhas = [...form.value.testemunhas, { nome: '', cpf: '' }];
+}
+
+function removeTestemunha(i: number) {
+  if (form.value.testemunhas.length <= 1) return;
+  form.value.testemunhas = form.value.testemunhas.filter((_, idx) => idx !== i);
+}
+</script>
+
+<template>
+  <div class="flex flex-col" style="gap: 20px">
+    <StepGrid>
+      <SelectField
+        label="Fazenda"
+        :options="[...CONFINA_FAZENDA_OPTS]"
+        placeholder="Selecione"
+        :span="6"
+        v-model="form.fazenda"
+      />
+      <FormField label="Proprietário" placeholder="—" :span="6" v-model="form.proprietario" />
+      <SelectField
+        label="Posição Anexo"
+        :options="[...CONFINA_POSICAO_ANEXO_OPTS]"
+        placeholder="Selecione"
+        :span="4"
+        v-model="form.posicaoAnexo"
+      />
+    </StepGrid>
+
+    <BentoBox title="Testemunhas">
+      <div class="flex flex-col" style="gap: 12px">
+        <div
+          v-for="(t, i) in form.testemunhas"
+          :key="i"
+          class="grid items-end"
+          style="grid-template-columns: 1fr 1fr auto; gap: 12px"
+        >
+          <FormField label="Nome da Testemunha" placeholder="—" v-model="t.nome" />
+          <FormField label="CPF da Testemunha" placeholder="000.000.000-00" v-model="t.cpf" />
+          <div class="flex" style="gap: 8px; padding-bottom: 0">
+            <button
+              v-if="i === form.testemunhas.length - 1"
+              type="button"
+              aria-label="Adicionar testemunha"
+              class="flex items-center justify-center"
+              style="
+                width: 40px;
+                height: 40px;
+                border: 1px solid var(--border-default);
+                border-radius: var(--radius-lg);
+                background: var(--surface-card);
+                cursor: pointer;
+                color: var(--gci-base);
+              "
+              @click="addTestemunha"
+            >
+              <Plus :size="16" />
+            </button>
+            <button
+              v-if="form.testemunhas.length > 1"
+              type="button"
+              aria-label="Remover testemunha"
+              class="flex items-center justify-center"
+              style="
+                width: 40px;
+                height: 40px;
+                border: 1px solid var(--border-default);
+                border-radius: var(--radius-lg);
+                background: var(--surface-card);
+                cursor: pointer;
+                color: var(--danger-base);
+              "
+              @click="removeTestemunha(i)"
+            >
+              <Minus :size="16" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </BentoBox>
+
+    <ConfinaPreviaSimulacao :operacao="operacao" />
+  </div>
+</template>
+```
+
+### ConfinaPreviaSimulacao
+
+```vue
+<script setup lang="ts">
+import { computed } from 'vue';
+import { Calculator } from 'lucide-vue-next';
+import { brl } from '../../../data/operacaoData';
+import { BentoBox } from '../adicionar-contrato';
+import { simulatePromissoryNote } from '@/features/cra/data/simuladorData';
+import type { ConfinaOperacaoForm } from '../../../data/minutaData';
+
+const props = defineProps<{ operacao: ConfinaOperacaoForm }>();
+
+function parseNum(v: string) {
+  return Number(String(v).replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+}
+
+const preview = computed(() => {
+  const qty = parseNum(props.operacao.quantidadeAnimais);
+  const unit = parseNum(props.operacao.valorUnitarioArroba);
+  const weight = parseNum(props.operacao.pesoLoteArroba);
+  const rate = parseNum(props.operacao.taxaJuros);
+  if (!qty || !unit || !weight) return null;
+  const sim = simulatePromissoryNote({
+    animalsQuantity: qty,
+    unitValue: unit,
+    batchWeightInArroba: weight,
+    rate,
+    issueDate: props.operacao.emissao,
+    dueDate: props.operacao.vencimento,
+  });
+  const totalArrobaMedio = weight / qty;
+  const refComercializacao = unit > 0 ? unit * 0.03 : 0;
+  return {
+    ...sim,
+    totalArrobaMedio,
+    refComercializacao,
+    taxa: rate,
+    emissao: props.operacao.emissao || '—',
+    vencimento: props.operacao.vencimento || '—',
+  };
+});
+</script>
+
+<template>
+  <BentoBox v-if="preview" title="Prévia da simulação" :icon="Calculator">
+    <div
+      class="grid"
+      style="
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px 16px;
+      "
+    >
+      <div>
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">
+          Valor de compra
+        </div>
+        <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">
+          {{ brl(preview.valorCompra) }}
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">
+          Valor nominal
+        </div>
+        <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">
+          {{ brl(preview.valorNominal) }}
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">
+          Total arroba médio
+        </div>
+        <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">
+          {{ preview.totalArrobaMedio.toFixed(2) }}
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">
+          Referência comercialização
+        </div>
+        <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">
+          {{ brl(preview.refComercializacao) }}
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">
+          Prazo em dias
+        </div>
+        <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">
+          {{ preview.dias }} dias
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">
+          Taxa juros
+        </div>
+        <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">
+          {{ preview.taxa }}%
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">
+          Emissão
+        </div>
+        <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">
+          {{ preview.emissao }}
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">
+          Vencimento
+        </div>
+        <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">
+          {{ preview.vencimento }}
+        </div>
+      </div>
+    </div>
+  </BentoBox>
+</template>
+```
+
+### ConfinaPromissoriaStep
+
+```vue
+<script setup lang="ts">
+import { computed } from 'vue';
+import { brl } from '../../../data/operacaoData';
+import { StepGrid, FormField, SelectField, ToggleRow } from '../adicionar-contrato';
+import { CONFINA_FILIAL_OPTS, type ConfinaOperacaoForm, type ConfinaPromissoriaForm } from '../../../data/minutaData';
+import { simulatePromissoryNote } from '@/features/cra/data/simuladorData';
+import ConfinaPreviaSimulacao from './ConfinaPreviaSimulacao.vue';
+
+const form = defineModel<ConfinaPromissoriaForm>({ required: true });
+const props = defineProps<{ operacao: ConfinaOperacaoForm }>();
+
+function parseNum(v: string) {
+  return Number(String(v).replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+}
+
+const feeEstimado = computed(() => {
+  const qty = parseNum(props.operacao.quantidadeAnimais);
+  const unit = parseNum(props.operacao.valorUnitarioArroba);
+  const weight = parseNum(props.operacao.pesoLoteArroba);
+  const rate = parseNum(props.operacao.taxaJuros);
+  const feePct = parseNum(form.value.feeMonitoramento);
+  if (!qty || !unit || !weight) return '—';
+  const sim = simulatePromissoryNote({
+    animalsQuantity: qty,
+    unitValue: unit,
+    batchWeightInArroba: weight,
+    rate,
+    issueDate: props.operacao.emissao,
+    dueDate: props.operacao.vencimento,
+  });
+  return brl(sim.valorNominal * (feePct / 100));
+});
+</script>
+
+<template>
+  <div class="flex flex-col" style="gap: 20px">
+    <StepGrid>
+      <FormField label="Número do título" placeholder="—" :span="4" v-model="form.numeroTitulo" />
+      <SelectField
+        label="Filial / Outorgante"
+        :options="[...CONFINA_FILIAL_OPTS]"
+        placeholder="Selecione"
+        :span="8"
+        v-model="form.filialOutorgante"
+      />
+      <FormField label="FEE monitoramento (%)" placeholder="0" :span="4" v-model="form.feeMonitoramento" />
+      <FormField label="Prazo de assinatura (dias)" placeholder="0" :span="4" v-model="form.prazoAssinaturaDias" />
+      <FormField label="Vigência do Contrato (meses)" placeholder="0" :span="4" v-model="form.vigenciaMeses" />
+      <div :style="{ gridColumn: 'span 12' }">
+        <div
+          style="
+            font-size: 10px;
+            font-weight: var(--weight-bold);
+            letter-spacing: 0.10em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+          "
+        >
+          Valor FEE monitoramento (estimado)
+        </div>
+        <div
+          style="
+            height: 40px;
+            padding: 0 14px;
+            display: flex;
+            align-items: center;
+            background: var(--surface-sunken);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            font-size: var(--text-sm);
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+          "
+        >
+          {{ feeEstimado }}
+        </div>
+      </div>
+    </StepGrid>
+
+    <ToggleRow
+      label="Enviar cópia da notificação para o e-mail do certificador"
+      :on="form.enviarCopiaCertificador"
+      spacious
+      @toggle="form.enviarCopiaCertificador = !form.enviarCopiaCertificador"
+    />
+
+    <ConfinaPreviaSimulacao :operacao="operacao" />
+  </div>
+</template>
+```
+
+### EnderecosLocacaoFields
+
+```vue
+<script setup lang="ts">
+import { computed, watch } from 'vue';
+import { Trash2 } from 'lucide-vue-next';
+import { UF_OPTIONS, PAISES_DDI } from '../../../data/operacaoData';
+import { StepGrid, FormField, SelectField, AddButton } from '../adicionar-contrato';
+import { cidadesDaUf, emptyEnderecoLocacaoItem, type EnderecoLocacaoItem } from '../../../data/minutaData';
+
+const lista = defineModel<EnderecoLocacaoItem[]>('lista', { default: () => [] });
+const draft = defineModel<EnderecoLocacaoItem>('draft', { required: true });
+
+const PAIS_OPTS = PAISES_DDI.map((p) => p.pais);
+const cidadeOpts = computed(() => cidadesDaUf(draft.value.estado));
+
+watch(
+  () => draft.value.estado,
+  () => {
+    if (draft.value.cidade && !cidadeOpts.value.includes(draft.value.cidade)) {
+      draft.value.cidade = '';
+    }
+  },
+);
+
+function add() {
+  if (!draft.value.cep && !draft.value.localidade && !draft.value.cidade) return;
+  lista.value = [
+    ...(lista.value ?? []),
+    {
+      cep: draft.value.cep,
+      localidade: draft.value.localidade,
+      numero: draft.value.numero,
+      bairro: draft.value.bairro,
+      infoAdicionais: draft.value.infoAdicionais,
+      cidade: draft.value.cidade,
+      estado: draft.value.estado,
+      pais: draft.value.pais || 'Brasil',
+    },
+  ];
+  Object.assign(draft.value, emptyEnderecoLocacaoItem());
+}
+
+function remove(i: number) {
+  lista.value = lista.value.filter((_, idx) => idx !== i);
+}
+</script>
+
+<template>
+  <div class="flex flex-col" style="gap: 14px">
+    <StepGrid>
+      <FormField label="CEP" placeholder="—" :span="3" v-model="draft.cep" />
+      <FormField label="Localidade" placeholder="—" :span="6" v-model="draft.localidade" />
+      <FormField label="Número" placeholder="—" :span="3" v-model="draft.numero" />
+      <FormField label="Bairro" placeholder="—" :span="4" v-model="draft.bairro" />
+      <FormField label="Informações adicionais" placeholder="—" :span="8" v-model="draft.infoAdicionais" />
+      <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="3" v-model="draft.estado" />
+      <SelectField
+        label="Cidade"
+        :options="cidadeOpts"
+        placeholder="Selecione"
+        :span="5"
+        :disabled="!draft.estado"
+        v-model="draft.cidade"
+      />
+      <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="4" v-model="draft.pais" />
+    </StepGrid>
+    <div class="flex justify-end">
+      <AddButton @click="add">Adicionar endereço</AddButton>
+    </div>
+    <div
+      v-if="lista.length === 0"
+      style="padding: 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+    >
+      Nenhum endereço adicionado.
+    </div>
+    <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+      <div
+        class="grid"
+        style="
+          grid-template-columns: 0.8fr 1.4fr 1fr 0.5fr auto;
+          padding: 10px 14px;
+          background: var(--surface-sunken);
+          font-size: 10px;
+          font-weight: var(--weight-bold);
+          letter-spacing: 0.12em;
+          color: var(--text-muted);
+          text-transform: uppercase;
+        "
+      >
+        <div>CEP</div>
+        <div>Logradouro</div>
+        <div>Cidade</div>
+        <div>UF</div>
+        <div />
+      </div>
+      <div
+        v-for="(e, i) in lista"
+        :key="i"
+        class="grid items-center"
+        style="
+          grid-template-columns: 0.8fr 1.4fr 1fr 0.5fr auto;
+          padding: 10px 14px;
+          border-top: 1px solid var(--border-default);
+          font-size: var(--text-sm);
+        "
+      >
+        <div>{{ e.cep || '—' }}</div>
+        <div>{{ e.localidade || '—' }}</div>
+        <div>{{ e.cidade || '—' }}</div>
+        <div>{{ e.estado || '—' }}</div>
+        <button
+          aria-label="Remover"
+          style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
+          @click="remove(i)"
+        >
+          <Trash2 :size="14" />
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+### PessoaNaturezaFields
+
+```vue
+<script setup lang="ts">
+import { computed } from 'vue';
+import { User } from 'lucide-vue-next';
+import { BentoBox, StepGrid, FormField, SelectField } from '../adicionar-contrato';
+import {
+  ESTADO_CIVIL_GARANTIA_OPTS,
+  NACIONALIDADE_OPTS,
+  REGIME_CASAMENTO_OPTS,
+  emptyConjugeMinuta,
+  emptyPessoaMinuta,
+  estadoCivilExigeConjuge,
+  parteExigeFormularioConjuge,
+  type PessoaMinuta,
+} from '../../../data/minutaData';
+import SpouseFields from './SpouseFields.vue';
+
+const form = defineModel<PessoaMinuta>({ required: true });
+
+const NATUREZA_OPTS = ['Pessoa Física', 'Pessoa Jurídica'];
+
+const natureza = computed({
+  get: () => (form.value.tipoPessoa === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica'),
+  set: (v: string) => {
+    const next = v === 'Pessoa Física' ? 'FISICA' : 'JURIDICA';
+    if (form.value.tipoPessoa === next) return;
+    // Mantém a referência do objeto no pai (reactive) e reseta o conteúdo
+    Object.assign(form.value, emptyPessoaMinuta(next));
+  },
+});
+
+const conjugeModel = computed({
+  get: () => form.value.conjuge ?? emptyConjugeMinuta(),
+  set: (v) => {
+    form.value.conjuge = v;
+  },
+});
+</script>
+
+<template>
+  <div class="flex flex-col" style="gap: 14px">
+    <StepGrid>
+      <SelectField label="Natureza" :options="NATUREZA_OPTS" :span="4" v-model="natureza" />
+    </StepGrid>
+
+    <template v-if="form.tipoPessoa === 'FISICA'">
+      <StepGrid>
+        <FormField label="CPF" placeholder="000.000.000-00" required :span="3" v-model="form.cpf!" />
+        <FormField label="Nome completo" placeholder="—" required :span="6" v-model="form.nome" />
+        <FormField label="RG" placeholder="—" :span="3" v-model="form.rg!" />
+        <SelectField
+          label="Nacionalidade"
+          :options="NACIONALIDADE_OPTS"
+          placeholder="Selecione"
+          required
+          :span="4"
+          v-model="form.nacionalidade!"
+        />
+        <FormField label="Data de nascimento" placeholder="dd/mm/aaaa" required :span="4" v-model="form.dataNascimento!" />
+        <FormField label="Profissão" placeholder="—" :span="4" v-model="form.profissao!" />
+        <SelectField
+          label="Estado Civil"
+          :options="ESTADO_CIVIL_GARANTIA_OPTS"
+          placeholder="Selecione"
+          required
+          :span="4"
+          v-model="form.estadoCivil!"
+        />
+        <SelectField
+          v-if="estadoCivilExigeConjuge(form.estadoCivil)"
+          label="Regime"
+          :options="REGIME_CASAMENTO_OPTS"
+          placeholder="Selecione"
+          :span="4"
+          v-model="form.regime!"
+        />
+      </StepGrid>
+      <template v-if="parteExigeFormularioConjuge(form.estadoCivil, form.regime)">
+        <StepGrid>
+          <FormField
+            label="Data do Casamento"
+            placeholder="dd/mm/aaaa"
+            :span="4"
+            v-model="form.dataCasamento!"
+          />
+        </StepGrid>
+        <SpouseFields v-model="conjugeModel" :mostrar-data-nascimento="false" />
+      </template>
+    </template>
+
+    <template v-else>
+      <StepGrid>
+        <FormField label="CNPJ" placeholder="00.000.000/0000-00" :span="4" v-model="form.cnpj!" />
+        <FormField label="Razão social" placeholder="—" :span="5" v-model="form.razaoSocial!" />
+        <FormField label="Nome Fantasia" placeholder="—" :span="3" v-model="form.nomeFantasia!" />
+        <FormField label="Data de abertura" placeholder="dd/mm/aaaa" :span="3" v-model="form.dataAbertura!" />
+        <FormField label="Tipo" placeholder="—" :span="3" v-model="form.tipoEmpresa!" />
+        <FormField label="Porte" placeholder="—" :span="3" v-model="form.porte!" />
+        <FormField label="Atividade principal" placeholder="—" :span="3" v-model="form.atividadePrincipal!" />
+        <FormField label="Natureza jurídica" placeholder="—" :span="6" v-model="form.naturezaJuridica!" />
+        <FormField label="Inscrição municipal" placeholder="—" :span="3" v-model="form.inscricaoMunicipal!" />
+        <FormField label="Inscrição estadual" placeholder="—" :span="3" v-model="form.inscricaoEstadual!" />
+      </StepGrid>
+
+      <BentoBox title="Representante Legal" :icon="User">
+        <StepGrid>
+          <FormField label="CPF" placeholder="—" :span="3" v-model="form.representante!.cpf" />
+          <FormField label="Nome" placeholder="—" :span="5" v-model="form.representante!.nome" />
+          <SelectField
+            label="Nacionalidade"
+            :options="NACIONALIDADE_OPTS"
+            placeholder="Selecione"
+            :span="4"
+            v-model="form.representante!.nacionalidade"
+          />
+          <FormField label="Profissão" placeholder="—" :span="4" v-model="form.representante!.profissao" />
+          <SelectField
+            label="Estado Civil"
+            :options="ESTADO_CIVIL_GARANTIA_OPTS"
+            placeholder="Selecione"
+            :span="4"
+            v-model="form.representante!.estadoCivil"
+          />
+          <FormField label="E-mail" placeholder="—" :span="4" v-model="form.representante!.email" />
+          <FormField label="Telefone" placeholder="—" :span="4" v-model="form.representante!.telefone" />
+        </StepGrid>
+      </BentoBox>
+    </template>
   </div>
 </template>
 ```

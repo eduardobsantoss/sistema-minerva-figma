@@ -5084,6 +5084,11 @@ export interface NewClassData {
   benefBairro: string;
   benefCidade: string;
   benefEstado: string;
+  /** Configuração de cobrança (etapa Cobrança). */
+  boletagemImediata: boolean;
+  boletagemAutomatica: boolean;
+  notificarCessaoSemBoleto: boolean;
+  diasParaBoletar: string;
 }
 
 const props = withDefaults(
@@ -5112,7 +5117,7 @@ const steps: Step[] = [
   { key: 'partic', label: 'Participantes', icon: Users, hint: 'Prestadores' },
   { key: 'limites', label: 'Limites', icon: Percent, hint: 'Configuração de limites' },
   { key: 'grupos', label: 'Grupos', icon: Network, hint: 'Econômicos' },
-  { key: 'banco', label: 'Banco', icon: Banknote, hint: 'Domicílio bancário' },
+  { key: 'banco', label: 'Cobrança', icon: Banknote, hint: 'Carteira, beneficiário e boletagem' },
   { key: 'registro', label: 'Registro', icon: ClipboardList, hint: 'Registradoras' },
   { key: 'pdd', label: 'PDD', icon: AlertTriangle, hint: 'Provisão' },
   { key: 'resumo', label: 'Resumo', icon: ClipboardCheck, hint: 'Resumo dos dados cadastrados' },
@@ -5172,7 +5177,45 @@ const form = ref<NewClassData>({
   benefSelecionado: '', benefDesde: '',
   benefCnpj: '', benefNome: '', benefCep: '', benefEndereco: '', benefNumero: '',
   benefComplemento: '', benefBairro: '', benefCidade: '', benefEstado: '',
+  boletagemImediata: false,
+  boletagemAutomatica: false,
+  notificarCessaoSemBoleto: false,
+  diasParaBoletar: '',
 });
+
+const boletagemImediataHint =
+  'Boleta títulos elegíveis assim que a operação é concluída. Quando ativa, desabilita boletagem automática e dias para boletar.';
+const boletagemAutomaticaHint =
+  'Agenda a boletagem após o prazo em dias. Exige carteira Kobana configurada. Não pode ser usada junto com boletagem imediata.';
+const notificarCessaoSemBoletoHint =
+  'Quando ativo, permite enviar a notificação de cessão mesmo sem boleto gerado nos títulos. Títulos vencidos continuam bloqueando o envio.';
+
+const cobrancaBanner = computed(() => {
+  if (form.value.boletagemImediata) {
+    return 'Boletagem imediata ativa: títulos elegíveis serão boletados assim que a operação for concluída. Boletagem automática e dias para boletar ficam desabilitados.';
+  }
+  if (form.value.boletagemAutomatica) {
+    return 'Boletagem automática ativa: a boletagem será agendada após o prazo em dias. Exige carteira Kobana configurada.';
+  }
+  return 'Modo manual: nenhuma boletagem automática ou imediata será aplicada. Os títulos precisarão ser boletados manualmente.';
+});
+
+function toggleBoletagemImediata() {
+  if (form.value.boletagemAutomatica) return;
+  form.value.boletagemImediata = !form.value.boletagemImediata;
+  if (form.value.boletagemImediata) {
+    form.value.boletagemAutomatica = false;
+    form.value.diasParaBoletar = '';
+  }
+}
+
+function toggleBoletagemAutomatica() {
+  if (form.value.boletagemImediata) return;
+  form.value.boletagemAutomatica = !form.value.boletagemAutomatica;
+  if (form.value.boletagemAutomatica) {
+    form.value.boletagemImediata = false;
+  }
+}
 
 const stepIdx = ref(0);
 const hoverIdx = ref<number | null>(null);
@@ -5789,6 +5832,57 @@ function handleNext() {
               </StepGrid>
             </div>
           </div>
+
+          <div>
+            <SectionTitle :icon="Banknote">Configurações de Cobrança</SectionTitle>
+            <div
+              class="flex items-start"
+              style="
+                gap: 10px;
+                padding: 12px 14px;
+                margin-bottom: 16px;
+                background: var(--info-bg, #e8f4f8);
+                border: 1px solid var(--info-border, #b7d7e8);
+                border-radius: var(--radius-lg);
+                color: var(--gci-base);
+              "
+            >
+              <Info :size="16" :stroke-width="2.25" style="flex-shrink: 0; margin-top: 1px" />
+              <p style="margin: 0; font-size: var(--text-sm); line-height: 1.45; color: var(--text-default)">
+                {{ cobrancaBanner }}
+              </p>
+            </div>
+            <div class="flex flex-col" style="gap: 12px">
+              <ToggleRow
+                label="Boletagem imediata"
+                :hint="boletagemImediataHint"
+                :on="form.boletagemImediata"
+                :disabled="form.boletagemAutomatica"
+                @toggle="toggleBoletagemImediata"
+              />
+              <ToggleRow
+                label="Boletagem automática"
+                :hint="boletagemAutomaticaHint"
+                :on="form.boletagemAutomatica"
+                :disabled="form.boletagemImediata"
+                @toggle="toggleBoletagemAutomatica"
+              />
+              <ToggleRow
+                label="Notificar cessão sem boleto"
+                :hint="notificarCessaoSemBoletoHint"
+                :on="form.notificarCessaoSemBoleto"
+                @toggle="form.notificarCessaoSemBoleto = !form.notificarCessaoSemBoleto"
+              />
+              <FormField
+                label="Dias para boletar"
+                placeholder="—"
+                type="number"
+                :span="12"
+                :disabled="form.boletagemImediata"
+                v-model="form.diasParaBoletar"
+              />
+            </div>
+          </div>
         </div>
 
         <div v-else-if="step.key === 'registro'" class="flex flex-col" style="gap: 16px">
@@ -5933,7 +6027,7 @@ function handleNext() {
             <div v-else style="font-size: var(--text-sm); color: var(--text-muted)">Nenhum grupo selecionado.</div>
           </SectionGroup>
 
-          <SectionGroup :icon="Wallet" title="Banco e Beneficiário">
+          <SectionGroup :icon="Wallet" title="Cobrança e Beneficiário">
             <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
               <SummaryItem label="Nome da Carteira" :value="form.nomeCarteira" />
               <SummaryItem label="Banco" :value="form.banco" />
@@ -5949,6 +6043,10 @@ function handleNext() {
                 :value="form.cadastrarNovoBeneficiario ? form.benefCnpj : '—'"
               />
               <SummaryItem label="Beneficiário desde" :value="form.benefDesde" />
+              <SummaryItem label="Boletagem imediata" :value="form.boletagemImediata ? 'Sim' : 'Não'" />
+              <SummaryItem label="Boletagem automática" :value="form.boletagemAutomatica ? 'Sim' : 'Não'" />
+              <SummaryItem label="Notificar cessão sem boleto" :value="form.notificarCessaoSemBoleto ? 'Sim' : 'Não'" />
+              <SummaryItem label="Dias para boletar" :value="form.diasParaBoletar || '—'" />
             </div>
           </SectionGroup>
 
@@ -7387,7 +7485,7 @@ defineProps<{ icon?: Component }>();
 
 ```vue
 <script setup lang="ts">
-import { ChevronDown } from 'lucide-vue-next';
+import { ChevronDown, Info } from 'lucide-vue-next';
 import FieldLabel from './FieldLabel.vue';
 
 defineProps<{
@@ -7395,6 +7493,8 @@ defineProps<{
   options: string[];
   span?: number;
   placeholder?: string;
+  hint?: string;
+  disabled?: boolean;
 }>();
 
 const emit = defineEmits<{ change: [v: string] }>();
@@ -7403,28 +7503,40 @@ const model = defineModel<string>();
 
 <template>
   <div :style="{ gridColumn: span ? `span ${span}` : undefined }">
-    <FieldLabel v-if="label">{{ label }}</FieldLabel>
+    <div v-if="label" class="flex items-center" style="gap: 6px; margin-bottom: 6px">
+      <FieldLabel style="margin-bottom: 0">{{ label }}</FieldLabel>
+      <span
+        v-if="hint"
+        :title="hint"
+        class="flex items-center justify-center"
+        style="color: var(--text-muted); cursor: help; flex-shrink: 0"
+      >
+        <Info :size="12" :stroke-width="2.25" />
+      </span>
+    </div>
     <div style="position: relative">
       <select
         v-model="model"
-        style="
-          height: 40px;
-          padding-left: 14px;
-          padding-right: 40px;
-          background: var(--surface-card);
-          border-width: 1px;
-          border-style: solid;
-          border-color: var(--border-default);
-          border-radius: var(--radius-md);
-          outline: none;
-          font-size: var(--text-sm);
-          color: var(--text-strong);
-          width: 100%;
-          appearance: none;
-        "
+        :disabled="disabled"
+        :style="{
+          height: '40px',
+          paddingLeft: '14px',
+          paddingRight: '40px',
+          background: disabled ? 'var(--surface-sunken)' : 'var(--surface-card)',
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          borderColor: 'var(--border-default)',
+          borderRadius: 'var(--radius-md)',
+          outline: 'none',
+          fontSize: 'var(--text-sm)',
+          color: disabled ? 'var(--text-muted)' : 'var(--text-strong)',
+          width: '100%',
+          appearance: 'none',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+        }"
         @change="emit('change', ($event.target as HTMLSelectElement).value)"
       >
-        <option v-if="placeholder" value="" disabled selected>{{ placeholder }}</option>
+        <option v-if="placeholder" value="" disabled>{{ placeholder }}</option>
         <option v-for="o in options" :key="o" :value="o">{{ o }}</option>
       </select>
       <ChevronDown
@@ -9045,7 +9157,10 @@ function handleSave() {
 
 ```vue
 <script setup lang="ts">
-defineProps<{ label: string; on: boolean; hint?: string }>();
+withDefaults(
+  defineProps<{ label: string; on: boolean; hint?: string; disabled?: boolean }>(),
+  { disabled: false },
+);
 const emit = defineEmits<{ toggle: [] }>();
 </script>
 
@@ -9057,20 +9172,21 @@ const emit = defineEmits<{ toggle: [] }>();
       borderRadius: 'var(--radius-lg)',
       borderWidth: '1px',
       borderStyle: 'solid',
-      borderColor: on ? 'var(--success-base)' : 'var(--border-default)',
-      background: on ? 'var(--success-light)' : 'var(--surface-card)',
+      borderColor: on && !disabled ? 'var(--success-base)' : 'var(--border-default)',
+      background: on && !disabled ? 'var(--success-light)' : 'var(--surface-card)',
       transition: 'all var(--duration-base)',
-      cursor: 'pointer',
+      cursor: disabled ? 'not-allowed' : 'pointer',
       gap: '12px',
+      opacity: disabled ? 0.55 : 1,
     }"
-    @click="emit('toggle')"
+    @click="!disabled && emit('toggle')"
   >
     <div style="min-width: 0">
       <div
         :style="{
           fontSize: 'var(--text-sm)',
-          color: on ? 'var(--success-dark)' : 'var(--text-default)',
-          fontWeight: on ? 'var(--weight-semibold)' : 'var(--weight-regular)',
+          color: on && !disabled ? 'var(--success-dark)' : 'var(--text-default)',
+          fontWeight: on && !disabled ? 'var(--weight-semibold)' : 'var(--weight-regular)',
           userSelect: 'none',
           lineHeight: '1.4',
         }"
@@ -9081,13 +9197,16 @@ const emit = defineEmits<{ toggle: [] }>();
     </div>
     <div
       style="width: 44px; height: 24px; border-radius: 9999px; position: relative; flex-shrink: 0"
-      :style="{ background: on ? 'var(--success-base)' : 'var(--border-default)', transition: 'background var(--duration-base)' }"
+      :style="{
+        background: on && !disabled ? 'var(--success-base)' : 'var(--border-default)',
+        transition: 'background var(--duration-base)',
+      }"
     >
       <span
         :style="{
           position: 'absolute',
           top: '3px',
-          left: on ? '23px' : '3px',
+          left: on && !disabled ? '23px' : '3px',
           width: '18px',
           height: '18px',
           borderRadius: '9999px',

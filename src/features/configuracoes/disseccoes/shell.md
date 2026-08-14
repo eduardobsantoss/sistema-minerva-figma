@@ -1,6 +1,6 @@
 # Login / Shell / Home
 
-> Shell global do Minerva: login, topbar, sidebar, home (DashboardView) e ModuleCard.
+> Shell global do Minerva: login, topbar, sidebar, home (DashboardView), ModuleCard, toasts, alerts e tela de erro.
 > Preview em `src/features/shell/`; source canônico nos caminhos originais.
 > Handoff: `docs/handoff/login-header-sidebar.md` · `docs/handoff/layout-shell.md`.
 
@@ -410,6 +410,188 @@ defineEmits<{ moduleClick: [title: string] }>();
 </template>
 ```
 
+### ErrorScreen
+
+```vue
+<script setup lang="ts">
+import { computed } from 'vue';
+import { ChevronRight, Home } from 'lucide-vue-next';
+import ImageWithFallback from '@/components/figma/ImageWithFallback.vue';
+import logoSrc from '@/assets/logo-azul-sem-bg.png';
+import { resolveErrorPreset } from '../data/errorPresets';
+
+/** Ilustração estática (handoff). Em produção pode ser substituída pela API de GIFs. */
+const PUPPY_IMG =
+  'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=800&auto=format&fit=crop';
+
+const props = withDefaults(
+  defineProps<{
+    code?: string | number;
+    title?: string;
+    description?: string;
+    primaryLabel?: string;
+  }>(),
+  { code: '404' },
+);
+
+const emit = defineEmits<{
+  primary: [];
+  home: [];
+}>();
+
+const resolved = computed(() => {
+  const preset = resolveErrorPreset(props.code ?? '404');
+  return {
+    code: String(props.code ?? preset.code),
+    title: props.title ?? preset.title,
+    description: props.description ?? preset.description,
+    primaryLabel: props.primaryLabel ?? preset.primaryLabel,
+  };
+});
+</script>
+
+<template>
+  <div
+    class="flex flex-col items-center justify-center"
+    style="
+      width: 100%;
+      height: 100%;
+      min-height: 560px;
+      background: var(--surface-page);
+      padding: 40px 24px;
+    "
+  >
+    <div
+      class="flex flex-col"
+      style="
+        width: 100%;
+        max-width: 480px;
+        background: var(--surface-card);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-md);
+        padding: 36px 36px 32px;
+        gap: 0;
+      "
+    >
+      <ImageWithFallback
+        :src="logoSrc"
+        alt="Grupo Ceres Investimentos"
+        :style="{ height: '56px', width: 'auto', objectFit: 'contain', alignSelf: 'flex-start' }"
+      />
+
+      <div
+        style="
+          width: 48px;
+          height: 4px;
+          background: var(--agro-base);
+          border-radius: 2px;
+          margin: 24px 0 20px;
+        "
+      />
+
+      <div
+        style="
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.18em;
+          color: var(--accent);
+          font-weight: var(--weight-bold);
+          margin-bottom: 8px;
+        "
+      >
+        Erro {{ resolved.code }}
+      </div>
+
+      <h1
+        style="
+          font-size: var(--text-3xl);
+          font-weight: var(--weight-bold);
+          color: var(--text-strong);
+          letter-spacing: -0.02em;
+          line-height: var(--leading-tight);
+          margin: 0 0 10px;
+        "
+      >
+        {{ resolved.title }}
+      </h1>
+
+      <p
+        style="
+          margin: 0 0 24px;
+          font-size: var(--text-sm);
+          color: var(--text-muted);
+          line-height: var(--leading-relaxed);
+        "
+      >
+        {{ resolved.description }}
+      </p>
+
+      <div
+        style="
+          border-radius: var(--radius-xl);
+          overflow: hidden;
+          height: 180px;
+          background: var(--surface-sunken);
+          margin-bottom: 28px;
+        "
+      >
+        <ImageWithFallback
+          :src="PUPPY_IMG"
+          alt="Cachorrinho"
+          :style="{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }"
+        />
+      </div>
+
+      <div class="flex items-center" style="gap: 12px">
+        <button
+          type="button"
+          class="btn-animated btn-primary flex items-center justify-center"
+          style="
+            flex: 1;
+            height: 44px;
+            padding: 0 16px;
+            border: none;
+            border-radius: var(--radius-xl);
+            background: var(--action-primary-bg);
+            color: var(--action-primary-text);
+            font-weight: var(--weight-bold);
+            font-size: var(--text-sm);
+            cursor: pointer;
+            gap: 6px;
+            box-shadow: 0 10px 24px -8px rgba(8, 60, 74, 0.18);
+          "
+          @click="emit('primary')"
+        >
+          {{ resolved.primaryLabel }}
+          <ChevronRight :size="16" />
+        </button>
+        <button
+          type="button"
+          class="btn-animated flex items-center justify-center"
+          style="
+            height: 44px;
+            padding: 0 14px;
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-xl);
+            background: var(--surface-card);
+            color: var(--text-default);
+            font-weight: var(--weight-bold);
+            font-size: var(--text-sm);
+            cursor: pointer;
+            gap: 8px;
+          "
+          @click="emit('home')"
+        >
+          <Home :size="16" />
+          Início
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
 ## Layout
 
 ### Topbar
@@ -650,6 +832,14 @@ const items: NavItem[] = [
       { key: 'cras', label: 'Gestão', icon: Briefcase },
       { key: 'cras-simulador', label: 'Simulador', icon: Gauge },
       { key: 'cras-relatorios', label: 'Relatórios', icon: BarChart3 },
+    ],
+  },
+  {
+    key: 'semiestruturadas',
+    label: 'Semiestruturadas',
+    icon: Layers,
+    children: [
+      { key: 'semiestruturadas', label: 'Gestão', icon: Layers },
     ],
   },
   {
@@ -967,6 +1157,8 @@ function handleItemClick(it: NavItem) {
               color: #fff;
               line-height: 1.2;
               white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
             "
           >
             {{ CURRENT_USER.fullName }}
@@ -1142,6 +1334,497 @@ const tone = toneStyles[props.item.tone];
         Acessar módulo →
       </div>
     </div>
+  </div>
+</template>
+```
+
+### ToastCard
+
+```vue
+<script setup lang="ts">
+import { computed, type Component } from 'vue';
+import { CircleAlert, CircleCheck, Info, TriangleAlert, X } from 'lucide-vue-next';
+import type { ToastItem, ToastType } from '@/composables/useToast';
+
+const props = defineProps<{ toast: ToastItem }>();
+const emit = defineEmits<{
+  dismiss: [];
+  action: [];
+}>();
+
+const tone = computed(() => {
+  const map: Record<
+    ToastType,
+    { icon: Component; fg: string; bg: string; btnBg: string; btnFg: string }
+  > = {
+    error: {
+      icon: CircleAlert,
+      fg: 'var(--danger-base)',
+      bg: 'var(--danger-light)',
+      btnBg: 'var(--danger-light)',
+      btnFg: 'var(--danger-dark)',
+    },
+    warning: {
+      icon: TriangleAlert,
+      fg: 'var(--warning-base)',
+      bg: 'var(--warning-light)',
+      btnBg: 'var(--warning-light)',
+      btnFg: 'var(--warning-dark)',
+    },
+    success: {
+      icon: CircleCheck,
+      fg: 'var(--success-base)',
+      bg: 'var(--success-light)',
+      btnBg: 'var(--success-light)',
+      btnFg: 'var(--success-dark)',
+    },
+    info: {
+      icon: Info,
+      fg: 'var(--gci-base)',
+      bg: 'var(--gci-light)',
+      btnBg: 'var(--gci-light)',
+      btnFg: 'var(--gci-base)',
+    },
+  };
+  return map[props.toast.type];
+});
+
+function handleAction() {
+  props.toast.action?.onClick?.();
+  emit('action');
+}
+</script>
+
+<template>
+  <div
+    role="status"
+    :aria-live="toast.type === 'error' ? 'assertive' : 'polite'"
+    class="flex flex-col"
+    :style="{
+      width: '360px',
+      maxWidth: '100%',
+      background: 'var(--surface-card)',
+      border: '1px solid var(--border-default)',
+      borderLeft: `4px solid ${tone.fg}`,
+      borderRadius: 'var(--radius-xl)',
+      boxShadow: 'var(--shadow-lg)',
+      overflow: 'hidden',
+    }"
+  >
+    <div class="flex" style="gap: 12px; padding: 14px 14px 0 14px; align-items: flex-start">
+      <div
+        class="flex items-center justify-center"
+        :style="{
+          width: '32px',
+          height: '32px',
+          borderRadius: 'var(--radius-full)',
+          background: tone.bg,
+          color: tone.fg,
+          flexShrink: 0,
+        }"
+      >
+        <component :is="tone.icon" :size="16" :stroke-width="2.25" />
+      </div>
+
+      <div style="flex: 1; min-width: 0; padding-top: 4px">
+        <div class="flex items-start" style="gap: 8px">
+          <p
+            style="
+              margin: 0;
+              font-size: var(--text-sm);
+              font-weight: var(--weight-semibold);
+              color: var(--text-strong);
+              line-height: var(--leading-snug);
+              flex: 1;
+              min-width: 0;
+            "
+          >
+            {{ toast.message }}
+          </p>
+          <span
+            v-if="toast.count > 1"
+            :style="{
+              flexShrink: 0,
+              fontSize: '10px',
+              fontWeight: 'var(--weight-bold)',
+              letterSpacing: '0.04em',
+              color: tone.fg,
+              background: tone.bg,
+              borderRadius: 'var(--radius-full)',
+              padding: '2px 7px',
+              lineHeight: 1.4,
+            }"
+          >
+            ×{{ toast.count }}
+          </span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        aria-label="Fechar"
+        class="btn-animated flex items-center justify-center"
+        style="
+          width: 28px;
+          height: 28px;
+          border: none;
+          background: transparent;
+          color: var(--text-muted);
+          cursor: pointer;
+          border-radius: var(--radius-md);
+          flex-shrink: 0;
+          padding: 0;
+        "
+        @click="emit('dismiss')"
+      >
+        <X :size="14" :stroke-width="2.25" />
+      </button>
+    </div>
+
+    <div
+      class="flex items-center justify-between"
+      style="padding: 12px 14px 14px; gap: 12px"
+    >
+      <button
+        v-if="toast.action"
+        type="button"
+        class="btn-animated"
+        :style="{
+          height: '32px',
+          padding: '0 12px',
+          border: 'none',
+          borderRadius: 'var(--radius-lg)',
+          background: tone.btnBg,
+          color: tone.btnFg,
+          fontSize: 'var(--text-xs)',
+          fontWeight: 'var(--weight-bold)',
+          cursor: 'pointer',
+        }"
+        @click="handleAction"
+      >
+        {{ toast.action.label }}
+      </button>
+      <span v-else />
+      <button
+        type="button"
+        class="btn-animated"
+        style="
+          height: 32px;
+          padding: 0 4px;
+          border: none;
+          background: transparent;
+          color: var(--text-muted);
+          font-size: var(--text-xs);
+          font-weight: var(--weight-semibold);
+          cursor: pointer;
+        "
+        @click="emit('dismiss')"
+      >
+        Dismiss
+      </button>
+    </div>
+  </div>
+</template>
+```
+
+### ToastStack
+
+```vue
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import type { ToastItem } from '@/composables/useToast';
+import ToastCard from './ToastCard.vue';
+
+const VISIBLE = 3;
+
+const props = withDefaults(
+  defineProps<{
+    toasts: readonly ToastItem[];
+    contained?: boolean;
+  }>(),
+  { contained: false },
+);
+
+const emit = defineEmits<{
+  dismiss: [id: string];
+  'dismiss-all': [];
+}>();
+
+const expanded = ref(false);
+
+const ordered = computed(() => [...props.toasts].sort((a, b) => b.createdAt - a.createdAt));
+
+const visible = computed(() =>
+  expanded.value ? ordered.value : ordered.value.slice(0, VISIBLE),
+);
+
+const hiddenCount = computed(() => Math.max(0, ordered.value.length - VISIBLE));
+
+function cardStyle(index: number) {
+  if (expanded.value) {
+    return {
+      position: 'relative' as const,
+      transform: 'none',
+      zIndex: String(visible.value.length - index),
+      opacity: 1,
+      pointerEvents: 'auto' as const,
+      marginBottom: '0px',
+    };
+  }
+  return {
+    position: (index === 0 ? 'relative' : 'absolute') as 'relative' | 'absolute',
+    right: '0',
+    bottom: index === 0 ? '0' : `${index * 10}px`,
+    transform: `scale(${1 - index * 0.04})`,
+    transformOrigin: 'bottom right',
+    zIndex: String(visible.value.length - index),
+    opacity: 1,
+    pointerEvents: (index === 0 ? 'auto' : 'none') as 'auto' | 'none',
+  };
+}
+</script>
+
+<template>
+  <div
+    v-if="toasts.length"
+    class="flex flex-col items-end"
+    :style="{
+      position: contained ? 'absolute' : 'fixed',
+      right: '28px',
+      bottom: '28px',
+      zIndex: 'var(--z-toast)',
+      width: '360px',
+      maxWidth: 'calc(100% - 56px)',
+      gap: expanded ? '10px' : '0',
+    }"
+    @mouseenter="expanded = true"
+    @mouseleave="expanded = false"
+  >
+    <div
+      v-if="toasts.length > 1"
+      class="flex items-center justify-between"
+      style="width: 100%; gap: 12px; padding: 0 2px"
+    >
+      <span
+        style="
+          font-size: 10px;
+          font-weight: var(--weight-bold);
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--text-muted);
+        "
+      >
+        {{ toasts.length }} {{ toasts.length === 1 ? 'aviso' : 'avisos' }}
+        <template v-if="!expanded && hiddenCount > 0"> · +{{ hiddenCount }}</template>
+      </span>
+      <button
+        type="button"
+        class="btn-animated"
+        style="
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          font-size: var(--text-xs);
+          font-weight: var(--weight-bold);
+          color: var(--gci-base);
+          padding: 0;
+        "
+        @click="emit('dismiss-all')"
+      >
+        Dispensar todos
+      </button>
+    </div>
+
+    <div
+      class="relative"
+      :style="{
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: expanded ? '10px' : '0',
+        maxHeight: expanded ? '70vh' : 'none',
+        overflow: expanded ? 'auto' : 'visible',
+        paddingBottom: expanded || visible.length <= 1 ? '0' : `${Math.min(visible.length - 1, 2) * 10}px`,
+      }"
+    >
+      <div
+        v-for="(item, index) in visible"
+        :key="item.id"
+        :style="cardStyle(index)"
+      >
+        <ToastCard :toast="item" @dismiss="emit('dismiss', item.id)" @action="emit('dismiss', item.id)" />
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+### Alert
+
+```vue
+<script setup lang="ts">
+import { computed, type Component } from 'vue';
+import { CircleAlert, CircleCheck, Info, TriangleAlert, X } from 'lucide-vue-next';
+
+export type AlertType = 'error' | 'warning' | 'success' | 'info';
+
+const props = withDefaults(
+  defineProps<{
+    type?: AlertType;
+    title?: string;
+    message?: string;
+    dismissible?: boolean;
+    actionLabel?: string;
+  }>(),
+  {
+    type: 'info',
+    dismissible: true,
+  },
+);
+
+const emit = defineEmits<{
+  dismiss: [];
+  action: [];
+}>();
+
+const tone = computed(() => {
+  const map: Record<
+    AlertType,
+    { icon: Component; fg: string; bg: string; border: string; btnBg: string; btnFg: string }
+  > = {
+    error: {
+      icon: CircleAlert,
+      fg: 'var(--danger-base)',
+      bg: 'var(--danger-light)',
+      border: 'var(--danger-base)',
+      btnBg: 'var(--surface-card)',
+      btnFg: 'var(--danger-dark)',
+    },
+    warning: {
+      icon: TriangleAlert,
+      fg: 'var(--warning-base)',
+      bg: 'var(--warning-light)',
+      border: 'var(--warning-base)',
+      btnBg: 'var(--surface-card)',
+      btnFg: 'var(--warning-dark)',
+    },
+    success: {
+      icon: CircleCheck,
+      fg: 'var(--success-base)',
+      bg: 'var(--success-light)',
+      border: 'var(--success-base)',
+      btnBg: 'var(--surface-card)',
+      btnFg: 'var(--success-dark)',
+    },
+    info: {
+      icon: Info,
+      fg: 'var(--gci-base)',
+      bg: 'var(--gci-light)',
+      border: 'var(--gci-base)',
+      btnBg: 'var(--surface-card)',
+      btnFg: 'var(--gci-base)',
+    },
+  };
+  return map[props.type];
+});
+</script>
+
+<template>
+  <div
+    role="alert"
+    class="flex"
+    :style="{
+      gap: '12px',
+      alignItems: 'flex-start',
+      width: '100%',
+      background: tone.bg,
+      border: `1px solid color-mix(in srgb, ${tone.border} 28%, transparent)`,
+      borderLeft: `4px solid ${tone.border}`,
+      borderRadius: 'var(--radius-xl)',
+      padding: '14px 16px',
+    }"
+  >
+    <div
+      class="flex items-center justify-center"
+      :style="{
+        width: '32px',
+        height: '32px',
+        borderRadius: 'var(--radius-full)',
+        background: 'var(--surface-card)',
+        color: tone.fg,
+        flexShrink: 0,
+      }"
+    >
+      <component :is="tone.icon" :size="16" :stroke-width="2.25" />
+    </div>
+
+    <div style="flex: 1; min-width: 0; padding-top: 4px">
+      <div
+        v-if="title"
+        style="
+          font-size: var(--text-sm);
+          font-weight: var(--weight-bold);
+          color: var(--text-strong);
+          line-height: var(--leading-snug);
+          margin-bottom: 4px;
+        "
+      >
+        {{ title }}
+      </div>
+      <p
+        v-if="message"
+        style="
+          margin: 0;
+          font-size: var(--text-sm);
+          color: var(--text-default);
+          line-height: var(--leading-normal);
+        "
+      >
+        {{ message }}
+      </p>
+      <slot />
+      <button
+        v-if="actionLabel"
+        type="button"
+        class="btn-animated"
+        :style="{
+          marginTop: '10px',
+          height: '32px',
+          padding: '0 12px',
+          border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-lg)',
+          background: tone.btnBg,
+          color: tone.btnFg,
+          fontSize: 'var(--text-xs)',
+          fontWeight: 'var(--weight-bold)',
+          cursor: 'pointer',
+        }"
+        @click="emit('action')"
+      >
+        {{ actionLabel }}
+      </button>
+    </div>
+
+    <button
+      v-if="dismissible"
+      type="button"
+      aria-label="Fechar"
+      class="btn-animated flex items-center justify-center"
+      style="
+        width: 28px;
+        height: 28px;
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+        border-radius: var(--radius-md);
+        flex-shrink: 0;
+        padding: 0;
+      "
+      @click="emit('dismiss')"
+    >
+      <X :size="14" :stroke-width="2.25" />
+    </button>
   </div>
 </template>
 ```

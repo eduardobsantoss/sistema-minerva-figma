@@ -27,6 +27,7 @@ import {
 import TituloDetailScreen from './TituloDetailScreen.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import { useToast } from '@/composables/useToast';
 
 const emit = defineEmits<{ navigate: [view: string] }>();
 
@@ -34,8 +35,7 @@ type Route = { level: 'dashboard' } | { level: 'titulo'; id: string };
 
 const route = ref<Route>({ level: 'dashboard' });
 const query = ref('');
-const toast = ref<string | null>(null);
-let toastTimer: ReturnType<typeof setTimeout> | null = null;
+const { success } = useToast();
 
 const titulos = ref(TITULOS_SEED.map((t) => ({ ...t })));
 
@@ -45,11 +45,7 @@ const tituloAtual = computed(() => {
 });
 
 function showToast(msg: string) {
-  toast.value = msg;
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toast.value = null;
-  }, 2400);
+  success(msg);
 }
 
 function todayBR() {
@@ -746,25 +742,6 @@ const CONF_GRID = 'minmax(110px, 1.2fr) minmax(150px, 1.6fr) minmax(100px, 1fr) 
         <ChevronRight :size="16" style="color: var(--text-muted)" />
       </button>
     </div>
-  </div>
-
-  <div
-    v-if="toast"
-    style="
-      position: fixed;
-      bottom: 28px;
-      right: 28px;
-      z-index: 500;
-      background: var(--gci-base);
-      color: #fff;
-      padding: 12px 18px;
-      border-radius: var(--radius-lg);
-      font-size: var(--text-sm);
-      font-weight: var(--weight-semibold);
-      box-shadow: var(--shadow-md);
-    "
-  >
-    {{ toast }}
   </div>
 </template>
 

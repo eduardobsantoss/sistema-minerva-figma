@@ -201,6 +201,20 @@ export function isGarantiaCessao(tipo: string): boolean {
   return isGarantiaCessaoDuplicatas(tipo) || isGarantiaCessaoContrato(tipo);
 }
 
+/**
+ * Produto + endereço na constituição: cessão de contrato, ou cessão de duplicata com tipo de título CPR.
+ */
+export function isProdutoConstituicaoCessao(
+  tipo: string,
+  tipoTitulo?: string,
+  tipoContrato?: string,
+): boolean {
+  if (isGarantiaCessaoContrato(tipo)) return true;
+  if (!isGarantiaCessaoDuplicatas(tipo)) return false;
+  const titulo = (tipoTitulo || tipoContrato || '').toUpperCase().replace(/\s/g, '');
+  return titulo === 'CPR';
+}
+
 /** Tipos de garantia com formulário específico (sem testemunhas / constituição / obrigação). */
 export function isGarantiaFormularioEspecifico(tipo: string): boolean {
   return (
@@ -1076,6 +1090,22 @@ export interface ObrigacaoGarantidaConstituicao {
   valor: string;
 }
 
+export interface ProdutoConstituicao {
+  numeroIdentificacao: string;
+  produto: string;
+  safra: string;
+  quantidade: string;
+  prazoEntrega: string;
+  cep: string;
+  localidade: string;
+  numero: string;
+  bairro: string;
+  infoAdicionais: string;
+  cidade: string;
+  estado: string;
+  pais: string;
+}
+
 export interface ConstitucaoGarantiaConfig {
   instrumentoParticular: boolean;
   constituirGarantia: boolean;
@@ -1089,6 +1119,7 @@ export interface ConstitucaoGarantiaConfig {
   fiduciariaPadrao: string;
   fiduciaria: PessoaMinuta;
   obrigacao: ObrigacaoGarantidaConstituicao;
+  produto: ProdutoConstituicao;
 }
 
 export const FIDUCIARIA_PADRAO_OPTS = ['Ceres Trading', 'Ceres Securitizadora', 'BMP', 'Vortx'];
@@ -1151,6 +1182,24 @@ export function emptyObrigacaoGarantidaConstituicao(): ObrigacaoGarantidaConstit
   };
 }
 
+export function emptyProdutoConstituicao(): ProdutoConstituicao {
+  return {
+    numeroIdentificacao: '',
+    produto: '',
+    safra: '',
+    quantidade: '',
+    prazoEntrega: '',
+    cep: '',
+    localidade: '',
+    numero: '',
+    bairro: '',
+    infoAdicionais: '',
+    cidade: '',
+    estado: '',
+    pais: 'Brasil',
+  };
+}
+
 export function emptyConstituicaoGarantia(): ConstitucaoGarantiaConfig {
   return {
     instrumentoParticular: false,
@@ -1165,6 +1214,7 @@ export function emptyConstituicaoGarantia(): ConstitucaoGarantiaConfig {
     fiduciariaPadrao: '',
     fiduciaria: emptyPessoaMinuta('JURIDICA'),
     obrigacao: emptyObrigacaoGarantidaConstituicao(),
+    produto: emptyProdutoConstituicao(),
   };
 }
 

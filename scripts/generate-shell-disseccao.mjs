@@ -26,6 +26,13 @@ const COMPONENTS = [
     sourceFile: 'src/app/DashboardView.vue',
   },
   {
+    section: 'Screens',
+    id: 'screens__ErrorScreen',
+    name: 'ErrorScreen',
+    path: 'screens/ErrorScreen.vue',
+    sourceFile: 'src/features/errors/screens/ErrorScreen.vue',
+  },
+  {
     section: 'Layout',
     id: 'components__Topbar',
     name: 'Topbar',
@@ -46,6 +53,27 @@ const COMPONENTS = [
     path: 'components/ModuleCard.vue',
     sourceFile: 'src/features/dashboard/components/ModuleCard.vue',
   },
+  {
+    section: 'Components',
+    id: 'components__ToastCard',
+    name: 'ToastCard',
+    path: 'components/ToastCard.vue',
+    sourceFile: 'src/components/feedback/ToastCard.vue',
+  },
+  {
+    section: 'Components',
+    id: 'components__ToastStack',
+    name: 'ToastStack',
+    path: 'components/ToastStack.vue',
+    sourceFile: 'src/components/feedback/ToastStack.vue',
+  },
+  {
+    section: 'Components',
+    id: 'components__Alert',
+    name: 'Alert',
+    path: 'components/Alert.vue',
+    sourceFile: 'src/components/feedback/Alert.vue',
+  },
 ];
 
 function readSource(relFromRoot) {
@@ -57,7 +85,7 @@ const title = 'Login / Shell / Home';
 const lines = [
   `# ${title}`,
   '',
-  '> Shell global do Minerva: login, topbar, sidebar, home (DashboardView) e ModuleCard.',
+  '> Shell global do Minerva: login, topbar, sidebar, home (DashboardView), ModuleCard, toasts, alerts e tela de erro.',
   '> Preview em `src/features/shell/`; source canônico nos caminhos originais.',
   '> Handoff: `docs/handoff/login-header-sidebar.md` · `docs/handoff/layout-shell.md`.',
   '',

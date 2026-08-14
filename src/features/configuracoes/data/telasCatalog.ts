@@ -31,7 +31,7 @@ export const TELAS_DISSECCOES: TelaDisseccao[] = [
   {
     key: 'shell',
     title: 'Login / Shell / Home',
-    description: 'Login, topbar, sidebar, home (módulos) e ModuleCard.',
+    description: 'Login, topbar, sidebar, home, toasts, alerts e tela de erro HTTP.',
     cta: 'Abrir dissecção',
   },
   {

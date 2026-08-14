@@ -104,7 +104,8 @@ const groups = [
         k.startsWith('--sidebar-') ||
         k.startsWith('--main-') ||
         k.startsWith('--topbar-') ||
-        k.startsWith('--dashboard-'),
+        k.startsWith('--dashboard-') ||
+        k.startsWith('--z-'),
     ),
   },
 ];

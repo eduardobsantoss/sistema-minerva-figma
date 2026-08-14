@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { TITULOS_SEED, type Titulo } from '../data/titulosData';
+import { useToast } from '@/composables/useToast';
 import TitulosListScreen from './TitulosListScreen.vue';
 import TituloDetailScreen from './TituloDetailScreen.vue';
 
@@ -8,8 +9,7 @@ type Route = { level: 'list' } | { level: 'detail'; tituloId: string };
 
 const list = ref<Titulo[]>(TITULOS_SEED.map((t) => ({ ...t })));
 const route = ref<Route>({ level: 'list' });
-const toast = ref<string | null>(null);
-let toastTimer: ReturnType<typeof setTimeout> | null = null;
+const { success } = useToast();
 
 const tituloAtual = computed(() => {
   const r = route.value;
@@ -17,11 +17,7 @@ const tituloAtual = computed(() => {
 });
 
 function showToast(msg: string) {
-  toast.value = msg;
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toast.value = null;
-  }, 2400);
+  success(msg);
 }
 
 function todayBR() {
@@ -93,23 +89,4 @@ function handleNegociar(id: string) {
       @negociar="handleNegociar"
     />
   </template>
-
-  <div
-    v-if="toast"
-    style="
-      position: fixed;
-      bottom: 28px;
-      right: 28px;
-      z-index: 500;
-      background: var(--gci-base);
-      color: #fff;
-      padding: 12px 18px;
-      border-radius: var(--radius-lg);
-      font-size: var(--text-sm);
-      font-weight: var(--weight-semibold);
-      box-shadow: var(--shadow-md);
-    "
-  >
-    {{ toast }}
-  </div>
 </template>

@@ -141,6 +141,8 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-out:      cubic-bezier(0, 0, 0.2, 1);
 
+  --z-toast: 500;
+
   /* ===== RESPONSIVIDADE (layout shell) ===== */
   --sidebar-width-expanded: 280px;
   --main-padding: 40px;

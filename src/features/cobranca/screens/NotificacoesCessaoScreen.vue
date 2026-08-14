@@ -4,6 +4,7 @@ import {
   NOTIFICACOES_CESSAO_SEED,
   type NotificacaoCessao,
 } from '../data/notificacoesCessaoData';
+import { useToast } from '@/composables/useToast';
 import NotificacoesCessaoListScreen from './NotificacoesCessaoListScreen.vue';
 import NotificacaoCessaoDetailScreen from './NotificacaoCessaoDetailScreen.vue';
 
@@ -11,8 +12,7 @@ type Route = { level: 'list' } | { level: 'detail'; id: string };
 
 const list = ref<NotificacaoCessao[]>(NOTIFICACOES_CESSAO_SEED.map((n) => ({ ...n })));
 const route = ref<Route>({ level: 'list' });
-const toast = ref<string | null>(null);
-let toastTimer: ReturnType<typeof setTimeout> | null = null;
+const { success } = useToast();
 
 const atual = computed(() => {
   const r = route.value;
@@ -20,11 +20,7 @@ const atual = computed(() => {
 });
 
 function showToast(msg: string) {
-  toast.value = msg;
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toast.value = null;
-  }, 2400);
+  success(msg);
 }
 
 function nowBR() {
@@ -83,23 +79,4 @@ function handleCancelar(id: string) {
       @cancelar="handleCancelar"
     />
   </template>
-
-  <div
-    v-if="toast"
-    style="
-      position: fixed;
-      bottom: 28px;
-      right: 28px;
-      z-index: 500;
-      background: var(--gci-base);
-      color: #fff;
-      padding: 12px 18px;
-      border-radius: var(--radius-lg);
-      font-size: var(--text-sm);
-      font-weight: var(--weight-semibold);
-      box-shadow: var(--shadow-md);
-    "
-  >
-    {{ toast }}
-  </div>
 </template>

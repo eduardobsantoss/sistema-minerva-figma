@@ -3058,7 +3058,7 @@ function onEspecialChange(s: Sacado) {
 <script setup lang="ts">
 import { ref, toRaw, watch } from 'vue';
 import {
-  Settings, SlidersHorizontal, FileCheck, Wallet, Receipt, ListChecks,
+  Settings, SlidersHorizontal, FileCheck, Wallet, Receipt, ListChecks, Save,
 } from 'lucide-vue-next';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import FormField from '../../components/create-cra-operacao-modal/FormField.vue';
@@ -3080,6 +3080,7 @@ function cloneSetup(s: CraSetup): CraSetup {
 
 const subTab = ref<SubTab>('Dados gerais');
 const local = ref<CraSetup>(cloneSetup(props.setup));
+const saved = ref(false);
 
 watch(
   () => props.setup,
@@ -3091,11 +3092,17 @@ watch(
 
 function save() {
   emit('update', cloneSetup(local.value));
+  saved.value = true;
+  setTimeout(() => {
+    saved.value = false;
+  }, 2000);
 }
 
 function toggleBond(id: string) {
-  const bt = local.value.bondTypes.find((b) => b.id === id);
-  if (bt) bt.ativo = !bt.ativo;
+  local.value = {
+    ...local.value,
+    bondTypes: local.value.bondTypes.map((b) => (b.id === id ? { ...b, ativo: !b.ativo } : b)),
+  };
 }
 </script>
 
@@ -3171,18 +3178,22 @@ function toggleBond(id: string) {
 
       <template v-else-if="subTab === 'Tipos de título'">
         <SectionGroup :icon="FileCheck" title="Tipos de título">
-          <div class="flex flex-col" style="gap: 10px">
+          <div style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+            <div class="grid" style="grid-template-columns: 0.6fr 1.4fr 0.5fr; padding: 14px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase">
+              <div>Abreviação</div>
+              <div>Descrição</div>
+              <div>Ativo</div>
+            </div>
             <div
               v-for="bt in local.bondTypes"
               :key="bt.id"
-              class="flex items-center"
-              style="gap: 12px; padding: 12px 16px; border-radius: var(--radius-lg); border: 1px solid var(--border-default); background: var(--surface-card); cursor: pointer"
-              @click="toggleBond(bt.id)"
+              class="grid items-center"
+              style="grid-template-columns: 0.6fr 1.4fr 0.5fr; padding: 14px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
             >
-              <Checkbox :checked="bt.ativo" @change="toggleBond(bt.id)" />
-              <div style="flex: 1">
-                <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">{{ bt.abreviacao }}</div>
-                <div style="font-size: var(--text-xs); color: var(--text-muted)">{{ bt.descricao }}</div>
+              <div style="font-weight: var(--weight-semibold)">{{ bt.abreviacao }}</div>
+              <div style="color: var(--text-muted)">{{ bt.descricao }}</div>
+              <div>
+                <Checkbox :checked="bt.ativo" @change="toggleBond(bt.id)" />
               </div>
             </div>
           </div>
@@ -3220,57 +3231,38 @@ function toggleBond(id: string) {
 
       <template v-else>
         <SectionGroup :icon="ListChecks" title="Elegibilidade">
-          <div class="flex flex-col" style="gap: 12px">
+          <div style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+            <div class="grid" style="grid-template-columns: 0.8fr 0.6fr 0.6fr; padding: 14px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase">
+              <div>Tipo</div>
+              <div>Quantidade</div>
+              <div>Concentração %</div>
+            </div>
             <div
               v-for="top in local.eligibilityTops"
               :key="top.id"
               class="grid items-center"
-              style="grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 12px 16px; border-radius: var(--radius-lg); border: 1px solid var(--border-default); background: var(--surface-card)"
+              style="grid-template-columns: 0.8fr 0.6fr 0.6fr; padding: 14px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
             >
-              <div>
-                <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">Tipo</div>
-                <select
-                  v-model="top.tipo"
-                  style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-sunken); border: 1px solid var(--border-default); border-radius: var(--radius-md); font-size: var(--text-sm)"
-                >
-                  <option value="CEDENTE">CEDENTE</option>
-                  <option value="SACADO">SACADO</option>
-                </select>
-              </div>
-              <div>
-                <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">Quantidade</div>
-                <input
-                  v-model.number="top.quantidade"
-                  type="number"
-                  style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-sunken); border: 1px solid var(--border-default); border-radius: var(--radius-md); font-size: var(--text-sm)"
-                />
-              </div>
-              <div>
-                <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">Concentração (%)</div>
-                <input
-                  v-model.number="top.concentracaoPct"
-                  type="number"
-                  style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-sunken); border: 1px solid var(--border-default); border-radius: var(--radius-md); font-size: var(--text-sm)"
-                />
-              </div>
+              <div style="font-weight: var(--weight-semibold)">{{ top.tipo }}</div>
+              <div style="font-variant-numeric: tabular-nums">{{ top.quantidade }}</div>
+              <div style="font-variant-numeric: tabular-nums">{{ top.concentracaoPct }}%</div>
             </div>
-            <button
-              type="button"
-              style="background: none; border: none; cursor: default; font-size: var(--text-sm); color: var(--text-muted); text-align: left; padding: 4px 0"
-            >
-              Ver ranking (em breve)
-            </button>
           </div>
+          <p style="font-size: var(--text-xs); color: var(--gci-base); margin-top: 12px; font-weight: var(--weight-semibold); cursor: pointer">
+            Ver ranking de concentração →
+          </p>
         </SectionGroup>
       </template>
 
-      <div class="flex justify-end">
+      <div class="flex items-center justify-end" style="gap: 12px; margin-top: 4px">
+        <span v-if="saved" style="font-size: var(--text-sm); color: var(--success-base); font-weight: var(--weight-semibold)">Alterações salvas</span>
         <button
           type="button"
-          style="padding: 12px 28px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: 700; font-size: var(--text-sm); box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
+          class="flex items-center btn-animated btn-agro"
+          style="gap: 8px; padding: 10px 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
           @click="save"
         >
-          Salvar
+          <Save :size="14" /> SALVAR
         </button>
       </div>
     </div>
@@ -5087,6 +5079,11 @@ export interface NewCraOperacaoData {
   benefCidade: string;
   benefEstado: string;
   titularConta: string;
+  /** Configuração de cobrança */
+  boletagemImediata: boolean;
+  boletagemAutomatica: boolean;
+  notificarCessaoSemBoleto: boolean;
+  diasParaBoletar: string;
   // Carteira de registro
   registradora: string;
   idCarteira: string;
@@ -5108,7 +5105,7 @@ const steps: Step[] = [
   { key: 'veiculo',  label: 'Veículo',     icon: Settings,          hint: 'Configurações do veículo' },
   { key: 'config',   label: 'Adicionais',  icon: SlidersHorizontal, hint: 'Configurações adicionais' },
   { key: 'limites',  label: 'Limites',     icon: Percent,           hint: 'Configuração de limites' },
-  { key: 'cobranca', label: 'Cobrança',    icon: Wallet,            hint: 'Carteira de cobrança' },
+  { key: 'cobranca', label: 'Cobrança',    icon: Wallet,            hint: 'Carteira, beneficiário e boletagem' },
   { key: 'registro', label: 'Registro',    icon: Network,           hint: 'Carteira de registro' },
   { key: 'pdd',      label: 'PDD',         icon: AlertTriangle,     hint: 'Parametrização de PDD' },
   { key: 'grupos',   label: 'Grupos',      icon: Layers,            hint: 'Seleção de grupos empresariais' },
@@ -5168,9 +5165,47 @@ const form = ref<NewCraOperacaoData>({
   benefCnpj: '', benefNome: '', benefCep: '', benefEndereco: '',
   benefNumero: '', benefComplemento: '', benefBairro: '', benefCidade: '', benefEstado: '',
   titularConta: '',
+  boletagemImediata: false,
+  boletagemAutomatica: false,
+  notificarCessaoSemBoleto: false,
+  diasParaBoletar: '',
   registradora: '', idCarteira: '', apiToken: '', apiSecret: '',
 });
 const grupoQ = ref('');
+
+const boletagemImediataHint =
+  'Boleta títulos elegíveis assim que a operação é concluída. Quando ativa, desabilita boletagem automática e dias para boletar.';
+const boletagemAutomaticaHint =
+  'Agenda a boletagem após o prazo em dias. Exige carteira Kobana configurada. Não pode ser usada junto com boletagem imediata.';
+const notificarCessaoSemBoletoHint =
+  'Quando ativo, permite enviar a notificação de cessão mesmo sem boleto gerado nos títulos. Títulos vencidos continuam bloqueando o envio.';
+
+const cobrancaBanner = computed(() => {
+  if (form.value.boletagemImediata) {
+    return 'Boletagem imediata ativa: títulos elegíveis serão boletados assim que a operação for concluída. Boletagem automática e dias para boletar ficam desabilitados.';
+  }
+  if (form.value.boletagemAutomatica) {
+    return 'Boletagem automática ativa: a boletagem será agendada após o prazo em dias. Exige carteira Kobana configurada.';
+  }
+  return 'Modo manual: nenhuma boletagem automática ou imediata será aplicada. Os títulos precisarão ser boletados manualmente.';
+});
+
+function toggleBoletagemImediata() {
+  if (form.value.boletagemAutomatica) return;
+  form.value.boletagemImediata = !form.value.boletagemImediata;
+  if (form.value.boletagemImediata) {
+    form.value.boletagemAutomatica = false;
+    form.value.diasParaBoletar = '';
+  }
+}
+
+function toggleBoletagemAutomatica() {
+  if (form.value.boletagemImediata) return;
+  form.value.boletagemAutomatica = !form.value.boletagemAutomatica;
+  if (form.value.boletagemAutomatica) {
+    form.value.boletagemImediata = false;
+  }
+}
 
 // Step Limites — 4 sub-tabs
 type LimitTab = 'concentracao' | 'totalizadores' | 'topCedente' | 'topSacado';
@@ -5657,6 +5692,57 @@ function handleCreate() {
               </StepGrid>
             </div>
           </div>
+
+          <div>
+            <SectionTitle :icon="Wallet">Configurações de Cobrança</SectionTitle>
+            <div
+              class="flex items-start"
+              style="
+                gap: 10px;
+                padding: 12px 14px;
+                margin-bottom: 16px;
+                background: var(--info-bg, #e8f4f8);
+                border: 1px solid var(--info-border, #b7d7e8);
+                border-radius: var(--radius-lg);
+                color: var(--gci-base);
+              "
+            >
+              <Info :size="16" :stroke-width="2.25" style="flex-shrink: 0; margin-top: 1px" />
+              <p style="margin: 0; font-size: var(--text-sm); line-height: 1.45; color: var(--text-default)">
+                {{ cobrancaBanner }}
+              </p>
+            </div>
+            <div class="flex flex-col" style="gap: 12px">
+              <ToggleRow
+                label="Boletagem imediata"
+                :hint="boletagemImediataHint"
+                :on="form.boletagemImediata"
+                :disabled="form.boletagemAutomatica"
+                @toggle="toggleBoletagemImediata"
+              />
+              <ToggleRow
+                label="Boletagem automática"
+                :hint="boletagemAutomaticaHint"
+                :on="form.boletagemAutomatica"
+                :disabled="form.boletagemImediata"
+                @toggle="toggleBoletagemAutomatica"
+              />
+              <ToggleRow
+                label="Notificar cessão sem boleto"
+                :hint="notificarCessaoSemBoletoHint"
+                :on="form.notificarCessaoSemBoleto"
+                @toggle="form.notificarCessaoSemBoleto = !form.notificarCessaoSemBoleto"
+              />
+              <FormField
+                label="Dias para boletar"
+                placeholder="—"
+                type="number"
+                :span="12"
+                :disabled="form.boletagemImediata"
+                v-model="form.diasParaBoletar"
+              />
+            </div>
+          </div>
         </div>
 
         <!-- Step 6 — Carteira de registro -->
@@ -5818,6 +5904,10 @@ function handleCreate() {
                 label="Beneficiário Final (Cobrança)"
                 :value="beneficiarioFinalLabel || '—'"
               />
+              <SummaryItem label="Boletagem imediata" :value="form.boletagemImediata ? 'Sim' : 'Não'" />
+              <SummaryItem label="Boletagem automática" :value="form.boletagemAutomatica ? 'Sim' : 'Não'" />
+              <SummaryItem label="Notificar cessão sem boleto" :value="form.notificarCessaoSemBoleto ? 'Sim' : 'Não'" />
+              <SummaryItem label="Dias para boletar" :value="form.diasParaBoletar || '—'" />
             </div>
           </SectionGroup>
 
@@ -6530,7 +6620,10 @@ defineProps<{ label: string; value?: string | null }>();
 
 ```vue
 <script setup lang="ts">
-defineProps<{ label: string; on: boolean; hint?: string }>();
+withDefaults(
+  defineProps<{ label: string; on: boolean; hint?: string; disabled?: boolean }>(),
+  { disabled: false },
+);
 const emit = defineEmits<{ toggle: [] }>();
 </script>
 
@@ -6542,20 +6635,21 @@ const emit = defineEmits<{ toggle: [] }>();
       borderRadius: 'var(--radius-lg)',
       borderWidth: '1px',
       borderStyle: 'solid',
-      borderColor: on ? 'var(--success-base)' : 'var(--border-default)',
-      background: on ? 'var(--success-light)' : 'var(--surface-card)',
+      borderColor: on && !disabled ? 'var(--success-base)' : 'var(--border-default)',
+      background: on && !disabled ? 'var(--success-light)' : 'var(--surface-card)',
       transition: 'all var(--duration-base)',
-      cursor: 'pointer',
+      cursor: disabled ? 'not-allowed' : 'pointer',
       gap: '12px',
+      opacity: disabled ? 0.55 : 1,
     }"
-    @click="emit('toggle')"
+    @click="!disabled && emit('toggle')"
   >
     <div style="min-width: 0">
       <div
         :style="{
           fontSize: 'var(--text-sm)',
-          color: on ? 'var(--success-dark)' : 'var(--text-default)',
-          fontWeight: on ? 'var(--weight-semibold)' : 'var(--weight-regular)',
+          color: on && !disabled ? 'var(--success-dark)' : 'var(--text-default)',
+          fontWeight: on && !disabled ? 'var(--weight-semibold)' : 'var(--weight-regular)',
           userSelect: 'none',
           lineHeight: '1.4',
         }"
@@ -6566,13 +6660,16 @@ const emit = defineEmits<{ toggle: [] }>();
     </div>
     <div
       style="width: 44px; height: 24px; border-radius: 9999px; position: relative; flex-shrink: 0"
-      :style="{ background: on ? 'var(--success-base)' : 'var(--border-default)', transition: 'background var(--duration-base)' }"
+      :style="{
+        background: on && !disabled ? 'var(--success-base)' : 'var(--border-default)',
+        transition: 'background var(--duration-base)',
+      }"
     >
       <span
         :style="{
           position: 'absolute',
           top: '3px',
-          left: on ? '23px' : '3px',
+          left: on && !disabled ? '23px' : '3px',
           width: '18px',
           height: '18px',
           borderRadius: '9999px',

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
-import { X, Trash2, User, Mail, MapPin } from 'lucide-vue-next';
+import { X, Trash2, User, Mail, MapPin, Package } from 'lucide-vue-next';
 import { UF_OPTIONS, PAISES_DDI } from '../../../data/operacaoData';
 import {
   BentoBox,
@@ -15,11 +15,14 @@ import {
   NACIONALIDADE_OPTS,
   FIDUCIARIA_PADRAO_OPTS,
   CESSAO_VINCULADA_OPTS,
+  PRODUTO_TIPO_OPTS,
   MOCK_CLIENTES_MINUTA,
   cessaoVinculadaPorLabel,
   emptyConstituicaoGarantia,
   emptyTestemunhaConstituicao,
   emptyPessoaMinuta,
+  emptyProdutoConstituicao,
+  isProdutoConstituicaoCessao,
   type ConstitucaoGarantiaConfig,
   type GarantiaMinuta,
 } from '../../../data/minutaData';
@@ -63,6 +66,17 @@ const cessaoResumo = computed(() =>
   form.cessaoVinculada ? cessaoVinculadaPorLabel(form.cessaoVinculada) : undefined,
 );
 
+const showProdutoConstituicao = computed(
+  () =>
+    form.constituirGarantia &&
+    !!props.garantia &&
+    isProdutoConstituicaoCessao(
+      props.garantia.tipo,
+      props.garantia.tipoTitulo,
+      props.garantia.tipoContrato,
+    ),
+);
+
 const ddiModel = computed({
   get: () => {
     const ddi = form.fiduciaria.ddi || '+55';
@@ -94,6 +108,7 @@ watch(
       },
       testemunhas: Array.isArray(raw.testemunhas) ? raw.testemunhas : [],
       obrigacao: { ...base.obrigacao, ...(raw.obrigacao ?? {}) },
+      produto: { ...emptyProdutoConstituicao(), ...(raw.produto ?? {}) },
     });
   },
   { immediate: true },
@@ -376,6 +391,50 @@ function salvar() {
                 />
               </StepGrid>
             </BentoBox>
+
+            <template v-if="showProdutoConstituicao">
+              <BentoBox title="Informações do produto" :icon="Package">
+                <StepGrid>
+                  <FormField
+                    label="Número de identificação"
+                    placeholder="—"
+                    required
+                    :span="12"
+                    v-model="form.produto.numeroIdentificacao"
+                  />
+                  <SelectField
+                    label="Produto"
+                    :options="PRODUTO_TIPO_OPTS"
+                    placeholder="Selecione"
+                    required
+                    :span="3"
+                    v-model="form.produto.produto"
+                  />
+                  <FormField label="Safra" placeholder="—" required :span="3" v-model="form.produto.safra" />
+                  <FormField label="Quantidade" placeholder="—" required :span="3" v-model="form.produto.quantidade" />
+                  <FormField
+                    label="Prazo de entrega"
+                    placeholder="dd/mm/aaaa"
+                    required
+                    :span="3"
+                    v-model="form.produto.prazoEntrega"
+                  />
+                </StepGrid>
+              </BentoBox>
+
+              <BentoBox title="Endereço" :icon="MapPin">
+                <StepGrid>
+                  <FormField label="CEP" placeholder="—" :span="4" v-model="form.produto.cep" />
+                  <FormField label="Localidade" placeholder="—" :span="8" v-model="form.produto.localidade" />
+                  <FormField label="Número" placeholder="—" :span="4" v-model="form.produto.numero" />
+                  <FormField label="Bairro" placeholder="—" :span="8" v-model="form.produto.bairro" />
+                  <FormField label="Informações adicionais" placeholder="—" :span="12" v-model="form.produto.infoAdicionais" />
+                  <FormField label="Cidade" placeholder="—" :span="12" v-model="form.produto.cidade" />
+                  <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="6" v-model="form.produto.estado" />
+                  <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="6" v-model="form.produto.pais" />
+                </StepGrid>
+              </BentoBox>
+            </template>
           </template>
 
           <!-- Testemunhas: quando instrumento particular ou constituir -->

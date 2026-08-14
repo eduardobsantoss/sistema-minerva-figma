@@ -196,6 +196,7 @@ Se o componente usa `var(--token)`, declare o token com o valor resolvido abaixo
 | `--sidebar-width-expanded` | `280px` | `280px` |
 | `--topbar-height` | `80px` | `80px` |
 | `--topbar-padding-x` | `32px` | `32px` |
+| `--z-toast` | `500` | `500` |
 
 ## Tipografia — mapa de uso (produto)
 
@@ -340,6 +341,7 @@ Se o componente usa `var(--token)`, declare o token com o valor resolvido abaixo
   --duration-slow: 300ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --z-toast: 500;
   --sidebar-width-expanded: 280px;
   --main-padding: 40px;
   --topbar-padding-x: 32px;
