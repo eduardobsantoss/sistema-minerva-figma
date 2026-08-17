@@ -1032,6 +1032,8 @@ export interface GarantiaMinuta {
   estoques: EstoqueItem[];
   /** Anexo Relação do Estoque Detalhado (AF. Estoque / Penhor de Estoque). */
   relacaoEstoqueDetalhadoEnviado: boolean;
+  /** Validade do anexo de estoque (dd/mm/aaaa). */
+  relacaoEstoqueDetalhadoValidade: string;
   // Relatório
   dataRelatorio: string;
   periodicidadeRelatorio: string;
@@ -1067,8 +1069,38 @@ export interface GarantiaMinuta {
   bensMoveis: BemMovelItem[];
   /** Uso da garantia na tabela (0 / 50 / 100) */
   percentualUsado: 0 | 50 | 100;
+  /** Anexos da garantia (edição · aba Documentos). */
+  documentos: GarantiaMinutaDocumento[];
   /** Configuração do modal “Configurar constituição da garantia” */
   constituicao: ConstitucaoGarantiaConfig;
+}
+
+export interface GarantiaMinutaDocumento {
+  id: string;
+  nome: string;
+  tipo: string;
+  validade: string;
+}
+
+export const TIPO_ARQUIVO_GARANTIA_MINUTA_OPTS = [
+  'Certidão da Matrícula',
+  'Contrato de Arrendamento',
+  'Contrato de Comodato',
+  'Contrato de Parceria',
+  'Contrato de Locação',
+  'Relação do Estoque Detalhado',
+  'Contrato de Prestação de Serviços',
+  'Outros',
+];
+
+export function isDocumentoGarantiaVigente(validade: string, now = new Date()): boolean {
+  const raw = validade.trim();
+  if (!raw) return true;
+  const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return true;
+  const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  d.setHours(23, 59, 59, 999);
+  return d.getTime() >= now.getTime();
 }
 
 export interface TestemunhaConstituicao {
@@ -1278,6 +1310,7 @@ export function emptyGarantiaMinuta(): GarantiaMinuta {
     nomeContratado: '',
     estoques: [],
     relacaoEstoqueDetalhadoEnviado: false,
+    relacaoEstoqueDetalhadoValidade: '',
     dataRelatorio: '',
     periodicidadeRelatorio: '',
     dataPrimeiraAtualizacao: '',
@@ -1308,6 +1341,7 @@ export function emptyGarantiaMinuta(): GarantiaMinuta {
     titularEscrow: '',
     bensMoveis: [],
     percentualUsado: 0,
+    documentos: [],
     constituicao: emptyConstituicaoGarantia(),
   };
 }

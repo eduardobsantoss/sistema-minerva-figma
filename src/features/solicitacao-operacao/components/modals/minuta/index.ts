@@ -6,6 +6,7 @@ export { default as AvalistaStep } from './AvalistaStep.vue';
 export { default as EmissaoStep } from './EmissaoStep.vue';
 export { default as ProdutoStep } from './ProdutoStep.vue';
 export { default as GarantiaMinutaStep } from './GarantiaMinutaStep.vue';
+export { default as GarantiaDocumentosFields } from './GarantiaDocumentosFields.vue';
 export { default as TituloMinutaStep } from './TituloMinutaStep.vue';
 export { default as EscrituradorStep } from './EscrituradorStep.vue';
 export { default as InformacaoPagamentoStep } from './InformacaoPagamentoStep.vue';

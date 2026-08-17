@@ -1,28 +1,44 @@
 <script setup lang="ts">
-import { CheckCircle2, Download, FileText, Trash2, Upload } from 'lucide-vue-next';
+import { CheckCircle2, Download, FileText, Paperclip, Trash2, Upload } from 'lucide-vue-next';
 import IconAction from './IconAction.vue';
 
-defineProps<{
-  title: string;
-  docs: { id: string; nome: string; obrigatorio: boolean }[];
-  docFiles: Record<string, boolean>;
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    docs: { id: string; nome: string; obrigatorio: boolean; exigeValidade?: boolean }[];
+    docFiles: Record<string, boolean>;
+    docValidades?: Record<string, string>;
+  }>(),
+  { docValidades: () => ({}) },
+);
+const emit = defineEmits<{
+  toggleDoc: [id: string];
+  updateValidade: [id: string, value: string];
 }>();
-const emit = defineEmits<{ toggleDoc: [id: string] }>();
+
+function validadeOf(id: string) {
+  return props.docValidades?.[id] ?? '';
+}
 </script>
 
 <template>
   <div>
-    <div
-      style="
-        font-size: 10px;
-        font-weight: var(--weight-bold);
-        letter-spacing: 0.18em;
-        color: var(--accent);
-        text-transform: uppercase;
-        margin-bottom: 12px;
-      "
-    >
-      {{ title }}
+    <div class="flex items-center" style="gap: 8px; margin-bottom: 4px">
+      <Paperclip :size="14" style="color: var(--accent)" />
+      <div
+        style="
+          font-size: 10px;
+          font-weight: var(--weight-bold);
+          letter-spacing: 0.18em;
+          color: var(--accent);
+          text-transform: uppercase;
+        "
+      >
+        {{ title }}
+      </div>
+    </div>
+    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px">
+      Informe a data de até quando o anexo é válido
     </div>
     <div class="flex flex-col" style="gap: 10px">
       <div
@@ -37,7 +53,10 @@ const emit = defineEmits<{ toggleDoc: [id: string] }>();
           borderStyle: 'solid',
           borderColor: 'var(--border-default)',
           borderLeft:
-            doc.obrigatorio && !docFiles[doc.id] ? '3px solid var(--warning-base)' : '1px solid var(--border-default)',
+            (doc.obrigatorio && !docFiles[doc.id]) ||
+            (doc.exigeValidade && docFiles[doc.id] && !validadeOf(doc.id).trim())
+              ? '3px solid var(--warning-base)'
+              : '1px solid var(--border-default)',
           borderRadius: 'var(--radius-lg)',
         }"
       >
@@ -83,11 +102,30 @@ const emit = defineEmits<{ toggleDoc: [id: string] }>();
               marginTop: '2px',
             }"
           >
-            {{ docFiles[doc.id] ? 'Arquivo anexado · documento.pdf' : 'Nenhum arquivo anexado' }}
+            {{ docFiles[doc.id] ? `Arquivo anexado · ${doc.nome}.pdf` : 'Nenhum arquivo anexado' }}
           </div>
         </div>
 
-        <div class="flex items-center" style="gap: 6px">
+        <div class="flex items-center" style="gap: 10px; flex-shrink: 0">
+          <div v-if="doc.exigeValidade && docFiles[doc.id]" style="width: 148px">
+            <input
+              :value="validadeOf(doc.id)"
+              type="date"
+              :style="{
+                width: '100%',
+                height: '38px',
+                padding: '0 12px',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-lg)',
+                outline: 'none',
+                fontSize: 'var(--text-sm)',
+                color: 'var(--text-strong)',
+                fontVariantNumeric: 'tabular-nums',
+              }"
+              @input="emit('updateValidade', doc.id, ($event.target as HTMLInputElement).value)"
+            />
+          </div>
           <template v-if="docFiles[doc.id]">
             <IconAction :icon="Download" label="Baixar" />
             <IconAction :icon="Trash2" label="Excluir" danger @click="emit('toggleDoc', doc.id)" />

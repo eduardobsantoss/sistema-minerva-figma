@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
-import { X, Trash2, Shield, Home, Scale, User, Settings2 } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { X, Trash2, Shield, Home, Scale, User, MoreVertical, Pencil, Settings2 } from 'lucide-vue-next';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import { UF_OPTIONS, PAISES_DDI } from '../../../data/operacaoData';
 import {
   BentoBox,
@@ -53,6 +54,7 @@ import {
 import PessoaNaturezaFields from './PessoaNaturezaFields.vue';
 import EnderecosLocacaoFields from './EnderecosLocacaoFields.vue';
 import ConfigurarConstituicaoGarantiaModal from './ConfigurarConstituicaoGarantiaModal.vue';
+import GarantiaDocumentosFields from './GarantiaDocumentosFields.vue';
 import DocGroup from '../../novo-pedido/DocGroup.vue';
 
 const garantias = defineModel<GarantiaMinuta[]>('garantias', { default: () => [] });
@@ -61,13 +63,38 @@ const RELACAO_ESTOQUE_DOC = {
   id: 'relacao-estoque',
   nome: 'Relação do Estoque Detalhado',
   obrigatorio: true,
+  exigeValidade: true,
 } as const;
 
 const possuiGarantias = ref(true);
 const showNova = ref(false);
 const editingIndex = ref<number | null>(null);
+const editTab = ref<'dados' | 'documentos'>('dados');
+const garantiaMenuOpen = ref<number | null>(null);
 const showConstituicao = ref(false);
 const constituicaoIndex = ref<number | null>(null);
+
+function closeGarantiaMenu() {
+  garantiaMenuOpen.value = null;
+}
+
+function toggleGarantiaMenu(i: number) {
+  garantiaMenuOpen.value = garantiaMenuOpen.value === i ? null : i;
+}
+
+function onClickOutsideGarantiaMenu(e: MouseEvent) {
+  const t = e.target as HTMLElement | null;
+  if (t?.closest('[data-garantia-action-menu]')) return;
+  closeGarantiaMenu();
+}
+
+onMounted(() => document.addEventListener('mousedown', onClickOutsideGarantiaMenu));
+onUnmounted(() => document.removeEventListener('mousedown', onClickOutsideGarantiaMenu));
+
+const EDIT_GARANTIA_TABS = [
+  { key: 'dados', label: 'Dados' },
+  { key: 'documentos', label: 'Documentos' },
+];
 const form = reactive<GarantiaMinuta>(emptyGarantiaMinuta());
 const estoqueDraft = reactive({ propriedade: '', proprietario: '' });
 const enderecoDraft = reactive<EnderecoLocacaoItem>(emptyEnderecoLocacaoItem());
@@ -155,6 +182,8 @@ function hydrateGarantia(g: GarantiaMinuta) {
     : [];
   form.percentualUsado = (g.percentualUsado === 50 || g.percentualUsado === 100 ? g.percentualUsado : 0) as 0 | 50 | 100;
   form.relacaoEstoqueDetalhadoEnviado = !!g.relacaoEstoqueDetalhadoEnviado;
+  form.relacaoEstoqueDetalhadoValidade = g.relacaoEstoqueDetalhadoValidade || '';
+  form.documentos = Array.isArray(g.documentos) ? JSON.parse(JSON.stringify(g.documentos)) : [];
   form.constituicao = g.constituicao
     ? { ...emptyConstituicaoGarantia(), ...JSON.parse(JSON.stringify(g.constituicao)) }
     : emptyConstituicaoGarantia();
@@ -238,6 +267,8 @@ watch(
 
 function openNova() {
   editingIndex.value = null;
+  editTab.value = 'dados';
+  closeGarantiaMenu();
   hydrateGarantia(emptyGarantiaMinuta());
   estoqueDraft.propriedade = '';
   estoqueDraft.proprietario = '';
@@ -249,6 +280,8 @@ function openNova() {
 
 function openEdit(i: number) {
   editingIndex.value = i;
+  editTab.value = 'dados';
+  closeGarantiaMenu();
   hydrateGarantia(garantias.value[i]);
   estoqueDraft.propriedade = '';
   estoqueDraft.proprietario = '';
@@ -279,9 +312,16 @@ function removeEstoque(i: number) {
 
 const canCadastrar = computed(() => {
   if (!form.tipo || !form.valor) return false;
-  if (isGarantiaEstoque(form.tipo) && !form.relacaoEstoqueDetalhadoEnviado) return false;
+  if (isGarantiaEstoque(form.tipo)) {
+    if (!form.relacaoEstoqueDetalhadoEnviado || !form.relacaoEstoqueDetalhadoValidade.trim()) return false;
+  }
   return true;
 });
+
+function toggleRelacaoEstoque() {
+  form.relacaoEstoqueDetalhadoEnviado = !form.relacaoEstoqueDetalhadoEnviado;
+  if (!form.relacaoEstoqueDetalhadoEnviado) form.relacaoEstoqueDetalhadoValidade = '';
+}
 
 function cadastrar() {
   if (!canCadastrar.value) return;
@@ -298,6 +338,7 @@ function cadastrar() {
 }
 
 function openConstituicao(i: number) {
+  closeGarantiaMenu();
   constituicaoIndex.value = i;
   showConstituicao.value = true;
 }
@@ -354,7 +395,7 @@ function globalIndex(pageIdx: number) {
         title="Nenhuma garantia adicionada"
         hint="Clique em Adicionar garantia para cadastrar AF. Estoque, Lavoura, Imóvel e demais tipos disponíveis."
       />
-      <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+      <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: visible">
         <div
           class="grid"
           style="
@@ -421,23 +462,84 @@ function globalIndex(pageIdx: number) {
           <div>{{ g.instrumentoParticular ? 'Sim' : 'Não' }}</div>
           <div>{{ g.constituirGarantia ? 'Sim' : 'Não' }}</div>
           <div>{{ g.numeroTestemunhas || '—' }}</div>
-          <button
-            aria-label="Configurar constituição"
-            title="Configurar constituição da garantia"
-            class="flex items-center justify-center"
-            style="
-              width: 32px;
-              height: 32px;
-              border: 1px solid var(--border-default);
-              border-radius: var(--radius-lg);
-              background: var(--surface-card);
-              cursor: pointer;
-              color: var(--text-muted);
-            "
-            @click.stop="openConstituicao(globalIndex(pageIdx))"
-          >
-            <Settings2 :size="15" />
-          </button>
+          <div class="flex justify-end" style="position: relative" data-garantia-action-menu @click.stop>
+            <button
+              type="button"
+              aria-label="Ações"
+              class="flex items-center justify-center"
+              style="
+                width: 32px;
+                height: 32px;
+                border: 1px solid var(--border-default);
+                border-radius: var(--radius-lg);
+                background: var(--surface-card);
+                cursor: pointer;
+                color: var(--text-muted);
+              "
+              @click="toggleGarantiaMenu(globalIndex(pageIdx))"
+            >
+              <MoreVertical :size="15" />
+            </button>
+            <div
+              v-if="garantiaMenuOpen === globalIndex(pageIdx)"
+              class="flex flex-col"
+              style="
+                position: absolute;
+                top: 36px;
+                right: 0;
+                z-index: 50;
+                min-width: 248px;
+                background: var(--surface-card);
+                border: 1px solid var(--border-default);
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-md);
+                padding: 6px;
+              "
+            >
+              <button
+                type="button"
+                class="flex items-center garantia-action-item"
+                style="
+                  gap: 8px;
+                  padding: 8px 12px;
+                  background: none;
+                  border: none;
+                  cursor: pointer;
+                  border-radius: var(--radius-md);
+                  text-align: left;
+                  font-size: var(--text-sm);
+                  font-weight: var(--weight-semibold);
+                  color: var(--text-default);
+                  width: 100%;
+                "
+                @click="openEdit(globalIndex(pageIdx))"
+              >
+                <Pencil :size="14" style="color: var(--text-muted); flex-shrink: 0" />
+                Editar
+              </button>
+              <button
+                type="button"
+                class="flex items-center garantia-action-item"
+                style="
+                  gap: 8px;
+                  padding: 8px 12px;
+                  background: none;
+                  border: none;
+                  cursor: pointer;
+                  border-radius: var(--radius-md);
+                  text-align: left;
+                  font-size: var(--text-sm);
+                  font-weight: var(--weight-semibold);
+                  color: var(--text-default);
+                  width: 100%;
+                "
+                @click="openConstituicao(globalIndex(pageIdx))"
+              >
+                <Settings2 :size="14" style="color: var(--text-muted); flex-shrink: 0" />
+                Configurar constituição da garantia
+              </button>
+            </div>
+          </div>
         </div>
         <TablePagination
           :total="total"
@@ -506,7 +608,21 @@ function globalIndex(pageIdx: number) {
         </div>
 
         <div style="flex: 1; overflow-y: auto; padding: 32px">
-          <div class="flex flex-col" style="gap: 20px">
+          <div v-if="editingIndex != null" style="margin-bottom: 20px">
+            <SegmentedToggle
+              :model-value="editTab"
+              :options="EDIT_GARANTIA_TABS"
+              variant="brand"
+              @update:model-value="editTab = $event as 'dados' | 'documentos'"
+            />
+          </div>
+
+          <GarantiaDocumentosFields
+            v-if="editingIndex != null && editTab === 'documentos'"
+            v-model:documentos="form.documentos"
+          />
+
+          <div v-show="editingIndex == null || editTab === 'dados'" class="flex flex-col" style="gap: 20px">
             <BentoBox title="Dados da garantia" :icon="Scale">
               <div class="flex flex-col" style="gap: 14px">
                 <StepGrid>
@@ -679,7 +795,7 @@ function globalIndex(pageIdx: number) {
                 <AddButton @click="addEstoque">Adicionar dados do estoque</AddButton>
               </div>
 
-              <BentoBox title="Estoques">
+              <BentoBox title="Estoques" :icon="Home">
                 <div
                   v-if="form.estoques.length === 0"
                   style="padding: 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
@@ -728,7 +844,7 @@ function globalIndex(pageIdx: number) {
                 </div>
               </BentoBox>
 
-              <BentoBox title="Informações do relatório">
+              <BentoBox title="Informações do relatório" :icon="Scale">
                 <StepGrid>
                   <FormField label="Data do relatório" placeholder="dd/mm/aaaa" required :span="4" v-model="form.dataRelatorio" />
                   <SelectField
@@ -752,7 +868,9 @@ function globalIndex(pageIdx: number) {
                 title="Anexos do estoque"
                 :docs="[RELACAO_ESTOQUE_DOC]"
                 :doc-files="{ [RELACAO_ESTOQUE_DOC.id]: form.relacaoEstoqueDetalhadoEnviado }"
-                @toggle-doc="form.relacaoEstoqueDetalhadoEnviado = !form.relacaoEstoqueDetalhadoEnviado"
+                :doc-validades="{ [RELACAO_ESTOQUE_DOC.id]: form.relacaoEstoqueDetalhadoValidade }"
+                @toggle-doc="toggleRelacaoEstoque"
+                @update-validade="(_, value) => (form.relacaoEstoqueDetalhadoValidade = value)"
               />
             </template>
 
@@ -1504,3 +1622,9 @@ function globalIndex(pageIdx: number) {
     />
   </div>
 </template>
+
+<style scoped>
+.garantia-action-item:hover {
+  background: var(--surface-sunken);
+}
+</style>
