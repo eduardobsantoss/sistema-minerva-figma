@@ -12,6 +12,8 @@ import {
   Link2,
   BookOpen,
   ScrollText,
+  UserCheck,
+  ReceiptText,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import { isTipoNc } from '../../data/minutaData';
@@ -24,6 +26,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   reject: [];
   vincularVeiculo: [];
+  definirAtendente: [];
   transferirSolicitacao: [];
   atualizarCessao: [];
   gerarTermoCessao: [];
@@ -39,6 +42,8 @@ const rootRef = ref<HTMLDivElement | null>(null);
 
 type ActionKey =
   | 'vincularVeiculo'
+  | 'extratoDesembolso'
+  | 'definirAtendente'
   | 'transferirSolicitacao'
   | 'atualizarCessao'
   | 'gerarTermoCessao'
@@ -65,6 +70,8 @@ const isCcb = computed(() => {
 const secondary = computed<ActionItem[]>(() =>
   [
     { label: 'Vincular a um veículo de operação', icon: Link2, action: 'vincularVeiculo' as const },
+    { label: 'Extrato para Desembolso', icon: ReceiptText, action: 'extratoDesembolso' as const },
+    { label: 'Definir atendente atual', icon: UserCheck, action: 'definirAtendente' as const },
     { label: 'Transferir solicitação', icon: ArrowRightLeft, action: 'transferirSolicitacao' as const },
     { label: 'Atualizar cessão', icon: RefreshCw, action: 'atualizarCessao' as const },
     { label: 'Gerar Termo de Cessão', icon: FileText, action: 'gerarTermoCessao' as const },
@@ -98,6 +105,11 @@ function handleItem(a: ActionItem) {
   switch (a.action) {
     case 'vincularVeiculo':
       emit('vincularVeiculo');
+      break;
+    case 'extratoDesembolso':
+      break;
+    case 'definirAtendente':
+      emit('definirAtendente');
       break;
     case 'transferirSolicitacao':
       emit('transferirSolicitacao');

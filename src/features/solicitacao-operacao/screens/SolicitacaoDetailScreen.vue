@@ -31,6 +31,7 @@ import AtualizarCessaoModal from '../components/modals/AtualizarCessaoModal.vue'
 import GerarTermoCessaoModal from '../components/modals/GerarTermoCessaoModal.vue';
 import GerarCnabModal from '../components/modals/GerarCnabModal.vue';
 import VincularVeiculoOperacaoModal from '../components/modals/VincularVeiculoOperacaoModal.vue';
+import DefinirAtendenteModal from '../components/modals/DefinirAtendenteModal.vue';
 import TransferirSolicitacaoModal from '../components/modals/TransferirSolicitacaoModal.vue';
 import TransferirContaBancariaModal from '../components/modals/TransferirContaBancariaModal.vue';
 import MesclarAtivosPedidosModal from '../components/modals/MesclarAtivosPedidosModal.vue';
@@ -80,6 +81,7 @@ const showAtualizarCessao = ref(false);
 const showGerarTermo = ref(false);
 const showGerarCnab = ref(false);
 const showVincularVeiculo = ref(false);
+const showDefinirAtendente = ref(false);
 const showTransferirSolicitacao = ref(false);
 const showTransferirConta = ref(false);
 const showMesclarAtivos = ref(false);
@@ -210,6 +212,11 @@ function pushHistorico(acao: string) {
 function onVincularVeiculo(veiculo: string) {
   props.solicitacao.veiculo = veiculo;
   pushHistorico(`vinculou a solicitação de operação ao ${veiculo}`);
+}
+
+function onDefinirAtendente(atendente: string) {
+  props.solicitacao.atendente = atendente;
+  pushHistorico(`definiu ${atendente} como atendente atual da solicitação`);
 }
 
 function onTransferirSolicitacao(veiculo: string) {
@@ -377,6 +384,7 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
           :tipo-contrato="solicitacao.tipoContrato"
           @reject="confirmReject = true"
           @vincular-veiculo="showVincularVeiculo = true"
+          @definir-atendente="showDefinirAtendente = true"
           @transferir-solicitacao="showTransferirSolicitacao = true"
           @atualizar-cessao="showAtualizarCessao = true"
           @gerar-termo-cessao="showGerarTermo = true"
@@ -494,6 +502,12 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
       v-if="showVincularVeiculo"
       @close="showVincularVeiculo = false"
       @confirm="onVincularVeiculo"
+    />
+
+    <DefinirAtendenteModal
+      v-if="showDefinirAtendente"
+      @close="showDefinirAtendente = false"
+      @confirm="onDefinirAtendente"
     />
 
     <TransferirSolicitacaoModal
