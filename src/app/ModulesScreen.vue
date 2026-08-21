@@ -34,6 +34,7 @@ import {
   RiscoDashboardScreen,
 } from '@/features/risco';
 import { SerasaScreen } from '@/features/serasa';
+import { MonitoramentoScreen } from '@/features/monitoramento';
 
 type View =
   | 'dashboard'
@@ -63,6 +64,7 @@ type View =
   | 'risco-agrupamentos'
   | 'risco-rel'
   | 'risco-serasa'
+  | 'monitoramento'
   | 'passivo'
   | 'colab'
   | 'rel'
@@ -96,6 +98,7 @@ const titleMap: Record<View, string> = {
   'risco-agrupamentos': 'Agrupamentos de Limite',
   'risco-rel': 'Relatórios de Risco',
   'risco-serasa': 'Consultas',
+  monitoramento: 'Monitoramento Pós Desembolso',
   passivo: 'Passivo',
   colab: 'Colaboradores',
   rel: 'Relatórios',
@@ -110,6 +113,7 @@ const VALID_VIEWS = new Set<View>([
   'semiestruturadas',
   'cobranca', 'cobranca-titulos', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-notif-cessao', 'cobranca-resultado-notif', 'cobranca-rel',
   'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-agrupamentos', 'risco-serasa', 'risco-rel',
+  'monitoramento',
   'passivo', 'colab', 'rel', 'conf',
 ]);
 
@@ -242,6 +246,7 @@ function handleModuleClick(title: string) {
           <RelatoriosScreen v-else-if="view === 'risco-rel'" />
           <RiscoDashboardScreen v-else-if="view === 'risco-dashboard'" />
           <SerasaScreen v-else-if="view === 'risco-serasa'" />
+          <MonitoramentoScreen v-else-if="view === 'monitoramento'" />
           <PassivoScreen v-else-if="view === 'passivo'" />
           <ConfiguracoesScreen v-else-if="view === 'conf'" />
           <Placeholder v-else :name="titleMap[view]" />

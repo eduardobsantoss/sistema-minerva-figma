@@ -27,6 +27,7 @@ import {
   ShieldCheck,
   Package,
   Search,
+  Radar,
 } from 'lucide-vue-next';
 import gciLogoMark from '@/assets/gci-logo-mark.png';
 import gciLogoFull from '@/assets/gci-logo-full.png';
@@ -115,6 +116,7 @@ const items: NavItem[] = [
       { key: 'risco-rel', label: 'Relatórios', icon: BarChart3 },
     ],
   },
+  { key: 'monitoramento', label: 'Monitoramento', icon: Radar },
   { key: 'passivo', label: 'Passivo', icon: Database },
   { key: 'colab', label: 'Colaboradores', icon: Users },
   { key: 'rel', label: 'Relatórios', icon: FileText },
