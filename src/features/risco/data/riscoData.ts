@@ -322,9 +322,80 @@ export interface HistoricoEvento {
   descricao: string;
 }
 
+export interface ParametrizacaoAdicional {
+  id: string;
+  parametro: string;
+  descricao: string;
+  valida: boolean;
+}
+
+export const PARAMETRIZACOES_ADICIONAIS_SEED: ParametrizacaoAdicional[] = [
+  {
+    id: 'pa-1',
+    parametro: 'Risco x Limite do Cedente',
+    descricao: 'Verifica se o Limite x Risco atual do Cedente está dentro dos parâmetros definidos para o grupo da operação desejada.',
+    valida: true,
+  },
+  {
+    id: 'pa-2',
+    parametro: 'Parecer de Crédito Assinado',
+    descricao: 'Validação se o Parecer de Crédito está disponível neste pedido de operação, observando a Política de Crédito.',
+    valida: true,
+  },
+  {
+    id: 'pa-3',
+    parametro: 'Vigência do Parecer de Crédito',
+    descricao: 'Validação se a vigência do Parecer de Crédito atende ao prazo dessa operação.',
+    valida: true,
+  },
+  {
+    id: 'pa-4',
+    parametro: 'Validação Inadimplência Cedente',
+    descricao: 'Validação se o Cedente está inadimplente ou com ativos vencidos em alguma operação feita no Grupo GCI.',
+    valida: false,
+  },
+  {
+    id: 'pa-5',
+    parametro: 'Validação Inadimplência Sacado',
+    descricao: 'Validação se o(s) Sacado(s) está inadimplente ou com ativos vencidos em alguma operação feita no Grupo GCI.',
+    valida: false,
+  },
+  {
+    id: 'pa-6',
+    parametro: 'Confirmação de Performance',
+    descricao: 'Validação se os ativos cedidos estão performados ou são ativos de entrega futura.',
+    valida: true,
+  },
+  {
+    id: 'pa-7',
+    parametro: '% de Confirmação Sacado',
+    descricao: 'Verifica se os ativos cedidos na operação estão com os percentuais de confirmação dentro dos parametros definidos pela operação e crédito.',
+    valida: true,
+  },
+  {
+    id: 'pa-8',
+    parametro: 'Limite de Operação - Partes Relacionadas Sacado',
+    descricao: 'Verifica se o sacado ultrapassa o limite permitido quando este for partes relacionadas do grupo empresarial nesta operação',
+    valida: true,
+  },
+  {
+    id: 'pa-9',
+    parametro: 'Bloqueio de Parte Relacionada Sacado',
+    descricao: 'Verifica e alerta se existe algum sacado na operação cadastrado como parte relacionada do grupo empresarial',
+    valida: true,
+  },
+  {
+    id: 'pa-10',
+    parametro: 'Cadastro dos Assinantes e Partes Relacionadas',
+    descricao: 'Verifica se existem cadastro de partes relacionadas associadas ao grupo empresarial informado (Sócios, Representantes Legais e Procuradores)',
+    valida: true,
+  },
+];
+
 export interface DetalheGrupo {
   partesRelacionadas: ParteRelacionada[];
   parametrizacoes: Parametrizacoes;
+  parametrizacoesAdicionais: ParametrizacaoAdicional[];
   cedentes: Cedente[];
   historico: HistoricoEvento[];
 }
@@ -472,6 +543,7 @@ export function detalheGrupo(grupo: GrupoEmpresarial): DetalheGrupo {
         ],
       },
     },
+    parametrizacoesAdicionais: PARAMETRIZACOES_ADICIONAIS_SEED.map((p) => ({ ...p })),
     cedentes: [
       {
         id: 'ced-1', documento: '12.345.678/0001-90', nome: grupo.nome,

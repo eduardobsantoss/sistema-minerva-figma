@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, reactive, ref, type Component } from 'vue';
-import { ArrowLeft, MoreVertical, Settings2, Users, History, UserCog, BellRing, ShieldCheck, Info, Link2 } from 'lucide-vue-next';
+import { ArrowLeft, MoreVertical, Settings2, Users, History, UserCog, BellRing, ShieldCheck, Info, Link2, SlidersHorizontal } from 'lucide-vue-next';
 import {
   statusOperacaoColor, detalheGrupo,
   type GrupoEmpresarial,
@@ -14,6 +14,7 @@ import { CopyButton } from './detail-tabs/shared';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import DetalhesTab from './detail-tabs/DetalhesTab.vue';
 import ParametrizacoesTab from './detail-tabs/ParametrizacoesTab.vue';
+import ParametrizacoesAdicionaisTab from './detail-tabs/ParametrizacoesAdicionaisTab.vue';
 import CedentesTab from './detail-tabs/CedentesTab.vue';
 import HistoricoTab from './detail-tabs/HistoricoTab.vue';
 import TransferirGerenteModal from '../components/modals/TransferirGerenteModal.vue';
@@ -25,11 +26,12 @@ interface Props {
   grupo: GrupoEmpresarial;
 }
 
-type Tab = 'detalhes' | 'parametrizacoes' | 'cedentes' | 'historico';
+type Tab = 'detalhes' | 'parametrizacoes' | 'parametrizacoes-adicionais' | 'cedentes' | 'historico';
 
 const TABS: { key: Tab; label: string; icon: Component }[] = [
   { key: 'detalhes', label: 'Detalhes', icon: Info },
   { key: 'parametrizacoes', label: 'Parametrizações', icon: Settings2 },
+  { key: 'parametrizacoes-adicionais', label: 'Parametrizações Adicionais', icon: SlidersHorizontal },
   { key: 'cedentes', label: 'Cedentes', icon: Users },
   { key: 'historico', label: 'Histórico', icon: History },
 ];
@@ -150,6 +152,11 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
       :partes-relacionadas="det.partesRelacionadas"
       @change="(parametrizacoes) => { det.parametrizacoes = parametrizacoes; }"
       @update:partes-relacionadas="(pr) => { det.partesRelacionadas = pr; }"
+    />
+    <ParametrizacoesAdicionaisTab
+      v-if="tab === 'parametrizacoes-adicionais'"
+      :itens="det.parametrizacoesAdicionais"
+      @toggle="(id) => { det.parametrizacoesAdicionais = det.parametrizacoesAdicionais.map((p) => (p.id === id ? { ...p, valida: !p.valida } : p)); }"
     />
     <CedentesTab
       v-if="tab === 'cedentes'"
