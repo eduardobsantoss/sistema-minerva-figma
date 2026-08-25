@@ -8,11 +8,13 @@ import {
   Truck,
   Search,
   Trash2,
+  Users,
 } from 'lucide-vue-next';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import ToggleRow from '../modals/adicionar-contrato/ToggleRow.vue';
 import {
+  CEDENTES_VALIDACAO,
   SETOR_RESPONSAVEL_OPTS,
   TIPO_PEDIDO_OPTS,
   VEICULOS_VALIDACAO,
@@ -21,6 +23,7 @@ import {
   setorColor,
   setorLabel,
   tipoPedidoLabel,
+  type CedenteTipoTab,
   type FundTypeTab,
   type ValidationConfig,
   type ValidationItem,
@@ -34,22 +37,28 @@ const emit = defineEmits<{
 
 type TabKey = 'detalhes' | 'configuracoes' | 'veiculos';
 
-const TABS: { key: TabKey; label: string; icon: Component }[] = [
-  { key: 'detalhes', label: 'Detalhes', icon: FileText },
-  { key: 'configuracoes', label: 'Configurações', icon: Settings2 },
-  { key: 'veiculos', label: 'Veículos', icon: Truck },
-];
-
 function cloneItem(item: ValidationItem): ValidationItem {
   return {
     ...item,
-    configs: item.configs.map((c) => ({ ...c, vehicleIds: [...c.vehicleIds] })),
+    configs: item.configs.map((c) => ({
+      ...c,
+      vehicleIds: [...c.vehicleIds],
+      cedenteIds: [...(c.cedenteIds ?? [])],
+    })),
   };
 }
 
 const tab = ref<TabKey>('detalhes');
 const local = ref<ValidationItem>(cloneItem(props.item));
 const savedBanner = ref(false);
+
+const TABS = computed<{ key: TabKey; label: string; icon: Component }[]>(() => [
+  { key: 'detalhes', label: 'Detalhes', icon: FileText },
+  { key: 'configuracoes', label: 'Configurações', icon: Settings2 },
+  local.value.usedByMonoTransferor
+    ? { key: 'veiculos', label: 'Cedentes', icon: Users }
+    : { key: 'veiculos', label: 'Veículos', icon: Truck },
+]);
 let bannerTimer: ReturnType<typeof setTimeout> | null = null;
 
 watch(
@@ -82,7 +91,11 @@ const selectedConfig = computed(
   () => local.value.configs.find((c) => c.id === selectedConfigId.value) ?? null,
 );
 
+const isCedenteMode = computed(() => local.value.usedByMonoTransferor);
+const scopeNoun = computed(() => (isCedenteMode.value ? 'cedente' : 'veículo'));
+
 const fundTab = ref<FundTypeTab>('CRA');
+const cedenteTab = ref<CedenteTipoTab>('PJ');
 const vehicleSearch = ref('');
 const vehicleSearchDebounced = ref('');
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -103,17 +116,48 @@ const vehiclesInTab = computed(() => {
   });
 });
 
+const cedentesInTab = computed(() => {
+  const needle = vehicleSearchDebounced.value.trim().toLowerCase();
+  return CEDENTES_VALIDACAO.filter((c) => {
+    if (c.tipo !== cedenteTab.value) return false;
+    if (
+      needle &&
+      !c.nome.toLowerCase().includes(needle) &&
+      !c.documento.toLowerCase().includes(needle)
+    ) {
+      return false;
+    }
+    return true;
+  });
+});
+
+const itemsInTabCount = computed(() =>
+  isCedenteMode.value ? cedentesInTab.value.length : vehiclesInTab.value.length,
+);
+
 const linkedInTabCount = computed(() => {
   const cfg = selectedConfig.value;
   if (!cfg) return 0;
+  if (isCedenteMode.value) {
+    const linked = new Set(cfg.cedenteIds ?? []);
+    return cedentesInTab.value.filter((c) => linked.has(c.id)).length;
+  }
   const linked = new Set(cfg.vehicleIds);
   return vehiclesInTab.value.filter((v) => linked.has(v.id)).length;
 });
+
+const linkedCountForConfig = (cfg: ValidationConfig) =>
+  isCedenteMode.value ? (cfg.cedenteIds?.length ?? 0) : cfg.vehicleIds.length;
 
 const FUND_TABS: { key: FundTypeTab; label: string }[] = [
   { key: 'CRA', label: 'CRAs' },
   { key: 'CDCA', label: 'CDCAs' },
   { key: 'FIDC', label: 'FIDCs' },
+];
+
+const CEDENTE_TABS: { key: CedenteTipoTab; label: string }[] = [
+  { key: 'PJ', label: 'Pessoa Jurídica' },
+  { key: 'PF', label: 'Pessoa Física' },
 ];
 
 const labelStyle = {
@@ -159,6 +203,12 @@ function updateConfigVehicleIds(configId: string, vehicleIds: string[]) {
   );
 }
 
+function updateConfigCedenteIds(configId: string, cedenteIds: string[]) {
+  patchConfigs(
+    local.value.configs.map((c) => (c.id === configId ? { ...c, cedenteIds } : c)),
+  );
+}
+
 function insertConfig() {
   if (newRequestTypeId.value === '') return;
   const requestTypeId = Number(newRequestTypeId.value);
@@ -166,7 +216,7 @@ function insertConfig() {
 
   patchConfigs([
     ...local.value.configs,
-    { id: `cfg-${Date.now()}`, requestTypeId, vehicleIds: [] },
+    { id: `cfg-${Date.now()}`, requestTypeId, vehicleIds: [], cedenteIds: [] },
   ]);
   newRequestTypeId.value = '';
 }
@@ -180,6 +230,10 @@ function isVehicleLinked(vehicleId: string): boolean {
   return selectedConfig.value?.vehicleIds.includes(vehicleId) ?? false;
 }
 
+function isCedenteLinked(cedenteId: string): boolean {
+  return selectedConfig.value?.cedenteIds?.includes(cedenteId) ?? false;
+}
+
 function toggleVehicle(vehicleId: string) {
   const cfg = selectedConfig.value;
   if (!cfg) return;
@@ -190,9 +244,30 @@ function toggleVehicle(vehicleId: string) {
   updateConfigVehicleIds(cfg.id, ids);
 }
 
+function toggleCedente(cedenteId: string) {
+  const cfg = selectedConfig.value;
+  if (!cfg) return;
+  const ids = [...(cfg.cedenteIds ?? [])];
+  const idx = ids.indexOf(cedenteId);
+  if (idx >= 0) ids.splice(idx, 1);
+  else ids.push(cedenteId);
+  updateConfigCedenteIds(cfg.id, ids);
+}
+
+function selectScopeTab(key: string) {
+  if (isCedenteMode.value) cedenteTab.value = key as CedenteTipoTab;
+  else fundTab.value = key as FundTypeTab;
+}
+
 function linkAllInTab() {
   const cfg = selectedConfig.value;
   if (!cfg) return;
+  if (isCedenteMode.value) {
+    const set = new Set(cfg.cedenteIds ?? []);
+    cedentesInTab.value.forEach((c) => set.add(c.id));
+    updateConfigCedenteIds(cfg.id, [...set]);
+    return;
+  }
   const set = new Set(cfg.vehicleIds);
   vehiclesInTab.value.forEach((v) => set.add(v.id));
   updateConfigVehicleIds(cfg.id, [...set]);
@@ -280,40 +355,6 @@ function handleAtualizar() {
           {{ isEscopoConfigurado(local) ? escopoLabel(local) : 'Não configurado' }}
         </p>
       </div>
-
-      <button
-        type="button"
-        class="flex items-center"
-        style="
-          height: 44px;
-          padding: 0 22px;
-          background: var(--action-primary-bg);
-          color: var(--action-primary-text);
-          border: none;
-          border-radius: var(--radius-lg);
-          cursor: pointer;
-          font-weight: var(--weight-bold);
-          font-size: var(--text-sm);
-          flex-shrink: 0;
-        "
-        @click="handleAtualizar"
-      >
-        Atualizar
-      </button>
-    </div>
-
-    <div
-      v-if="savedBanner"
-      style="
-        padding: 12px 16px;
-        border-radius: var(--radius-lg);
-        background: color-mix(in srgb, #16a34a 12%, transparent);
-        border: 1px solid color-mix(in srgb, #16a34a 35%, transparent);
-        font-size: var(--text-sm);
-        color: var(--text-default);
-      "
-    >
-      Validação atualizada com sucesso.
     </div>
 
     <SegmentedToggle
@@ -384,7 +425,13 @@ function handleAtualizar() {
           </div>
         </div>
       </div>
-      <div style="margin-top: 16px">
+      <div class="flex flex-col" style="gap: 12px; margin-top: 16px">
+        <ToggleRow
+          :label="local.usedByMonoTransferor ? 'Vínculo por cedente' : 'Vínculo por veículo'"
+          hint="Define se o escopo desta validação é por veículo (CRA, CDCA, FIDC) ou por cedente. A última aba acompanha essa escolha."
+          :on="local.usedByMonoTransferor"
+          @toggle="local.usedByMonoTransferor = !local.usedByMonoTransferor"
+        />
         <ToggleRow
           label="Anexo obrigatório na autorização"
           :on="local.requiresAttachmentOnAuthorization"
@@ -474,7 +521,7 @@ function handleAtualizar() {
           "
         >
           <div>Tipo de Solicitação</div>
-          <div>Qtd. veículos</div>
+          <div>Qtd. {{ isCedenteMode ? 'cedentes' : 'veículos' }}</div>
           <div style="text-align: right">Remover</div>
         </div>
         <div
@@ -492,7 +539,7 @@ function handleAtualizar() {
             {{ tipoPedidoLabel(cfg.requestTypeId) }}
           </div>
           <div style="font-variant-numeric: tabular-nums; color: var(--text-default)">
-            {{ cfg.vehicleIds.length }}
+            {{ linkedCountForConfig(cfg) }}
           </div>
           <div class="flex justify-end">
             <button
@@ -532,7 +579,7 @@ function handleAtualizar() {
         "
       >
         Nenhuma configuração cadastrada. Adicione uma configuração na aba Configurações para vincular
-        veículos.
+        {{ isCedenteMode ? 'cedentes' : 'veículos' }}.
       </div>
 
       <div
@@ -593,7 +640,7 @@ function handleAtualizar() {
               {{ tipoPedidoLabel(cfg.requestTypeId) }}
             </span>
             <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px">
-              {{ cfg.vehicleIds.length }} veículo(s)
+              {{ linkedCountForConfig(cfg) }} {{ scopeNoun }}(s)
             </span>
           </button>
         </div>
@@ -611,7 +658,7 @@ function handleAtualizar() {
         >
           <div class="flex items-center" style="gap: 6px; flex-wrap: wrap">
             <button
-              v-for="ft in FUND_TABS"
+              v-for="ft in isCedenteMode ? CEDENTE_TABS : FUND_TABS"
               :key="ft.key"
               type="button"
               :style="{
@@ -620,11 +667,11 @@ function handleAtualizar() {
                 cursor: 'pointer',
                 fontSize: '10px',
                 fontWeight: 'var(--weight-bold)',
-                border: `1px solid ${fundTab === ft.key ? 'var(--gci-base)' : 'var(--border-default)'}`,
-                background: fundTab === ft.key ? 'var(--surface-selected)' : 'var(--surface-card)',
-                color: fundTab === ft.key ? 'var(--gci-base)' : 'var(--text-muted)',
+                border: `1px solid ${(isCedenteMode ? cedenteTab : fundTab) === ft.key ? 'var(--gci-base)' : 'var(--border-default)'}`,
+                background: (isCedenteMode ? cedenteTab : fundTab) === ft.key ? 'var(--surface-selected)' : 'var(--surface-card)',
+                color: (isCedenteMode ? cedenteTab : fundTab) === ft.key ? 'var(--gci-base)' : 'var(--text-muted)',
               }"
-              @click="fundTab = ft.key"
+              @click="selectScopeTab(ft.key)"
             >
               {{ ft.label }}
             </button>
@@ -643,7 +690,7 @@ function handleAtualizar() {
             />
             <input
               v-model="vehicleSearch"
-              placeholder="Buscar por nome..."
+              :placeholder="isCedenteMode ? 'Buscar por nome ou documento...' : 'Buscar por nome...'"
               style="
                 width: 100%;
                 height: 44px;
@@ -660,7 +707,7 @@ function handleAtualizar() {
 
           <div class="flex items-center justify-between" style="gap: 12px; flex-wrap: wrap">
             <span style="font-size: var(--text-sm); color: var(--text-muted)">
-              {{ linkedInTabCount }} de {{ vehiclesInTab.length }} selecionados
+              {{ linkedInTabCount }} de {{ itemsInTabCount }} selecionados
             </span>
             <button
               type="button"
@@ -682,10 +729,50 @@ function handleAtualizar() {
           </div>
 
           <div
-            v-if="vehiclesInTab.length === 0"
+            v-if="itemsInTabCount === 0"
             style="padding: 32px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
           >
-            Nenhum veículo encontrado.
+            Nenhum {{ scopeNoun }} encontrado.
+          </div>
+          <div
+            v-else-if="isCedenteMode"
+            style="
+              border: 1px solid var(--border-default);
+              border-radius: var(--radius-lg);
+              overflow: hidden;
+              max-height: 420px;
+              overflow-y: auto;
+            "
+          >
+            <div
+              v-for="c in cedentesInTab"
+              :key="c.id"
+              class="flex items-center"
+              style="
+                gap: 12px;
+                padding: 12px 14px;
+                border-top: 1px solid var(--border-default);
+                cursor: pointer;
+                background: var(--surface-card);
+              "
+              @click="toggleCedente(c.id)"
+            >
+              <Checkbox :checked="isCedenteLinked(c.id)" @change="toggleCedente(c.id)" @click.stop />
+              <div style="min-width: 0">
+                <div
+                  style="
+                    font-size: var(--text-sm);
+                    font-weight: var(--weight-medium);
+                    color: var(--text-strong);
+                  "
+                >
+                  {{ c.nome }}
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px">
+                  {{ c.documento }} · {{ c.tipo }}
+                </div>
+              </div>
+            </div>
           </div>
           <div
             v-else
@@ -729,6 +816,34 @@ function handleAtualizar() {
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="flex items-center justify-end" style="gap: 12px">
+      <span
+        v-if="savedBanner"
+        style="font-size: var(--text-sm); color: var(--success-base); font-weight: var(--weight-semibold)"
+      >
+        Validação atualizada com sucesso.
+      </span>
+      <button
+        type="button"
+        class="flex items-center"
+        style="
+          height: 44px;
+          padding: 0 22px;
+          background: var(--action-primary-bg);
+          color: var(--action-primary-text);
+          border: none;
+          border-radius: var(--radius-lg);
+          cursor: pointer;
+          font-weight: var(--weight-bold);
+          font-size: var(--text-sm);
+          flex-shrink: 0;
+        "
+        @click="handleAtualizar"
+      >
+        Atualizar
+      </button>
     </div>
   </div>
 </template>

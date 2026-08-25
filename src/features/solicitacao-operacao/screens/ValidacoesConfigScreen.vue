@@ -20,7 +20,11 @@ const COLS = '0.55fr 1.1fr 2fr 1fr 1.15fr auto';
 function cloneValidationItem(item: ValidationItem): ValidationItem {
   return {
     ...item,
-    configs: item.configs.map((c) => ({ ...c, vehicleIds: [...c.vehicleIds] })),
+    configs: item.configs.map((c) => ({
+      ...c,
+      vehicleIds: [...c.vehicleIds],
+      cedenteIds: [...(c.cedenteIds ?? [])],
+    })),
   };
 }
 

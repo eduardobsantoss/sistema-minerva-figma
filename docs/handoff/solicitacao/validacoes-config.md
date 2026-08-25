@@ -15,8 +15,9 @@ ModulesScreen.vue  (view === 'solicitacoes-validacoes')
 
 1. Listagem com botão **Filtros** (popover, igual Solicitações) — Nome, ID, Setor + Limpar / FILTRAR
 2. Clique na linha / lápis → **tela de detalhe** (mesmo padrão de Ativo/Solicitação: voltar + header + `SegmentedToggle`)
-3. Abas: Detalhes | Configurações | Veículos
-4. Botão **Atualizar** no header salva em memória e mostra banner de sucesso
+3. Abas: Detalhes | Configurações | Veículos (ou Cedentes, conforme o toggle de vínculo em Detalhes)
+4. Em Detalhes, o toggle **Vínculo por veículo / cedente** (`usedByMonoTransferor`) troca a última aba e a listagem vinculada
+5. Botão **Atualizar** no header salva em memória e mostra banner de sucesso
 
 ## Árvore
 

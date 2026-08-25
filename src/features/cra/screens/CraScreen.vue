@@ -9,6 +9,7 @@ import GrupoEmpresarialDetailScreen from './GrupoEmpresarialDetailScreen.vue';
 import CreateCraModal, { type NewCraData } from '../components/CreateCraModal.vue';
 import CreateCraOperacaoModal, { type NewCraOperacaoData } from '../components/CreateCraOperacaoModal.vue';
 import { cras as initialCras, type Cra, type CraOperacao, type Cessao, type Sacado, type CraSetup, type GrupoEmpresarialVinculo } from '../data/craData';
+import { PARAMETRIZACOES_ADICIONAIS_SEED } from '../../risco/data/riscoData';
 
 type Route =
   | { level: 'list' }
@@ -51,6 +52,7 @@ function defaultSetup(nome: string): CraSetup {
     jurosBoleto: '',
     multaBoleto: '',
     eligibilityTops: [],
+    parametrizacoesAdicionais: PARAMETRIZACOES_ADICIONAIS_SEED.map((p) => ({ ...p })),
   };
 }
 

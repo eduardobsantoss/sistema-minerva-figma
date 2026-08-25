@@ -129,7 +129,7 @@ Estado mutável: `craList = ref(initialCras)`. Sem URL para níveis internos.
 |---|---|---|
 | **`SegmentedToggle` `variant="brand"`** | Seções do CRA, título (7), sacado, grupo | Shell: card + border + radius-xl, pad 4, gap 4; pill ativa `--gci-base`; btn `10px 14px`, `--text-sm` bold, ícone 14 |
 | **`TabBtn`** (pill sunken) | Só Operações ↔ Títulos | Parent: pad 4, `surface-sunken`, radius-lg; btn `8px 14px`, **10px** bold `letter-spacing: 0.10em`; ativo: card + `shadow-xs` |
-| **Underline** | Setup (6), Dados Contatos/Endereços, Simulador Termo | `padding: 10px 4px`, `marginRight: 22px`, ativa `2px solid var(--accent)`, `marginBottom: -1px` |
+| **Underline** | Setup (7), Dados Contatos/Endereços, Simulador Termo | `padding: 10px 4px`, `marginRight: 22px`, ativa `2px solid var(--accent)`, `marginBottom: -1px` |
 
 ---
 
@@ -293,6 +293,7 @@ Underline **fora** do form (padrão nível 2), padding container `20px`:
 | Carteira | Nome, banco, slug, CNAB, conta, agência |
 | Cobrança | Vencimento fim de semana, beneficiário endereço, juros/multa boleto |
 | Elegibilidade | `eligibilityTops` (CEDENTE/SACADO + qtd + %) |
+| Parametrizações adicionais | Mesma tabela de Risco → Grupo Empresarial (`ParametrizacoesAdicionaisTab`) |
 
 Reusa `FormField` / `SelectField` / `ToggleRow` / `SectionGroup` / `StepGrid` de `create-cra-operacao-modal/`. Botão salvar emite `updateSetup`.
 

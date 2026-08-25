@@ -1,3 +1,8 @@
+import {
+  PARAMETRIZACOES_ADICIONAIS_SEED,
+  type ParametrizacaoAdicional,
+} from '../../risco/data/riscoData';
+
 export type FidcCategory = 'MONOCLASSE' | 'MULTICLASSE';
 
 export type TitleStatus = 'CONFIRMADO' | 'PENDENTE' | 'VENCIDO';
@@ -260,6 +265,7 @@ export interface FidcSetup {
   beneficiarioCidade: string;
   beneficiarioUf: string;
   eligibilityTops: SetupEligibilityTop[];
+  parametrizacoesAdicionais: ParametrizacaoAdicional[];
 }
 
 export interface Fidc {
@@ -517,6 +523,7 @@ function makeFidcSetup(name: string, cnpj: string): FidcSetup {
       { id: 'top-1', tipo: 'CEDENTE', quantidade: 8, concentracaoPct: 30 },
       { id: 'top-2', tipo: 'SACADO', quantidade: 12, concentracaoPct: 25 },
     ],
+    parametrizacoesAdicionais: PARAMETRIZACOES_ADICIONAIS_SEED.map((p) => ({ ...p })),
   };
 }
 

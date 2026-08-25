@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, toRaw, watch } from 'vue';
-import { Info, Settings2, FileType, Wallet, Receipt, Target, Save } from 'lucide-vue-next';
+import { Info, Settings2, FileType, Wallet, Receipt, Target, Save, SlidersHorizontal } from 'lucide-vue-next';
 import type { FidcSetup } from '../../data/fidcsData';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import SectionGroup from '../../components/create-class/SectionGroup.vue';
@@ -8,11 +8,12 @@ import StepGrid from '../../components/create-class/StepGrid.vue';
 import FormField from '../../components/create-class/FormField.vue';
 import SelectField from '../../components/create-class/SelectField.vue';
 import ToggleRow from '../../components/modals/ToggleRow.vue';
+import ParametrizacoesAdicionaisTab from '@/features/risco/screens/detail-tabs/ParametrizacoesAdicionaisTab.vue';
 
 const props = defineProps<{ setup: FidcSetup }>();
 const emit = defineEmits<{ update: [FidcSetup] }>();
 
-const SUB_TABS = ['Informações', 'Configurações', 'Tipos de título', 'Carteira', 'Cobrança', 'Elegibilidade'] as const;
+const SUB_TABS = ['Informações', 'Configurações', 'Tipos de título', 'Carteira', 'Cobrança', 'Elegibilidade', 'Parametrizações adicionais'] as const;
 type SubTab = (typeof SUB_TABS)[number];
 
 function cloneSetup(s: FidcSetup): FidcSetup {
@@ -52,6 +53,15 @@ function togglePosse() {
 
 function toggleVencimentoFimSemana() {
   local.value = { ...local.value, vencimentoFimSemana: !local.value.vencimentoFimSemana };
+}
+
+function toggleParamAdicional(id: string) {
+  local.value = {
+    ...local.value,
+    parametrizacoesAdicionais: local.value.parametrizacoesAdicionais.map((p) =>
+      p.id === id ? { ...p, valida: !p.valida } : p,
+    ),
+  };
 }
 </script>
 
@@ -153,7 +163,7 @@ function toggleVencimentoFimSemana() {
         </div>
       </SectionGroup>
 
-      <SectionGroup v-else title="Elegibilidade TOP" :icon="Target">
+      <SectionGroup v-else-if="subTab === 'Elegibilidade'" title="Elegibilidade TOP" :icon="Target">
         <div style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
           <div class="grid" style="grid-template-columns: 0.8fr 0.6fr 0.6fr; padding: 14px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase">
             <div>Tipo</div>
@@ -169,6 +179,13 @@ function toggleVencimentoFimSemana() {
         <p style="font-size: var(--text-xs); color: var(--gci-base); margin-top: 12px; font-weight: var(--weight-semibold); cursor: pointer">
           Ver ranking de concentração →
         </p>
+      </SectionGroup>
+
+      <SectionGroup v-else title="Parametrizações adicionais" :icon="SlidersHorizontal">
+        <ParametrizacoesAdicionaisTab
+          :itens="local.parametrizacoesAdicionais"
+          @toggle="toggleParamAdicional"
+        />
       </SectionGroup>
 
       <div class="flex items-center" style="gap: 12px; margin-top: 20px">

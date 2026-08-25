@@ -27,10 +27,20 @@ export interface VeiculoDisponivel {
   fundType: FundTypeTab;
 }
 
+export type CedenteTipoTab = 'PF' | 'PJ';
+
+export interface CedenteDisponivel {
+  id: string;
+  nome: string;
+  documento: string;
+  tipo: CedenteTipoTab;
+}
+
 export interface ValidationConfig {
   id: string;
   requestTypeId: number;
   vehicleIds: string[];
+  cedenteIds: string[];
 }
 
 export interface ValidationItem {
@@ -55,6 +65,17 @@ export const VEICULOS_VALIDACAO: VeiculoDisponivel[] = [
   { id: 'fidc-v4', name: 'FIDC Monocedente Norte', fundType: 'FIDC' },
 ];
 
+export const CEDENTES_VALIDACAO: CedenteDisponivel[] = [
+  { id: 'ced-v1', nome: '3A MAQUINAS E TRANSPORTES LTDA', documento: '12.345.678/0001-90', tipo: 'PJ' },
+  { id: 'ced-v2', nome: 'FAZENDA SANTA NIVA AGROPECUARIA LTDA', documento: '98.765.432/0001-11', tipo: 'PJ' },
+  { id: 'ced-v3', nome: 'AGROPECUARIA VALE VERDE S/A', documento: '45.112.998/0001-22', tipo: 'PJ' },
+  { id: 'ced-v4', nome: 'CERRADO GRÃOS COMERCIO E EXPORTACAO LTDA', documento: '33.220.114/0001-05', tipo: 'PJ' },
+  { id: 'ced-v5', nome: 'LATICÍNIOS PRADO LTDA', documento: '11.222.333/0001-44', tipo: 'PJ' },
+  { id: 'ced-v6', nome: 'José Carlos Mendes', documento: '234.567.890-12', tipo: 'PF' },
+  { id: 'ced-v7', nome: 'Maria Helena Rocha', documento: '321.654.987-00', tipo: 'PF' },
+  { id: 'ced-v8', nome: 'Pedro Alves Costa', documento: '456.789.123-55', tipo: 'PF' },
+];
+
 export const VALIDACOES_SEED: ValidationItem[] = [
   {
     id: 101,
@@ -64,8 +85,8 @@ export const VALIDACOES_SEED: ValidationItem[] = [
     requiresAttachmentOnAuthorization: true,
     usedByMonoTransferor: false,
     configs: [
-      { id: 'cfg-101-1', requestTypeId: 1, vehicleIds: ['fidc-v1', 'cra-v1'] },
-      { id: 'cfg-101-2', requestTypeId: 9, vehicleIds: ['fidc-v2'] },
+      { id: 'cfg-101-1', requestTypeId: 1, vehicleIds: ['fidc-v1', 'cra-v1'], cedenteIds: [] },
+      { id: 'cfg-101-2', requestTypeId: 9, vehicleIds: ['fidc-v2'], cedenteIds: [] },
     ],
   },
   {
@@ -76,7 +97,7 @@ export const VALIDACOES_SEED: ValidationItem[] = [
     requiresAttachmentOnAuthorization: false,
     usedByMonoTransferor: true,
     configs: [
-      { id: 'cfg-102-1', requestTypeId: 6, vehicleIds: ['fidc-v1', 'fidc-v3'] },
+      { id: 'cfg-102-1', requestTypeId: 6, vehicleIds: ['fidc-v1', 'fidc-v3'], cedenteIds: ['ced-v1', 'ced-v3'] },
     ],
   },
   {
@@ -96,15 +117,19 @@ export const VALIDACOES_SEED: ValidationItem[] = [
     requiresAttachmentOnAuthorization: false,
     usedByMonoTransferor: false,
     configs: [
-      { id: 'cfg-104-1', requestTypeId: 7, vehicleIds: [] },
+      { id: 'cfg-104-1', requestTypeId: 7, vehicleIds: [], cedenteIds: [] },
     ],
   },
 ];
 
 export function escopoLabel(item: ValidationItem): string {
   const tipos = item.configs.length;
-  const veiculos = item.configs.reduce((acc, c) => acc + c.vehicleIds.length, 0);
   if (tipos === 0) return 'Não configurado';
+  if (item.usedByMonoTransferor) {
+    const cedentes = item.configs.reduce((acc, c) => acc + (c.cedenteIds?.length ?? 0), 0);
+    return `${tipos} tipo(s) · ${cedentes} cedente(s)`;
+  }
+  const veiculos = item.configs.reduce((acc, c) => acc + c.vehicleIds.length, 0);
   return `${tipos} tipo(s) · ${veiculos} veículo(s)`;
 }
 

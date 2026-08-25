@@ -1,3 +1,8 @@
+import {
+  PARAMETRIZACOES_ADICIONAIS_SEED,
+  type ParametrizacaoAdicional,
+} from '../../risco/data/riscoData';
+
 export type CraTipo = 'MONO CRA' | 'MULTI CRA';
 export type CraStatus = 'EM ANDAMENTO' | 'ENCERRADO';
 export type TituloStatus = 'CONFIRMADO' | 'PENDENTE' | 'VENCIDO';
@@ -282,6 +287,7 @@ export interface CraSetup {
   jurosBoleto: string;
   multaBoleto: string;
   eligibilityTops: SetupEligibilityTop[];
+  parametrizacoesAdicionais: ParametrizacaoAdicional[];
 }
 
 export interface Cra {
@@ -663,6 +669,7 @@ function makeSetup(nome: string, cessionaria: string): CraSetup {
       { id: 'top-1', tipo: 'CEDENTE', quantidade: 10, concentracaoPct: 25 },
       { id: 'top-2', tipo: 'SACADO', quantidade: 15, concentracaoPct: 20 },
     ],
+    parametrizacoesAdicionais: PARAMETRIZACOES_ADICIONAIS_SEED.map((p) => ({ ...p })),
   };
 }
 
