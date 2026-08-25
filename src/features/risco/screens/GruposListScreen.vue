@@ -3,7 +3,7 @@ import { computed, ref, type Component } from 'vue';
 import {
   Filter, ChevronDown,
   MoreVertical, SlidersHorizontal, CheckCircle2, Clock, XCircle, Minus, Building2,
-  Settings2, UserCog, BellRing, ShieldCheck, Search, Link2,
+  Settings2, UserCog, BellRing, ShieldCheck, Search, Link2, Plus,
 } from 'lucide-vue-next';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
@@ -20,7 +20,10 @@ import VincularAgrupamentoModal from '../components/modals/VincularAgrupamentoMo
 import Checkbox from '@/components/ui/Checkbox.vue';
 import Tooltip from '@/components/ui/Tooltip.vue';
 
-const emit = defineEmits<{ open: [id: string] }>();
+const emit = defineEmits<{
+  open: [id: string];
+  create: [];
+}>();
 
 type ColKey = 'statusOperacao' | 'limite' | 'limiteAutoatendimento' | 'riscoTotal' | 'gerente' | 'vencimentoParecer';
 
@@ -171,16 +174,50 @@ function menuActions(g: GrupoEmpresarial) {
 
 <template>
   <div class="flex flex-col" style="gap: 20px">
-    <div>
-      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--accent); font-weight: var(--weight-bold); margin-bottom: 6px">
-        Risco
+    <div class="flex items-end justify-between" style="gap: 16px; flex-wrap: wrap">
+      <div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--accent); font-weight: var(--weight-bold); margin-bottom: 6px">
+          Risco
+        </div>
+        <h1 style="font-size: 26px; font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.02em; line-height: 1.15">
+          Grupos Empresariais
+        </h1>
+        <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+          {{ filtered.length }} {{ filtered.length === 1 ? 'grupo encontrado' : 'grupos encontrados' }}
+        </p>
       </div>
-      <h1 style="font-size: 26px; font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.02em; line-height: 1.15">
-        Grupos Empresariais
-      </h1>
-      <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-        {{ filtered.length }} {{ filtered.length === 1 ? 'grupo encontrado' : 'grupos encontrados' }}
-      </p>
+      <button
+        type="button"
+        class="flex items-center btn-animated btn-agro"
+        style="
+          gap: 8px;
+          height: 48px;
+          padding: 0 20px;
+          background: var(--agro-base);
+          color: #fff;
+          border-radius: var(--radius-xl);
+          border: none;
+          cursor: pointer;
+          font-weight: var(--weight-bold);
+          font-size: var(--text-xs);
+          letter-spacing: 0.10em;
+          box-shadow: 0 10px 24px -8px rgba(242, 125, 38, 0.4);
+        "
+        @click="emit('create')"
+      >
+        <span
+          class="flex items-center justify-center"
+          style="
+            width: 22px;
+            height: 22px;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.2);
+          "
+        >
+          <Plus :size="14" />
+        </span>
+        NOVO GRUPO
+      </button>
     </div>
 
     <!-- Toolbar -->

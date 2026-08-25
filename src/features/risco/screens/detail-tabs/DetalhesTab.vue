@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
-import { Users, FileText, Star, UserCog, Eye, RefreshCw } from 'lucide-vue-next';
+import { Users, FileText, Star, UserCog, Eye, RefreshCw, Pencil } from 'lucide-vue-next';
 import {
   RATINGS_SEED, gerentePorNome, type GrupoEmpresarial,
   type ParteRelacionada, type ParametrizacaoLimite,
@@ -16,7 +16,11 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<{ 'update:limite': [data: ParametrizacaoLimite]; 'update:rating': [rating: string] }>();
+const emit = defineEmits<{
+  'update:limite': [data: ParametrizacaoLimite];
+  'update:rating': [rating: string];
+  'edit-parte': [parte: ParteRelacionada];
+}>();
 
 const form = reactive({ ...props.limite });
 const gerente = gerentePorNome(props.grupo.gerente);
@@ -37,10 +41,10 @@ function saveRating() {
   <div class="flex flex-col" style="gap: 20px">
     <TabCard title="Partes Relacionadas" :icon="Users">
       <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
-        <div class="grid items-center" style="grid-template-columns: 1.4fr 1fr 1.2fr 1fr 1fr; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
-          <div>Nome</div><div>Documento</div><div>E-mail</div><div>Telefone</div><div>Estado Civil</div>
+        <div class="grid items-center" style="grid-template-columns: 1.4fr 1fr 1.2fr 1fr 1fr 48px; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
+          <div>Nome</div><div>Documento</div><div>E-mail</div><div>Telefone</div><div>Estado Civil</div><div style="text-align: right">Ação</div>
         </div>
-        <div v-for="p in pageItems" :key="p.id" class="grid items-center" style="grid-template-columns: 1.4fr 1fr 1.2fr 1fr 1fr; padding: 12px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
+        <div v-for="p in pageItems" :key="p.id" class="grid items-center" style="grid-template-columns: 1.4fr 1fr 1.2fr 1fr 1fr 48px; padding: 12px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
           <div>
             <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ p.nome }}</div>
             <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">{{ p.papel }}</div>
@@ -49,6 +53,17 @@ function saveRating() {
           <div style="color: var(--text-default)">{{ p.email }}</div>
           <div style="font-variant-numeric: tabular-nums; color: var(--text-default)">{{ p.telefone }}</div>
           <div style="color: var(--text-default)">{{ p.estadoCivil }}</div>
+          <div class="flex justify-end">
+            <button
+              type="button"
+              aria-label="Editar parte relacionada"
+              class="flex items-center justify-center"
+              style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--text-muted)"
+              @click="emit('edit-parte', p)"
+            >
+              <Pencil :size="14" />
+            </button>
+          </div>
         </div>
         <TablePagination
           v-if="partesRelacionadas.length > 0"

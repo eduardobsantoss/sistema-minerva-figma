@@ -21,6 +21,13 @@ import TransferirGerenteModal from '../components/modals/TransferirGerenteModal.
 import ConfigurarNotificacoesModal from '../components/modals/ConfigurarNotificacoesModal.vue';
 import HabilitarOperarModal from '../components/modals/HabilitarOperarModal.vue';
 import VincularAgrupamentoModal from '../components/modals/VincularAgrupamentoModal.vue';
+import { ParteRelacionadaDetailView } from '@/features/solicitacao-operacao/screens/detail-tabs/parte-relacionada';
+import type { ParteRelacionada as ParteCadastro } from '@/features/solicitacao-operacao/data/operacaoData';
+import {
+  applyParteCadastro,
+  toParteCadastro,
+} from '../data/parteRelacionadaMap';
+import type { ParteRelacionada } from '../data/riscoData';
 
 interface Props {
   grupo: GrupoEmpresarial;
@@ -50,6 +57,9 @@ const configurandoNotif = ref(false);
 const habilitando = ref(false);
 const vinculandoVeiculo = ref(false);
 
+const editingParteId = ref<string | null>(null);
+const editingParte = ref<ParteCadastro | null>(null);
+
 const actionMenuOpen = ref(false);
 const actionMenuRef = ref<HTMLDivElement | null>(null);
 
@@ -69,6 +79,23 @@ function handleVinculosUpdate(ops: typeof operacoesVinculaveis.value) {
   det.parametrizacoes.autoatendimento.veiculosOperacao = applyGrupoVinculos(props.grupo.id, ops);
 }
 
+function openParteEdit(parte: ParteRelacionada) {
+  editingParteId.value = parte.id;
+  editingParte.value = toParteCadastro(parte);
+}
+
+function closeParteEdit() {
+  const rich = editingParte.value;
+  const id = editingParteId.value;
+  if (rich && id) {
+    det.partesRelacionadas = det.partesRelacionadas.map((p) =>
+      p.id === id ? applyParteCadastro(p, rich) : p,
+    );
+  }
+  editingParte.value = null;
+  editingParteId.value = null;
+}
+
 function handleClickOutside(e: MouseEvent) {
   if (actionMenuRef.value && !actionMenuRef.value.contains(e.target as Node)) actionMenuOpen.value = false;
 }
@@ -78,7 +105,13 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
 </script>
 
 <template>
-  <div class="flex flex-col" style="gap: 24px">
+  <ParteRelacionadaDetailView
+    v-if="editingParte"
+    :parte="editingParte"
+    :solicitacao-id="grupo.nome"
+    @back="closeParteEdit"
+  />
+  <div v-show="!editingParte" class="flex flex-col" style="gap: 24px">
     <!-- Header -->
     <div class="flex items-center" style="gap: 16px">
       <button aria-label="Voltar" class="flex items-center justify-center" style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: var(--surface-card); border: 1px solid var(--border-default); cursor: pointer; color: var(--text-strong); flex-shrink: 0" @click="emit('back')">
@@ -144,6 +177,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
       :limite="det.parametrizacoes.limite"
       @update:limite="(limite) => { det.parametrizacoes = { ...det.parametrizacoes, limite }; }"
       @update:rating="(rating) => { det.parametrizacoes.limite.indicativoRating = rating; }"
+      @edit-parte="openParteEdit"
     />
     <ParametrizacoesTab
       v-if="tab === 'parametrizacoes'"
@@ -152,6 +186,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
       :partes-relacionadas="det.partesRelacionadas"
       @change="(parametrizacoes) => { det.parametrizacoes = parametrizacoes; }"
       @update:partes-relacionadas="(pr) => { det.partesRelacionadas = pr; }"
+      @edit-parte="openParteEdit"
     />
     <ParametrizacoesAdicionaisTab
       v-if="tab === 'parametrizacoes-adicionais'"

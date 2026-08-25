@@ -4,6 +4,8 @@ import GruposListScreen from './GruposListScreen.vue';
 import GrupoDetailScreen from './GrupoDetailScreen.vue';
 import { GRUPOS_SEED } from '../data/riscoData';
 
+const emit = defineEmits<{ navigate: [key: string] }>();
+
 type Route = { level: 'list' } | { level: 'detail'; grupoId: string };
 
 const route = ref<Route>({ level: 'list' });
@@ -19,9 +21,13 @@ function openDetail(grupoId: string) {
 </script>
 
 <template>
-  <GruposListScreen v-if="route.level === 'list'" @open="openDetail" />
+  <GruposListScreen
+    v-if="route.level === 'list'"
+    @open="openDetail"
+    @create="emit('navigate', 'grupos-cadastro')"
+  />
   <template v-else>
     <GrupoDetailScreen v-if="grupoAtual" :grupo="grupoAtual" @back="route = { level: 'list' }" />
-    <GruposListScreen v-else @open="openDetail" />
+    <GruposListScreen v-else @open="openDetail" @create="emit('navigate', 'grupos-cadastro')" />
   </template>
 </template>

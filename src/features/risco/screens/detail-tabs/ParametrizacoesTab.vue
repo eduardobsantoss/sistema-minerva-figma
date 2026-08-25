@@ -16,6 +16,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   change: [data: Parametrizacoes];
   'update:partes-relacionadas': [data: ParteRelacionada[]];
+  'edit-parte': [parte: ParteRelacionada];
 }>();
 
 const SUB_TABS = ['Limite', 'Autoatendimento', 'Geral', 'Garantia'] as const;
@@ -56,6 +57,7 @@ const tab = ref<SubTab>('Limite');
       :partes-relacionadas="partesRelacionadas"
       @save="(geral) => emit('change', { ...data, geral })"
       @update:partes-relacionadas="(pr) => emit('update:partes-relacionadas', pr)"
+      @edit-parte="(p) => emit('edit-parte', p)"
     />
     <GarantiaSubTab v-if="tab === 'Garantia'" :data="data.garantia" @save="(garantia) => emit('change', { ...data, garantia })" />
   </div>

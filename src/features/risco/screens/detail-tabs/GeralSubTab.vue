@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
-import { ClipboardCheck, Users, Truck, ShieldCheck, UserCheck, Trash2 } from 'lucide-vue-next';
+import { reactive, ref, watch } from 'vue';
+import { ClipboardCheck, Users, Truck, ShieldCheck, UserCheck, Trash2, Pencil } from 'lucide-vue-next';
 import { type ParametrizacaoGeral, type ExcecaoConcentracao, type ParteRelacionada } from '../../data/riscoData';
 import { TabCard, FieldLabel, ToggleRow, PctInput, DiasInput, EmptyState, AddButton } from './shared';
 import Checkbox from '@/components/ui/Checkbox.vue';
@@ -16,6 +16,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   save: [data: ParametrizacaoGeral];
   'update:partes-relacionadas': [data: ParteRelacionada[]];
+  'edit-parte': [parte: ParteRelacionada];
 }>();
 
 const form = reactive<ParametrizacaoGeral>({ ...props.data });
@@ -23,6 +24,28 @@ const partes = reactive<ParteRelacionada[]>(props.partesRelacionadas.map((p) => 
 const excSacadoDoc = ref('');
 const excSacadoNome = ref('');
 const excPct = ref('');
+
+watch(
+  () => props.partesRelacionadas,
+  (next) => {
+    const localById = new Map(partes.map((p) => [p.id, p]));
+    partes.splice(
+      0,
+      partes.length,
+      ...next.map((p) => {
+        const local = localById.get(p.id);
+        if (!local) return { ...p };
+        return {
+          ...p,
+          conjugeAnuente: local.conjugeAnuente,
+          assinaturaObrigatoria: local.assinaturaObrigatoria,
+          aceitaRestritivo: local.aceitaRestritivo,
+          valorRestritivoAceito: local.valorRestritivoAceito,
+        };
+      }),
+    );
+  },
+);
 
 const {
   page: excecoesPage,
@@ -182,10 +205,10 @@ function handleSavePartes() {
     <TabCard title="Partes Relacionadas" :icon="Users" has-save @save="handleSavePartes">
       <EmptyState v-if="partes.length === 0" :icon="Users" title="Nenhuma parte relacionada cadastrada" hint="Partes relacionadas são herdadas do cadastro do grupo." />
       <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; overflow-x: auto">
-        <div class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 0.9fr 80px 80px 80px 120px; min-width: 900px; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
-          <div>Nome + Documento</div><div>E-mail + Telefone</div><div>Estado Civil</div><div>Cônjuge anuente</div><div>Assin. obrig.</div><div>Aceita restritivo</div><div>Valor restritivo</div>
+        <div class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 0.9fr 80px 80px 80px 120px 40px; min-width: 960px; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
+          <div>Nome + Documento</div><div>E-mail + Telefone</div><div>Estado Civil</div><div>Cônjuge anuente</div><div>Assin. obrig.</div><div>Aceita restritivo</div><div>Valor restritivo</div><div style="text-align: right">Ação</div>
         </div>
-        <div v-for="p in partesPageItems" :key="p.id" class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 0.9fr 80px 80px 80px 120px; min-width: 900px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
+        <div v-for="p in partesPageItems" :key="p.id" class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 0.9fr 80px 80px 80px 120px 40px; min-width: 960px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
           <div>
             <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ p.nome }}</div>
             <div style="font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums">{{ p.documento }}</div>
@@ -214,6 +237,17 @@ function handleSavePartes() {
               @input="handleRestritivoInput(p.id, $event)"
             />
             <span v-else style="color: var(--text-muted); font-size: var(--text-xs)">—</span>
+          </div>
+          <div class="flex justify-end">
+            <button
+              type="button"
+              aria-label="Editar parte relacionada"
+              class="flex items-center justify-center"
+              style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--text-muted)"
+              @click="emit('edit-parte', p)"
+            >
+              <Pencil :size="14" />
+            </button>
           </div>
         </div>
         <TablePagination
