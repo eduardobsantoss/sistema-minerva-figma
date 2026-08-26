@@ -6,6 +6,7 @@ import {
   Layers,
   LayoutPanelLeft,
   Shield,
+  Users,
   Wallet,
   Briefcase,
 } from 'lucide-vue-next';
@@ -17,6 +18,7 @@ export type TelaDisseccaoKey =
   | 'cra'
   | 'cobranca'
   | 'risco'
+  | 'grupos-empresariais'
   | 'ativos'
   | 'passivo';
 
@@ -65,6 +67,12 @@ export const TELAS_DISSECCOES: TelaDisseccao[] = [
     cta: 'Abrir dissecção',
   },
   {
+    key: 'grupos-empresariais',
+    title: 'Grupos Empresariais',
+    description: 'Listagem, cadastro, detalhe com cards e as 8 abas do grupo.',
+    cta: 'Abrir dissecção',
+  },
+  {
     key: 'ativos',
     title: 'Ativos',
     description: 'Listagem e detalhes de contratos e títulos.',
@@ -85,6 +93,7 @@ export const TELA_ICONS: Record<TelaDisseccaoKey, Component> = {
   cra: Building2,
   cobranca: Wallet,
   risco: Shield,
+  'grupos-empresariais': Users,
   ativos: Layers,
   passivo: Briefcase,
 };

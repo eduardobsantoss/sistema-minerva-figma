@@ -8,6 +8,7 @@ import { resolvePreview as resolveRiscoPreview } from './riscoPreviewProps';
 import { resolvePreview as resolveCraPreview } from './craPreviewProps';
 import { resolvePreview as resolveFidcPreview } from './fidcPreviewProps';
 import { resolvePreview as resolveShellPreview } from './shellPreviewProps';
+import { resolvePreview as resolveGruposEmpresariaisPreview } from './gruposEmpresariaisPreviewProps';
 
 export type { PreviewConfig };
 export { isModalPath, frameStyle };
@@ -70,6 +71,9 @@ export function resolvePreview(
   }
   if (feature === 'shell') {
     return resolveShellPreview(relPath, name);
+  }
+  if (feature === 'grupos-empresariais') {
+    return resolveGruposEmpresariaisPreview(relPath, name);
   }
   return resolveGeneric(relPath, name);
 }

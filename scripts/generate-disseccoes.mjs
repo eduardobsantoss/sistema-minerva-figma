@@ -18,6 +18,7 @@ const AUTO_MODULES = [
   { key: 'cra', title: "CRA's" },
   { key: 'cobranca', title: 'Cobrança' },
   { key: 'risco', title: 'Risco' },
+  { key: 'grupos-empresariais', title: 'Grupos Empresariais' },
   { key: 'ativos', title: 'Ativos' },
   { key: 'passivo', title: 'Passivo' },
 ];

@@ -17,6 +17,7 @@ import fidcCatalog from '../disseccoes/fidc.catalog.json';
 import craCatalog from '../disseccoes/cra.catalog.json';
 import cobrancaCatalog from '../disseccoes/cobranca.catalog.json';
 import riscoCatalog from '../disseccoes/risco.catalog.json';
+import gruposEmpresariaisCatalog from '../disseccoes/grupos-empresariais.catalog.json';
 import ativosCatalog from '../disseccoes/ativos.catalog.json';
 import passivoCatalog from '../disseccoes/passivo.catalog.json';
 
@@ -29,6 +30,7 @@ const CATALOGS: Record<TelaDisseccaoKey, DisseccaoCatalog> = {
   cra: craCatalog as DisseccaoCatalog,
   cobranca: cobrancaCatalog as DisseccaoCatalog,
   risco: riscoCatalog as DisseccaoCatalog,
+  'grupos-empresariais': gruposEmpresariaisCatalog as DisseccaoCatalog,
   ativos: ativosCatalog as DisseccaoCatalog,
   passivo: passivoCatalog as DisseccaoCatalog,
 };
