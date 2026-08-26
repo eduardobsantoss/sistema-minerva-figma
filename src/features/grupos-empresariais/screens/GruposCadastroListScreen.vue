@@ -45,7 +45,7 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
             margin-bottom: 6px;
           "
         >
-          Cadastro
+          Grupos
         </div>
         <h1
           style="
@@ -56,7 +56,7 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
             line-height: 1.15;
           "
         >
-          Cadastro de Grupos
+          Grupos Empresariais
         </h1>
         <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
           {{ filtered.length }}

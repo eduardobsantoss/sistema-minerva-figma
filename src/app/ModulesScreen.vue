@@ -100,7 +100,7 @@ const titleMap: Record<View, string> = {
   'risco-agrupamentos': 'Agrupamentos de Limite',
   'risco-rel': 'Relatórios de Risco',
   'risco-serasa': 'Consultas',
-  'grupos-cadastro': 'Cadastro de Grupos',
+  'grupos-cadastro': 'Grupos Empresariais',
   monitoramento: 'Monitoramento Pós Desembolso',
   passivo: 'Passivo',
   colab: 'Colaboradores',
@@ -196,6 +196,8 @@ function handleModuleClick(title: string) {
   } else if (title === 'Risco') {
     view.value = 'risco-dashboard';
     openMenu.value = 'risco';
+  } else if (title === 'Grupos Empresariais') {
+    view.value = 'grupos-cadastro';
   } else if (title === 'Passivo') {
     view.value = 'passivo';
   }

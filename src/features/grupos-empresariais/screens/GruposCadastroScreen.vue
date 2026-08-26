@@ -52,9 +52,20 @@ function openDetail(id: string) {
 
 function handleSave(grupo: GrupoCadastro) {
   if (route.value.level === 'create') {
+    const now = new Date();
+    const datetime = now.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).replace(',', '');
     const created: GrupoCadastro = {
       ...cloneGrupo(grupo),
       id: `grp-${Date.now()}`,
+      historico: grupo.historico.length
+        ? grupo.historico
+        : [{ id: `hist-${Date.now()}`, datetime, descricao: 'Grupo empresarial cadastrado.' }],
     };
     items.value = [created, ...items.value];
     route.value = { level: 'detail', grupoId: created.id };

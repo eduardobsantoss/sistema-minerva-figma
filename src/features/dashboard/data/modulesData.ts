@@ -12,6 +12,7 @@ import {
   Receipt,
   ClipboardList,
   Layers,
+  Building2,
 } from 'lucide-vue-next';
 
 export type Tone = 'info' | 'success' | 'warning' | 'danger' | 'accent';
@@ -95,6 +96,12 @@ export const modules: ModuleItem[] = [
     description: 'Monitoramento de exposição, alertas e métricas de risco operacional.',
     icon: AlertCircle,
     tone: 'accent',
+  },
+  {
+    title: 'Grupos Empresariais',
+    description: 'Grupos empresariais e partes relacionadas (PF/PJ, cônjuge, representante e tipos).',
+    icon: Building2,
+    tone: 'info',
   },
 ];
 
