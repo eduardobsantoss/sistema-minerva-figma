@@ -9,10 +9,12 @@ import { useTablePagination } from '@/composables/useTablePagination';
 
 interface Props {
   cedentes: Cedente[];
+  /** Quando true, o clique na linha emite `open` para o detalhe em página (sem modal). */
+  asPage?: boolean;
 }
 
-const props = defineProps<Props>();
-const emit = defineEmits<{ 'update-cedente': [cedente: Cedente] }>();
+const props = withDefaults(defineProps<Props>(), { asPage: false });
+const emit = defineEmits<{ 'update-cedente': [cedente: Cedente]; open: [cedente: Cedente] }>();
 
 const COLS = '1.2fr 1.8fr 1.6fr 1fr 1fr';
 
@@ -23,6 +25,11 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
   () => props.cedentes,
   { defaultPageSize: 10 },
 );
+
+function onRowClick(c: Cedente) {
+  if (props.asPage) emit('open', c);
+  else selecionadoId.value = c.id;
+}
 </script>
 
 <template>
@@ -37,7 +44,7 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
         :key="c.id"
         class="grid items-center cedentes-row"
         :style="{ gridTemplateColumns: COLS, padding: '14px 20px', borderTop: '1px solid var(--border-default)', fontSize: 'var(--text-sm)', cursor: 'pointer', transition: 'background var(--duration-fast)' }"
-        @click="selecionadoId = c.id"
+        @click="onRowClick(c)"
       >
         <div style="font-variant-numeric: tabular-nums; color: var(--text-muted)">{{ c.documento }}</div>
         <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ c.nome }}</div>
@@ -56,7 +63,7 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
     </div>
 
     <CedenteDetailModal
-      v-if="selecionado"
+      v-if="!asPage && selecionado"
       :cedente="selecionado"
       @close="selecionadoId = null"
       @update="emit('update-cedente', $event)"

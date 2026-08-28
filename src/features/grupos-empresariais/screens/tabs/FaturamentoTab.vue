@@ -5,6 +5,7 @@ import FormField from '@/features/solicitacao-operacao/components/modals/adicion
 import StepGrid from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/StepGrid.vue';
 import { parseCurrencyInput } from '@/features/solicitacao-operacao/utils/currencyMask';
 import { brl } from '@/features/risco/data/riscoData';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
 import type { FaturamentoGrupo } from '../../data/gruposCadastroData';
 
 defineProps<{ faturamentos: FaturamentoGrupo[] }>();
@@ -15,6 +16,7 @@ const emit = defineEmits<{
 
 const valorMasked = ref('R$ 0,00');
 const anoFiscal = ref('');
+const toDelete = ref<FaturamentoGrupo | null>(null);
 
 function cadastrar() {
   const valor = parseCurrencyInput(valorMasked.value);
@@ -25,9 +27,14 @@ function cadastrar() {
   anoFiscal.value = '';
 }
 
-function excluir(id: string) {
-  if (!window.confirm('Excluir este faturamento?')) return;
-  emit('remove', id);
+function excluir(item: FaturamentoGrupo) {
+  toDelete.value = item;
+}
+
+function confirmExcluir() {
+  if (!toDelete.value) return;
+  emit('remove', toDelete.value.id);
+  toDelete.value = null;
 }
 </script>
 
@@ -73,11 +80,19 @@ function excluir(id: string) {
         <div style="font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">{{ brl(f.valor) }}</div>
         <div style="color: var(--text-default)">{{ f.anoFiscal }}</div>
         <div class="flex justify-end">
-          <button type="button" aria-label="Excluir faturamento" class="flex items-center justify-center" style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--action-danger-text-only)" @click="excluir(f.id)">
+          <button type="button" aria-label="Excluir faturamento" class="flex items-center justify-center" style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--action-danger-text-only)" @click="excluir(f)">
             <Trash2 :size="14" />
           </button>
         </div>
       </div>
     </div>
+
+    <ConfirmDeleteModal
+      v-if="toDelete"
+      :title="`Excluir o faturamento de ${toDelete.anoFiscal}?`"
+      description="Esta ação remove o registro de faturamento deste grupo. Não será possível desfazer por aqui."
+      @close="toDelete = null"
+      @confirm="confirmExcluir"
+    />
   </div>
 </template>

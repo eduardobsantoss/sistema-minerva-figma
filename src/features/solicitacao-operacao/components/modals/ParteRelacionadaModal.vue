@@ -18,7 +18,8 @@ import {
 } from '../../data/minutaData';
 import SpouseFields from './minuta/SpouseFields.vue';
 
-const emit = defineEmits<{ close: []; create: [data: ParteRelacionada] }>();
+const props = defineProps<{ parte?: ParteRelacionada | null }>();
+const emit = defineEmits<{ close: []; create: [data: ParteRelacionada]; save: [data: ParteRelacionada] }>();
 
 export interface NewParteRelacionadaData {
   tipoPessoa: 'FISICA' | 'JURIDICA';
@@ -72,44 +73,92 @@ const TIPOS_OPTS: { label: string; codigo: ParteTipo }[] = [
   { label: 'Procurador', codigo: 'PROC' },
 ];
 
-const form = reactive<NewParteRelacionadaData>({
-  tipoPessoa: 'FISICA',
-  cpf: '',
-  nomeFisica: '',
-  rg: '',
-  inscricaoProdutorRural: '',
-  nacionalidade: '',
-  dataNascimento: '',
-  profissao: '',
-  estadoCivil: '',
-  regime: '',
-  dataCasamento: '',
-  cnpj: '',
-  razaoSocial: '',
-  nomeFantasia: '',
-  dataAbertura: '',
-  tipoEmpresa: '',
-  porte: '',
-  atividadePrincipal: '',
-  naturezaJuridica: '',
-  inscricaoMunicipal: '',
-  inscricaoEstadual: '',
-  cep: '',
-  localidade: '',
-  numero: '',
-  bairro: '',
-  infoAdicionais: '',
-  cidade: '',
-  estado: '',
-  pais: 'Brasil',
-  nomeContato: '',
-  email: '',
-  ddi: '+55',
-  telefone: '',
-  tipos: [],
-  possuiConjuge: false,
-  orgaoEmissorRg: '',
-});
+const isEdit = computed(() => !!props.parte);
+
+function emptyForm(): NewParteRelacionadaData {
+  return {
+    tipoPessoa: 'FISICA',
+    cpf: '',
+    nomeFisica: '',
+    rg: '',
+    inscricaoProdutorRural: '',
+    nacionalidade: '',
+    dataNascimento: '',
+    profissao: '',
+    estadoCivil: '',
+    regime: '',
+    dataCasamento: '',
+    cnpj: '',
+    razaoSocial: '',
+    nomeFantasia: '',
+    dataAbertura: '',
+    tipoEmpresa: '',
+    porte: '',
+    atividadePrincipal: '',
+    naturezaJuridica: '',
+    inscricaoMunicipal: '',
+    inscricaoEstadual: '',
+    cep: '',
+    localidade: '',
+    numero: '',
+    bairro: '',
+    infoAdicionais: '',
+    cidade: '',
+    estado: '',
+    pais: 'Brasil',
+    nomeContato: '',
+    email: '',
+    ddi: '+55',
+    telefone: '',
+    tipos: [],
+    possuiConjuge: false,
+    orgaoEmissorRg: '',
+  };
+}
+
+function hydrate(p: ParteRelacionada) {
+  Object.assign(form, emptyForm(), {
+    tipoPessoa: p.tipoPessoa,
+    cpf: p.cpf ?? (p.tipoPessoa === 'FISICA' ? p.documento : ''),
+    nomeFisica: p.tipoPessoa === 'FISICA' ? p.nome : '',
+    rg: p.rg ?? '',
+    inscricaoProdutorRural: p.inscricaoProdutorRural ?? '',
+    nacionalidade: p.nacionalidade ?? '',
+    dataNascimento: p.dataNascimento ?? '',
+    profissao: p.profissao ?? '',
+    estadoCivil: p.estadoCivil ?? '',
+    regime: p.regime ?? '',
+    dataCasamento: p.dataCasamento ?? '',
+    cnpj: p.cnpj ?? (p.tipoPessoa === 'JURIDICA' ? p.documento : ''),
+    razaoSocial: p.razaoSocial ?? (p.tipoPessoa === 'JURIDICA' ? p.nome : ''),
+    nomeFantasia: p.nomeFantasia ?? '',
+    dataAbertura: p.dataAbertura ?? '',
+    tipoEmpresa: p.tipoEmpresa ?? '',
+    porte: p.porte ?? '',
+    atividadePrincipal: p.atividadePrincipal ?? '',
+    naturezaJuridica: p.naturezaJuridica ?? '',
+    inscricaoMunicipal: p.inscricaoMunicipal ?? '',
+    inscricaoEstadual: p.inscricaoEstadual ?? '',
+    cep: p.cep ?? '',
+    localidade: p.localidade ?? '',
+    numero: p.numero ?? '',
+    bairro: p.bairro ?? '',
+    infoAdicionais: p.infoAdicionais ?? '',
+    cidade: p.cidade ?? '',
+    estado: p.estado ?? '',
+    pais: p.pais ?? 'Brasil',
+    nomeContato: p.nomeContato ?? p.nome,
+    email: p.email,
+    ddi: p.ddi ?? '+55',
+    telefone: p.telefone,
+    tipos: TIPOS_OPTS.filter((t) => p.tipos.includes(t.codigo)).map((t) => t.label),
+    possuiConjuge: !!p.possuiConjuge,
+  });
+  Object.assign(conjuge, p.conjuge ?? emptyConjugeMinuta());
+  Object.assign(representante, p.representante ?? { ...emptyPessoaMinuta('JURIDICA').representante! });
+}
+
+const form = reactive<NewParteRelacionadaData>(emptyForm());
 
 const conjuge = reactive<ConjugeMinuta>(emptyConjugeMinuta());
 const representante = reactive<RepresentanteLegal>({ ...emptyPessoaMinuta('JURIDICA').representante! });
@@ -126,6 +175,8 @@ watch(
     form.possuiConjuge = parteExigeFormularioConjuge(ec, regime);
   },
 );
+
+if (props.parte) hydrate(props.parte);
 
 const tipoPessoaLabel = computed({
   get: () => (form.tipoPessoa === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica'),
@@ -153,7 +204,7 @@ const canSubmit = computed(() => nome.value.trim() !== '' && documento.value.tri
 function handleSubmit() {
   if (!canSubmit.value) return;
   const codigos = TIPOS_OPTS.filter((t) => form.tipos.includes(t.label)).map((t) => t.codigo);
-  emit('create', enriquecerParteRelacionada({
+  const data = enriquecerParteRelacionada({
     nome: nome.value,
     documento: documento.value,
     email: form.email,
@@ -195,8 +246,10 @@ function handleSubmit() {
         ? { ...conjuge }
         : undefined,
     representante: form.tipoPessoa === 'JURIDICA' ? { ...representante } : undefined,
-    contatosRelacionados: [],
-  }));
+    contatosRelacionados: props.parte?.contatosRelacionados ?? [],
+  });
+  if (props.parte) emit('save', data);
+  else emit('create', data);
 }
 </script>
 
@@ -233,10 +286,10 @@ function handleSubmit() {
       <div class="flex items-start justify-between" style="padding: 24px 32px; border-bottom: 1px solid var(--border-default)">
         <div>
           <h2 style="font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.01em">
-            Nova Parte Relacionada
+            {{ isEdit ? 'Editar Parte Relacionada' : 'Nova Parte Relacionada' }}
           </h2>
           <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Identificação, endereço, contato e vínculo com a solicitação
+            {{ isEdit ? 'Atualize identificação, endereço, contato e vínculo' : 'Identificação, endereço, contato e vínculo com a solicitação' }}
           </p>
         </div>
         <button
@@ -404,7 +457,7 @@ function handleSubmit() {
           }"
           @click="handleSubmit"
         >
-          <Building2 :size="15" /> CADASTRAR
+          <Building2 :size="15" /> {{ isEdit ? 'ATUALIZAR' : 'CADASTRAR' }}
         </button>
       </div>
     </div>

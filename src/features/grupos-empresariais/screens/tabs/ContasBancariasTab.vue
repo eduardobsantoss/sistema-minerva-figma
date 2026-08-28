@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { reactive, ref } from 'vue';
 import { Star, Trash2 } from 'lucide-vue-next';
 import FormField from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/FormField.vue';
 import SelectField from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/SelectField.vue';
 import StepGrid from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/StepGrid.vue';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
 import { BANCO_GRUPO_OPTS, type ContaBancariaGrupo } from '../../data/gruposCadastroData';
 
 const props = defineProps<{ contas: ContaBancariaGrupo[] }>();
@@ -19,6 +20,7 @@ const draft = reactive({
   conta: '',
   titular: '',
 });
+const toDelete = ref<ContaBancariaGrupo | null>(null);
 
 function cadastrar() {
   if (!draft.banco || !draft.agencia.trim() || !draft.conta.trim() || !draft.titular.trim()) return;
@@ -35,9 +37,14 @@ function cadastrar() {
   draft.titular = '';
 }
 
-function excluir(id: string) {
-  if (!window.confirm('Excluir esta conta bancária?')) return;
-  emit('remove', id);
+function excluir(conta: ContaBancariaGrupo) {
+  toDelete.value = conta;
+}
+
+function confirmExcluir() {
+  if (!toDelete.value) return;
+  emit('remove', toDelete.value.id);
+  toDelete.value = null;
 }
 </script>
 
@@ -109,11 +116,19 @@ function excluir(id: string) {
         <div style="font-variant-numeric: tabular-nums; color: var(--text-default)">{{ c.conta }}</div>
         <div style="color: var(--text-default)">{{ c.titular }}</div>
         <div class="flex justify-end">
-          <button type="button" aria-label="Excluir conta" class="flex items-center justify-center" style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--action-danger-text-only)" @click="excluir(c.id)">
+          <button type="button" aria-label="Excluir conta" class="flex items-center justify-center" style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--action-danger-text-only)" @click="excluir(c)">
             <Trash2 :size="14" />
           </button>
         </div>
       </div>
     </div>
+
+    <ConfirmDeleteModal
+      v-if="toDelete"
+      :title="`Excluir a conta “${toDelete.banco}” — ${toDelete.conta}?`"
+      description="Esta ação remove a conta bancária deste grupo. Não será possível desfazer por aqui."
+      @close="toDelete = null"
+      @confirm="confirmExcluir"
+    />
   </div>
 </template>

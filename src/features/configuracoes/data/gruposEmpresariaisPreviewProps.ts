@@ -22,7 +22,6 @@ function baseExample(name: string, attrs: string): string {
 }
 
 const sampleGrupo = cloneGrupo(GRUPOS_CADASTRO_SEED[0]!);
-const sampleGarantia = sampleGrupo.garantias[0] ?? null;
 
 /** Resolve props + exemplo mínimo para Grupos Empresariais. */
 export function resolvePreview(relPath: string, name: string): PreviewConfig {
@@ -120,17 +119,6 @@ export function resolvePreview(relPath: string, name: string): PreviewConfig {
       example: exampleBlock(
         `import ${name} from './${name}.vue';\nimport { GRUPOS_CADASTRO_SEED } from '../../data/gruposCadastroData';`,
         `  <${name} :garantias="GRUPOS_CADASTRO_SEED[0].garantias" />`,
-      ),
-    };
-  }
-
-  if (path.endsWith('GarantiaModal.vue')) {
-    return {
-      props: { garantia: sampleGarantia },
-      frame: 'modal',
-      example: exampleBlock(
-        `import { ref } from 'vue';\nimport ${name} from './${name}.vue';\nimport { GRUPOS_CADASTRO_SEED } from '../../data/gruposCadastroData';\nconst open = ref(true);\nconst garantia = GRUPOS_CADASTRO_SEED[0].garantias[0];`,
-        `  <${name} v-if="open" :garantia="garantia" @close="open = false" />`,
       ),
     };
   }

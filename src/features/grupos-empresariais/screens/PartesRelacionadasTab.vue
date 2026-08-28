@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Plus, Trash2, Pencil } from 'lucide-vue-next';
 import type { ParteTipo, ParteRelacionada } from '@/features/solicitacao-operacao/data/operacaoData';
 import { PARTE_TIPO_LABEL, TIPOS_PARTE_OPTS } from '@/features/solicitacao-operacao/data/parteRelacionadaFields';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
 
 const props = defineProps<{ partes: ParteRelacionada[] }>();
 const emit = defineEmits<{
@@ -14,6 +15,7 @@ const emit = defineEmits<{
 const COLS = '1.1fr 1.8fr 1.2fr auto';
 const filtroDocumento = ref('');
 const filtroTipo = ref('');
+const toDelete = ref<ParteRelacionada | null>(null);
 
 const parteTone: Record<ParteTipo, { bg: string; fg: string }> = {
   AVA: { bg: 'var(--gci-light)', fg: 'var(--gci-base)' },
@@ -42,8 +44,13 @@ const tiposUsados = computed(() => {
 
 function onRemove(parte: ParteRelacionada, e: Event) {
   e.stopPropagation();
-  if (!window.confirm('Remover esta parte relacionada?')) return;
-  emit('remove', parte);
+  toDelete.value = parte;
+}
+
+function confirmRemove() {
+  if (!toDelete.value) return;
+  emit('remove', toDelete.value);
+  toDelete.value = null;
 }
 </script>
 
@@ -200,5 +207,13 @@ function onRemove(parte: ParteRelacionada, e: Event) {
         {{ PARTE_TIPO_LABEL[t] }}
       </span>
     </div>
+
+    <ConfirmDeleteModal
+      v-if="toDelete"
+      :title="`Remover a parte relacionada “${toDelete.nome}”?`"
+      description="Esta ação desvincula a parte deste grupo. Não será possível desfazer por aqui."
+      @close="toDelete = null"
+      @confirm="confirmRemove"
+    />
   </div>
 </template>

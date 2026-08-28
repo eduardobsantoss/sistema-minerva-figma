@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { X, Pencil, FileUp, TrendingUp, MapPin, CalendarDays, Phone, Home, FileText } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import { ArrowLeft, X, Pencil, FileUp, TrendingUp, MapPin, CalendarDays, Phone, Home, FileText } from 'lucide-vue-next';
 import { brl, statusCedenteColor, type Cedente } from '../../data/riscoData';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
+import { CopyButton } from '../../screens/detail-tabs/shared';
 import { KpiCard, ContatosPanel, EnderecosPanel, DocumentosPanel } from './cedente-detail';
 import EditarCadastroCedenteModal from './EditarCadastroCedenteModal.vue';
 
@@ -14,12 +15,23 @@ const TABS: { key: Tab; label: string; icon: typeof Phone }[] = [
   { key: 'documentos', label: 'Documentos', icon: FileText },
 ];
 
-const props = defineProps<{ cedente: Cedente }>();
+const props = withDefaults(
+  defineProps<{
+    cedente: Cedente;
+    /** Renderiza como página de detalhe (padrão dos módulos) em vez de overlay. */
+    asPage?: boolean;
+    pageLabel?: string;
+  }>(),
+  { asPage: false, pageLabel: '' },
+);
 const emit = defineEmits<{ close: []; update: [cedente: Cedente] }>();
 
 const tab = ref<Tab>('contatos');
 const editando = ref(false);
-const cor = statusCedenteColor(props.cedente.status);
+const cor = computed(() => statusCedenteColor(props.cedente.status));
+const eyebrow = computed(() =>
+  props.pageLabel ? `${props.pageLabel} · Cedente` : 'Cedente',
+);
 
 function handleUpdate(updated: Cedente) {
   emit('update', updated);
@@ -28,7 +40,67 @@ function handleUpdate(updated: Cedente) {
 </script>
 
 <template>
+  <!-- Página de detalhe -->
+  <div v-if="asPage" class="flex flex-col" style="gap: 24px">
+    <div class="flex items-center" style="gap: 16px">
+      <button
+        type="button"
+        aria-label="Voltar"
+        class="flex items-center justify-center"
+        style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: var(--surface-card); border: 1px solid var(--border-default); cursor: pointer; color: var(--text-strong); flex-shrink: 0"
+        @click="emit('close')"
+      >
+        <ArrowLeft :size="20" />
+      </button>
+      <div style="flex: 1; min-width: 0">
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.18em; color: var(--accent); text-transform: uppercase; margin-bottom: 4px">
+          {{ eyebrow }}
+        </div>
+        <h2 class="flex items-center" style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.01em; line-height: 1.2; gap: 10px; flex-wrap: wrap">
+          {{ cedente.nome }}
+          <span class="flex items-center" :style="{ gap: '6px', fontSize: '10px', fontWeight: 'var(--weight-bold)', letterSpacing: '0.10em', padding: '5px 11px', borderRadius: '9999px', background: `color-mix(in srgb, ${cor} 14%, transparent)`, color: cor }">
+            <span :style="{ width: '7px', height: '7px', borderRadius: '9999px', background: cor }" />
+            {{ cedente.status.toUpperCase() }}
+          </span>
+        </h2>
+        <p class="flex items-center" style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px; gap: 6px">
+          <span style="font-variant-numeric: tabular-nums">{{ cedente.documento }}</span>
+          <CopyButton :value="cedente.documento" />
+        </p>
+      </div>
+      <button
+        type="button"
+        class="flex items-center"
+        style="gap: 8px; height: 40px; padding: 0 16px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-card); cursor: pointer; color: var(--text-strong); font-weight: var(--weight-bold); font-size: var(--text-sm); white-space: nowrap; flex-shrink: 0"
+        @click="editando = true"
+      >
+        <Pencil :size="14" /> Editar cadastro
+      </button>
+    </div>
+
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px">
+      <KpiCard :icon="FileUp" label="Qtd. de títulos em aberto" :value="String(cedente.qtdTitulosAberto)" />
+      <KpiCard :icon="TrendingUp" label="Risco tomado" :value="brl(cedente.riscoTomado)" />
+      <KpiCard :icon="MapPin" label="Cidade - UF" :value="`${cedente.cidade} - ${cedente.uf}`" />
+      <KpiCard :icon="CalendarDays" label="Data de abertura" :value="cedente.dataAbertura" />
+    </div>
+
+    <SegmentedToggle
+      :model-value="tab"
+      :options="TABS"
+      variant="brand"
+      style="width: fit-content"
+      @update:model-value="tab = $event as Tab"
+    />
+
+    <ContatosPanel v-if="tab === 'contatos'" :cedente="cedente" @update="emit('update', $event)" />
+    <EnderecosPanel v-else-if="tab === 'enderecos'" :cedente="cedente" @update="emit('update', $event)" />
+    <DocumentosPanel v-else :cedente="cedente" @update="emit('update', $event)" />
+  </div>
+
+  <!-- Overlay (Risco e demais usos) -->
   <div
+    v-else
     style="
       position: fixed; inset: 0;
       background: rgba(8,60,74,0.55); backdrop-filter: blur(8px);
@@ -45,7 +117,6 @@ function handleUpdate(updated: Cedente) {
       "
       @click.stop
     >
-      <!-- Header -->
       <div class="flex items-start justify-between" style="padding: 20px 28px; border-bottom: 1px solid var(--border-default); flex-shrink: 0; gap: 16px">
         <div style="min-width: 0">
           <div class="flex items-center" style="gap: 10px; flex-wrap: wrap">
@@ -80,7 +151,6 @@ function handleUpdate(updated: Cedente) {
         </div>
       </div>
 
-      <!-- Body -->
       <div class="flex flex-col" style="padding: 24px; gap: 20px; overflow: auto">
         <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 14px">
           <KpiCard :icon="FileUp" label="Qtd. de títulos em aberto" :value="String(cedente.qtdTitulosAberto)" />
@@ -102,7 +172,6 @@ function handleUpdate(updated: Cedente) {
         <DocumentosPanel v-if="tab === 'documentos'" :cedente="cedente" @update="emit('update', $event)" />
       </div>
 
-      <!-- Footer -->
       <div class="flex items-center justify-end" style="gap: 12px; padding: 14px 28px; border-top: 1px solid var(--border-default); background: var(--surface-card); flex-shrink: 0">
         <button
           style="height: 40px; padding: 0 20px; background: var(--surface-card); color: var(--text-strong); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"

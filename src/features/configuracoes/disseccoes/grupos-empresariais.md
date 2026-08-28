@@ -6,15 +6,18 @@
 
 ```vue
 <script setup lang="ts">
-import { computed, reactive, ref, watch, type Component } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch, type Component } from 'vue';
 import {
   ArrowLeft,
   Bell,
+  Building2,
   CalendarDays,
   CircleDollarSign,
   FileText,
   History,
   Landmark,
+  MoreVertical,
+  Pencil,
   Receipt,
   Shield,
   TrendingUp,
@@ -33,6 +36,7 @@ import CedentesTab from '@/features/risco/screens/detail-tabs/CedentesTab.vue';
 import HistoricoTab from '@/features/risco/screens/detail-tabs/HistoricoTab.vue';
 import { CopyButton } from '@/features/risco/screens/detail-tabs/shared';
 import type { ParteRelacionada } from '@/features/solicitacao-operacao/data/operacaoData';
+import type { GarantiaMinuta } from '@/features/solicitacao-operacao/data/minutaData';
 import {
   GERENTES_SEED,
   TIPO_CLIENTE_OPTS,
@@ -41,7 +45,6 @@ import {
   type ContaBancariaGrupo,
   type DocumentoGrupo,
   type FaturamentoGrupo,
-  type GarantiaGrupo,
   type GrupoCadastro,
   type TipoCliente,
 } from '../data/gruposCadastroData';
@@ -62,6 +65,7 @@ const emit = defineEmits<{
   addParte: [];
   openParte: [parte: ParteRelacionada];
   removeParte: [parte: ParteRelacionada];
+  openCedente: [cedente: Cedente];
 }>();
 
 type TabKey =
@@ -88,6 +92,8 @@ const TABS: { key: TabKey; label: string; icon: Component }[] = [
 const toast = useToast();
 const tab = ref<TabKey>('cedentes');
 const editingCadastro = ref(false);
+const actionMenuOpen = ref(false);
+const actionMenuRef = ref<HTMLDivElement | null>(null);
 const savedBanner = ref(false);
 let bannerTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -252,27 +258,32 @@ function removeFaturamento(id: string) {
   });
 }
 
-function addGarantia(item: GarantiaGrupo) {
+function setGarantias(items: GarantiaMinuta[]) {
   persist((g) => {
-    g.garantias = [...g.garantias, item];
-  });
-}
-
-function updateGarantia(item: GarantiaGrupo) {
-  persist((g) => {
-    g.garantias = g.garantias.map((x) => (x.id === item.id ? item : x));
-  });
-}
-
-function removeGarantia(id: string) {
-  persist((g) => {
-    g.garantias = g.garantias.filter((x) => x.id !== id);
+    g.garantias = items;
   });
 }
 
 function verGrupoEconomico() {
   toast.info('Módulo de Grupos Econômicos ainda não está disponível.');
 }
+
+const actions = [
+  { label: 'Editar Cadastro', icon: Pencil, onClick: () => { editingCadastro.value = true; } },
+  { label: 'Ver Grupo Econômico', icon: Building2, onClick: verGrupoEconomico },
+];
+
+function handleActionClick(action: (typeof actions)[number]) {
+  actionMenuOpen.value = false;
+  action.onClick();
+}
+
+function handleClickOutside(e: MouseEvent) {
+  if (actionMenuRef.value && !actionMenuRef.value.contains(e.target as Node)) actionMenuOpen.value = false;
+}
+
+onMounted(() => document.addEventListener('mousedown', handleClickOutside));
+onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside));
 </script>
 
 <template>
@@ -352,41 +363,33 @@ function verGrupoEconomico() {
         </p>
       </div>
 
-      <div v-if="!isCreate && !editingCadastro" class="flex items-center" style="gap: 8px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end">
+      <div v-if="!isCreate && !editingCadastro" ref="actionMenuRef" style="position: relative; flex-shrink: 0">
         <button
           type="button"
-          style="
-            height: 40px;
-            padding: 0 16px;
-            background: var(--surface-card);
-            color: var(--text-strong);
-            border: 1px solid var(--border-default);
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            font-weight: var(--weight-bold);
-            font-size: var(--text-sm);
-          "
-          @click="verGrupoEconomico"
+          aria-label="Mais ações"
+          class="flex items-center justify-center"
+          style="width: 44px; height: 44px; border-radius: var(--radius-lg); background: var(--surface-card); border: 1px solid var(--border-default); cursor: pointer; color: var(--text-strong)"
+          @click="actionMenuOpen = !actionMenuOpen"
         >
-          Ver Grupo Econômico
+          <MoreVertical :size="20" />
         </button>
-        <button
-          type="button"
-          style="
-            height: 40px;
-            padding: 0 16px;
-            background: var(--action-primary-bg);
-            color: var(--action-primary-text);
-            border: none;
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            font-weight: var(--weight-bold);
-            font-size: var(--text-sm);
-          "
-          @click="editingCadastro = true"
+        <div
+          v-if="actionMenuOpen"
+          class="flex flex-col"
+          style="position: absolute; top: 52px; right: 0; z-index: 50; min-width: 240px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 6px"
         >
-          Editar Cadastro
-        </button>
+          <button
+            v-for="a in actions"
+            :key="a.label"
+            type="button"
+            class="flex items-center grupo-detail-action-item"
+            style="gap: 10px; padding: 10px 12px; background: none; border: none; cursor: pointer; border-radius: var(--radius-md); text-align: left; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-default); width: 100%; transition: background var(--duration-fast)"
+            @click="handleActionClick(a)"
+          >
+            <component :is="a.icon" :size="16" style="color: var(--text-muted)" />
+            {{ a.label }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -537,7 +540,13 @@ function verGrupoEconomico() {
     </div>
 
     <template v-else>
-      <CedentesTab v-if="tab === 'cedentes'" :cedentes="grupo.cedentes" @update-cedente="onUpdateCedente" />
+      <CedentesTab
+        v-if="tab === 'cedentes'"
+        as-page
+        :cedentes="grupo.cedentes"
+        @update-cedente="onUpdateCedente"
+        @open="emit('openCedente', $event)"
+      />
       <PartesRelacionadasTab
         v-else-if="tab === 'partes'"
         :partes="grupo.partes"
@@ -568,14 +577,18 @@ function verGrupoEconomico() {
       <GarantiasTab
         v-else-if="tab === 'garantias'"
         :garantias="grupo.garantias"
-        @add="addGarantia"
-        @update="updateGarantia"
-        @remove="removeGarantia"
+        @update:garantias="setGarantias"
       />
       <HistoricoTab v-else-if="tab === 'historico'" :eventos="grupo.historico" />
     </template>
   </div>
 </template>
+
+<style scoped>
+.grupo-detail-action-item:hover {
+  background: var(--surface-sunken);
+}
+</style>
 ```
 
 ### GruposCadastroListScreen
@@ -793,8 +806,9 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import type { ParteRelacionada } from '@/features/solicitacao-operacao/data/operacaoData';
+import type { Cedente } from '@/features/risco/data/riscoData';
 import ParteRelacionadaModal from '@/features/solicitacao-operacao/components/modals/ParteRelacionadaModal.vue';
-import { ParteRelacionadaDetailView } from '@/features/solicitacao-operacao/screens/detail-tabs/parte-relacionada';
+import CedenteDetailModal from '@/features/risco/components/modals/CedenteDetailModal.vue';
 import {
   GRUPOS_CADASTRO_SEED,
   cloneGrupo,
@@ -808,25 +822,19 @@ import GrupoCadastroView from './GrupoCadastroView.vue';
 type Route =
   | { level: 'list' }
   | { level: 'create' }
-  | { level: 'detail'; grupoId: string }
-  | { level: 'parte'; grupoId: string; parteKey: string };
+  | { level: 'detail'; grupoId: string };
 
 const items = ref<GrupoCadastro[]>(GRUPOS_CADASTRO_SEED.map(cloneGrupo));
 const route = ref<Route>({ level: 'list' });
 const showParteModal = ref(false);
+const editingParte = ref<ParteRelacionada | null>(null);
+const cedenteAtual = ref<Cedente | null>(null);
 const creating = ref<GrupoCadastro>(emptyGrupo());
 
 const grupoAtual = computed(() => {
   const r = route.value;
-  if (r.level !== 'detail' && r.level !== 'parte') return null;
+  if (r.level !== 'detail') return null;
   return items.value.find((g) => g.id === r.grupoId) ?? null;
-});
-
-const parteAtual = computed(() => {
-  const r = route.value;
-  const grupo = grupoAtual.value;
-  if (r.level !== 'parte' || !grupo) return null;
-  return grupo.partes.find((p) => parteKey(p) === r.parteKey) ?? null;
 });
 
 function parteKey(p: ParteRelacionada) {
@@ -839,6 +847,7 @@ function openCreate() {
 }
 
 function openDetail(id: string) {
+  cedenteAtual.value = null;
   route.value = { level: 'detail', grupoId: id };
 }
 
@@ -866,13 +875,29 @@ function handleSave(grupo: GrupoCadastro) {
   items.value = items.value.map((g) => (g.id === grupo.id ? cloneGrupo(grupo) : g));
 }
 
+function closeParteModal() {
+  showParteModal.value = false;
+  editingParte.value = null;
+}
+
 function handleAddParte(parte: ParteRelacionada) {
   const grupo = grupoAtual.value;
   if (!grupo) return;
   const next = cloneGrupo(grupo);
   next.partes = [...next.partes, cloneParte(parte)];
   items.value = items.value.map((g) => (g.id === next.id ? next : g));
-  showParteModal.value = false;
+  closeParteModal();
+}
+
+function handleSaveParte(parte: ParteRelacionada) {
+  const grupo = grupoAtual.value;
+  const original = editingParte.value;
+  if (!grupo || !original) return;
+  const key = parteKey(original);
+  const next = cloneGrupo(grupo);
+  next.partes = next.partes.map((p) => (parteKey(p) === key ? cloneParte(parte) : p));
+  items.value = items.value.map((g) => (g.id === next.id ? next : g));
+  closeParteModal();
 }
 
 function handleRemoveParte(parte: ParteRelacionada) {
@@ -884,24 +909,39 @@ function handleRemoveParte(parte: ParteRelacionada) {
   items.value = items.value.map((g) => (g.id === next.id ? next : g));
 }
 
-function openParte(parte: ParteRelacionada) {
-  const grupo = grupoAtual.value;
-  if (!grupo) return;
-  route.value = { level: 'parte', grupoId: grupo.id, parteKey: parteKey(parte) };
+function openAddParte() {
+  editingParte.value = null;
+  showParteModal.value = true;
 }
 
-function closeParte() {
-  const r = route.value;
-  if (r.level === 'parte') route.value = { level: 'detail', grupoId: r.grupoId };
+function openParte(parte: ParteRelacionada) {
+  editingParte.value = parte;
+  showParteModal.value = true;
+}
+
+function handleUpdateCedente(cedente: Cedente) {
+  const grupo = grupoAtual.value;
+  if (!grupo) return;
+  const next = cloneGrupo(grupo);
+  next.cedentes = next.cedentes.map((c) => (c.id === cedente.id ? cedente : c));
+  items.value = items.value.map((g) => (g.id === next.id ? next : g));
+  if (cedenteAtual.value?.id === cedente.id) cedenteAtual.value = cedente;
+}
+
+function backFromDetail() {
+  cedenteAtual.value = null;
+  route.value = { level: 'list' };
 }
 </script>
 
 <template>
-  <ParteRelacionadaDetailView
-    v-if="route.level === 'parte' && parteAtual && grupoAtual"
-    :parte="parteAtual"
-    :solicitacao-id="grupoAtual.nome"
-    @back="closeParte"
+  <CedenteDetailModal
+    v-if="cedenteAtual && grupoAtual"
+    as-page
+    :cedente="cedenteAtual"
+    :page-label="grupoAtual.nome"
+    @close="cedenteAtual = null"
+    @update="handleUpdateCedente"
   />
 
   <GruposCadastroListScreen
@@ -920,21 +960,24 @@ function closeParte() {
   />
 
   <GrupoCadastroView
-    v-if="grupoAtual && (route.level === 'detail' || route.level === 'parte')"
-    v-show="route.level === 'detail'"
+    v-if="grupoAtual && route.level === 'detail'"
+    v-show="!cedenteAtual"
     :grupo="grupoAtual"
     mode="detail"
-    @back="route = { level: 'list' }"
+    @back="backFromDetail"
     @save="handleSave"
-    @add-parte="showParteModal = true"
+    @add-parte="openAddParte"
     @open-parte="openParte"
     @remove-parte="handleRemoveParte"
+    @open-cedente="cedenteAtual = $event"
   />
 
   <ParteRelacionadaModal
     v-if="showParteModal"
-    @close="showParteModal = false"
+    :parte="editingParte"
+    @close="closeParteModal"
     @create="handleAddParte"
+    @save="handleSaveParte"
   />
 </template>
 ```
@@ -947,6 +990,7 @@ import { computed, ref } from 'vue';
 import { Plus, Trash2, Pencil } from 'lucide-vue-next';
 import type { ParteTipo, ParteRelacionada } from '@/features/solicitacao-operacao/data/operacaoData';
 import { PARTE_TIPO_LABEL, TIPOS_PARTE_OPTS } from '@/features/solicitacao-operacao/data/parteRelacionadaFields';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
 
 const props = defineProps<{ partes: ParteRelacionada[] }>();
 const emit = defineEmits<{
@@ -958,6 +1002,7 @@ const emit = defineEmits<{
 const COLS = '1.1fr 1.8fr 1.2fr auto';
 const filtroDocumento = ref('');
 const filtroTipo = ref('');
+const toDelete = ref<ParteRelacionada | null>(null);
 
 const parteTone: Record<ParteTipo, { bg: string; fg: string }> = {
   AVA: { bg: 'var(--gci-light)', fg: 'var(--gci-base)' },
@@ -986,8 +1031,13 @@ const tiposUsados = computed(() => {
 
 function onRemove(parte: ParteRelacionada, e: Event) {
   e.stopPropagation();
-  if (!window.confirm('Remover esta parte relacionada?')) return;
-  emit('remove', parte);
+  toDelete.value = parte;
+}
+
+function confirmRemove() {
+  if (!toDelete.value) return;
+  emit('remove', toDelete.value);
+  toDelete.value = null;
 }
 </script>
 
@@ -1144,6 +1194,14 @@ function onRemove(parte: ParteRelacionada, e: Event) {
         {{ PARTE_TIPO_LABEL[t] }}
       </span>
     </div>
+
+    <ConfirmDeleteModal
+      v-if="toDelete"
+      :title="`Remover a parte relacionada “${toDelete.nome}”?`"
+      description="Esta ação desvincula a parte deste grupo. Não será possível desfazer por aqui."
+      @close="toDelete = null"
+      @confirm="confirmRemove"
+    />
   </div>
 </template>
 ```
@@ -1154,11 +1212,12 @@ function onRemove(parte: ParteRelacionada, e: Event) {
 
 ```vue
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { reactive, ref } from 'vue';
 import { Star, Trash2 } from 'lucide-vue-next';
 import FormField from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/FormField.vue';
 import SelectField from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/SelectField.vue';
 import StepGrid from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/StepGrid.vue';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
 import { BANCO_GRUPO_OPTS, type ContaBancariaGrupo } from '../../data/gruposCadastroData';
 
 const props = defineProps<{ contas: ContaBancariaGrupo[] }>();
@@ -1174,6 +1233,7 @@ const draft = reactive({
   conta: '',
   titular: '',
 });
+const toDelete = ref<ContaBancariaGrupo | null>(null);
 
 function cadastrar() {
   if (!draft.banco || !draft.agencia.trim() || !draft.conta.trim() || !draft.titular.trim()) return;
@@ -1190,9 +1250,14 @@ function cadastrar() {
   draft.titular = '';
 }
 
-function excluir(id: string) {
-  if (!window.confirm('Excluir esta conta bancária?')) return;
-  emit('remove', id);
+function excluir(conta: ContaBancariaGrupo) {
+  toDelete.value = conta;
+}
+
+function confirmExcluir() {
+  if (!toDelete.value) return;
+  emit('remove', toDelete.value.id);
+  toDelete.value = null;
 }
 </script>
 
@@ -1264,12 +1329,20 @@ function excluir(id: string) {
         <div style="font-variant-numeric: tabular-nums; color: var(--text-default)">{{ c.conta }}</div>
         <div style="color: var(--text-default)">{{ c.titular }}</div>
         <div class="flex justify-end">
-          <button type="button" aria-label="Excluir conta" class="flex items-center justify-center" style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--action-danger-text-only)" @click="excluir(c.id)">
+          <button type="button" aria-label="Excluir conta" class="flex items-center justify-center" style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--action-danger-text-only)" @click="excluir(c)">
             <Trash2 :size="14" />
           </button>
         </div>
       </div>
     </div>
+
+    <ConfirmDeleteModal
+      v-if="toDelete"
+      :title="`Excluir a conta “${toDelete.banco}” — ${toDelete.conta}?`"
+      description="Esta ação remove a conta bancária deste grupo. Não será possível desfazer por aqui."
+      @close="toDelete = null"
+      @confirm="confirmExcluir"
+    />
   </div>
 </template>
 ```
@@ -1279,10 +1352,8 @@ function excluir(id: string) {
 ```vue
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Download, Trash2 } from 'lucide-vue-next';
-import FormField from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/FormField.vue';
-import SelectField from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/SelectField.vue';
-import StepGrid from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/StepGrid.vue';
+import { Download, FileText, Paperclip, Plus, Trash2 } from 'lucide-vue-next';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
 import { DOCUMENTO_TIPO_OPTS, type DocumentoGrupo } from '../../data/gruposCadastroData';
 
 const props = defineProps<{ documentos: DocumentoGrupo[] }>();
@@ -1292,112 +1363,193 @@ const emit = defineEmits<{
 }>();
 
 const tipo = ref(DOCUMENTO_TIPO_OPTS[0] ?? '');
-const validoAte = ref('');
 const arquivoNome = ref('');
 const fileRef = ref<HTMLInputElement | null>(null);
+const toDelete = ref<DocumentoGrupo | null>(null);
 
 function onFile(e: Event) {
   const input = e.target as HTMLInputElement;
   arquivoNome.value = input.files?.[0]?.name ?? '';
 }
 
-function cadastrar() {
+function inserir() {
   if (!arquivoNome.value.trim() || !tipo.value) return;
   emit('add', {
     id: `doc-${Date.now()}`,
     nome: arquivoNome.value.trim(),
     tipo: tipo.value,
-    validoAte: validoAte.value,
+    validoAte: '',
   });
   arquivoNome.value = '';
-  validoAte.value = '';
   if (fileRef.value) fileRef.value.value = '';
 }
 
-function excluir(id: string) {
-  if (!window.confirm('Excluir este documento?')) return;
-  emit('remove', id);
+function confirmExcluir() {
+  if (!toDelete.value) return;
+  emit('remove', toDelete.value.id);
+  toDelete.value = null;
 }
 </script>
 
 <template>
-  <div class="flex flex-col" style="gap: 16px">
-    <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); padding: 20px">
-      <StepGrid>
-        <SelectField v-model="tipo" label="Tipo do arquivo" :options="[...DOCUMENTO_TIPO_OPTS]" :span="4" />
-        <div style="grid-column: span 5">
-          <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
-            Insira o arquivo
-          </div>
-          <input
-            ref="fileRef"
-            type="file"
-            style="width: 100%; height: 40px; font-size: var(--text-sm); color: var(--text-default)"
-            @change="onFile"
-          />
-        </div>
-        <div style="grid-column: span 3">
-          <FormField v-model="validoAte" label="Válido até" placeholder="AAAA-MM-DD" />
-        </div>
-      </StepGrid>
-      <div class="flex justify-end" style="margin-top: 14px">
-        <button
-          type="button"
-          :disabled="!arquivoNome"
-          :style="{
-            height: '40px',
-            padding: '0 18px',
-            background: arquivoNome ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
-            color: arquivoNome ? '#fff' : 'var(--text-disabled)',
-            border: 'none',
-            borderRadius: 'var(--radius-lg)',
-            cursor: arquivoNome ? 'pointer' : 'not-allowed',
-            fontWeight: 'var(--weight-bold)',
-            fontSize: 'var(--text-xs)',
-            letterSpacing: '0.08em',
-          }"
-          @click="cadastrar"
-        >
-          CADASTRAR
-        </button>
-      </div>
+  <div class="flex flex-col" style="gap: 18px">
+    <div class="flex items-center justify-end">
+      <button
+        type="button"
+        class="flex items-center"
+        :disabled="documentos.length === 0"
+        :style="{
+          gap: '8px',
+          height: '38px',
+          padding: '0 14px',
+          background: 'var(--surface-card)',
+          border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-lg)',
+          cursor: documentos.length === 0 ? 'not-allowed' : 'pointer',
+          fontSize: 'var(--text-sm)',
+          fontWeight: 'var(--weight-bold)',
+          color: documentos.length === 0 ? 'var(--text-disabled)' : 'var(--text-strong)',
+        }"
+      >
+        <Download :size="14" /> Baixar todos
+      </button>
+    </div>
+
+    <div class="flex items-center" style="gap: 12px; flex-wrap: wrap">
+      <button
+        type="button"
+        class="flex items-center"
+        style="
+          gap: 8px;
+          flex: 1;
+          min-width: 220px;
+          height: 42px;
+          padding: 0 14px;
+          background: var(--surface-sunken);
+          border: 1px dashed var(--border-default);
+          border-radius: var(--radius-lg);
+          color: var(--text-muted);
+          font-size: var(--text-sm);
+          cursor: pointer;
+          text-align: left;
+        "
+        @click="fileRef?.click()"
+      >
+        <Paperclip :size="15" />
+        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+          {{ arquivoNome || 'Selecionar arquivo...' }}
+        </span>
+      </button>
+      <input ref="fileRef" type="file" hidden @change="onFile" />
+      <select
+        v-model="tipo"
+        style="
+          min-width: 180px;
+          height: 42px;
+          padding: 0 14px;
+          background: var(--surface-card);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-lg);
+          color: var(--text-default);
+          font-size: var(--text-sm);
+        "
+      >
+        <option v-for="opt in DOCUMENTO_TIPO_OPTS" :key="opt" :value="opt">{{ opt }}</option>
+      </select>
+      <button
+        type="button"
+        class="flex items-center"
+        :disabled="!arquivoNome"
+        :style="{
+          gap: '8px',
+          height: '42px',
+          padding: '0 18px',
+          background: arquivoNome ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
+          color: arquivoNome ? 'var(--action-primary-text)' : 'var(--text-disabled)',
+          border: 'none',
+          borderRadius: 'var(--radius-lg)',
+          cursor: arquivoNome ? 'pointer' : 'not-allowed',
+          fontWeight: 'var(--weight-bold)',
+          fontSize: 'var(--text-xs)',
+          letterSpacing: '0.06em',
+        }"
+        @click="inserir"
+      >
+        <Plus :size="15" /> Inserir
+      </button>
     </div>
 
     <div
       v-if="documentos.length === 0"
       style="padding: 40px; text-align: center; font-size: var(--text-sm); color: var(--text-muted); background: var(--surface-sunken); border-radius: var(--radius-xl); border: 1px dashed var(--border-default)"
     >
-      Nenhum documento cadastrado.
+      Nenhum documento anexado.
     </div>
-    <div
-      v-else
-      style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); overflow: hidden; background: var(--surface-card)"
-    >
-      <div class="grid items-center" style="grid-template-columns: 1.6fr 1.2fr 0.9fr auto; padding: 12px 20px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase">
-        <div>Nome</div>
-        <div>Tipo</div>
-        <div>Válido até</div>
-        <div style="text-align: right">Ação</div>
-      </div>
+    <div v-else class="flex flex-col" style="gap: 10px">
       <div
         v-for="d in documentos"
         :key="d.id"
-        class="grid items-center"
-        style="grid-template-columns: 1.6fr 1.2fr 0.9fr auto; padding: 14px 20px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
+        class="flex items-center"
+        style="gap: 14px; padding: 14px; background: var(--surface-sunken); border-radius: var(--radius-lg)"
       >
-        <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ d.nome }}</div>
-        <div style="color: var(--text-default)">{{ d.tipo }}</div>
-        <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ d.validoAte || '—' }}</div>
-        <div class="flex justify-end" style="gap: 6px">
-          <button type="button" aria-label="Download" class="flex items-center justify-center" style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--text-muted)">
-            <Download :size="14" />
-          </button>
-          <button type="button" aria-label="Excluir documento" class="flex items-center justify-center" style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--action-danger-text-only)" @click="excluir(d.id)">
-            <Trash2 :size="14" />
-          </button>
+        <div
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--gci-light); color: var(--gci-base); flex-shrink: 0"
+        >
+          <FileText :size="18" />
         </div>
+        <div style="flex: 1; min-width: 0">
+          <div class="flex items-center" style="gap: 8px; flex-wrap: wrap">
+            <span style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">{{ d.nome }}</span>
+            <span
+              style="
+                font-size: 9px;
+                font-weight: var(--weight-bold);
+                letter-spacing: 0.06em;
+                padding: 2px 7px;
+                border-radius: var(--radius-sm);
+                background: var(--status-neutral-bg);
+                color: var(--status-neutral-text);
+                text-transform: uppercase;
+              "
+            >
+              {{ d.tipo }}
+            </span>
+          </div>
+          <div
+            v-if="d.validoAte"
+            style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px"
+          >
+            Válido até {{ d.validoAte }}
+          </div>
+        </div>
+        <button
+          type="button"
+          aria-label="Baixar"
+          class="flex items-center justify-center"
+          style="width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--surface-card); border: 1px solid var(--border-default); cursor: pointer; color: var(--gci-base)"
+        >
+          <Download :size="15" />
+        </button>
+        <button
+          type="button"
+          aria-label="Excluir"
+          class="flex items-center justify-center"
+          style="width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--surface-card); border: 1px solid var(--border-default); cursor: pointer; color: var(--text-muted)"
+          @click="toDelete = d"
+        >
+          <Trash2 :size="15" />
+        </button>
       </div>
     </div>
+
+    <ConfirmDeleteModal
+      v-if="toDelete"
+      :title="`Excluir o documento “${toDelete.nome}”?`"
+      description="Esta ação remove o arquivo anexado deste grupo. Não será possível desfazer por aqui."
+      @close="toDelete = null"
+      @confirm="confirmExcluir"
+    />
   </div>
 </template>
 ```
@@ -1412,6 +1564,7 @@ import FormField from '@/features/solicitacao-operacao/components/modals/adicion
 import StepGrid from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/StepGrid.vue';
 import { parseCurrencyInput } from '@/features/solicitacao-operacao/utils/currencyMask';
 import { brl } from '@/features/risco/data/riscoData';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
 import type { FaturamentoGrupo } from '../../data/gruposCadastroData';
 
 defineProps<{ faturamentos: FaturamentoGrupo[] }>();
@@ -1422,6 +1575,7 @@ const emit = defineEmits<{
 
 const valorMasked = ref('R$ 0,00');
 const anoFiscal = ref('');
+const toDelete = ref<FaturamentoGrupo | null>(null);
 
 function cadastrar() {
   const valor = parseCurrencyInput(valorMasked.value);
@@ -1432,9 +1586,14 @@ function cadastrar() {
   anoFiscal.value = '';
 }
 
-function excluir(id: string) {
-  if (!window.confirm('Excluir este faturamento?')) return;
-  emit('remove', id);
+function excluir(item: FaturamentoGrupo) {
+  toDelete.value = item;
+}
+
+function confirmExcluir() {
+  if (!toDelete.value) return;
+  emit('remove', toDelete.value.id);
+  toDelete.value = null;
 }
 </script>
 
@@ -1480,108 +1639,20 @@ function excluir(id: string) {
         <div style="font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">{{ brl(f.valor) }}</div>
         <div style="color: var(--text-default)">{{ f.anoFiscal }}</div>
         <div class="flex justify-end">
-          <button type="button" aria-label="Excluir faturamento" class="flex items-center justify-center" style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--action-danger-text-only)" @click="excluir(f.id)">
+          <button type="button" aria-label="Excluir faturamento" class="flex items-center justify-center" style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--action-danger-text-only)" @click="excluir(f)">
             <Trash2 :size="14" />
           </button>
         </div>
       </div>
     </div>
-  </div>
-</template>
-```
 
-### GarantiaModal
-
-```vue
-<script setup lang="ts">
-import { reactive } from 'vue';
-import { X } from 'lucide-vue-next';
-import FormField from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/FormField.vue';
-import SelectField from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/SelectField.vue';
-import StepGrid from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/StepGrid.vue';
-import { parseCurrencyInput } from '@/features/solicitacao-operacao/utils/currencyMask';
-import { brl } from '@/features/risco/data/riscoData';
-import {
-  GARANTIA_STATUS_OPTS,
-  GARANTIA_TIPO_OPTS,
-  type GarantiaGrupo,
-} from '../../data/gruposCadastroData';
-
-const props = defineProps<{ garantia: GarantiaGrupo | null }>();
-const emit = defineEmits<{
-  close: [];
-  save: [item: GarantiaGrupo];
-}>();
-
-const draft = reactive({
-  tipo: props.garantia?.tipo ?? GARANTIA_TIPO_OPTS[0] ?? '',
-  dataAquisicao: props.garantia?.dataAquisicao ?? '',
-  valorMasked: brl(props.garantia?.valor ?? 0),
-  pctUsado: String(props.garantia?.pctUsado ?? 0),
-  qtdOperacoes: String(props.garantia?.qtdOperacoes ?? 0),
-  status: props.garantia?.status ?? GARANTIA_STATUS_OPTS[0] ?? 'Vigente',
-});
-
-function salvar() {
-  if (!draft.tipo) return;
-  emit('save', {
-    id: props.garantia?.id ?? `gar-${Date.now()}`,
-    tipo: draft.tipo,
-    dataAquisicao: draft.dataAquisicao,
-    valor: parseCurrencyInput(draft.valorMasked),
-    pctUsado: Number(draft.pctUsado.replace(',', '.')) || 0,
-    qtdOperacoes: Number(draft.qtdOperacoes) || 0,
-    status: draft.status,
-  });
-}
-</script>
-
-<template>
-  <div
-    style="position: fixed; inset: 0; z-index: 500; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 32px"
-    @click.self="emit('close')"
-  >
-    <div
-      style="width: 100%; max-width: 640px; background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden"
-      @click.stop
-    >
-      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
-        <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
-          {{ garantia ? 'Editar garantia' : 'Cadastrar garantia' }}
-        </h2>
-        <button
-          type="button"
-          aria-label="Fechar"
-          class="flex items-center justify-center"
-          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted)"
-          @click="emit('close')"
-        >
-          <X :size="18" />
-        </button>
-      </div>
-      <div style="padding: 24px 28px">
-        <StepGrid>
-          <SelectField v-model="draft.tipo" label="Tipo" :options="[...GARANTIA_TIPO_OPTS]" :span="6" />
-          <FormField v-model="draft.dataAquisicao" label="Data de aquisição" placeholder="DD/MM/AAAA" :span="6" />
-          <FormField v-model="draft.valorMasked" label="Valor" currency :span="4" />
-          <FormField v-model="draft.pctUsado" label="% usado" :span="4" />
-          <FormField v-model="draft.qtdOperacoes" label="Qtde operações" :span="4" />
-          <SelectField v-model="draft.status" label="Status" :options="[...GARANTIA_STATUS_OPTS]" :span="12" />
-        </StepGrid>
-      </div>
-      <div class="flex items-center justify-end" style="gap: 10px; padding: 16px 28px; border-top: 1px solid var(--border-default)">
-        <button type="button" style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)" @click="emit('close')">
-          Cancelar
-        </button>
-        <button
-          type="button"
-          style="height: 44px; padding: 0 22px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
-          @click="salvar"
-        >
-          Salvar
-        </button>
-      </div>
-    </div>
+    <ConfirmDeleteModal
+      v-if="toDelete"
+      :title="`Excluir o faturamento de ${toDelete.anoFiscal}?`"
+      description="Esta ação remove o registro de faturamento deste grupo. Não será possível desfazer por aqui."
+      @close="toDelete = null"
+      @confirm="confirmExcluir"
+    />
   </div>
 </template>
 ```
@@ -1590,102 +1661,21 @@ function salvar() {
 
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
-import { brl } from '@/features/risco/data/riscoData';
-import type { GarantiaGrupo } from '../../data/gruposCadastroData';
-import GarantiaModal from './GarantiaModal.vue';
+import { computed } from 'vue';
+import GarantiaMinutaStep from '@/features/solicitacao-operacao/components/modals/minuta/GarantiaMinutaStep.vue';
+import type { GarantiaMinuta } from '@/features/solicitacao-operacao/data/minutaData';
 
-const props = defineProps<{ garantias: GarantiaGrupo[] }>();
-const emit = defineEmits<{
-  add: [item: GarantiaGrupo];
-  update: [item: GarantiaGrupo];
-  remove: [id: string];
-}>();
+const props = defineProps<{ garantias: GarantiaMinuta[] }>();
+const emit = defineEmits<{ 'update:garantias': [items: GarantiaMinuta[]] }>();
 
-const editing = ref<GarantiaGrupo | null>(null);
-const creating = ref(false);
-
-function onSave(item: GarantiaGrupo) {
-  if (creating.value) emit('add', item);
-  else emit('update', item);
-  creating.value = false;
-  editing.value = null;
-}
-
-function excluir(id: string) {
-  if (!window.confirm('Excluir esta garantia?')) return;
-  emit('remove', id);
-}
-
-function statusColor(status: string) {
-  if (status === 'Vigente') return 'var(--success-base)';
-  if (status === 'Baixada') return 'var(--text-muted)';
-  return 'var(--warning-base)';
-}
+const model = computed({
+  get: () => props.garantias,
+  set: (next) => emit('update:garantias', next),
+});
 </script>
 
 <template>
-  <div class="flex flex-col" style="gap: 16px">
-    <div class="flex justify-end">
-      <button
-        type="button"
-        class="flex items-center"
-        style="gap: 8px; height: 38px; padding: 0 14px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)"
-        @click="editing = null; creating = true"
-      >
-        <Plus :size="14" />
-        Cadastrar
-      </button>
-    </div>
-
-    <div
-      v-if="garantias.length === 0"
-      style="padding: 40px; text-align: center; font-size: var(--text-sm); color: var(--text-muted); background: var(--surface-sunken); border-radius: var(--radius-xl); border: 1px dashed var(--border-default)"
-    >
-      Nenhuma garantia cadastrada.
-    </div>
-    <div
-      v-else
-      style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); overflow: hidden; background: var(--surface-card)"
-    >
-      <div class="grid items-center" style="grid-template-columns: 1.2fr 0.9fr 1fr 0.6fr 0.7fr 0.8fr auto; padding: 12px 20px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase">
-        <div>Tipo</div>
-        <div>Data aquisição</div>
-        <div>Valor</div>
-        <div>% usado</div>
-        <div>Operações</div>
-        <div>Status</div>
-        <div style="text-align: right">Ação</div>
-      </div>
-      <div
-        v-for="g in garantias"
-        :key="g.id"
-        class="grid items-center"
-        style="grid-template-columns: 1.2fr 0.9fr 1fr 0.6fr 0.7fr 0.8fr auto; padding: 14px 20px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
-      >
-        <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ g.tipo }}</div>
-        <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ g.dataAquisicao || '—' }}</div>
-        <div style="font-variant-numeric: tabular-nums; color: var(--text-default)">{{ brl(g.valor) }}</div>
-        <div style="font-variant-numeric: tabular-nums">{{ g.pctUsado }}%</div>
-        <div style="font-variant-numeric: tabular-nums">{{ g.qtdOperacoes }}</div>
-        <div :style="{ color: statusColor(g.status), fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-xs)' }">
-          {{ g.status }}
-        </div>
-        <div class="flex justify-end" style="gap: 6px">
-          <button type="button" aria-label="Editar garantia" class="flex items-center justify-center" style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--text-muted)" @click="editing = g">
-            <Pencil :size="14" />
-          </button>
-          <button type="button" aria-label="Excluir garantia" class="flex items-center justify-center" style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--action-danger-text-only)" @click="excluir(g.id)">
-            <Trash2 :size="14" />
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <GarantiaModal v-if="creating" :garantia="null" @close="creating = false" @save="onSave" />
-    <GarantiaModal v-else-if="editing" :garantia="editing" @close="editing = null" @save="onSave" />
-  </div>
+  <GarantiaMinutaStep v-model:garantias="model" :edit-on-row-click="false" />
 </template>
 ```
 

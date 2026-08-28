@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import type { ParteRelacionada } from '@/features/solicitacao-operacao/data/operacaoData';
+import type { Cedente } from '@/features/risco/data/riscoData';
 import ParteRelacionadaModal from '@/features/solicitacao-operacao/components/modals/ParteRelacionadaModal.vue';
-import { ParteRelacionadaDetailView } from '@/features/solicitacao-operacao/screens/detail-tabs/parte-relacionada';
+import CedenteDetailModal from '@/features/risco/components/modals/CedenteDetailModal.vue';
 import {
   GRUPOS_CADASTRO_SEED,
   cloneGrupo,
@@ -16,25 +17,19 @@ import GrupoCadastroView from './GrupoCadastroView.vue';
 type Route =
   | { level: 'list' }
   | { level: 'create' }
-  | { level: 'detail'; grupoId: string }
-  | { level: 'parte'; grupoId: string; parteKey: string };
+  | { level: 'detail'; grupoId: string };
 
 const items = ref<GrupoCadastro[]>(GRUPOS_CADASTRO_SEED.map(cloneGrupo));
 const route = ref<Route>({ level: 'list' });
 const showParteModal = ref(false);
+const editingParte = ref<ParteRelacionada | null>(null);
+const cedenteAtual = ref<Cedente | null>(null);
 const creating = ref<GrupoCadastro>(emptyGrupo());
 
 const grupoAtual = computed(() => {
   const r = route.value;
-  if (r.level !== 'detail' && r.level !== 'parte') return null;
+  if (r.level !== 'detail') return null;
   return items.value.find((g) => g.id === r.grupoId) ?? null;
-});
-
-const parteAtual = computed(() => {
-  const r = route.value;
-  const grupo = grupoAtual.value;
-  if (r.level !== 'parte' || !grupo) return null;
-  return grupo.partes.find((p) => parteKey(p) === r.parteKey) ?? null;
 });
 
 function parteKey(p: ParteRelacionada) {
@@ -47,6 +42,7 @@ function openCreate() {
 }
 
 function openDetail(id: string) {
+  cedenteAtual.value = null;
   route.value = { level: 'detail', grupoId: id };
 }
 
@@ -74,13 +70,29 @@ function handleSave(grupo: GrupoCadastro) {
   items.value = items.value.map((g) => (g.id === grupo.id ? cloneGrupo(grupo) : g));
 }
 
+function closeParteModal() {
+  showParteModal.value = false;
+  editingParte.value = null;
+}
+
 function handleAddParte(parte: ParteRelacionada) {
   const grupo = grupoAtual.value;
   if (!grupo) return;
   const next = cloneGrupo(grupo);
   next.partes = [...next.partes, cloneParte(parte)];
   items.value = items.value.map((g) => (g.id === next.id ? next : g));
-  showParteModal.value = false;
+  closeParteModal();
+}
+
+function handleSaveParte(parte: ParteRelacionada) {
+  const grupo = grupoAtual.value;
+  const original = editingParte.value;
+  if (!grupo || !original) return;
+  const key = parteKey(original);
+  const next = cloneGrupo(grupo);
+  next.partes = next.partes.map((p) => (parteKey(p) === key ? cloneParte(parte) : p));
+  items.value = items.value.map((g) => (g.id === next.id ? next : g));
+  closeParteModal();
 }
 
 function handleRemoveParte(parte: ParteRelacionada) {
@@ -92,24 +104,39 @@ function handleRemoveParte(parte: ParteRelacionada) {
   items.value = items.value.map((g) => (g.id === next.id ? next : g));
 }
 
-function openParte(parte: ParteRelacionada) {
-  const grupo = grupoAtual.value;
-  if (!grupo) return;
-  route.value = { level: 'parte', grupoId: grupo.id, parteKey: parteKey(parte) };
+function openAddParte() {
+  editingParte.value = null;
+  showParteModal.value = true;
 }
 
-function closeParte() {
-  const r = route.value;
-  if (r.level === 'parte') route.value = { level: 'detail', grupoId: r.grupoId };
+function openParte(parte: ParteRelacionada) {
+  editingParte.value = parte;
+  showParteModal.value = true;
+}
+
+function handleUpdateCedente(cedente: Cedente) {
+  const grupo = grupoAtual.value;
+  if (!grupo) return;
+  const next = cloneGrupo(grupo);
+  next.cedentes = next.cedentes.map((c) => (c.id === cedente.id ? cedente : c));
+  items.value = items.value.map((g) => (g.id === next.id ? next : g));
+  if (cedenteAtual.value?.id === cedente.id) cedenteAtual.value = cedente;
+}
+
+function backFromDetail() {
+  cedenteAtual.value = null;
+  route.value = { level: 'list' };
 }
 </script>
 
 <template>
-  <ParteRelacionadaDetailView
-    v-if="route.level === 'parte' && parteAtual && grupoAtual"
-    :parte="parteAtual"
-    :solicitacao-id="grupoAtual.nome"
-    @back="closeParte"
+  <CedenteDetailModal
+    v-if="cedenteAtual && grupoAtual"
+    as-page
+    :cedente="cedenteAtual"
+    :page-label="grupoAtual.nome"
+    @close="cedenteAtual = null"
+    @update="handleUpdateCedente"
   />
 
   <GruposCadastroListScreen
@@ -128,20 +155,23 @@ function closeParte() {
   />
 
   <GrupoCadastroView
-    v-if="grupoAtual && (route.level === 'detail' || route.level === 'parte')"
-    v-show="route.level === 'detail'"
+    v-if="grupoAtual && route.level === 'detail'"
+    v-show="!cedenteAtual"
     :grupo="grupoAtual"
     mode="detail"
-    @back="route = { level: 'list' }"
+    @back="backFromDetail"
     @save="handleSave"
-    @add-parte="showParteModal = true"
+    @add-parte="openAddParte"
     @open-parte="openParte"
     @remove-parte="handleRemoveParte"
+    @open-cedente="cedenteAtual = $event"
   />
 
   <ParteRelacionadaModal
     v-if="showParteModal"
-    @close="showParteModal = false"
+    :parte="editingParte"
+    @close="closeParteModal"
     @create="handleAddParte"
+    @save="handleSaveParte"
   />
 </template>

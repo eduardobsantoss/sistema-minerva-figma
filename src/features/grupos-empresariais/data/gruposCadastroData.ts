@@ -6,6 +6,10 @@ import {
   type TipoCliente,
 } from '@/features/risco/data/riscoData';
 import {
+  emptyGarantiaMinuta,
+  type GarantiaMinuta,
+} from '@/features/solicitacao-operacao/data/minutaData';
+import {
   enriquecerParteRelacionada,
   type ParteRelacionada,
 } from '@/features/solicitacao-operacao/data/operacaoData';
@@ -43,15 +47,7 @@ export interface FundoNotificacaoGrupo {
   notifiable: boolean;
 }
 
-export interface GarantiaGrupo {
-  id: string;
-  tipo: string;
-  dataAquisicao: string;
-  valor: number;
-  pctUsado: number;
-  qtdOperacoes: number;
-  status: string;
-}
+export type GarantiaGrupo = GarantiaMinuta;
 
 export const DOCUMENTO_TIPO_OPTS = [
   'Contrato social',
@@ -71,16 +67,6 @@ export const BANCO_GRUPO_OPTS = [
   '237 — Bradesco',
   '341 — Itaú',
 ];
-
-export const GARANTIA_TIPO_OPTS = [
-  'AF Imóvel',
-  'AF Veículo',
-  'Penhor Agrícola',
-  'Aval',
-  'Caução',
-];
-
-export const GARANTIA_STATUS_OPTS = ['Vigente', 'Em análise', 'Baixada'];
 
 export interface GrupoCadastro {
   id: string;
@@ -123,6 +109,14 @@ function cloneCedente(c: Cedente): Cedente {
   };
 }
 
+export function cloneGarantia(g: GarantiaMinuta): GarantiaMinuta {
+  return JSON.parse(JSON.stringify(g)) as GarantiaMinuta;
+}
+
+function seedGarantia(partial: Partial<GarantiaMinuta>): GarantiaMinuta {
+  return { ...emptyGarantiaMinuta(), ...partial };
+}
+
 export function cloneGrupo(grupo: GrupoCadastro): GrupoCadastro {
   return {
     ...grupo,
@@ -132,7 +126,7 @@ export function cloneGrupo(grupo: GrupoCadastro): GrupoCadastro {
     contas: grupo.contas.map((c) => ({ ...c })),
     faturamentos: grupo.faturamentos.map((f) => ({ ...f })),
     fundosNotificacao: grupo.fundosNotificacao.map((f) => ({ ...f })),
-    garantias: grupo.garantias.map((g) => ({ ...g })),
+    garantias: grupo.garantias.map(cloneGarantia),
     historico: grupo.historico.map((h) => ({ ...h })),
   };
 }
@@ -351,15 +345,15 @@ function detalhePadrao(
       { id: `${id}-fn-3`, nome: 'FIDC Recebíveis', notifiable: false },
     ],
     garantias: extras.garantias ?? [
-      {
-        id: `${id}-gar-1`,
-        tipo: 'AF Imóvel',
-        dataAquisicao: '10/03/2024',
-        valor: 2_000_000,
-        pctUsado: 45,
-        qtdOperacoes: 2,
-        status: 'Vigente',
-      },
+      seedGarantia({
+        tipo: 'AF. Imóvel',
+        valor: 'R$ 2.000.000,00',
+        descricao: 'Imóvel rural vinculado ao grupo',
+        percentualUsado: 50,
+        instrumentoParticular: true,
+        constituirGarantia: true,
+        numeroTestemunhas: '2',
+      }),
     ],
     historico: extras.historico ?? [
       { id: `${id}-hist-3`, datetime: '18/06/2026 09:12', descricao: 'Documentos do grupo atualizados.' },

@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch, type Component } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch, type Component } from 'vue';
 import {
   ArrowLeft,
   Bell,
+  Building2,
   CalendarDays,
   CircleDollarSign,
   FileText,
   History,
   Landmark,
+  MoreVertical,
+  Pencil,
   Receipt,
   Shield,
   TrendingUp,
@@ -26,6 +29,7 @@ import CedentesTab from '@/features/risco/screens/detail-tabs/CedentesTab.vue';
 import HistoricoTab from '@/features/risco/screens/detail-tabs/HistoricoTab.vue';
 import { CopyButton } from '@/features/risco/screens/detail-tabs/shared';
 import type { ParteRelacionada } from '@/features/solicitacao-operacao/data/operacaoData';
+import type { GarantiaMinuta } from '@/features/solicitacao-operacao/data/minutaData';
 import {
   GERENTES_SEED,
   TIPO_CLIENTE_OPTS,
@@ -34,7 +38,6 @@ import {
   type ContaBancariaGrupo,
   type DocumentoGrupo,
   type FaturamentoGrupo,
-  type GarantiaGrupo,
   type GrupoCadastro,
   type TipoCliente,
 } from '../data/gruposCadastroData';
@@ -55,6 +58,7 @@ const emit = defineEmits<{
   addParte: [];
   openParte: [parte: ParteRelacionada];
   removeParte: [parte: ParteRelacionada];
+  openCedente: [cedente: Cedente];
 }>();
 
 type TabKey =
@@ -81,6 +85,8 @@ const TABS: { key: TabKey; label: string; icon: Component }[] = [
 const toast = useToast();
 const tab = ref<TabKey>('cedentes');
 const editingCadastro = ref(false);
+const actionMenuOpen = ref(false);
+const actionMenuRef = ref<HTMLDivElement | null>(null);
 const savedBanner = ref(false);
 let bannerTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -245,27 +251,32 @@ function removeFaturamento(id: string) {
   });
 }
 
-function addGarantia(item: GarantiaGrupo) {
+function setGarantias(items: GarantiaMinuta[]) {
   persist((g) => {
-    g.garantias = [...g.garantias, item];
-  });
-}
-
-function updateGarantia(item: GarantiaGrupo) {
-  persist((g) => {
-    g.garantias = g.garantias.map((x) => (x.id === item.id ? item : x));
-  });
-}
-
-function removeGarantia(id: string) {
-  persist((g) => {
-    g.garantias = g.garantias.filter((x) => x.id !== id);
+    g.garantias = items;
   });
 }
 
 function verGrupoEconomico() {
   toast.info('Módulo de Grupos Econômicos ainda não está disponível.');
 }
+
+const actions = [
+  { label: 'Editar Cadastro', icon: Pencil, onClick: () => { editingCadastro.value = true; } },
+  { label: 'Ver Grupo Econômico', icon: Building2, onClick: verGrupoEconomico },
+];
+
+function handleActionClick(action: (typeof actions)[number]) {
+  actionMenuOpen.value = false;
+  action.onClick();
+}
+
+function handleClickOutside(e: MouseEvent) {
+  if (actionMenuRef.value && !actionMenuRef.value.contains(e.target as Node)) actionMenuOpen.value = false;
+}
+
+onMounted(() => document.addEventListener('mousedown', handleClickOutside));
+onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside));
 </script>
 
 <template>
@@ -345,41 +356,33 @@ function verGrupoEconomico() {
         </p>
       </div>
 
-      <div v-if="!isCreate && !editingCadastro" class="flex items-center" style="gap: 8px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end">
+      <div v-if="!isCreate && !editingCadastro" ref="actionMenuRef" style="position: relative; flex-shrink: 0">
         <button
           type="button"
-          style="
-            height: 40px;
-            padding: 0 16px;
-            background: var(--surface-card);
-            color: var(--text-strong);
-            border: 1px solid var(--border-default);
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            font-weight: var(--weight-bold);
-            font-size: var(--text-sm);
-          "
-          @click="verGrupoEconomico"
+          aria-label="Mais ações"
+          class="flex items-center justify-center"
+          style="width: 44px; height: 44px; border-radius: var(--radius-lg); background: var(--surface-card); border: 1px solid var(--border-default); cursor: pointer; color: var(--text-strong)"
+          @click="actionMenuOpen = !actionMenuOpen"
         >
-          Ver Grupo Econômico
+          <MoreVertical :size="20" />
         </button>
-        <button
-          type="button"
-          style="
-            height: 40px;
-            padding: 0 16px;
-            background: var(--action-primary-bg);
-            color: var(--action-primary-text);
-            border: none;
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            font-weight: var(--weight-bold);
-            font-size: var(--text-sm);
-          "
-          @click="editingCadastro = true"
+        <div
+          v-if="actionMenuOpen"
+          class="flex flex-col"
+          style="position: absolute; top: 52px; right: 0; z-index: 50; min-width: 240px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 6px"
         >
-          Editar Cadastro
-        </button>
+          <button
+            v-for="a in actions"
+            :key="a.label"
+            type="button"
+            class="flex items-center grupo-detail-action-item"
+            style="gap: 10px; padding: 10px 12px; background: none; border: none; cursor: pointer; border-radius: var(--radius-md); text-align: left; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-default); width: 100%; transition: background var(--duration-fast)"
+            @click="handleActionClick(a)"
+          >
+            <component :is="a.icon" :size="16" style="color: var(--text-muted)" />
+            {{ a.label }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -530,7 +533,13 @@ function verGrupoEconomico() {
     </div>
 
     <template v-else>
-      <CedentesTab v-if="tab === 'cedentes'" :cedentes="grupo.cedentes" @update-cedente="onUpdateCedente" />
+      <CedentesTab
+        v-if="tab === 'cedentes'"
+        as-page
+        :cedentes="grupo.cedentes"
+        @update-cedente="onUpdateCedente"
+        @open="emit('openCedente', $event)"
+      />
       <PartesRelacionadasTab
         v-else-if="tab === 'partes'"
         :partes="grupo.partes"
@@ -561,11 +570,15 @@ function verGrupoEconomico() {
       <GarantiasTab
         v-else-if="tab === 'garantias'"
         :garantias="grupo.garantias"
-        @add="addGarantia"
-        @update="updateGarantia"
-        @remove="removeGarantia"
+        @update:garantias="setGarantias"
       />
       <HistoricoTab v-else-if="tab === 'historico'" :eventos="grupo.historico" />
     </template>
   </div>
 </template>
+
+<style scoped>
+.grupo-detail-action-item:hover {
+  background: var(--surface-sunken);
+}
+</style>

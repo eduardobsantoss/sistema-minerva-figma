@@ -59,6 +59,16 @@ import DocGroup from '../../novo-pedido/DocGroup.vue';
 
 const garantias = defineModel<GarantiaMinuta[]>('garantias', { default: () => [] });
 
+const props = withDefaults(
+  defineProps<{
+    /** Clique na linha abre a edição. Desative para editar só pelo menu de ações. */
+    editOnRowClick?: boolean;
+    /** Toggle “Possui garantias” — só na minuta. */
+    showPossuiToggle?: boolean;
+  }>(),
+  { editOnRowClick: true, showPossuiToggle: true },
+);
+
 const RELACAO_ESTOQUE_DOC = {
   id: 'relacao-estoque',
   nome: 'Relação do Estoque Detalhado',
@@ -381,14 +391,21 @@ function globalIndex(pageIdx: number) {
 
 <template>
   <div class="flex flex-col" style="gap: 20px">
-    <div class="flex items-center justify-between" style="gap: 16px; flex-wrap: wrap">
-      <div style="flex: 1; min-width: 240px">
+    <div
+      class="flex items-center"
+      :style="{
+        gap: '16px',
+        flexWrap: 'wrap',
+        justifyContent: showPossuiToggle ? 'space-between' : 'flex-end',
+      }"
+    >
+      <div v-if="showPossuiToggle" style="flex: 1; min-width: 240px">
         <ToggleRow label="Possui garantias" :on="possuiGarantias" @toggle="possuiGarantias = !possuiGarantias" />
       </div>
-      <AddButton v-if="possuiGarantias" @click="openNova">Adicionar garantia</AddButton>
+      <AddButton v-if="!showPossuiToggle || possuiGarantias" @click="openNova">Adicionar garantia</AddButton>
     </div>
 
-    <template v-if="possuiGarantias">
+    <template v-if="!showPossuiToggle || possuiGarantias">
       <EmptyState
         v-if="garantias.length === 0"
         :icon="Shield"
@@ -423,15 +440,15 @@ function globalIndex(pageIdx: number) {
           v-for="(g, pageIdx) in pageItems"
           :key="pageIdx"
           class="grid items-center"
-          style="
-            grid-template-columns: minmax(120px, 1.1fr) minmax(96px, 0.7fr) 96px minmax(90px, 0.75fr) minmax(80px, 0.65fr) minmax(72px, 0.55fr) 40px;
-            padding: 12px 14px;
-            border-top: 1px solid var(--border-default);
-            font-size: var(--text-sm);
-            cursor: pointer;
-            column-gap: 12px;
-          "
-          @click="openEdit(globalIndex(pageIdx))"
+          :style="{
+            gridTemplateColumns: 'minmax(120px, 1.1fr) minmax(96px, 0.7fr) 96px minmax(90px, 0.75fr) minmax(80px, 0.65fr) minmax(72px, 0.55fr) 40px',
+            padding: '12px 14px',
+            borderTop: '1px solid var(--border-default)',
+            fontSize: 'var(--text-sm)',
+            cursor: editOnRowClick ? 'pointer' : 'default',
+            columnGap: '12px',
+          }"
+          @click="editOnRowClick && openEdit(globalIndex(pageIdx))"
         >
           <div style="font-weight: var(--weight-semibold); color: var(--text-strong); min-width: 0">{{ g.tipo }}</div>
           <div style="font-variant-numeric: tabular-nums; color: var(--text-strong)">{{ g.valor || '—' }}</div>
