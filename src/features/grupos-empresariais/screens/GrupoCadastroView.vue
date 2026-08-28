@@ -29,7 +29,7 @@ import CedentesTab from '@/features/risco/screens/detail-tabs/CedentesTab.vue';
 import HistoricoTab from '@/features/risco/screens/detail-tabs/HistoricoTab.vue';
 import { CopyButton } from '@/features/risco/screens/detail-tabs/shared';
 import type { ParteRelacionada } from '@/features/solicitacao-operacao/data/operacaoData';
-import type { GarantiaMinuta } from '@/features/solicitacao-operacao/data/minutaData';
+import type { GarantiaGrupo } from '../data/gruposCadastroData';
 import {
   GERENTES_SEED,
   TIPO_CLIENTE_OPTS,
@@ -251,7 +251,7 @@ function removeFaturamento(id: string) {
   });
 }
 
-function setGarantias(items: GarantiaMinuta[]) {
+function setGarantias(items: GarantiaGrupo[]) {
   persist((g) => {
     g.garantias = items;
   });

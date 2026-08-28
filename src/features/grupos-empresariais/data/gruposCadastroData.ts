@@ -47,7 +47,17 @@ export interface FundoNotificacaoGrupo {
   notifiable: boolean;
 }
 
-export type GarantiaGrupo = GarantiaMinuta;
+export type SituacaoGarantiaGrupo = 'em_uso' | 'disponivel';
+export type SituacaoRegistroGrupo = 'pendente' | 'nao' | 'ok';
+
+export interface GarantiaGrupo extends GarantiaMinuta {
+  id: string;
+  dataAquisicao: string;
+  qtdOperacoes: number;
+  situacaoGarantia: SituacaoGarantiaGrupo;
+  situacaoRegistroCartorio: SituacaoRegistroGrupo;
+  situacaoRegistroRegistradora: SituacaoRegistroGrupo;
+}
 
 export const DOCUMENTO_TIPO_OPTS = [
   'Contrato social',
@@ -109,13 +119,135 @@ function cloneCedente(c: Cedente): Cedente {
   };
 }
 
-export function cloneGarantia(g: GarantiaMinuta): GarantiaMinuta {
-  return JSON.parse(JSON.stringify(g)) as GarantiaMinuta;
+export function cloneGarantia(g: GarantiaGrupo): GarantiaGrupo {
+  return JSON.parse(JSON.stringify(g)) as GarantiaGrupo;
 }
 
 function seedGarantia(partial: Partial<GarantiaMinuta>): GarantiaMinuta {
   return { ...emptyGarantiaMinuta(), ...partial };
 }
+
+let garantiaIdSeq = 0;
+
+export function seedGarantiaGrupo(partial: Partial<GarantiaGrupo> = {}): GarantiaGrupo {
+  const minuta = seedGarantia(partial);
+  const qtdOperacoes = partial.qtdOperacoes ?? 0;
+  const percentualUsado = partial.percentualUsado ?? minuta.percentualUsado ?? 0;
+  return {
+    ...minuta,
+    id: partial.id ?? `gar-${++garantiaIdSeq}`,
+    dataAquisicao: partial.dataAquisicao ?? new Date().toLocaleDateString('pt-BR'),
+    qtdOperacoes,
+    percentualUsado,
+    situacaoGarantia:
+      partial.situacaoGarantia ??
+      (qtdOperacoes > 0 || percentualUsado > 0 ? 'em_uso' : 'disponivel'),
+    situacaoRegistroCartorio: partial.situacaoRegistroCartorio ?? 'nao',
+    situacaoRegistroRegistradora: partial.situacaoRegistroRegistradora ?? 'nao',
+  };
+}
+
+const GARANTIAS_SEED_PADRAO: Partial<GarantiaGrupo>[] = [
+  {
+    id: 'gar-1',
+    tipo: 'AF. Imóvel',
+    valor: 'R$ 11.958.588,00',
+    dataAquisicao: '30/07/2025',
+    percentualUsado: 100,
+    qtdOperacoes: 1,
+    situacaoGarantia: 'em_uso',
+    situacaoRegistroCartorio: 'pendente',
+    situacaoRegistroRegistradora: 'nao',
+  },
+  {
+    id: 'gar-2',
+    tipo: 'AF. Imóvel',
+    valor: 'R$ 8.806.811,00',
+    dataAquisicao: '30/07/2025',
+    percentualUsado: 100,
+    qtdOperacoes: 1,
+    situacaoGarantia: 'em_uso',
+    situacaoRegistroCartorio: 'nao',
+    situacaoRegistroRegistradora: 'nao',
+  },
+  {
+    id: 'gar-3',
+    tipo: 'AF. Estoque',
+    valor: 'R$ 12.000.000,00',
+    dataAquisicao: '30/07/2025',
+    percentualUsado: 100,
+    qtdOperacoes: 1,
+    situacaoGarantia: 'em_uso',
+    situacaoRegistroCartorio: 'nao',
+    situacaoRegistroRegistradora: 'nao',
+  },
+  {
+    id: 'gar-4',
+    tipo: 'Cessão Fiduciária de Direitos Creditórios (DUPLICATA)',
+    valor: 'R$ 1.111,11',
+    dataAquisicao: '26/08/2025',
+    percentualUsado: 100,
+    qtdOperacoes: 1,
+    situacaoGarantia: 'em_uso',
+    situacaoRegistroCartorio: 'nao',
+    situacaoRegistroRegistradora: 'nao',
+  },
+  {
+    id: 'gar-5',
+    tipo: 'Cessão Fiduciária de Direitos Creditórios (DUPLICATA)',
+    valor: 'R$ 1.111,11',
+    dataAquisicao: '13/08/2026',
+    percentualUsado: 100,
+    qtdOperacoes: 1,
+    situacaoGarantia: 'em_uso',
+    situacaoRegistroCartorio: 'nao',
+    situacaoRegistroRegistradora: 'nao',
+  },
+  {
+    id: 'gar-6',
+    tipo: 'AF. Estoque',
+    valor: 'R$ 100.741.600,42',
+    dataAquisicao: '31/07/2025',
+    percentualUsado: 0,
+    qtdOperacoes: 0,
+    situacaoGarantia: 'disponivel',
+    situacaoRegistroCartorio: 'nao',
+    situacaoRegistroRegistradora: 'nao',
+  },
+  {
+    id: 'gar-7',
+    tipo: 'AF. Imóvel',
+    valor: 'R$ 9.066.006,00',
+    dataAquisicao: '31/07/2025',
+    percentualUsado: 0,
+    qtdOperacoes: 0,
+    situacaoGarantia: 'disponivel',
+    situacaoRegistroCartorio: 'nao',
+    situacaoRegistroRegistradora: 'nao',
+  },
+  {
+    id: 'gar-8',
+    tipo: 'Cessão Fiduciária de Direitos Creditórios (CONTRATO)',
+    valor: 'R$ 3.000.000,00',
+    dataAquisicao: '31/07/2025',
+    percentualUsado: 0,
+    qtdOperacoes: 0,
+    situacaoGarantia: 'disponivel',
+    situacaoRegistroCartorio: 'nao',
+    situacaoRegistroRegistradora: 'nao',
+  },
+  {
+    id: 'gar-9',
+    tipo: 'Cessão Fiduciária de Direitos Creditórios (CONTRATO)',
+    valor: 'R$ 2.500.000,00',
+    dataAquisicao: '31/07/2025',
+    percentualUsado: 0,
+    qtdOperacoes: 0,
+    situacaoGarantia: 'disponivel',
+    situacaoRegistroCartorio: 'nao',
+    situacaoRegistroRegistradora: 'nao',
+  },
+];
 
 export function cloneGrupo(grupo: GrupoCadastro): GrupoCadastro {
   return {
@@ -344,17 +476,7 @@ function detalhePadrao(
       { id: `${id}-fn-2`, nome: 'CRA Ceres 2024', notifiable: true },
       { id: `${id}-fn-3`, nome: 'FIDC Recebíveis', notifiable: false },
     ],
-    garantias: extras.garantias ?? [
-      seedGarantia({
-        tipo: 'AF. Imóvel',
-        valor: 'R$ 2.000.000,00',
-        descricao: 'Imóvel rural vinculado ao grupo',
-        percentualUsado: 50,
-        instrumentoParticular: true,
-        constituirGarantia: true,
-        numeroTestemunhas: '2',
-      }),
-    ],
+    garantias: extras.garantias ?? GARANTIAS_SEED_PADRAO.map((g) => seedGarantiaGrupo(g)),
     historico: extras.historico ?? [
       { id: `${id}-hist-3`, datetime: '18/06/2026 09:12', descricao: 'Documentos do grupo atualizados.' },
       { id: `${id}-hist-2`, datetime: '02/05/2026 14:40', descricao: 'Limite de crédito ajustado.' },

@@ -65,8 +65,12 @@ const props = withDefaults(
     editOnRowClick?: boolean;
     /** Toggle “Possui garantias” — só na minuta. */
     showPossuiToggle?: boolean;
+    /** Oculta a tabela interna (listagem externa). */
+    hideTable?: boolean;
+    /** Oculta cabeçalho com toggle e botão adicionar. */
+    hideHeader?: boolean;
   }>(),
-  { editOnRowClick: true, showPossuiToggle: true },
+  { editOnRowClick: true, showPossuiToggle: true, hideTable: false, hideHeader: false },
 );
 
 const RELACAO_ESTOQUE_DOC = {
@@ -338,7 +342,8 @@ function cadastrar() {
   const payload = JSON.parse(JSON.stringify(form)) as GarantiaMinuta;
   if (editingIndex.value != null) {
     const next = [...garantias.value];
-    next[editingIndex.value] = payload;
+    const prev = garantias.value[editingIndex.value];
+    next[editingIndex.value] = { ...prev, ...payload };
     garantias.value = next;
   } else {
     garantias.value = [...garantias.value, payload];
@@ -387,11 +392,14 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
 function globalIndex(pageIdx: number) {
   return (page.value - 1) * pageSize.value + pageIdx;
 }
+
+defineExpose({ openNova, openEdit, openConstituicao });
 </script>
 
 <template>
   <div class="flex flex-col" style="gap: 20px">
     <div
+      v-if="!hideHeader"
       class="flex items-center"
       :style="{
         gap: '16px',
@@ -405,7 +413,7 @@ function globalIndex(pageIdx: number) {
       <AddButton v-if="!showPossuiToggle || possuiGarantias" @click="openNova">Adicionar garantia</AddButton>
     </div>
 
-    <template v-if="!showPossuiToggle || possuiGarantias">
+    <template v-if="!hideTable && (!showPossuiToggle || possuiGarantias)">
       <EmptyState
         v-if="garantias.length === 0"
         :icon="Shield"
