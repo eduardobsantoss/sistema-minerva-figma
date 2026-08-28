@@ -4,10 +4,23 @@ import {
   CategoryScale,
   LinearScale,
   ArcElement,
+  LineElement,
+  PointElement,
+  Filler,
   Tooltip,
   Legend,
 } from 'chart.js';
 
-ChartJS.register(BarElement, CategoryScale, LinearScale, ArcElement, Tooltip, Legend);
+ChartJS.register(
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  ArcElement,
+  LineElement,
+  PointElement,
+  Filler,
+  Tooltip,
+  Legend,
+);
 
 export { ChartJS };

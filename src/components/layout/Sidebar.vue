@@ -28,6 +28,7 @@ import {
   Package,
   Search,
   Radar,
+  Banknote,
 } from "lucide-vue-next";
 import gciLogoMark from "@/assets/gci-logo-mark.png";
 import gciLogoFull from "@/assets/gci-logo-full.png";
@@ -141,6 +142,7 @@ const items: NavItem[] = [
   { key: "grupos-cadastro", label: "Grupos Empresariais", icon: Building2 },
   { key: "monitoramento", label: "Monitoramento", icon: Radar },
   { key: "passivo", label: "Passivo", icon: Database },
+  { key: "passivo-novo", label: "Passivo (novo)", icon: Banknote },
   { key: "colab", label: "Colaboradores", icon: Users },
   { key: "rel", label: "Relatórios", icon: FileText },
   { key: "conf", label: "Configurações", icon: Settings },

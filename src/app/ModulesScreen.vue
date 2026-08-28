@@ -23,6 +23,7 @@ import {
   ValidacoesConfigScreen,
 } from '@/features/solicitacao-operacao';
 import { PassivoScreen } from '@/features/passivo';
+import { PassivoNovoScreen } from '@/features/passivo-novo';
 import { AtivosScreen } from '@/features/ativos';
 import { ConfiguracoesScreen } from '@/features/configuracoes';
 
@@ -68,6 +69,7 @@ type View =
   | 'grupos-cadastro'
   | 'monitoramento'
   | 'passivo'
+  | 'passivo-novo'
   | 'colab'
   | 'rel'
   | 'conf';
@@ -103,6 +105,7 @@ const titleMap: Record<View, string> = {
   'grupos-cadastro': 'Grupos Empresariais',
   monitoramento: 'Monitoramento Pós Desembolso',
   passivo: 'Passivo',
+  'passivo-novo': 'Passivo (novo)',
   colab: 'Colaboradores',
   rel: 'Relatórios',
   conf: 'Configurações',
@@ -118,7 +121,7 @@ const VALID_VIEWS = new Set<View>([
   'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-agrupamentos', 'risco-serasa', 'risco-rel',
   'grupos-cadastro',
   'monitoramento',
-  'passivo', 'colab', 'rel', 'conf',
+  'passivo', 'passivo-novo', 'colab', 'rel', 'conf',
 ]);
 
 function getViewFromUrl(): View {
@@ -255,6 +258,7 @@ function handleModuleClick(title: string) {
           <SerasaScreen v-else-if="view === 'risco-serasa'" />
           <MonitoramentoScreen v-else-if="view === 'monitoramento'" />
           <PassivoScreen v-else-if="view === 'passivo'" />
+          <PassivoNovoScreen v-else-if="view === 'passivo-novo'" />
           <ConfiguracoesScreen v-else-if="view === 'conf'" />
           <Placeholder v-else :name="titleMap[view]" />
         </div>
