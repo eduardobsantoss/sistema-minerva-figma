@@ -393,7 +393,12 @@ function globalIndex(pageIdx: number) {
   return (page.value - 1) * pageSize.value + pageIdx;
 }
 
-defineExpose({ openNova, openEdit, openConstituicao });
+function closeEditor() {
+  showNova.value = false;
+  editingIndex.value = null;
+}
+
+defineExpose({ openNova, openEdit, openConstituicao, closeEditor });
 </script>
 
 <template>

@@ -59,6 +59,7 @@ const emit = defineEmits<{
   openParte: [parte: ParteRelacionada];
   removeParte: [parte: ParteRelacionada];
   openCedente: [cedente: Cedente];
+  openGarantia: [garantia: GarantiaGrupo];
 }>();
 
 type TabKey =
@@ -571,6 +572,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
         v-else-if="tab === 'garantias'"
         :garantias="grupo.garantias"
         @update:garantias="setGarantias"
+        @open="emit('openGarantia', $event)"
       />
       <HistoricoTab v-else-if="tab === 'historico'" :eventos="grupo.historico" />
     </template>

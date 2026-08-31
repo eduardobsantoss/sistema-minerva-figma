@@ -10,9 +10,11 @@ import {
   cloneParte,
   emptyGrupo,
   type GrupoCadastro,
+  type GarantiaGrupo,
 } from '../data/gruposCadastroData';
 import GruposCadastroListScreen from './GruposCadastroListScreen.vue';
 import GrupoCadastroView from './GrupoCadastroView.vue';
+import GarantiaGrupoDetailView from './GarantiaGrupoDetailView.vue';
 
 type Route =
   | { level: 'list' }
@@ -24,6 +26,7 @@ const route = ref<Route>({ level: 'list' });
 const showParteModal = ref(false);
 const editingParte = ref<ParteRelacionada | null>(null);
 const cedenteAtual = ref<Cedente | null>(null);
+const garantiaAtual = ref<GarantiaGrupo | null>(null);
 const creating = ref<GrupoCadastro>(emptyGrupo());
 
 const grupoAtual = computed(() => {
@@ -43,6 +46,7 @@ function openCreate() {
 
 function openDetail(id: string) {
   cedenteAtual.value = null;
+  garantiaAtual.value = null;
   route.value = { level: 'detail', grupoId: id };
 }
 
@@ -125,13 +129,46 @@ function handleUpdateCedente(cedente: Cedente) {
 
 function backFromDetail() {
   cedenteAtual.value = null;
+  garantiaAtual.value = null;
   route.value = { level: 'list' };
+}
+
+function openGarantia(garantia: GarantiaGrupo) {
+  const grupo = grupoAtual.value;
+  garantiaAtual.value = grupo?.garantias.find((g) => g.id === garantia.id) ?? garantia;
+}
+
+function handleUpdateGarantia(garantia: GarantiaGrupo) {
+  const grupo = grupoAtual.value;
+  if (!grupo) return;
+  const next = cloneGrupo(grupo);
+  next.garantias = next.garantias.map((g) => (g.id === garantia.id ? garantia : g));
+  items.value = items.value.map((g) => (g.id === next.id ? next : g));
+  if (garantiaAtual.value?.id === garantia.id) garantiaAtual.value = garantia;
+}
+
+function handleDeleteGarantia(garantia: GarantiaGrupo) {
+  const grupo = grupoAtual.value;
+  if (!grupo) return;
+  const next = cloneGrupo(grupo);
+  next.garantias = next.garantias.filter((g) => g.id !== garantia.id);
+  items.value = items.value.map((g) => (g.id === next.id ? next : g));
+  garantiaAtual.value = null;
 }
 </script>
 
 <template>
+  <GarantiaGrupoDetailView
+    v-if="garantiaAtual && grupoAtual && !cedenteAtual"
+    :grupo="grupoAtual"
+    :garantia="garantiaAtual"
+    @close="garantiaAtual = null"
+    @update="handleUpdateGarantia"
+    @delete="handleDeleteGarantia"
+  />
+
   <CedenteDetailModal
-    v-if="cedenteAtual && grupoAtual"
+    v-if="cedenteAtual && grupoAtual && !garantiaAtual"
     as-page
     :cedente="cedenteAtual"
     :page-label="grupoAtual.nome"
@@ -156,7 +193,7 @@ function backFromDetail() {
 
   <GrupoCadastroView
     v-if="grupoAtual && route.level === 'detail'"
-    v-show="!cedenteAtual"
+    v-show="!cedenteAtual && !garantiaAtual"
     :grupo="grupoAtual"
     mode="detail"
     @back="backFromDetail"
@@ -165,6 +202,7 @@ function backFromDetail() {
     @open-parte="openParte"
     @remove-parte="handleRemoveParte"
     @open-cedente="cedenteAtual = $event"
+    @open-garantia="openGarantia"
   />
 
   <ParteRelacionadaModal

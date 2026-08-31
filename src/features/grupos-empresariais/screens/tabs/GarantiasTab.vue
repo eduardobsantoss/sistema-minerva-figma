@@ -28,7 +28,7 @@ import {
 } from '../../data/gruposCadastroData';
 
 const props = defineProps<{ garantias: GarantiaGrupo[] }>();
-const emit = defineEmits<{ 'update:garantias': [items: GarantiaGrupo[]] }>();
+const emit = defineEmits<{ 'update:garantias': [items: GarantiaGrupo[]]; open: [garantia: GarantiaGrupo] }>();
 
 const minutaRef = ref<InstanceType<typeof GarantiaMinutaStep> | null>(null);
 const menuOpen = ref<number | null>(null);
@@ -38,7 +38,7 @@ const toUpdateStatus = ref<GarantiaGrupo | null>(null);
 const STATUS_CONFIRM_PHRASE = 'GARANTIA-EM-EXECUCAO';
 
 const COLS =
-  'minmax(200px, min(400px, 36%)) 96px minmax(130px, 1fr) 96px 100px 84px 100px 112px 48px';
+  'minmax(200px, 380px) 96px 180px 1fr 112px 100px 84px 100px 112px 48px';
 
 const model = computed({
   get: () => props.garantias,
@@ -109,6 +109,11 @@ function openNova() {
   minutaRef.value?.openNova();
 }
 
+function openDetail(g: GarantiaGrupo) {
+  minutaRef.value?.closeEditor?.();
+  emit('open', g);
+}
+
 function openEdit(i: number) {
   closeMenu();
   minutaRef.value?.openEdit(i);
@@ -171,6 +176,7 @@ function confirmDelete() {
               <div class="garantia-grupo-th">Aquisição</div>
             </Tooltip>
             <div class="garantia-grupo-th garantia-grupo-th-num">Valor</div>
+            <div />
             <Tooltip content="Porcentagem usada" side="bottom" variant="light">
               <div class="garantia-grupo-th">Uso</div>
             </Tooltip>
@@ -192,8 +198,9 @@ function confirmDelete() {
           <div
             v-for="(g, pageIdx) in pageItems"
             :key="g.id"
-            class="grid items-center garantia-grupo-table-row"
+            class="grid items-center garantia-grupo-table-row garantia-grupo-table-row-clickable"
             :style="{ gridTemplateColumns: COLS }"
+            @click="openDetail(g)"
           >
             <div style="font-weight: var(--weight-semibold); color: var(--text-strong); min-width: 0; line-height: 1.35">
               {{ g.tipo }}
@@ -204,6 +211,7 @@ function confirmDelete() {
             <div class="garantia-grupo-td-num" style="color: var(--text-strong)">
               {{ g.valor || '—' }}
             </div>
+            <div />
             <div class="flex items-center" style="gap: 6px">
               <div
                 style="
@@ -268,7 +276,7 @@ function confirmDelete() {
                 :style="{ color: registroRegistradoraColor(g.situacaoRegistroRegistradora) }"
               />
             </div>
-            <div class="flex justify-end" style="position: relative" data-garantia-grupo-menu>
+            <div class="flex justify-end" style="position: relative" data-garantia-grupo-menu @click.stop>
               <button
                 type="button"
                 aria-label="Ações"
@@ -318,10 +326,10 @@ function confirmDelete() {
                     color: var(--text-default);
                     width: 100%;
                   "
-                  @click="openEdit(globalIndex(pageIdx))"
+                  @click.stop="openEdit(globalIndex(pageIdx))"
                 >
                   <Pencil :size="14" style="color: var(--text-muted); flex-shrink: 0" />
-                  Editar
+                  Editar Garantia
                 </button>
                 <button
                   type="button"
@@ -339,7 +347,7 @@ function confirmDelete() {
                     color: var(--text-default);
                     width: 100%;
                   "
-                  @click="openUpdateStatus(g)"
+                  @click.stop="openUpdateStatus(g)"
                 >
                   <RefreshCw :size="14" style="color: var(--text-muted); flex-shrink: 0" />
                   Atualizar Status da Garantia
@@ -362,7 +370,7 @@ function confirmDelete() {
                     width: '100%',
                     opacity: podeExcluir(g) ? 1 : 0.55,
                   }"
-                  @click="askDelete(g)"
+                  @click.stop="askDelete(g)"
                 >
                   <Trash2 :size="14" style="flex-shrink: 0" />
                   Excluir
@@ -414,14 +422,22 @@ function confirmDelete() {
 <style scoped>
 .garantia-grupo-table-inner {
   width: 100%;
-  min-width: 960px;
+  min-width: 980px;
 }
 
 .garantia-grupo-table-row {
-  column-gap: 10px;
+  column-gap: 12px;
   padding: 12px 16px;
   border-top: 1px solid var(--border-default);
   font-size: var(--text-sm);
+}
+
+.garantia-grupo-table-row-clickable {
+  cursor: pointer;
+}
+
+.garantia-grupo-table-row-clickable:hover {
+  background: var(--surface-sunken);
 }
 
 .garantia-grupo-table-header {

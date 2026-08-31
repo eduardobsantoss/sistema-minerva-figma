@@ -180,6 +180,10 @@ const GARANTIAS_SEED_PADRAO: Partial<GarantiaGrupo>[] = [
     situacaoGarantia: 'em_uso',
     situacaoRegistroCartorio: 'nao',
     situacaoRegistroRegistradora: 'nao',
+    estoques: [
+      { propriedade: 'Fazenda Santa Rita — Silo 01', proprietario: '3A Máquinas e Transportes' },
+      { propriedade: 'Armazém Rio Verde', proprietario: '3A Máquinas e Transportes' },
+    ],
   },
   {
     id: 'gar-4',
@@ -213,6 +217,9 @@ const GARANTIAS_SEED_PADRAO: Partial<GarantiaGrupo>[] = [
     situacaoGarantia: 'disponivel',
     situacaoRegistroCartorio: 'nao',
     situacaoRegistroRegistradora: 'nao',
+    estoques: [
+      { propriedade: 'Unidade de Beneficiamento GO', proprietario: 'Agro Verde S/A' },
+    ],
   },
   {
     id: 'gar-7',
@@ -227,7 +234,7 @@ const GARANTIAS_SEED_PADRAO: Partial<GarantiaGrupo>[] = [
   },
   {
     id: 'gar-8',
-    tipo: 'Cessão Fiduciária de Direitos Creditórios (CONTRATO)',
+    tipo: 'Penhor de Estoque',
     valor: 'R$ 3.000.000,00',
     dataAquisicao: '31/07/2025',
     percentualUsado: 0,
@@ -235,6 +242,10 @@ const GARANTIAS_SEED_PADRAO: Partial<GarantiaGrupo>[] = [
     situacaoGarantia: 'disponivel',
     situacaoRegistroCartorio: 'nao',
     situacaoRegistroRegistradora: 'nao',
+    estoques: [
+      { propriedade: 'Depósito Central', proprietario: 'Ceres Agro LTDA' },
+      { propriedade: 'Silo B — Safra 2025', proprietario: 'Ceres Agro LTDA' },
+    ],
   },
   {
     id: 'gar-9',
