@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import {
   ArrowLeft,
+  ArrowLeftRight,
   CalendarDays,
   CheckCircle2,
   Clock,
@@ -30,6 +31,7 @@ import {
 } from '@/features/solicitacao-operacao/data/minutaData';
 import type { GrupoCadastro, GarantiaGrupo } from '../data/gruposCadastroData';
 import DetailField from './garantia-detail/DetailField.vue';
+import CessoesPanel from './garantia-detail/CessoesPanel.vue';
 import EstoqueListPanel from './garantia-detail/EstoqueListPanel.vue';
 
 const props = defineProps<{
@@ -39,7 +41,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: []; update: [garantia: GarantiaGrupo]; delete: [garantia: GarantiaGrupo] }>();
 
-const tab = ref<'dados' | 'documentos'>('dados');
+const tab = ref<'dados' | 'documentos' | 'cessoes'>('dados');
 const editorRef = ref<InstanceType<typeof GarantiaMinutaStep> | null>(null);
 const menuOpen = ref(false);
 const toDelete = ref(false);
@@ -118,6 +120,7 @@ function updateEstoques(items: EstoqueItem[]) {
 const TABS = [
   { key: 'dados', label: 'Dados', icon: Scale },
   { key: 'documentos', label: 'Documentos', icon: FileText },
+  { key: 'cessoes', label: 'Cessões', icon: ArrowLeftRight },
 ];
 </script>
 
@@ -225,7 +228,7 @@ const TABS = [
       :options="TABS"
       variant="brand"
       style="width: fit-content"
-      @update:model-value="tab = $event as 'dados' | 'documentos'"
+      @update:model-value="tab = $event as 'dados' | 'documentos' | 'cessoes'"
     />
 
     <div v-if="tab === 'dados'" class="flex flex-col" style="gap: 16px">
@@ -319,7 +322,7 @@ const TABS = [
     </div>
 
     <div
-      v-else
+      v-else-if="tab === 'documentos'"
       style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); overflow: hidden; background: var(--surface-card)"
     >
       <div
@@ -351,6 +354,12 @@ const TABS = [
         </div>
       </template>
     </div>
+
+    <CessoesPanel
+      v-else-if="tab === 'cessoes'"
+      :cessoes="g.cessoes ?? []"
+      :cessao-vinculada="g.constituicao?.cessaoVinculada"
+    />
 
     <GarantiaMinutaStep
       ref="editorRef"

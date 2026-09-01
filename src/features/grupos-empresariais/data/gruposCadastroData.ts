@@ -6,7 +6,9 @@ import {
   type TipoCliente,
 } from '@/features/risco/data/riscoData';
 import {
+  CESSOES_VINCULADAS_MOCK,
   emptyGarantiaMinuta,
+  type CessaoVinculadaMock,
   type GarantiaMinuta,
 } from '@/features/solicitacao-operacao/data/minutaData';
 import {
@@ -50,6 +52,20 @@ export interface FundoNotificacaoGrupo {
 export type SituacaoGarantiaGrupo = 'em_uso' | 'disponivel';
 export type SituacaoRegistroGrupo = 'pendente' | 'nao' | 'ok';
 
+/** Cessão vinculada à garantia (mesmo modelo do card em Configurar constituição). */
+export interface CessaoGarantiaGrupo extends CessaoVinculadaMock {
+  data: string;
+  veiculo?: string;
+  taxa?: string;
+}
+
+export function cessaoGarantiaFromMock(
+  mock: CessaoVinculadaMock,
+  extras: Partial<Omit<CessaoGarantiaGrupo, keyof CessaoVinculadaMock>> = {},
+): CessaoGarantiaGrupo {
+  return { ...mock, data: extras.data ?? '30/07/2025', ...extras };
+}
+
 export interface GarantiaGrupo extends GarantiaMinuta {
   id: string;
   dataAquisicao: string;
@@ -57,6 +73,7 @@ export interface GarantiaGrupo extends GarantiaMinuta {
   situacaoGarantia: SituacaoGarantiaGrupo;
   situacaoRegistroCartorio: SituacaoRegistroGrupo;
   situacaoRegistroRegistradora: SituacaoRegistroGrupo;
+  cessoes: CessaoGarantiaGrupo[];
 }
 
 export const DOCUMENTO_TIPO_OPTS = [
@@ -144,6 +161,7 @@ export function seedGarantiaGrupo(partial: Partial<GarantiaGrupo> = {}): Garanti
       (qtdOperacoes > 0 || percentualUsado > 0 ? 'em_uso' : 'disponivel'),
     situacaoRegistroCartorio: partial.situacaoRegistroCartorio ?? 'nao',
     situacaoRegistroRegistradora: partial.situacaoRegistroRegistradora ?? 'nao',
+    cessoes: partial.cessoes ?? [],
   };
 }
 
@@ -158,6 +176,13 @@ const GARANTIAS_SEED_PADRAO: Partial<GarantiaGrupo>[] = [
     situacaoGarantia: 'em_uso',
     situacaoRegistroCartorio: 'pendente',
     situacaoRegistroRegistradora: 'nao',
+    cessoes: [
+      cessaoGarantiaFromMock(CESSOES_VINCULADAS_MOCK[0], {
+        data: '06/08/2026',
+        veiculo: 'CRA',
+        taxa: '14,5% a.a.',
+      }),
+    ],
   },
   {
     id: 'gar-2',
@@ -169,6 +194,13 @@ const GARANTIAS_SEED_PADRAO: Partial<GarantiaGrupo>[] = [
     situacaoGarantia: 'em_uso',
     situacaoRegistroCartorio: 'nao',
     situacaoRegistroRegistradora: 'nao',
+    cessoes: [
+      cessaoGarantiaFromMock(CESSOES_VINCULADAS_MOCK[1], {
+        data: '12/07/2026',
+        veiculo: 'FIDC',
+        taxa: '13,2% a.a.',
+      }),
+    ],
   },
   {
     id: 'gar-3',
@@ -184,6 +216,23 @@ const GARANTIAS_SEED_PADRAO: Partial<GarantiaGrupo>[] = [
       { propriedade: 'Fazenda Santa Rita — Silo 01', proprietario: '3A Máquinas e Transportes' },
       { propriedade: 'Armazém Rio Verde', proprietario: '3A Máquinas e Transportes' },
     ],
+    cessoes: [
+      cessaoGarantiaFromMock(CESSOES_VINCULADAS_MOCK[0], {
+        data: '30/07/2025',
+        veiculo: 'CRA',
+        taxa: '12,8% a.a.',
+      }),
+      cessaoGarantiaFromMock(CESSOES_VINCULADAS_MOCK[1], {
+        data: '15/08/2025',
+        veiculo: 'FIDC',
+        taxa: '13,5% a.a.',
+      }),
+      cessaoGarantiaFromMock(CESSOES_VINCULADAS_MOCK[2], {
+        data: '22/08/2025',
+        veiculo: 'CRA',
+        taxa: '11,9% a.a.',
+      }),
+    ],
   },
   {
     id: 'gar-4',
@@ -195,6 +244,13 @@ const GARANTIAS_SEED_PADRAO: Partial<GarantiaGrupo>[] = [
     situacaoGarantia: 'em_uso',
     situacaoRegistroCartorio: 'nao',
     situacaoRegistroRegistradora: 'nao',
+    cessoes: [
+      cessaoGarantiaFromMock(CESSOES_VINCULADAS_MOCK[2], {
+        data: '26/08/2025',
+        veiculo: 'CRA',
+        taxa: '15,0% a.a.',
+      }),
+    ],
   },
   {
     id: 'gar-5',
@@ -206,6 +262,13 @@ const GARANTIAS_SEED_PADRAO: Partial<GarantiaGrupo>[] = [
     situacaoGarantia: 'em_uso',
     situacaoRegistroCartorio: 'nao',
     situacaoRegistroRegistradora: 'nao',
+    cessoes: [
+      cessaoGarantiaFromMock(CESSOES_VINCULADAS_MOCK[2], {
+        data: '13/08/2026',
+        veiculo: 'FIDC',
+        taxa: '14,1% a.a.',
+      }),
+    ],
   },
   {
     id: 'gar-6',
