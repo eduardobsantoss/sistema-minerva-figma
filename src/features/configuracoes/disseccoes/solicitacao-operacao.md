@@ -1251,6 +1251,7 @@ import AtualizarCessaoModal from '../components/modals/AtualizarCessaoModal.vue'
 import GerarTermoCessaoModal from '../components/modals/GerarTermoCessaoModal.vue';
 import GerarCnabModal from '../components/modals/GerarCnabModal.vue';
 import VincularVeiculoOperacaoModal from '../components/modals/VincularVeiculoOperacaoModal.vue';
+import DefinirAtendenteModal from '../components/modals/DefinirAtendenteModal.vue';
 import TransferirSolicitacaoModal from '../components/modals/TransferirSolicitacaoModal.vue';
 import TransferirContaBancariaModal from '../components/modals/TransferirContaBancariaModal.vue';
 import MesclarAtivosPedidosModal from '../components/modals/MesclarAtivosPedidosModal.vue';
@@ -1300,6 +1301,7 @@ const showAtualizarCessao = ref(false);
 const showGerarTermo = ref(false);
 const showGerarCnab = ref(false);
 const showVincularVeiculo = ref(false);
+const showDefinirAtendente = ref(false);
 const showTransferirSolicitacao = ref(false);
 const showTransferirConta = ref(false);
 const showMesclarAtivos = ref(false);
@@ -1430,6 +1432,11 @@ function pushHistorico(acao: string) {
 function onVincularVeiculo(veiculo: string) {
   props.solicitacao.veiculo = veiculo;
   pushHistorico(`vinculou a solicitação de operação ao ${veiculo}`);
+}
+
+function onDefinirAtendente(atendente: string) {
+  props.solicitacao.atendente = atendente;
+  pushHistorico(`definiu ${atendente} como atendente atual da solicitação`);
 }
 
 function onTransferirSolicitacao(veiculo: string) {
@@ -1597,6 +1604,7 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
           :tipo-contrato="solicitacao.tipoContrato"
           @reject="confirmReject = true"
           @vincular-veiculo="showVincularVeiculo = true"
+          @definir-atendente="showDefinirAtendente = true"
           @transferir-solicitacao="showTransferirSolicitacao = true"
           @atualizar-cessao="showAtualizarCessao = true"
           @gerar-termo-cessao="showGerarTermo = true"
@@ -1716,6 +1724,12 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
       @confirm="onVincularVeiculo"
     />
 
+    <DefinirAtendenteModal
+      v-if="showDefinirAtendente"
+      @close="showDefinirAtendente = false"
+      @confirm="onDefinirAtendente"
+    />
+
     <TransferirSolicitacaoModal
       v-if="showTransferirSolicitacao"
       :veiculo-atual="solicitacao.veiculo"
@@ -1803,6 +1817,8 @@ import {
   Link2,
   BookOpen,
   ScrollText,
+  UserCheck,
+  ReceiptText,
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import { isTipoNc } from '../../data/minutaData';
@@ -1815,6 +1831,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   reject: [];
   vincularVeiculo: [];
+  definirAtendente: [];
   transferirSolicitacao: [];
   atualizarCessao: [];
   gerarTermoCessao: [];
@@ -1830,6 +1847,8 @@ const rootRef = ref<HTMLDivElement | null>(null);
 
 type ActionKey =
   | 'vincularVeiculo'
+  | 'extratoDesembolso'
+  | 'definirAtendente'
   | 'transferirSolicitacao'
   | 'atualizarCessao'
   | 'gerarTermoCessao'
@@ -1856,6 +1875,8 @@ const isCcb = computed(() => {
 const secondary = computed<ActionItem[]>(() =>
   [
     { label: 'Vincular a um veículo de operação', icon: Link2, action: 'vincularVeiculo' as const },
+    { label: 'Extrato para Desembolso', icon: ReceiptText, action: 'extratoDesembolso' as const },
+    { label: 'Definir atendente atual', icon: UserCheck, action: 'definirAtendente' as const },
     { label: 'Transferir solicitação', icon: ArrowRightLeft, action: 'transferirSolicitacao' as const },
     { label: 'Atualizar cessão', icon: RefreshCw, action: 'atualizarCessao' as const },
     { label: 'Gerar Termo de Cessão', icon: FileText, action: 'gerarTermoCessao' as const },
@@ -1889,6 +1910,11 @@ function handleItem(a: ActionItem) {
   switch (a.action) {
     case 'vincularVeiculo':
       emit('vincularVeiculo');
+      break;
+    case 'extratoDesembolso':
+      break;
+    case 'definirAtendente':
+      emit('definirAtendente');
       break;
     case 'transferirSolicitacao':
       emit('transferirSolicitacao');
@@ -8077,30 +8103,46 @@ defineProps<{ title: string }>();
 
 ```vue
 <script setup lang="ts">
-import { CheckCircle2, Download, FileText, Trash2, Upload } from 'lucide-vue-next';
+import { CheckCircle2, Download, FileText, Paperclip, Trash2, Upload } from 'lucide-vue-next';
 import IconAction from './IconAction.vue';
 
-defineProps<{
-  title: string;
-  docs: { id: string; nome: string; obrigatorio: boolean }[];
-  docFiles: Record<string, boolean>;
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    docs: { id: string; nome: string; obrigatorio: boolean; exigeValidade?: boolean }[];
+    docFiles: Record<string, boolean>;
+    docValidades?: Record<string, string>;
+  }>(),
+  { docValidades: () => ({}) },
+);
+const emit = defineEmits<{
+  toggleDoc: [id: string];
+  updateValidade: [id: string, value: string];
 }>();
-const emit = defineEmits<{ toggleDoc: [id: string] }>();
+
+function validadeOf(id: string) {
+  return props.docValidades?.[id] ?? '';
+}
 </script>
 
 <template>
   <div>
-    <div
-      style="
-        font-size: 10px;
-        font-weight: var(--weight-bold);
-        letter-spacing: 0.18em;
-        color: var(--accent);
-        text-transform: uppercase;
-        margin-bottom: 12px;
-      "
-    >
-      {{ title }}
+    <div class="flex items-center" style="gap: 8px; margin-bottom: 4px">
+      <Paperclip :size="14" style="color: var(--accent)" />
+      <div
+        style="
+          font-size: 10px;
+          font-weight: var(--weight-bold);
+          letter-spacing: 0.18em;
+          color: var(--accent);
+          text-transform: uppercase;
+        "
+      >
+        {{ title }}
+      </div>
+    </div>
+    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px">
+      Informe a data de até quando o anexo é válido
     </div>
     <div class="flex flex-col" style="gap: 10px">
       <div
@@ -8115,7 +8157,10 @@ const emit = defineEmits<{ toggleDoc: [id: string] }>();
           borderStyle: 'solid',
           borderColor: 'var(--border-default)',
           borderLeft:
-            doc.obrigatorio && !docFiles[doc.id] ? '3px solid var(--warning-base)' : '1px solid var(--border-default)',
+            (doc.obrigatorio && !docFiles[doc.id]) ||
+            (doc.exigeValidade && docFiles[doc.id] && !validadeOf(doc.id).trim())
+              ? '3px solid var(--warning-base)'
+              : '1px solid var(--border-default)',
           borderRadius: 'var(--radius-lg)',
         }"
       >
@@ -8161,11 +8206,30 @@ const emit = defineEmits<{ toggleDoc: [id: string] }>();
               marginTop: '2px',
             }"
           >
-            {{ docFiles[doc.id] ? 'Arquivo anexado · documento.pdf' : 'Nenhum arquivo anexado' }}
+            {{ docFiles[doc.id] ? `Arquivo anexado · ${doc.nome}.pdf` : 'Nenhum arquivo anexado' }}
           </div>
         </div>
 
-        <div class="flex items-center" style="gap: 6px">
+        <div class="flex items-center" style="gap: 10px; flex-shrink: 0">
+          <div v-if="doc.exigeValidade && docFiles[doc.id]" style="width: 148px">
+            <input
+              :value="validadeOf(doc.id)"
+              type="date"
+              :style="{
+                width: '100%',
+                height: '38px',
+                padding: '0 12px',
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-lg)',
+                outline: 'none',
+                fontSize: 'var(--text-sm)',
+                color: 'var(--text-strong)',
+                fontVariantNumeric: 'tabular-nums',
+              }"
+              @input="emit('updateValidade', doc.id, ($event.target as HTMLInputElement).value)"
+            />
+          </div>
           <template v-if="docFiles[doc.id]">
             <IconAction :icon="Download" label="Baixar" />
             <IconAction :icon="Trash2" label="Excluir" danger @click="emit('toggleDoc', doc.id)" />
@@ -9647,7 +9711,8 @@ import {
 } from '../../data/minutaData';
 import SpouseFields from './minuta/SpouseFields.vue';
 
-const emit = defineEmits<{ close: []; create: [data: ParteRelacionada] }>();
+const props = defineProps<{ parte?: ParteRelacionada | null }>();
+const emit = defineEmits<{ close: []; create: [data: ParteRelacionada]; save: [data: ParteRelacionada] }>();
 
 export interface NewParteRelacionadaData {
   tipoPessoa: 'FISICA' | 'JURIDICA';
@@ -9701,44 +9766,92 @@ const TIPOS_OPTS: { label: string; codigo: ParteTipo }[] = [
   { label: 'Procurador', codigo: 'PROC' },
 ];
 
-const form = reactive<NewParteRelacionadaData>({
-  tipoPessoa: 'FISICA',
-  cpf: '',
-  nomeFisica: '',
-  rg: '',
-  inscricaoProdutorRural: '',
-  nacionalidade: '',
-  dataNascimento: '',
-  profissao: '',
-  estadoCivil: '',
-  regime: '',
-  dataCasamento: '',
-  cnpj: '',
-  razaoSocial: '',
-  nomeFantasia: '',
-  dataAbertura: '',
-  tipoEmpresa: '',
-  porte: '',
-  atividadePrincipal: '',
-  naturezaJuridica: '',
-  inscricaoMunicipal: '',
-  inscricaoEstadual: '',
-  cep: '',
-  localidade: '',
-  numero: '',
-  bairro: '',
-  infoAdicionais: '',
-  cidade: '',
-  estado: '',
-  pais: 'Brasil',
-  nomeContato: '',
-  email: '',
-  ddi: '+55',
-  telefone: '',
-  tipos: [],
-  possuiConjuge: false,
-  orgaoEmissorRg: '',
-});
+const isEdit = computed(() => !!props.parte);
+
+function emptyForm(): NewParteRelacionadaData {
+  return {
+    tipoPessoa: 'FISICA',
+    cpf: '',
+    nomeFisica: '',
+    rg: '',
+    inscricaoProdutorRural: '',
+    nacionalidade: '',
+    dataNascimento: '',
+    profissao: '',
+    estadoCivil: '',
+    regime: '',
+    dataCasamento: '',
+    cnpj: '',
+    razaoSocial: '',
+    nomeFantasia: '',
+    dataAbertura: '',
+    tipoEmpresa: '',
+    porte: '',
+    atividadePrincipal: '',
+    naturezaJuridica: '',
+    inscricaoMunicipal: '',
+    inscricaoEstadual: '',
+    cep: '',
+    localidade: '',
+    numero: '',
+    bairro: '',
+    infoAdicionais: '',
+    cidade: '',
+    estado: '',
+    pais: 'Brasil',
+    nomeContato: '',
+    email: '',
+    ddi: '+55',
+    telefone: '',
+    tipos: [],
+    possuiConjuge: false,
+    orgaoEmissorRg: '',
+  };
+}
+
+function hydrate(p: ParteRelacionada) {
+  Object.assign(form, emptyForm(), {
+    tipoPessoa: p.tipoPessoa,
+    cpf: p.cpf ?? (p.tipoPessoa === 'FISICA' ? p.documento : ''),
+    nomeFisica: p.tipoPessoa === 'FISICA' ? p.nome : '',
+    rg: p.rg ?? '',
+    inscricaoProdutorRural: p.inscricaoProdutorRural ?? '',
+    nacionalidade: p.nacionalidade ?? '',
+    dataNascimento: p.dataNascimento ?? '',
+    profissao: p.profissao ?? '',
+    estadoCivil: p.estadoCivil ?? '',
+    regime: p.regime ?? '',
+    dataCasamento: p.dataCasamento ?? '',
+    cnpj: p.cnpj ?? (p.tipoPessoa === 'JURIDICA' ? p.documento : ''),
+    razaoSocial: p.razaoSocial ?? (p.tipoPessoa === 'JURIDICA' ? p.nome : ''),
+    nomeFantasia: p.nomeFantasia ?? '',
+    dataAbertura: p.dataAbertura ?? '',
+    tipoEmpresa: p.tipoEmpresa ?? '',
+    porte: p.porte ?? '',
+    atividadePrincipal: p.atividadePrincipal ?? '',
+    naturezaJuridica: p.naturezaJuridica ?? '',
+    inscricaoMunicipal: p.inscricaoMunicipal ?? '',
+    inscricaoEstadual: p.inscricaoEstadual ?? '',
+    cep: p.cep ?? '',
+    localidade: p.localidade ?? '',
+    numero: p.numero ?? '',
+    bairro: p.bairro ?? '',
+    infoAdicionais: p.infoAdicionais ?? '',
+    cidade: p.cidade ?? '',
+    estado: p.estado ?? '',
+    pais: p.pais ?? 'Brasil',
+    nomeContato: p.nomeContato ?? p.nome,
+    email: p.email,
+    ddi: p.ddi ?? '+55',
+    telefone: p.telefone,
+    tipos: TIPOS_OPTS.filter((t) => p.tipos.includes(t.codigo)).map((t) => t.label),
+    possuiConjuge: !!p.possuiConjuge,
+  });
+  Object.assign(conjuge, p.conjuge ?? emptyConjugeMinuta());
+  Object.assign(representante, p.representante ?? { ...emptyPessoaMinuta('JURIDICA').representante! });
+}
+
+const form = reactive<NewParteRelacionadaData>(emptyForm());
 
 const conjuge = reactive<ConjugeMinuta>(emptyConjugeMinuta());
 const representante = reactive<RepresentanteLegal>({ ...emptyPessoaMinuta('JURIDICA').representante! });
@@ -9755,6 +9868,8 @@ watch(
     form.possuiConjuge = parteExigeFormularioConjuge(ec, regime);
   },
 );
+
+if (props.parte) hydrate(props.parte);
 
 const tipoPessoaLabel = computed({
   get: () => (form.tipoPessoa === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica'),
@@ -9782,7 +9897,7 @@ const canSubmit = computed(() => nome.value.trim() !== '' && documento.value.tri
 function handleSubmit() {
   if (!canSubmit.value) return;
   const codigos = TIPOS_OPTS.filter((t) => form.tipos.includes(t.label)).map((t) => t.codigo);
-  emit('create', enriquecerParteRelacionada({
+  const data = enriquecerParteRelacionada({
     nome: nome.value,
     documento: documento.value,
     email: form.email,
@@ -9824,8 +9939,10 @@ function handleSubmit() {
         ? { ...conjuge }
         : undefined,
     representante: form.tipoPessoa === 'JURIDICA' ? { ...representante } : undefined,
-    contatosRelacionados: [],
-  }));
+    contatosRelacionados: props.parte?.contatosRelacionados ?? [],
+  });
+  if (props.parte) emit('save', data);
+  else emit('create', data);
 }
 </script>
 
@@ -9862,10 +9979,10 @@ function handleSubmit() {
       <div class="flex items-start justify-between" style="padding: 24px 32px; border-bottom: 1px solid var(--border-default)">
         <div>
           <h2 style="font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.01em">
-            Nova Parte Relacionada
+            {{ isEdit ? 'Editar Parte Relacionada' : 'Nova Parte Relacionada' }}
           </h2>
           <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Identificação, endereço, contato e vínculo com a solicitação
+            {{ isEdit ? 'Atualize identificação, endereço, contato e vínculo' : 'Identificação, endereço, contato e vínculo com a solicitação' }}
           </p>
         </div>
         <button
@@ -10033,7 +10150,7 @@ function handleSubmit() {
           }"
           @click="handleSubmit"
         >
-          <Building2 :size="15" /> CADASTRAR
+          <Building2 :size="15" /> {{ isEdit ? 'ATUALIZAR' : 'CADASTRAR' }}
         </button>
       </div>
     </div>
@@ -16072,10 +16189,11 @@ function gerarPagamentosAutomaticos() {
 
 ```vue
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
-import { X, Trash2, Shield, Home, Scale, User, Settings2 } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { X, Trash2, Shield, Home, Scale, User, MoreVertical, Pencil, Settings2 } from 'lucide-vue-next';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import { UF_OPTIONS, PAISES_DDI } from '../../../data/operacaoData';
 import {
   BentoBox,
@@ -16126,21 +16244,61 @@ import {
 import PessoaNaturezaFields from './PessoaNaturezaFields.vue';
 import EnderecosLocacaoFields from './EnderecosLocacaoFields.vue';
 import ConfigurarConstituicaoGarantiaModal from './ConfigurarConstituicaoGarantiaModal.vue';
+import GarantiaDocumentosFields from './GarantiaDocumentosFields.vue';
 import DocGroup from '../../novo-pedido/DocGroup.vue';
 
 const garantias = defineModel<GarantiaMinuta[]>('garantias', { default: () => [] });
+
+const props = withDefaults(
+  defineProps<{
+    /** Clique na linha abre a edição. Desative para editar só pelo menu de ações. */
+    editOnRowClick?: boolean;
+    /** Toggle “Possui garantias” — só na minuta. */
+    showPossuiToggle?: boolean;
+    /** Oculta a tabela interna (listagem externa). */
+    hideTable?: boolean;
+    /** Oculta cabeçalho com toggle e botão adicionar. */
+    hideHeader?: boolean;
+  }>(),
+  { editOnRowClick: true, showPossuiToggle: true, hideTable: false, hideHeader: false },
+);
 
 const RELACAO_ESTOQUE_DOC = {
   id: 'relacao-estoque',
   nome: 'Relação do Estoque Detalhado',
   obrigatorio: true,
+  exigeValidade: true,
 } as const;
 
 const possuiGarantias = ref(true);
 const showNova = ref(false);
 const editingIndex = ref<number | null>(null);
+const editTab = ref<'dados' | 'documentos'>('dados');
+const garantiaMenuOpen = ref<number | null>(null);
 const showConstituicao = ref(false);
 const constituicaoIndex = ref<number | null>(null);
+
+function closeGarantiaMenu() {
+  garantiaMenuOpen.value = null;
+}
+
+function toggleGarantiaMenu(i: number) {
+  garantiaMenuOpen.value = garantiaMenuOpen.value === i ? null : i;
+}
+
+function onClickOutsideGarantiaMenu(e: MouseEvent) {
+  const t = e.target as HTMLElement | null;
+  if (t?.closest('[data-garantia-action-menu]')) return;
+  closeGarantiaMenu();
+}
+
+onMounted(() => document.addEventListener('mousedown', onClickOutsideGarantiaMenu));
+onUnmounted(() => document.removeEventListener('mousedown', onClickOutsideGarantiaMenu));
+
+const EDIT_GARANTIA_TABS = [
+  { key: 'dados', label: 'Dados' },
+  { key: 'documentos', label: 'Documentos' },
+];
 const form = reactive<GarantiaMinuta>(emptyGarantiaMinuta());
 const estoqueDraft = reactive({ propriedade: '', proprietario: '' });
 const enderecoDraft = reactive<EnderecoLocacaoItem>(emptyEnderecoLocacaoItem());
@@ -16228,6 +16386,8 @@ function hydrateGarantia(g: GarantiaMinuta) {
     : [];
   form.percentualUsado = (g.percentualUsado === 50 || g.percentualUsado === 100 ? g.percentualUsado : 0) as 0 | 50 | 100;
   form.relacaoEstoqueDetalhadoEnviado = !!g.relacaoEstoqueDetalhadoEnviado;
+  form.relacaoEstoqueDetalhadoValidade = g.relacaoEstoqueDetalhadoValidade || '';
+  form.documentos = Array.isArray(g.documentos) ? JSON.parse(JSON.stringify(g.documentos)) : [];
   form.constituicao = g.constituicao
     ? { ...emptyConstituicaoGarantia(), ...JSON.parse(JSON.stringify(g.constituicao)) }
     : emptyConstituicaoGarantia();
@@ -16311,6 +16471,8 @@ watch(
 
 function openNova() {
   editingIndex.value = null;
+  editTab.value = 'dados';
+  closeGarantiaMenu();
   hydrateGarantia(emptyGarantiaMinuta());
   estoqueDraft.propriedade = '';
   estoqueDraft.proprietario = '';
@@ -16322,6 +16484,8 @@ function openNova() {
 
 function openEdit(i: number) {
   editingIndex.value = i;
+  editTab.value = 'dados';
+  closeGarantiaMenu();
   hydrateGarantia(garantias.value[i]);
   estoqueDraft.propriedade = '';
   estoqueDraft.proprietario = '';
@@ -16352,16 +16516,24 @@ function removeEstoque(i: number) {
 
 const canCadastrar = computed(() => {
   if (!form.tipo || !form.valor) return false;
-  if (isGarantiaEstoque(form.tipo) && !form.relacaoEstoqueDetalhadoEnviado) return false;
+  if (isGarantiaEstoque(form.tipo)) {
+    if (!form.relacaoEstoqueDetalhadoEnviado || !form.relacaoEstoqueDetalhadoValidade.trim()) return false;
+  }
   return true;
 });
+
+function toggleRelacaoEstoque() {
+  form.relacaoEstoqueDetalhadoEnviado = !form.relacaoEstoqueDetalhadoEnviado;
+  if (!form.relacaoEstoqueDetalhadoEnviado) form.relacaoEstoqueDetalhadoValidade = '';
+}
 
 function cadastrar() {
   if (!canCadastrar.value) return;
   const payload = JSON.parse(JSON.stringify(form)) as GarantiaMinuta;
   if (editingIndex.value != null) {
     const next = [...garantias.value];
-    next[editingIndex.value] = payload;
+    const prev = garantias.value[editingIndex.value];
+    next[editingIndex.value] = { ...prev, ...payload };
     garantias.value = next;
   } else {
     garantias.value = [...garantias.value, payload];
@@ -16371,6 +16543,7 @@ function cadastrar() {
 }
 
 function openConstituicao(i: number) {
+  closeGarantiaMenu();
   constituicaoIndex.value = i;
   showConstituicao.value = true;
 }
@@ -16409,25 +16582,40 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
 function globalIndex(pageIdx: number) {
   return (page.value - 1) * pageSize.value + pageIdx;
 }
+
+function closeEditor() {
+  showNova.value = false;
+  editingIndex.value = null;
+}
+
+defineExpose({ openNova, openEdit, openConstituicao, closeEditor });
 </script>
 
 <template>
   <div class="flex flex-col" style="gap: 20px">
-    <div class="flex items-center justify-between" style="gap: 16px; flex-wrap: wrap">
-      <div style="flex: 1; min-width: 240px">
+    <div
+      v-if="!hideHeader"
+      class="flex items-center"
+      :style="{
+        gap: '16px',
+        flexWrap: 'wrap',
+        justifyContent: showPossuiToggle ? 'space-between' : 'flex-end',
+      }"
+    >
+      <div v-if="showPossuiToggle" style="flex: 1; min-width: 240px">
         <ToggleRow label="Possui garantias" :on="possuiGarantias" @toggle="possuiGarantias = !possuiGarantias" />
       </div>
-      <AddButton v-if="possuiGarantias" @click="openNova">Adicionar garantia</AddButton>
+      <AddButton v-if="!showPossuiToggle || possuiGarantias" @click="openNova">Adicionar garantia</AddButton>
     </div>
 
-    <template v-if="possuiGarantias">
+    <template v-if="!hideTable && (!showPossuiToggle || possuiGarantias)">
       <EmptyState
         v-if="garantias.length === 0"
         :icon="Shield"
         title="Nenhuma garantia adicionada"
         hint="Clique em Adicionar garantia para cadastrar AF. Estoque, Lavoura, Imóvel e demais tipos disponíveis."
       />
-      <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+      <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: visible">
         <div
           class="grid"
           style="
@@ -16455,15 +16643,15 @@ function globalIndex(pageIdx: number) {
           v-for="(g, pageIdx) in pageItems"
           :key="pageIdx"
           class="grid items-center"
-          style="
-            grid-template-columns: minmax(120px, 1.1fr) minmax(96px, 0.7fr) 96px minmax(90px, 0.75fr) minmax(80px, 0.65fr) minmax(72px, 0.55fr) 40px;
-            padding: 12px 14px;
-            border-top: 1px solid var(--border-default);
-            font-size: var(--text-sm);
-            cursor: pointer;
-            column-gap: 12px;
-          "
-          @click="openEdit(globalIndex(pageIdx))"
+          :style="{
+            gridTemplateColumns: 'minmax(120px, 1.1fr) minmax(96px, 0.7fr) 96px minmax(90px, 0.75fr) minmax(80px, 0.65fr) minmax(72px, 0.55fr) 40px',
+            padding: '12px 14px',
+            borderTop: '1px solid var(--border-default)',
+            fontSize: 'var(--text-sm)',
+            cursor: editOnRowClick ? 'pointer' : 'default',
+            columnGap: '12px',
+          }"
+          @click="editOnRowClick && openEdit(globalIndex(pageIdx))"
         >
           <div style="font-weight: var(--weight-semibold); color: var(--text-strong); min-width: 0">{{ g.tipo }}</div>
           <div style="font-variant-numeric: tabular-nums; color: var(--text-strong)">{{ g.valor || '—' }}</div>
@@ -16494,23 +16682,84 @@ function globalIndex(pageIdx: number) {
           <div>{{ g.instrumentoParticular ? 'Sim' : 'Não' }}</div>
           <div>{{ g.constituirGarantia ? 'Sim' : 'Não' }}</div>
           <div>{{ g.numeroTestemunhas || '—' }}</div>
-          <button
-            aria-label="Configurar constituição"
-            title="Configurar constituição da garantia"
-            class="flex items-center justify-center"
-            style="
-              width: 32px;
-              height: 32px;
-              border: 1px solid var(--border-default);
-              border-radius: var(--radius-lg);
-              background: var(--surface-card);
-              cursor: pointer;
-              color: var(--text-muted);
-            "
-            @click.stop="openConstituicao(globalIndex(pageIdx))"
-          >
-            <Settings2 :size="15" />
-          </button>
+          <div class="flex justify-end" style="position: relative" data-garantia-action-menu @click.stop>
+            <button
+              type="button"
+              aria-label="Ações"
+              class="flex items-center justify-center"
+              style="
+                width: 32px;
+                height: 32px;
+                border: 1px solid var(--border-default);
+                border-radius: var(--radius-lg);
+                background: var(--surface-card);
+                cursor: pointer;
+                color: var(--text-muted);
+              "
+              @click="toggleGarantiaMenu(globalIndex(pageIdx))"
+            >
+              <MoreVertical :size="15" />
+            </button>
+            <div
+              v-if="garantiaMenuOpen === globalIndex(pageIdx)"
+              class="flex flex-col"
+              style="
+                position: absolute;
+                top: 36px;
+                right: 0;
+                z-index: 50;
+                min-width: 248px;
+                background: var(--surface-card);
+                border: 1px solid var(--border-default);
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-md);
+                padding: 6px;
+              "
+            >
+              <button
+                type="button"
+                class="flex items-center garantia-action-item"
+                style="
+                  gap: 8px;
+                  padding: 8px 12px;
+                  background: none;
+                  border: none;
+                  cursor: pointer;
+                  border-radius: var(--radius-md);
+                  text-align: left;
+                  font-size: var(--text-sm);
+                  font-weight: var(--weight-semibold);
+                  color: var(--text-default);
+                  width: 100%;
+                "
+                @click="openEdit(globalIndex(pageIdx))"
+              >
+                <Pencil :size="14" style="color: var(--text-muted); flex-shrink: 0" />
+                Editar
+              </button>
+              <button
+                type="button"
+                class="flex items-center garantia-action-item"
+                style="
+                  gap: 8px;
+                  padding: 8px 12px;
+                  background: none;
+                  border: none;
+                  cursor: pointer;
+                  border-radius: var(--radius-md);
+                  text-align: left;
+                  font-size: var(--text-sm);
+                  font-weight: var(--weight-semibold);
+                  color: var(--text-default);
+                  width: 100%;
+                "
+                @click="openConstituicao(globalIndex(pageIdx))"
+              >
+                <Settings2 :size="14" style="color: var(--text-muted); flex-shrink: 0" />
+                Configurar constituição da garantia
+              </button>
+            </div>
+          </div>
         </div>
         <TablePagination
           :total="total"
@@ -16579,7 +16828,21 @@ function globalIndex(pageIdx: number) {
         </div>
 
         <div style="flex: 1; overflow-y: auto; padding: 32px">
-          <div class="flex flex-col" style="gap: 20px">
+          <div v-if="editingIndex != null" style="margin-bottom: 20px">
+            <SegmentedToggle
+              :model-value="editTab"
+              :options="EDIT_GARANTIA_TABS"
+              variant="brand"
+              @update:model-value="editTab = $event as 'dados' | 'documentos'"
+            />
+          </div>
+
+          <GarantiaDocumentosFields
+            v-if="editingIndex != null && editTab === 'documentos'"
+            v-model:documentos="form.documentos"
+          />
+
+          <div v-show="editingIndex == null || editTab === 'dados'" class="flex flex-col" style="gap: 20px">
             <BentoBox title="Dados da garantia" :icon="Scale">
               <div class="flex flex-col" style="gap: 14px">
                 <StepGrid>
@@ -16752,7 +17015,7 @@ function globalIndex(pageIdx: number) {
                 <AddButton @click="addEstoque">Adicionar dados do estoque</AddButton>
               </div>
 
-              <BentoBox title="Estoques">
+              <BentoBox title="Estoques" :icon="Home">
                 <div
                   v-if="form.estoques.length === 0"
                   style="padding: 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
@@ -16801,7 +17064,7 @@ function globalIndex(pageIdx: number) {
                 </div>
               </BentoBox>
 
-              <BentoBox title="Informações do relatório">
+              <BentoBox title="Informações do relatório" :icon="Scale">
                 <StepGrid>
                   <FormField label="Data do relatório" placeholder="dd/mm/aaaa" required :span="4" v-model="form.dataRelatorio" />
                   <SelectField
@@ -16825,7 +17088,9 @@ function globalIndex(pageIdx: number) {
                 title="Anexos do estoque"
                 :docs="[RELACAO_ESTOQUE_DOC]"
                 :doc-files="{ [RELACAO_ESTOQUE_DOC.id]: form.relacaoEstoqueDetalhadoEnviado }"
-                @toggle-doc="form.relacaoEstoqueDetalhadoEnviado = !form.relacaoEstoqueDetalhadoEnviado"
+                :doc-validades="{ [RELACAO_ESTOQUE_DOC.id]: form.relacaoEstoqueDetalhadoValidade }"
+                @toggle-doc="toggleRelacaoEstoque"
+                @update-validade="(_, value) => (form.relacaoEstoqueDetalhadoValidade = value)"
               />
             </template>
 
@@ -17577,6 +17842,12 @@ function globalIndex(pageIdx: number) {
     />
   </div>
 </template>
+
+<style scoped>
+.garantia-action-item:hover {
+  background: var(--surface-sunken);
+}
+</style>
 ```
 
 ### InformacaoPagamentoStep
@@ -20396,7 +20667,11 @@ const COLS = '0.55fr 1.1fr 2fr 1fr 1.15fr auto';
 function cloneValidationItem(item: ValidationItem): ValidationItem {
   return {
     ...item,
-    configs: item.configs.map((c) => ({ ...c, vehicleIds: [...c.vehicleIds] })),
+    configs: item.configs.map((c) => ({
+      ...c,
+      vehicleIds: [...c.vehicleIds],
+      cedenteIds: [...(c.cedenteIds ?? [])],
+    })),
   };
 }
 
@@ -20907,11 +21182,13 @@ import {
   Truck,
   Search,
   Trash2,
+  Users,
 } from 'lucide-vue-next';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import ToggleRow from '../modals/adicionar-contrato/ToggleRow.vue';
 import {
+  CEDENTES_VALIDACAO,
   SETOR_RESPONSAVEL_OPTS,
   TIPO_PEDIDO_OPTS,
   VEICULOS_VALIDACAO,
@@ -20920,6 +21197,7 @@ import {
   setorColor,
   setorLabel,
   tipoPedidoLabel,
+  type CedenteTipoTab,
   type FundTypeTab,
   type ValidationConfig,
   type ValidationItem,
@@ -20933,22 +21211,28 @@ const emit = defineEmits<{
 
 type TabKey = 'detalhes' | 'configuracoes' | 'veiculos';
 
-const TABS: { key: TabKey; label: string; icon: Component }[] = [
-  { key: 'detalhes', label: 'Detalhes', icon: FileText },
-  { key: 'configuracoes', label: 'Configurações', icon: Settings2 },
-  { key: 'veiculos', label: 'Veículos', icon: Truck },
-];
-
 function cloneItem(item: ValidationItem): ValidationItem {
   return {
     ...item,
-    configs: item.configs.map((c) => ({ ...c, vehicleIds: [...c.vehicleIds] })),
+    configs: item.configs.map((c) => ({
+      ...c,
+      vehicleIds: [...c.vehicleIds],
+      cedenteIds: [...(c.cedenteIds ?? [])],
+    })),
   };
 }
 
 const tab = ref<TabKey>('detalhes');
 const local = ref<ValidationItem>(cloneItem(props.item));
 const savedBanner = ref(false);
+
+const TABS = computed<{ key: TabKey; label: string; icon: Component }[]>(() => [
+  { key: 'detalhes', label: 'Detalhes', icon: FileText },
+  { key: 'configuracoes', label: 'Configurações', icon: Settings2 },
+  local.value.usedByMonoTransferor
+    ? { key: 'veiculos', label: 'Cedentes', icon: Users }
+    : { key: 'veiculos', label: 'Veículos', icon: Truck },
+]);
 let bannerTimer: ReturnType<typeof setTimeout> | null = null;
 
 watch(
@@ -20981,7 +21265,11 @@ const selectedConfig = computed(
   () => local.value.configs.find((c) => c.id === selectedConfigId.value) ?? null,
 );
 
+const isCedenteMode = computed(() => local.value.usedByMonoTransferor);
+const scopeNoun = computed(() => (isCedenteMode.value ? 'cedente' : 'veículo'));
+
 const fundTab = ref<FundTypeTab>('CRA');
+const cedenteTab = ref<CedenteTipoTab>('PJ');
 const vehicleSearch = ref('');
 const vehicleSearchDebounced = ref('');
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -21002,17 +21290,48 @@ const vehiclesInTab = computed(() => {
   });
 });
 
+const cedentesInTab = computed(() => {
+  const needle = vehicleSearchDebounced.value.trim().toLowerCase();
+  return CEDENTES_VALIDACAO.filter((c) => {
+    if (c.tipo !== cedenteTab.value) return false;
+    if (
+      needle &&
+      !c.nome.toLowerCase().includes(needle) &&
+      !c.documento.toLowerCase().includes(needle)
+    ) {
+      return false;
+    }
+    return true;
+  });
+});
+
+const itemsInTabCount = computed(() =>
+  isCedenteMode.value ? cedentesInTab.value.length : vehiclesInTab.value.length,
+);
+
 const linkedInTabCount = computed(() => {
   const cfg = selectedConfig.value;
   if (!cfg) return 0;
+  if (isCedenteMode.value) {
+    const linked = new Set(cfg.cedenteIds ?? []);
+    return cedentesInTab.value.filter((c) => linked.has(c.id)).length;
+  }
   const linked = new Set(cfg.vehicleIds);
   return vehiclesInTab.value.filter((v) => linked.has(v.id)).length;
 });
+
+const linkedCountForConfig = (cfg: ValidationConfig) =>
+  isCedenteMode.value ? (cfg.cedenteIds?.length ?? 0) : cfg.vehicleIds.length;
 
 const FUND_TABS: { key: FundTypeTab; label: string }[] = [
   { key: 'CRA', label: 'CRAs' },
   { key: 'CDCA', label: 'CDCAs' },
   { key: 'FIDC', label: 'FIDCs' },
+];
+
+const CEDENTE_TABS: { key: CedenteTipoTab; label: string }[] = [
+  { key: 'PJ', label: 'Pessoa Jurídica' },
+  { key: 'PF', label: 'Pessoa Física' },
 ];
 
 const labelStyle = {
@@ -21058,6 +21377,12 @@ function updateConfigVehicleIds(configId: string, vehicleIds: string[]) {
   );
 }
 
+function updateConfigCedenteIds(configId: string, cedenteIds: string[]) {
+  patchConfigs(
+    local.value.configs.map((c) => (c.id === configId ? { ...c, cedenteIds } : c)),
+  );
+}
+
 function insertConfig() {
   if (newRequestTypeId.value === '') return;
   const requestTypeId = Number(newRequestTypeId.value);
@@ -21065,7 +21390,7 @@ function insertConfig() {
 
   patchConfigs([
     ...local.value.configs,
-    { id: `cfg-${Date.now()}`, requestTypeId, vehicleIds: [] },
+    { id: `cfg-${Date.now()}`, requestTypeId, vehicleIds: [], cedenteIds: [] },
   ]);
   newRequestTypeId.value = '';
 }
@@ -21079,6 +21404,10 @@ function isVehicleLinked(vehicleId: string): boolean {
   return selectedConfig.value?.vehicleIds.includes(vehicleId) ?? false;
 }
 
+function isCedenteLinked(cedenteId: string): boolean {
+  return selectedConfig.value?.cedenteIds?.includes(cedenteId) ?? false;
+}
+
 function toggleVehicle(vehicleId: string) {
   const cfg = selectedConfig.value;
   if (!cfg) return;
@@ -21089,9 +21418,30 @@ function toggleVehicle(vehicleId: string) {
   updateConfigVehicleIds(cfg.id, ids);
 }
 
+function toggleCedente(cedenteId: string) {
+  const cfg = selectedConfig.value;
+  if (!cfg) return;
+  const ids = [...(cfg.cedenteIds ?? [])];
+  const idx = ids.indexOf(cedenteId);
+  if (idx >= 0) ids.splice(idx, 1);
+  else ids.push(cedenteId);
+  updateConfigCedenteIds(cfg.id, ids);
+}
+
+function selectScopeTab(key: string) {
+  if (isCedenteMode.value) cedenteTab.value = key as CedenteTipoTab;
+  else fundTab.value = key as FundTypeTab;
+}
+
 function linkAllInTab() {
   const cfg = selectedConfig.value;
   if (!cfg) return;
+  if (isCedenteMode.value) {
+    const set = new Set(cfg.cedenteIds ?? []);
+    cedentesInTab.value.forEach((c) => set.add(c.id));
+    updateConfigCedenteIds(cfg.id, [...set]);
+    return;
+  }
   const set = new Set(cfg.vehicleIds);
   vehiclesInTab.value.forEach((v) => set.add(v.id));
   updateConfigVehicleIds(cfg.id, [...set]);
@@ -21179,40 +21529,6 @@ function handleAtualizar() {
           {{ isEscopoConfigurado(local) ? escopoLabel(local) : 'Não configurado' }}
         </p>
       </div>
-
-      <button
-        type="button"
-        class="flex items-center"
-        style="
-          height: 44px;
-          padding: 0 22px;
-          background: var(--action-primary-bg);
-          color: var(--action-primary-text);
-          border: none;
-          border-radius: var(--radius-lg);
-          cursor: pointer;
-          font-weight: var(--weight-bold);
-          font-size: var(--text-sm);
-          flex-shrink: 0;
-        "
-        @click="handleAtualizar"
-      >
-        Atualizar
-      </button>
-    </div>
-
-    <div
-      v-if="savedBanner"
-      style="
-        padding: 12px 16px;
-        border-radius: var(--radius-lg);
-        background: color-mix(in srgb, #16a34a 12%, transparent);
-        border: 1px solid color-mix(in srgb, #16a34a 35%, transparent);
-        font-size: var(--text-sm);
-        color: var(--text-default);
-      "
-    >
-      Validação atualizada com sucesso.
     </div>
 
     <SegmentedToggle
@@ -21283,7 +21599,13 @@ function handleAtualizar() {
           </div>
         </div>
       </div>
-      <div style="margin-top: 16px">
+      <div class="flex flex-col" style="gap: 12px; margin-top: 16px">
+        <ToggleRow
+          :label="local.usedByMonoTransferor ? 'Vínculo por cedente' : 'Vínculo por veículo'"
+          hint="Define se o escopo desta validação é por veículo (CRA, CDCA, FIDC) ou por cedente. A última aba acompanha essa escolha."
+          :on="local.usedByMonoTransferor"
+          @toggle="local.usedByMonoTransferor = !local.usedByMonoTransferor"
+        />
         <ToggleRow
           label="Anexo obrigatório na autorização"
           :on="local.requiresAttachmentOnAuthorization"
@@ -21373,7 +21695,7 @@ function handleAtualizar() {
           "
         >
           <div>Tipo de Solicitação</div>
-          <div>Qtd. veículos</div>
+          <div>Qtd. {{ isCedenteMode ? 'cedentes' : 'veículos' }}</div>
           <div style="text-align: right">Remover</div>
         </div>
         <div
@@ -21391,7 +21713,7 @@ function handleAtualizar() {
             {{ tipoPedidoLabel(cfg.requestTypeId) }}
           </div>
           <div style="font-variant-numeric: tabular-nums; color: var(--text-default)">
-            {{ cfg.vehicleIds.length }}
+            {{ linkedCountForConfig(cfg) }}
           </div>
           <div class="flex justify-end">
             <button
@@ -21431,7 +21753,7 @@ function handleAtualizar() {
         "
       >
         Nenhuma configuração cadastrada. Adicione uma configuração na aba Configurações para vincular
-        veículos.
+        {{ isCedenteMode ? 'cedentes' : 'veículos' }}.
       </div>
 
       <div
@@ -21492,7 +21814,7 @@ function handleAtualizar() {
               {{ tipoPedidoLabel(cfg.requestTypeId) }}
             </span>
             <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px">
-              {{ cfg.vehicleIds.length }} veículo(s)
+              {{ linkedCountForConfig(cfg) }} {{ scopeNoun }}(s)
             </span>
           </button>
         </div>
@@ -21510,7 +21832,7 @@ function handleAtualizar() {
         >
           <div class="flex items-center" style="gap: 6px; flex-wrap: wrap">
             <button
-              v-for="ft in FUND_TABS"
+              v-for="ft in isCedenteMode ? CEDENTE_TABS : FUND_TABS"
               :key="ft.key"
               type="button"
               :style="{
@@ -21519,11 +21841,11 @@ function handleAtualizar() {
                 cursor: 'pointer',
                 fontSize: '10px',
                 fontWeight: 'var(--weight-bold)',
-                border: `1px solid ${fundTab === ft.key ? 'var(--gci-base)' : 'var(--border-default)'}`,
-                background: fundTab === ft.key ? 'var(--surface-selected)' : 'var(--surface-card)',
-                color: fundTab === ft.key ? 'var(--gci-base)' : 'var(--text-muted)',
+                border: `1px solid ${(isCedenteMode ? cedenteTab : fundTab) === ft.key ? 'var(--gci-base)' : 'var(--border-default)'}`,
+                background: (isCedenteMode ? cedenteTab : fundTab) === ft.key ? 'var(--surface-selected)' : 'var(--surface-card)',
+                color: (isCedenteMode ? cedenteTab : fundTab) === ft.key ? 'var(--gci-base)' : 'var(--text-muted)',
               }"
-              @click="fundTab = ft.key"
+              @click="selectScopeTab(ft.key)"
             >
               {{ ft.label }}
             </button>
@@ -21542,7 +21864,7 @@ function handleAtualizar() {
             />
             <input
               v-model="vehicleSearch"
-              placeholder="Buscar por nome..."
+              :placeholder="isCedenteMode ? 'Buscar por nome ou documento...' : 'Buscar por nome...'"
               style="
                 width: 100%;
                 height: 44px;
@@ -21559,7 +21881,7 @@ function handleAtualizar() {
 
           <div class="flex items-center justify-between" style="gap: 12px; flex-wrap: wrap">
             <span style="font-size: var(--text-sm); color: var(--text-muted)">
-              {{ linkedInTabCount }} de {{ vehiclesInTab.length }} selecionados
+              {{ linkedInTabCount }} de {{ itemsInTabCount }} selecionados
             </span>
             <button
               type="button"
@@ -21581,10 +21903,50 @@ function handleAtualizar() {
           </div>
 
           <div
-            v-if="vehiclesInTab.length === 0"
+            v-if="itemsInTabCount === 0"
             style="padding: 32px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
           >
-            Nenhum veículo encontrado.
+            Nenhum {{ scopeNoun }} encontrado.
+          </div>
+          <div
+            v-else-if="isCedenteMode"
+            style="
+              border: 1px solid var(--border-default);
+              border-radius: var(--radius-lg);
+              overflow: hidden;
+              max-height: 420px;
+              overflow-y: auto;
+            "
+          >
+            <div
+              v-for="c in cedentesInTab"
+              :key="c.id"
+              class="flex items-center"
+              style="
+                gap: 12px;
+                padding: 12px 14px;
+                border-top: 1px solid var(--border-default);
+                cursor: pointer;
+                background: var(--surface-card);
+              "
+              @click="toggleCedente(c.id)"
+            >
+              <Checkbox :checked="isCedenteLinked(c.id)" @change="toggleCedente(c.id)" @click.stop />
+              <div style="min-width: 0">
+                <div
+                  style="
+                    font-size: var(--text-sm);
+                    font-weight: var(--weight-medium);
+                    color: var(--text-strong);
+                  "
+                >
+                  {{ c.nome }}
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px">
+                  {{ c.documento }} · {{ c.tipo }}
+                </div>
+              </div>
+            </div>
           </div>
           <div
             v-else
@@ -21629,18 +21991,165 @@ function handleAtualizar() {
         </div>
       </div>
     </div>
+
+    <div class="flex items-center justify-end" style="gap: 12px">
+      <span
+        v-if="savedBanner"
+        style="font-size: var(--text-sm); color: var(--success-base); font-weight: var(--weight-semibold)"
+      >
+        Validação atualizada com sucesso.
+      </span>
+      <button
+        type="button"
+        class="flex items-center"
+        style="
+          height: 44px;
+          padding: 0 22px;
+          background: var(--action-primary-bg);
+          color: var(--action-primary-text);
+          border: none;
+          border-radius: var(--radius-lg);
+          cursor: pointer;
+          font-weight: var(--weight-bold);
+          font-size: var(--text-sm);
+          flex-shrink: 0;
+        "
+        @click="handleAtualizar"
+      >
+        Atualizar
+      </button>
+    </div>
   </div>
 </template>
 ```
 
 ## Outros
 
+### DefinirAtendenteModal
+
+```vue
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { X } from 'lucide-vue-next';
+import { SelectField, StepGrid } from './adicionar-contrato';
+import { solicitacoes } from '../../data/operacaoData';
+
+const emit = defineEmits<{ close: []; confirm: [atendente: string] }>();
+
+const ATENDENTE_OPTS = [
+  ...new Set(solicitacoes.map((s) => s.atendente).filter(Boolean)),
+].sort();
+
+const atendente = ref('');
+const canSubmit = computed(() => atendente.value.trim() !== '');
+
+function confirmar() {
+  if (!canSubmit.value) return;
+  emit('confirm', atendente.value);
+  emit('close');
+}
+</script>
+
+<template>
+  <div
+    style="
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(8, 60, 74, 0.55);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    "
+    @click.self="emit('close')"
+  >
+    <div
+      style="
+        width: 100%;
+        max-width: 480px;
+        background: var(--surface-card);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      "
+      @click.stop
+    >
+      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Definir atendente atual
+          </h2>
+          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            Selecione o atendente responsável por esta solicitação
+          </p>
+        </div>
+        <button
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted)"
+          @click="emit('close')"
+        >
+          <X :size="18" />
+        </button>
+      </div>
+
+      <div style="padding: 24px 28px">
+        <StepGrid>
+          <SelectField
+            label="Atendente"
+            :options="ATENDENTE_OPTS"
+            placeholder="Selecione"
+            :span="12"
+            v-model="atendente"
+          />
+        </StepGrid>
+      </div>
+
+      <div class="flex items-center justify-between" style="padding: 16px 28px; border-top: 1px solid var(--border-default)">
+        <button
+          type="button"
+          style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
+          @click="emit('close')"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn-animated"
+          :class="{ 'btn-primary': canSubmit }"
+          :disabled="!canSubmit"
+          :style="{
+            height: '44px',
+            padding: '0 24px',
+            background: canSubmit ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
+            color: canSubmit ? 'var(--action-primary-text)' : 'var(--text-disabled)',
+            border: 'none',
+            borderRadius: 'var(--radius-lg)',
+            cursor: canSubmit ? 'pointer' : 'not-allowed',
+            fontWeight: 'var(--weight-bold)',
+            fontSize: 'var(--text-xs)',
+            letterSpacing: '0.08em',
+          }"
+          @click="confirmar"
+        >
+          DEFINIR
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
 ### ConfigurarConstituicaoGarantiaModal
 
 ```vue
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
-import { X, Trash2, User, Mail, MapPin } from 'lucide-vue-next';
+import { X, Trash2, User, Mail, MapPin, Package } from 'lucide-vue-next';
 import { UF_OPTIONS, PAISES_DDI } from '../../../data/operacaoData';
 import {
   BentoBox,
@@ -21655,11 +22164,14 @@ import {
   NACIONALIDADE_OPTS,
   FIDUCIARIA_PADRAO_OPTS,
   CESSAO_VINCULADA_OPTS,
+  PRODUTO_TIPO_OPTS,
   MOCK_CLIENTES_MINUTA,
   cessaoVinculadaPorLabel,
   emptyConstituicaoGarantia,
   emptyTestemunhaConstituicao,
   emptyPessoaMinuta,
+  emptyProdutoConstituicao,
+  isProdutoConstituicaoCessao,
   type ConstitucaoGarantiaConfig,
   type GarantiaMinuta,
 } from '../../../data/minutaData';
@@ -21703,6 +22215,17 @@ const cessaoResumo = computed(() =>
   form.cessaoVinculada ? cessaoVinculadaPorLabel(form.cessaoVinculada) : undefined,
 );
 
+const showProdutoConstituicao = computed(
+  () =>
+    form.constituirGarantia &&
+    !!props.garantia &&
+    isProdutoConstituicaoCessao(
+      props.garantia.tipo,
+      props.garantia.tipoTitulo,
+      props.garantia.tipoContrato,
+    ),
+);
+
 const ddiModel = computed({
   get: () => {
     const ddi = form.fiduciaria.ddi || '+55';
@@ -21734,6 +22257,7 @@ watch(
       },
       testemunhas: Array.isArray(raw.testemunhas) ? raw.testemunhas : [],
       obrigacao: { ...base.obrigacao, ...(raw.obrigacao ?? {}) },
+      produto: { ...emptyProdutoConstituicao(), ...(raw.produto ?? {}) },
     });
   },
   { immediate: true },
@@ -22016,6 +22540,50 @@ function salvar() {
                 />
               </StepGrid>
             </BentoBox>
+
+            <template v-if="showProdutoConstituicao">
+              <BentoBox title="Informações do produto" :icon="Package">
+                <StepGrid>
+                  <FormField
+                    label="Número de identificação"
+                    placeholder="—"
+                    required
+                    :span="12"
+                    v-model="form.produto.numeroIdentificacao"
+                  />
+                  <SelectField
+                    label="Produto"
+                    :options="PRODUTO_TIPO_OPTS"
+                    placeholder="Selecione"
+                    required
+                    :span="3"
+                    v-model="form.produto.produto"
+                  />
+                  <FormField label="Safra" placeholder="—" required :span="3" v-model="form.produto.safra" />
+                  <FormField label="Quantidade" placeholder="—" required :span="3" v-model="form.produto.quantidade" />
+                  <FormField
+                    label="Prazo de entrega"
+                    placeholder="dd/mm/aaaa"
+                    required
+                    :span="3"
+                    v-model="form.produto.prazoEntrega"
+                  />
+                </StepGrid>
+              </BentoBox>
+
+              <BentoBox title="Endereço" :icon="MapPin">
+                <StepGrid>
+                  <FormField label="CEP" placeholder="—" :span="4" v-model="form.produto.cep" />
+                  <FormField label="Localidade" placeholder="—" :span="8" v-model="form.produto.localidade" />
+                  <FormField label="Número" placeholder="—" :span="4" v-model="form.produto.numero" />
+                  <FormField label="Bairro" placeholder="—" :span="8" v-model="form.produto.bairro" />
+                  <FormField label="Informações adicionais" placeholder="—" :span="12" v-model="form.produto.infoAdicionais" />
+                  <FormField label="Cidade" placeholder="—" :span="12" v-model="form.produto.cidade" />
+                  <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="6" v-model="form.produto.estado" />
+                  <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="6" v-model="form.produto.pais" />
+                </StepGrid>
+              </BentoBox>
+            </template>
           </template>
 
           <!-- Testemunhas: quando instrumento particular ou constituir -->
@@ -23037,6 +23605,197 @@ function remove(i: number) {
         >
           <Trash2 :size="14" />
         </button>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+### GarantiaDocumentosFields
+
+```vue
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { FileText, Paperclip, Download, Trash2, CheckCircle2, AlertTriangle } from 'lucide-vue-next';
+import { StepGrid, FormField, SelectField, AddButton, EmptyState } from '../adicionar-contrato';
+import {
+  TIPO_ARQUIVO_GARANTIA_MINUTA_OPTS,
+  isDocumentoGarantiaVigente,
+  type GarantiaMinutaDocumento,
+} from '../../../data/minutaData';
+
+const documentos = defineModel<GarantiaMinutaDocumento[]>('documentos', { default: () => [] });
+
+const tipo = ref('');
+const arquivoNome = ref('');
+const validade = ref('');
+const fileInput = ref<HTMLInputElement | null>(null);
+
+const canAdd = computed(() => !!tipo.value && !!arquivoNome.value.trim());
+
+function onFileChange(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  arquivoNome.value = file?.name ?? '';
+}
+
+function addDocumento() {
+  if (!canAdd.value) return;
+  documentos.value = [
+    ...documentos.value,
+    {
+      id: `gdoc-${Date.now()}`,
+      nome: arquivoNome.value.trim(),
+      tipo: tipo.value,
+      validade: validade.value.trim(),
+    },
+  ];
+  tipo.value = '';
+  arquivoNome.value = '';
+  validade.value = '';
+  if (fileInput.value) fileInput.value.value = '';
+}
+
+function removeDocumento(id: string) {
+  documentos.value = documentos.value.filter((d) => d.id !== id);
+}
+</script>
+
+<template>
+  <div class="flex flex-col" style="gap: 16px">
+    <StepGrid>
+      <SelectField
+        label="Tipo do arquivo"
+        :options="[...TIPO_ARQUIVO_GARANTIA_MINUTA_OPTS]"
+        placeholder="Selecione"
+        :span="4"
+        v-model="tipo"
+      />
+      <div :style="{ gridColumn: 'span 5' }">
+        <div
+          style="
+            font-size: 10px;
+            font-weight: var(--weight-bold);
+            letter-spacing: 0.10em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+          "
+        >
+          Insira o arquivo
+        </div>
+        <label
+          class="flex items-center"
+          :style="{
+            height: '40px',
+            padding: '0 14px',
+            gap: '8px',
+            background: 'var(--surface-card)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-lg)',
+            cursor: 'pointer',
+            minWidth: 0,
+          }"
+        >
+          <Paperclip :size="14" style="color: var(--text-muted); flex-shrink: 0" />
+          <span
+            :style="{
+              fontSize: 'var(--text-sm)',
+              color: arquivoNome ? 'var(--text-strong)' : 'var(--text-muted)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }"
+          >
+            {{ arquivoNome || 'Selecionar arquivo' }}
+          </span>
+          <input ref="fileInput" type="file" style="display: none" @change="onFileChange" />
+        </label>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px">
+          {{ arquivoNome ? '1 arquivo(s)' : '0 arquivo(s)' }}
+        </div>
+      </div>
+      <FormField label="Válido até" placeholder="dd/mm/aaaa" :span="3" v-model="validade" />
+    </StepGrid>
+
+    <div class="flex justify-end">
+      <AddButton :disabled="!canAdd" @click="addDocumento">Salvar documentos</AddButton>
+    </div>
+
+    <EmptyState
+      v-if="documentos.length === 0"
+      :icon="FileText"
+      title="Nenhum documento anexado"
+      hint="Selecione o tipo, o arquivo e a validade e clique em Salvar documentos."
+    />
+    <div
+      v-else
+      style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden"
+    >
+      <div
+        class="grid"
+        style="
+          grid-template-columns: 1.6fr 1.1fr 0.7fr auto;
+          padding: 10px 14px;
+          background: var(--surface-sunken);
+          font-size: 10px;
+          font-weight: var(--weight-bold);
+          letter-spacing: 0.12em;
+          color: var(--text-muted);
+          text-transform: uppercase;
+        "
+      >
+        <div>Nome</div>
+        <div>Tipo</div>
+        <div>Validade</div>
+        <div />
+      </div>
+      <div
+        v-for="d in documentos"
+        :key="d.id"
+        class="grid items-center"
+        style="
+          grid-template-columns: 1.6fr 1.1fr 0.7fr auto;
+          padding: 10px 14px;
+          border-top: 1px solid var(--border-default);
+          font-size: var(--text-sm);
+        "
+      >
+        <div
+          class="flex items-center"
+          style="gap: 8px; font-weight: var(--weight-semibold); color: var(--text-strong); min-width: 0"
+        >
+          <Paperclip :size="13" style="color: var(--text-muted); flex-shrink: 0" />
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ d.nome }}</span>
+        </div>
+        <div style="color: var(--text-muted)">{{ d.tipo }}</div>
+        <div class="flex items-center" style="gap: 6px">
+          <CheckCircle2
+            v-if="isDocumentoGarantiaVigente(d.validade)"
+            :size="16"
+            style="color: var(--success-base)"
+          />
+          <AlertTriangle v-else :size="16" style="color: var(--warning-base)" />
+          <span style="font-variant-numeric: tabular-nums; color: var(--text-muted)">{{ d.validade || '—' }}</span>
+        </div>
+        <div class="flex items-center justify-end" style="gap: 4px">
+          <button
+            type="button"
+            aria-label="Baixar"
+            class="flex items-center justify-center"
+            style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--gci-base)"
+          >
+            <Download :size="14" />
+          </button>
+          <button
+            type="button"
+            aria-label="Remover"
+            class="flex items-center justify-center"
+            style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
+            @click="removeDocumento(d.id)"
+          >
+            <Trash2 :size="14" />
+          </button>
+        </div>
       </div>
     </div>
   </div>

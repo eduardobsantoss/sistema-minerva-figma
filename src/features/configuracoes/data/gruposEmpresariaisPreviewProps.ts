@@ -14,14 +14,16 @@ ${template}
 </template>`;
 }
 
-function baseExample(name: string, attrs: string): string {
-  return exampleBlock(
-    `import ${name} from './${name}.vue';`,
-    `  <${name}${attrs ? ` ${attrs}` : ''} />`,
-  );
+function baseExample(name: string, attrs: string, slot?: string): string {
+  const template = slot
+    ? `  <${name}${attrs ? ` ${attrs}` : ''}>${slot}</${name}>`
+    : `  <${name}${attrs ? ` ${attrs}` : ''} />`;
+  return exampleBlock(`import ${name} from './${name}.vue';`, template);
 }
 
 const sampleGrupo = cloneGrupo(GRUPOS_CADASTRO_SEED[0]!);
+const sampleGarantia =
+  sampleGrupo.garantias.find((g) => g.id === 'gar-3') ?? sampleGrupo.garantias[0]!;
 
 /** Resolve props + exemplo mínimo para Grupos Empresariais. */
 export function resolvePreview(relPath: string, name: string): PreviewConfig {
@@ -53,6 +55,17 @@ export function resolvePreview(relPath: string, name: string): PreviewConfig {
       example: exampleBlock(
         `import ${name} from './${name}.vue';\nimport { GRUPOS_CADASTRO_SEED } from '../data/gruposCadastroData';`,
         `  <${name} :grupo="GRUPOS_CADASTRO_SEED[0]" mode="detail" />`,
+      ),
+    };
+  }
+
+  if (path.endsWith('GarantiaGrupoDetailView.vue')) {
+    return {
+      props: { grupo: sampleGrupo, garantia: sampleGarantia },
+      frame: 'wide',
+      example: exampleBlock(
+        `import ${name} from './${name}.vue';\nimport { GRUPOS_CADASTRO_SEED } from '../data/gruposCadastroData';\nconst grupo = GRUPOS_CADASTRO_SEED[0];\nconst garantia = grupo.garantias.find((g) => g.id === 'gar-3') ?? grupo.garantias[0];`,
+        `  <${name} :grupo="grupo" :garantia="garantia" />`,
       ),
     };
   }
@@ -120,6 +133,39 @@ export function resolvePreview(relPath: string, name: string): PreviewConfig {
         `import ${name} from './${name}.vue';\nimport { GRUPOS_CADASTRO_SEED } from '../../data/gruposCadastroData';`,
         `  <${name} :garantias="GRUPOS_CADASTRO_SEED[0].garantias" />`,
       ),
+    };
+  }
+
+  if (path.endsWith('CessoesPanel.vue')) {
+    return {
+      props: {
+        cessoes: sampleGarantia.cessoes ?? [],
+        cessaoVinculada: sampleGarantia.constituicao?.cessaoVinculada,
+      },
+      frame: 'wide',
+      example: exampleBlock(
+        `import ${name} from './${name}.vue';\nimport { GRUPOS_CADASTRO_SEED } from '../../data/gruposCadastroData';\nconst garantia = GRUPOS_CADASTRO_SEED[0].garantias.find((g) => g.id === 'gar-3') ?? GRUPOS_CADASTRO_SEED[0].garantias[0];`,
+        `  <${name} :cessoes="garantia.cessoes ?? []" :cessao-vinculada="garantia.constituicao?.cessaoVinculada" />`,
+      ),
+    };
+  }
+
+  if (path.endsWith('EstoqueListPanel.vue')) {
+    return {
+      props: { items: sampleGarantia.estoques ?? [] },
+      frame: 'wide',
+      example: exampleBlock(
+        `import ${name} from './${name}.vue';\nimport { GRUPOS_CADASTRO_SEED } from '../../data/gruposCadastroData';\nconst garantia = GRUPOS_CADASTRO_SEED[0].garantias.find((g) => g.id === 'gar-3') ?? GRUPOS_CADASTRO_SEED[0].garantias[0];`,
+        `  <${name} :items="garantia.estoques ?? []" />`,
+      ),
+    };
+  }
+
+  if (path.endsWith('DetailField.vue')) {
+    return {
+      props: { label: 'Valor da garantia' },
+      frame: 'wide',
+      example: baseExample(name, ' label="Valor da garantia"', 'R$ 12.000.000,00'),
     };
   }
 

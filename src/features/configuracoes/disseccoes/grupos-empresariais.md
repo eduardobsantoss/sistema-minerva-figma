@@ -2,6 +2,398 @@
 
 ## Screens
 
+### GarantiaGrupoDetailView
+
+```vue
+<script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import {
+  ArrowLeft,
+  ArrowLeftRight,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  FileText,
+  MoreVertical,
+  Pencil,
+  RefreshCw,
+  Scale,
+  ShieldCheck,
+  Trash2,
+  XCircle,
+} from 'lucide-vue-next';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
+import GarantiaMinutaStep from '@/features/solicitacao-operacao/components/modals/minuta/GarantiaMinutaStep.vue';
+import { BentoBox, StepGrid } from '@/features/solicitacao-operacao/components/modals/adicionar-contrato';
+import {
+  isDocumentoGarantiaVigente,
+  isGarantiaCessaoContrato,
+  isGarantiaCessaoDuplicatas,
+  isGarantiaComFormaProduto,
+  isGarantiaEstoque,
+  isGarantiaFormularioEspecifico,
+  isGarantiaImovel,
+  type EstoqueItem,
+} from '@/features/solicitacao-operacao/data/minutaData';
+import type { GrupoCadastro, GarantiaGrupo } from '../data/gruposCadastroData';
+import DetailField from './garantia-detail/DetailField.vue';
+import CessoesPanel from './garantia-detail/CessoesPanel.vue';
+import EstoqueListPanel from './garantia-detail/EstoqueListPanel.vue';
+
+const props = defineProps<{
+  grupo: GrupoCadastro;
+  garantia: GarantiaGrupo;
+}>();
+
+const emit = defineEmits<{ close: []; update: [garantia: GarantiaGrupo]; delete: [garantia: GarantiaGrupo] }>();
+
+const tab = ref<'dados' | 'documentos' | 'cessoes'>('dados');
+const editorRef = ref<InstanceType<typeof GarantiaMinutaStep> | null>(null);
+const menuOpen = ref(false);
+const toDelete = ref(false);
+const localGarantias = ref<GarantiaGrupo[]>([{ ...props.garantia }]);
+
+watch(
+  () => props.garantia,
+  (next) => {
+    localGarantias.value = [{ ...next }];
+  },
+);
+
+const g = computed(() => localGarantias.value[0] ?? props.garantia);
+
+const showCamposPadrao = computed(() => !!g.value.tipo && !isGarantiaFormularioEspecifico(g.value.tipo));
+const showFormaProduto = computed(() => isGarantiaComFormaProduto(g.value.tipo) && showCamposPadrao.value);
+const hideCabecalhoExtra = computed(
+  () =>
+    isGarantiaEstoque(g.value.tipo) ||
+    isGarantiaImovel(g.value.tipo) ||
+    isGarantiaCessaoDuplicatas(g.value.tipo) ||
+    isGarantiaCessaoContrato(g.value.tipo),
+);
+const podeExcluir = computed(() => g.value.qtdOperacoes === 0);
+
+function simNao(v: boolean) {
+  return v ? 'Sim' : 'Não';
+}
+
+function display(value: string | number | undefined | null) {
+  const raw = value == null ? '' : String(value).trim();
+  return raw || '—';
+}
+
+function openEdit() {
+  menuOpen.value = false;
+  editorRef.value?.openEdit(0);
+}
+
+function askDelete() {
+  if (!podeExcluir.value) return;
+  menuOpen.value = false;
+  toDelete.value = true;
+}
+
+function confirmDelete() {
+  emit('delete', g.value);
+  toDelete.value = false;
+}
+
+function onClickOutsideMenu(e: MouseEvent) {
+  const t = e.target as HTMLElement | null;
+  if (t?.closest('[data-garantia-detail-menu]')) return;
+  menuOpen.value = false;
+}
+
+onMounted(() => document.addEventListener('mousedown', onClickOutsideMenu));
+onUnmounted(() => document.removeEventListener('mousedown', onClickOutsideMenu));
+
+const garantiasModel = computed({
+  get: () => localGarantias.value,
+  set: (items) => {
+    const next = items[0] as GarantiaGrupo | undefined;
+    if (!next) return;
+    localGarantias.value = [{ ...props.garantia, ...next }];
+    emit('update', localGarantias.value[0]!);
+  },
+});
+
+function updateEstoques(items: EstoqueItem[]) {
+  const updated = { ...g.value, estoques: items };
+  localGarantias.value = [updated];
+  emit('update', updated);
+}
+
+const TABS = [
+  { key: 'dados', label: 'Dados', icon: Scale },
+  { key: 'documentos', label: 'Documentos', icon: FileText },
+  { key: 'cessoes', label: 'Cessões', icon: ArrowLeftRight },
+];
+</script>
+
+<template>
+  <div class="flex flex-col" style="gap: 24px">
+    <div class="flex items-center" style="gap: 16px">
+      <button
+        type="button"
+        aria-label="Voltar"
+        class="flex items-center justify-center"
+        style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: var(--surface-card); border: 1px solid var(--border-default); cursor: pointer; color: var(--text-strong); flex-shrink: 0"
+        @click="emit('close')"
+      >
+        <ArrowLeft :size="20" />
+      </button>
+      <div style="flex: 1; min-width: 0">
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.18em; color: var(--accent); text-transform: uppercase; margin-bottom: 4px">
+          {{ grupo.nome }} · Garantia
+        </div>
+        <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.01em; line-height: 1.25">
+          {{ g.tipo }}
+        </h2>
+        <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+          {{ g.valor || '—' }}
+        </p>
+      </div>
+      <div class="flex justify-end" style="position: relative; flex-shrink: 0" data-garantia-detail-menu>
+        <button
+          type="button"
+          aria-label="Ações"
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-card); cursor: pointer; color: var(--text-muted)"
+          @click.stop="menuOpen = !menuOpen"
+        >
+          <MoreVertical :size="18" />
+        </button>
+        <div
+          v-if="menuOpen"
+          class="flex flex-col"
+          style="position: absolute; top: 44px; right: 0; z-index: 50; min-width: 220px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 6px"
+        >
+          <button
+            type="button"
+            class="flex items-center garantia-detail-action-item"
+            style="gap: 8px; padding: 8px 12px; background: none; border: none; cursor: pointer; border-radius: var(--radius-md); text-align: left; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-default); width: 100%"
+            @click="openEdit"
+          >
+            <Pencil :size="14" style="color: var(--text-muted); flex-shrink: 0" />
+            Editar Garantia
+          </button>
+          <button
+            type="button"
+            class="flex items-center garantia-detail-action-item"
+            :disabled="!podeExcluir"
+            :style="{
+              gap: '8px',
+              padding: '8px 12px',
+              background: 'none',
+              border: 'none',
+              cursor: podeExcluir ? 'pointer' : 'not-allowed',
+              borderRadius: 'var(--radius-md)',
+              textAlign: 'left',
+              fontSize: 'var(--text-sm)',
+              fontWeight: 'var(--weight-semibold)',
+              color: podeExcluir ? 'var(--action-danger-text-only)' : 'var(--text-disabled)',
+              width: '100%',
+              opacity: podeExcluir ? 1 : 0.55,
+            }"
+            @click="askDelete"
+          >
+            <Trash2 :size="14" style="flex-shrink: 0" />
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px">
+      <div style="padding: 16px 18px; border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card)">
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Aquisição</div>
+        <div class="flex items-center" style="gap: 8px; font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+          <CalendarDays :size="16" style="color: var(--text-muted)" />
+          {{ g.dataAquisicao }}
+        </div>
+      </div>
+      <div style="padding: 16px 18px; border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card)">
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Uso</div>
+        <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">{{ g.percentualUsado ?? 0 }}%</div>
+      </div>
+      <div style="padding: 16px 18px; border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card)">
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Operações</div>
+        <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">{{ g.qtdOperacoes }}</div>
+      </div>
+      <div style="padding: 16px 18px; border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card)">
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Situação</div>
+        <div class="flex items-center" style="gap: 8px; font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+          <ShieldCheck :size="16" :style="{ color: g.situacaoGarantia === 'em_uso' ? 'var(--gci-base)' : 'var(--success-base)' }" />
+          {{ g.situacaoGarantia === 'em_uso' ? 'Em uso' : 'Disponível' }}
+        </div>
+      </div>
+    </div>
+
+    <SegmentedToggle
+      :model-value="tab"
+      :options="TABS"
+      variant="brand"
+      style="width: fit-content"
+      @update:model-value="tab = $event as 'dados' | 'documentos' | 'cessoes'"
+    />
+
+    <div v-if="tab === 'dados'" class="flex flex-col" style="gap: 16px">
+      <BentoBox title="Dados da garantia" :icon="Scale">
+        <StepGrid>
+          <DetailField label="Tipo de garantia" :span="6">{{ display(g.tipo) }}</DetailField>
+          <DetailField label="Valor da garantia" :span="6">{{ display(g.valor) }}</DetailField>
+          <DetailField v-if="showCamposPadrao" label="Nº de testemunhas" :span="4">{{ display(g.numeroTestemunhas) }}</DetailField>
+          <DetailField v-if="!hideCabecalhoExtra" label="Descrição" :span="12">{{ display(g.descricao) }}</DetailField>
+          <DetailField v-if="showCamposPadrao" label="Obrigação garantida / vínculo com o título" :span="8">
+            {{ display(g.obrigacaoGarantida) }}
+          </DetailField>
+          <DetailField v-if="showFormaProduto" label="Forma do produto" :span="4">{{ display(g.formaProduto) }}</DetailField>
+          <DetailField v-if="!hideCabecalhoExtra" label="É instrumento particular" :span="4">{{ simNao(g.instrumentoParticular) }}</DetailField>
+          <DetailField v-if="showCamposPadrao" label="Vai constituir garantia" :span="4">{{ simNao(g.constituirGarantia) }}</DetailField>
+        </StepGrid>
+      </BentoBox>
+
+      <BentoBox v-if="showCamposPadrao && g.constituirGarantia" title="Constituição da garantia" :icon="Scale">
+        <StepGrid>
+          <DetailField label="Órgão / cartório de registro" :span="6">{{ display(g.cartorioConstituicao) }}</DetailField>
+          <DetailField label="Data prevista de constituição" :span="6">{{ display(g.dataPrevistaConstituicao) }}</DetailField>
+          <DetailField label="Observações" :span="12">{{ display(g.observacoesConstituicao) }}</DetailField>
+        </StepGrid>
+      </BentoBox>
+
+      <BentoBox v-if="isGarantiaEstoque(g.tipo)" title="Informações do estoque de formação" :icon="Scale">
+        <StepGrid>
+          <DetailField label="Número do contrato de estoque (terceiro)" :span="12">{{ display(g.numeroContratoEstoque) }}</DetailField>
+          <DetailField label="Nome do imóvel" :span="3">{{ display(g.nomeImovel) }}</DetailField>
+          <DetailField label="Matrícula" :span="3">{{ display(g.matricula) }}</DetailField>
+          <DetailField label="Zona" :span="3">{{ display(g.zona) }}</DetailField>
+          <DetailField label="Tipo" :span="3">{{ display(g.tipoImovel) }}</DetailField>
+          <DetailField label="Área total afetada" :span="3">{{ display(g.areaTotal) }}</DetailField>
+          <DetailField label="Unidade de medida" :span="3">{{ display(g.unidadeMedidaArea) }}</DetailField>
+          <DetailField label="Cartório de registro" :span="3">{{ display(g.cartorioRegistro) }}</DetailField>
+          <DetailField label="UF de registro" :span="3">{{ display(g.ufRegistro) }}</DetailField>
+          <DetailField label="Cidade de registro" :span="3">{{ display(g.cidadeRegistro) }}</DetailField>
+          <DetailField label="Imóvel locado" :span="3">{{ simNao(g.imovelLocado) }}</DetailField>
+        </StepGrid>
+      </BentoBox>
+
+      <BentoBox v-if="isGarantiaEstoque(g.tipo)" title="Listagem de Estoque" :icon="Scale">
+        <EstoqueListPanel :items="g.estoques ?? []" @update="updateEstoques" />
+      </BentoBox>
+
+      <BentoBox v-if="isGarantiaImovel(g.tipo)" title="AF. Imóvel" :icon="Scale">
+        <StepGrid>
+          <DetailField label="Nome do imóvel" :span="4">{{ display(g.nomeImovel) }}</DetailField>
+          <DetailField label="Matrícula" :span="4">{{ display(g.matricula) }}</DetailField>
+          <DetailField label="Cartório de registro" :span="4">{{ display(g.cartorioRegistro) }}</DetailField>
+          <DetailField label="UF de registro" :span="4">{{ display(g.ufRegistro) }}</DetailField>
+          <DetailField label="Cidade de registro" :span="4">{{ display(g.cidadeRegistro) }}</DetailField>
+          <DetailField label="Área total" :span="4">{{ display(g.areaTotal) }}</DetailField>
+        </StepGrid>
+      </BentoBox>
+
+      <BentoBox v-if="isGarantiaCessaoDuplicatas(g.tipo) || isGarantiaCessaoContrato(g.tipo)" title="Cessão fiduciária" :icon="Scale">
+        <StepGrid>
+          <DetailField label="Descrição do contrato" :span="12">{{ display(g.descricaoContrato) }}</DetailField>
+          <DetailField label="Sacado" :span="6">{{ display(g.sacadoNome) }}</DetailField>
+          <DetailField label="Documento do sacado" :span="6">{{ display(g.sacadoDocumento) }}</DetailField>
+        </StepGrid>
+      </BentoBox>
+
+      <BentoBox title="Situação operacional" :icon="ShieldCheck">
+        <StepGrid>
+          <DetailField label="Registro no cartório" :span="4">
+            <span class="flex items-center" style="gap: 6px">
+              <Clock v-if="g.situacaoRegistroCartorio === 'pendente'" :size="14" />
+              <XCircle v-else-if="g.situacaoRegistroCartorio === 'nao'" :size="14" style="color: var(--action-danger-text-only)" />
+              <CheckCircle2 v-else :size="14" style="color: var(--success-base)" />
+              {{
+                g.situacaoRegistroCartorio === 'pendente'
+                  ? 'Pendente'
+                  : g.situacaoRegistroCartorio === 'ok'
+                    ? 'Registrado'
+                    : 'Não registrado'
+              }}
+            </span>
+          </DetailField>
+          <DetailField label="Registro em registradora" :span="4">
+            <span class="flex items-center" style="gap: 6px">
+              <XCircle v-if="g.situacaoRegistroRegistradora === 'nao'" :size="14" style="color: var(--action-danger-text-only)" />
+              <CheckCircle2 v-else :size="14" style="color: var(--success-base)" />
+              {{ g.situacaoRegistroRegistradora === 'ok' ? 'Registrado' : 'Não registrado' }}
+            </span>
+          </DetailField>
+        </StepGrid>
+      </BentoBox>
+    </div>
+
+    <div
+      v-else-if="tab === 'documentos'"
+      style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); overflow: hidden; background: var(--surface-card)"
+    >
+      <div
+        v-if="!g.documentos?.length"
+        style="padding: 40px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+      >
+        Nenhum documento vinculado a esta garantia.
+      </div>
+      <template v-else>
+        <div
+          class="grid items-center"
+          style="grid-template-columns: 1.2fr 1fr 120px; padding: 12px 18px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase"
+        >
+          <div>Arquivo</div>
+          <div>Tipo</div>
+          <div>Validade</div>
+        </div>
+        <div
+          v-for="doc in g.documentos"
+          :key="doc.id"
+          class="grid items-center"
+          style="grid-template-columns: 1.2fr 1fr 120px; padding: 14px 18px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
+        >
+          <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ doc.nome }}</div>
+          <div style="color: var(--text-default)">{{ doc.tipo }}</div>
+          <div :style="{ color: isDocumentoGarantiaVigente(doc.validade) ? 'var(--text-default)' : 'var(--action-danger-text-only)' }">
+            {{ doc.validade || '—' }}
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <CessoesPanel
+      v-else-if="tab === 'cessoes'"
+      :cessoes="g.cessoes ?? []"
+      :cessao-vinculada="g.constituicao?.cessaoVinculada"
+    />
+
+    <GarantiaMinutaStep
+      ref="editorRef"
+      v-model:garantias="garantiasModel"
+      hide-table
+      hide-header
+      :edit-on-row-click="false"
+      :show-possui-toggle="false"
+    />
+
+    <ConfirmDeleteModal
+      v-if="toDelete"
+      :title="`Excluir a garantia «${g.tipo}»?`"
+      description="Esta ação remove a garantia deste grupo. Não será possível desfazer por aqui."
+      @close="toDelete = false"
+      @confirm="confirmDelete"
+    />
+  </div>
+</template>
+
+<style scoped>
+.garantia-detail-action-item:hover:not(:disabled) {
+  background: var(--surface-sunken);
+}
+</style>
+```
+
 ### GrupoCadastroView
 
 ```vue
@@ -36,7 +428,7 @@ import CedentesTab from '@/features/risco/screens/detail-tabs/CedentesTab.vue';
 import HistoricoTab from '@/features/risco/screens/detail-tabs/HistoricoTab.vue';
 import { CopyButton } from '@/features/risco/screens/detail-tabs/shared';
 import type { ParteRelacionada } from '@/features/solicitacao-operacao/data/operacaoData';
-import type { GarantiaMinuta } from '@/features/solicitacao-operacao/data/minutaData';
+import type { GarantiaGrupo } from '../data/gruposCadastroData';
 import {
   GERENTES_SEED,
   TIPO_CLIENTE_OPTS,
@@ -66,6 +458,7 @@ const emit = defineEmits<{
   openParte: [parte: ParteRelacionada];
   removeParte: [parte: ParteRelacionada];
   openCedente: [cedente: Cedente];
+  openGarantia: [garantia: GarantiaGrupo];
 }>();
 
 type TabKey =
@@ -258,7 +651,7 @@ function removeFaturamento(id: string) {
   });
 }
 
-function setGarantias(items: GarantiaMinuta[]) {
+function setGarantias(items: GarantiaGrupo[]) {
   persist((g) => {
     g.garantias = items;
   });
@@ -578,6 +971,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
         v-else-if="tab === 'garantias'"
         :garantias="grupo.garantias"
         @update:garantias="setGarantias"
+        @open="emit('openGarantia', $event)"
       />
       <HistoricoTab v-else-if="tab === 'historico'" :eventos="grupo.historico" />
     </template>
@@ -815,9 +1209,11 @@ import {
   cloneParte,
   emptyGrupo,
   type GrupoCadastro,
+  type GarantiaGrupo,
 } from '../data/gruposCadastroData';
 import GruposCadastroListScreen from './GruposCadastroListScreen.vue';
 import GrupoCadastroView from './GrupoCadastroView.vue';
+import GarantiaGrupoDetailView from './GarantiaGrupoDetailView.vue';
 
 type Route =
   | { level: 'list' }
@@ -829,6 +1225,7 @@ const route = ref<Route>({ level: 'list' });
 const showParteModal = ref(false);
 const editingParte = ref<ParteRelacionada | null>(null);
 const cedenteAtual = ref<Cedente | null>(null);
+const garantiaAtual = ref<GarantiaGrupo | null>(null);
 const creating = ref<GrupoCadastro>(emptyGrupo());
 
 const grupoAtual = computed(() => {
@@ -848,6 +1245,7 @@ function openCreate() {
 
 function openDetail(id: string) {
   cedenteAtual.value = null;
+  garantiaAtual.value = null;
   route.value = { level: 'detail', grupoId: id };
 }
 
@@ -930,13 +1328,46 @@ function handleUpdateCedente(cedente: Cedente) {
 
 function backFromDetail() {
   cedenteAtual.value = null;
+  garantiaAtual.value = null;
   route.value = { level: 'list' };
+}
+
+function openGarantia(garantia: GarantiaGrupo) {
+  const grupo = grupoAtual.value;
+  garantiaAtual.value = grupo?.garantias.find((g) => g.id === garantia.id) ?? garantia;
+}
+
+function handleUpdateGarantia(garantia: GarantiaGrupo) {
+  const grupo = grupoAtual.value;
+  if (!grupo) return;
+  const next = cloneGrupo(grupo);
+  next.garantias = next.garantias.map((g) => (g.id === garantia.id ? garantia : g));
+  items.value = items.value.map((g) => (g.id === next.id ? next : g));
+  if (garantiaAtual.value?.id === garantia.id) garantiaAtual.value = garantia;
+}
+
+function handleDeleteGarantia(garantia: GarantiaGrupo) {
+  const grupo = grupoAtual.value;
+  if (!grupo) return;
+  const next = cloneGrupo(grupo);
+  next.garantias = next.garantias.filter((g) => g.id !== garantia.id);
+  items.value = items.value.map((g) => (g.id === next.id ? next : g));
+  garantiaAtual.value = null;
 }
 </script>
 
 <template>
+  <GarantiaGrupoDetailView
+    v-if="garantiaAtual && grupoAtual && !cedenteAtual"
+    :grupo="grupoAtual"
+    :garantia="garantiaAtual"
+    @close="garantiaAtual = null"
+    @update="handleUpdateGarantia"
+    @delete="handleDeleteGarantia"
+  />
+
   <CedenteDetailModal
-    v-if="cedenteAtual && grupoAtual"
+    v-if="cedenteAtual && grupoAtual && !garantiaAtual"
     as-page
     :cedente="cedenteAtual"
     :page-label="grupoAtual.nome"
@@ -961,7 +1392,7 @@ function backFromDetail() {
 
   <GrupoCadastroView
     v-if="grupoAtual && route.level === 'detail'"
-    v-show="!cedenteAtual"
+    v-show="!cedenteAtual && !garantiaAtual"
     :grupo="grupoAtual"
     mode="detail"
     @back="backFromDetail"
@@ -970,6 +1401,7 @@ function backFromDetail() {
     @open-parte="openParte"
     @remove-parte="handleRemoveParte"
     @open-cedente="cedenteAtual = $event"
+    @open-garantia="openGarantia"
   />
 
   <ParteRelacionadaModal
@@ -1206,6 +1638,459 @@ function confirmRemove() {
 </template>
 ```
 
+## Screens / garantia-detail
+
+### CessoesPanel
+
+```vue
+<script setup lang="ts">
+import { computed } from 'vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
+import { cessaoVinculadaPorLabel } from '@/features/solicitacao-operacao/data/minutaData';
+import type { CessaoGarantiaGrupo } from '../../data/gruposCadastroData';
+
+const props = defineProps<{
+  cessoes: CessaoGarantiaGrupo[];
+  cessaoVinculada?: string;
+}>();
+
+const cessaoConstituicao = computed(() =>
+  props.cessaoVinculada ? cessaoVinculadaPorLabel(props.cessaoVinculada) : undefined,
+);
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => props.cessoes,
+  { defaultPageSize: 5 },
+);
+
+const COLS =
+  'minmax(200px, 1.5fr) minmax(96px, 0.85fr) minmax(72px, 0.65fr) minmax(128px, 1fr) minmax(128px, 1fr) minmax(72px, 0.55fr) minmax(88px, 0.7fr)';
+
+const totalValorCompra = computed(() =>
+  props.cessoes.reduce((sum, c) => sum + parseBrl(c.totalValorCompra), 0),
+);
+
+const totalValorNominal = computed(() =>
+  props.cessoes.reduce((sum, c) => sum + parseBrl(c.totalValorNominal), 0),
+);
+
+const totalTitulos = computed(() =>
+  props.cessoes.reduce((sum, c) => sum + c.quantidadeTitulos, 0),
+);
+
+function parseBrl(value: string): number {
+  const digits = value.replace(/[^\d,]/g, '').replace(',', '.');
+  return Number(digits) || 0;
+}
+
+function formatBrl(value: number): string {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+</script>
+
+<template>
+  <div
+    style="
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      background: var(--surface-card);
+    "
+  >
+    <div
+      class="flex items-center flex-wrap"
+      style="gap: 16px; padding: 20px; border-bottom: 1px solid var(--border-default)"
+    >
+      <div style="flex: 1; min-width: 200px">
+        <div style="font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-strong)">
+          Cessões vinculadas
+        </div>
+        <div
+          style="
+            font-size: 10px;
+            font-weight: var(--weight-bold);
+            letter-spacing: 0.14em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 4px;
+          "
+        >
+          {{ cessoes.length }} cessão(ões) nesta garantia
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="cessaoConstituicao"
+      style="
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-default);
+        background: var(--surface-sunken);
+      "
+    >
+      <div
+        style="
+          font-size: 10px;
+          font-weight: var(--weight-bold);
+          letter-spacing: 0.12em;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          margin-bottom: 10px;
+        "
+      >
+        Cessão vinculada na constituição
+      </div>
+      <div
+        style="
+          font-size: var(--text-sm);
+          font-weight: var(--weight-bold);
+          color: var(--text-strong);
+          margin-bottom: 14px;
+        "
+      >
+        {{ cessaoConstituicao.label }}
+      </div>
+      <div class="grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px">
+        <div>
+          <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
+            Total valor de compra
+          </div>
+          <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
+            {{ cessaoConstituicao.totalValorCompra }}
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
+            Total valor nominal
+          </div>
+          <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
+            {{ cessaoConstituicao.totalValorNominal }}
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
+            Quantidade
+          </div>
+          <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+            {{ cessaoConstituicao.quantidadeTitulos }} título(s)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="!cessoes.length" style="padding: 60px; text-align: center; color: var(--text-muted); font-size: var(--text-sm)">
+      Nenhuma cessão vinculada a esta garantia.
+    </div>
+
+    <div v-else>
+      <div
+        class="grid"
+        :style="{
+          gridTemplateColumns: COLS,
+          padding: '14px 20px',
+          background: 'var(--surface-sunken)',
+          fontSize: '10px',
+          fontWeight: 'var(--weight-bold)',
+          letterSpacing: '0.12em',
+          color: 'var(--text-muted)',
+          textTransform: 'uppercase',
+          columnGap: '16px',
+        }"
+      >
+        <div>Cessão</div>
+        <div>Data</div>
+        <div>Veículo</div>
+        <div>Valor compra</div>
+        <div>Valor nominal</div>
+        <div>Títulos</div>
+        <div>Taxa</div>
+      </div>
+
+      <div
+        v-for="c in pageItems"
+        :key="c.id"
+        class="grid items-center"
+        :style="{
+          gridTemplateColumns: COLS,
+          padding: '16px 20px',
+          borderTop: '1px solid var(--border-default)',
+          fontSize: 'var(--text-sm)',
+          columnGap: '16px',
+        }"
+      >
+        <div style="font-weight: var(--weight-semibold); color: var(--text-strong); min-width: 0">
+          {{ c.label }}
+        </div>
+        <div style="color: var(--text-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums">
+          {{ c.data }}
+        </div>
+        <div>
+          <span
+            v-if="c.veiculo"
+            style="
+              font-size: 9px;
+              font-weight: var(--weight-bold);
+              letter-spacing: 0.06em;
+              padding: 4px 6px;
+              border-radius: var(--radius-sm);
+              background: var(--gci-light);
+              color: var(--gci-base);
+            "
+          >
+            {{ c.veiculo }}
+          </span>
+          <span v-else style="color: var(--text-muted)">—</span>
+        </div>
+        <div style="font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
+          {{ c.totalValorCompra }}
+        </div>
+        <div style="color: var(--text-default); font-variant-numeric: tabular-nums">
+          {{ c.totalValorNominal }}
+        </div>
+        <div style="color: var(--text-default); font-variant-numeric: tabular-nums">
+          {{ c.quantidadeTitulos }}
+        </div>
+        <div style="color: var(--text-default); font-variant-numeric: tabular-nums">
+          {{ c.taxa || '—' }}
+        </div>
+      </div>
+
+      <div
+        class="grid items-center"
+        :style="{
+          gridTemplateColumns: COLS,
+          padding: '14px 20px',
+          borderTop: '1px solid var(--border-default)',
+          background: 'var(--surface-sunken)',
+          fontSize: 'var(--text-sm)',
+          fontWeight: 'var(--weight-semibold)',
+          columnGap: '16px',
+        }"
+      >
+        <div style="color: var(--text-muted)">Total ({{ cessoes.length }})</div>
+        <div />
+        <div />
+        <div style="color: var(--text-strong); font-variant-numeric: tabular-nums">{{ formatBrl(totalValorCompra) }}</div>
+        <div style="color: var(--text-strong); font-variant-numeric: tabular-nums">{{ formatBrl(totalValorNominal) }}</div>
+        <div style="color: var(--text-strong); font-variant-numeric: tabular-nums">{{ totalTitulos }}</div>
+        <div />
+      </div>
+
+      <TablePagination
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
+    </div>
+  </div>
+</template>
+```
+
+### DetailField
+
+```vue
+<script setup lang="ts">
+defineProps<{ label: string; span?: number }>();
+</script>
+
+<template>
+  <div :style="{ gridColumn: span ? `span ${span}` : undefined }">
+    <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
+      {{ label }}
+    </div>
+    <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); line-height: 1.45">
+      <slot />
+    </div>
+  </div>
+</template>
+```
+
+### EstoqueListPanel
+
+```vue
+<script setup lang="ts">
+import { onMounted, onUnmounted, reactive, ref } from 'vue';
+import { MoreVertical, Pencil, Trash2, X } from 'lucide-vue-next';
+import FormField from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/FormField.vue';
+import type { EstoqueItem } from '@/features/solicitacao-operacao/data/minutaData';
+
+const props = defineProps<{ items: EstoqueItem[] }>();
+const emit = defineEmits<{ update: [items: EstoqueItem[]] }>();
+
+const menuOpen = ref<number | null>(null);
+const showEdit = ref(false);
+const editingIndex = ref<number | null>(null);
+const draft = reactive({ propriedade: '', proprietario: '' });
+
+function closeMenu() {
+  menuOpen.value = null;
+}
+
+function toggleMenu(i: number) {
+  menuOpen.value = menuOpen.value === i ? null : i;
+}
+
+function onClickOutside(e: MouseEvent) {
+  const t = e.target as HTMLElement | null;
+  if (t?.closest('[data-estoque-row-menu]')) return;
+  closeMenu();
+}
+
+onMounted(() => document.addEventListener('mousedown', onClickOutside));
+onUnmounted(() => document.removeEventListener('mousedown', onClickOutside));
+
+function openEdit(i: number) {
+  closeMenu();
+  editingIndex.value = i;
+  draft.propriedade = props.items[i]?.propriedade ?? '';
+  draft.proprietario = props.items[i]?.proprietario ?? '';
+  showEdit.value = true;
+}
+
+function closeEdit() {
+  showEdit.value = false;
+  editingIndex.value = null;
+}
+
+function saveEdit() {
+  if (editingIndex.value == null) return;
+  const next = [...props.items];
+  next[editingIndex.value] = {
+    propriedade: draft.propriedade.trim(),
+    proprietario: draft.proprietario.trim(),
+  };
+  emit('update', next);
+  closeEdit();
+}
+
+function remove(i: number) {
+  closeMenu();
+  emit('update', props.items.filter((_, idx) => idx !== i));
+}
+</script>
+
+<template>
+  <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-card)">
+    <div
+      class="grid items-center"
+      style="grid-template-columns: 1fr 1fr 48px; padding: 10px 14px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase"
+    >
+      <div>Propriedade</div>
+      <div>Proprietário</div>
+      <div style="text-align: right">Ações</div>
+    </div>
+
+    <div
+      v-if="items.length === 0"
+      style="padding: 24px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+    >
+      Não foi encontrado nenhum resultado.
+    </div>
+
+    <div
+      v-for="(item, i) in items"
+      :key="`${item.propriedade}-${i}`"
+      class="grid items-center"
+      style="grid-template-columns: 1fr 1fr 48px; padding: 12px 14px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
+    >
+      <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ item.propriedade }}</div>
+      <div style="color: var(--text-default)">{{ item.proprietario }}</div>
+      <div class="flex justify-end" style="position: relative" data-estoque-row-menu>
+        <button
+          type="button"
+          aria-label="Ações"
+          class="flex items-center justify-center"
+          style="width: 32px; height: 32px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-card); cursor: pointer; color: var(--text-muted)"
+          @click.stop="toggleMenu(i)"
+        >
+          <MoreVertical :size="15" />
+        </button>
+        <div
+          v-if="menuOpen === i"
+          class="flex flex-col"
+          style="position: absolute; top: 36px; right: 0; z-index: 50; min-width: 160px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 6px"
+        >
+          <button
+            type="button"
+            class="flex items-center estoque-action-item"
+            style="gap: 8px; padding: 8px 12px; background: none; border: none; cursor: pointer; border-radius: var(--radius-md); text-align: left; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-default); width: 100%"
+            @click="openEdit(i)"
+          >
+            <Pencil :size="14" style="color: var(--text-muted); flex-shrink: 0" />
+            Editar
+          </button>
+          <button
+            type="button"
+            class="flex items-center estoque-action-item"
+            style="gap: 8px; padding: 8px 12px; background: none; border: none; cursor: pointer; border-radius: var(--radius-md); text-align: left; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--action-danger-text-only); width: 100%"
+            @click="remove(i)"
+          >
+            <Trash2 :size="14" style="flex-shrink: 0" />
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    v-if="showEdit"
+    class="flex items-center justify-center"
+    style="position: fixed; inset: 0; z-index: 520; background: rgba(15, 23, 42, 0.45); padding: 24px"
+    @click.self="closeEdit"
+  >
+    <div
+      style="width: 100%; max-width: 440px; background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden"
+      @click.stop
+    >
+      <div class="flex items-center justify-between" style="padding: 18px 22px; border-bottom: 1px solid var(--border-default)">
+        <h3 style="font-size: var(--text-base); font-weight: var(--weight-bold); color: var(--text-strong); margin: 0">
+          Editar item do estoque
+        </h3>
+        <button
+          type="button"
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 32px; height: 32px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); cursor: pointer; color: var(--text-muted)"
+          @click="closeEdit"
+        >
+          <X :size="16" />
+        </button>
+      </div>
+      <div class="flex flex-col" style="gap: 14px; padding: 22px">
+        <FormField v-model="draft.propriedade" label="Propriedade" placeholder="—" />
+        <FormField v-model="draft.proprietario" label="Proprietário" placeholder="—" />
+      </div>
+      <div class="flex items-center justify-end" style="gap: 10px; padding: 16px 22px; border-top: 1px solid var(--border-default)">
+        <button
+          type="button"
+          style="height: 40px; padding: 0 18px; background: var(--surface-card); color: var(--text-strong); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
+          @click="closeEdit"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          style="height: 40px; padding: 0 18px; background: var(--gci-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
+          @click="saveEdit"
+        >
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.estoque-action-item:hover {
+  background: var(--surface-sunken);
+}
+</style>
+```
+
 ## Screens / tabs
 
 ### ContasBancariasTab
@@ -1354,6 +2239,8 @@ function confirmExcluir() {
 import { ref } from 'vue';
 import { Download, FileText, Paperclip, Plus, Trash2 } from 'lucide-vue-next';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
+import FormField from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/FormField.vue';
+import SelectField from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/SelectField.vue';
 import { DOCUMENTO_TIPO_OPTS, type DocumentoGrupo } from '../../data/gruposCadastroData';
 
 const props = defineProps<{ documentos: DocumentoGrupo[] }>();
@@ -1363,6 +2250,7 @@ const emit = defineEmits<{
 }>();
 
 const tipo = ref(DOCUMENTO_TIPO_OPTS[0] ?? '');
+const validoAte = ref('');
 const arquivoNome = ref('');
 const fileRef = ref<HTMLInputElement | null>(null);
 const toDelete = ref<DocumentoGrupo | null>(null);
@@ -1378,9 +2266,10 @@ function inserir() {
     id: `doc-${Date.now()}`,
     nome: arquivoNome.value.trim(),
     tipo: tipo.value,
-    validoAte: '',
+    validoAte: validoAte.value.trim(),
   });
   arquivoNome.value = '';
+  validoAte.value = '';
   if (fileRef.value) fileRef.value.value = '';
 }
 
@@ -1415,54 +2304,58 @@ function confirmExcluir() {
       </button>
     </div>
 
-    <div class="flex items-center" style="gap: 12px; flex-wrap: wrap">
-      <button
-        type="button"
-        class="flex items-center"
-        style="
-          gap: 8px;
-          flex: 1;
-          min-width: 220px;
-          height: 42px;
-          padding: 0 14px;
-          background: var(--surface-sunken);
-          border: 1px dashed var(--border-default);
-          border-radius: var(--radius-lg);
-          color: var(--text-muted);
-          font-size: var(--text-sm);
-          cursor: pointer;
-          text-align: left;
-        "
-        @click="fileRef?.click()"
-      >
-        <Paperclip :size="15" />
-        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
-          {{ arquivoNome || 'Selecionar arquivo...' }}
-        </span>
-      </button>
-      <input ref="fileRef" type="file" hidden @change="onFile" />
-      <select
-        v-model="tipo"
-        style="
-          min-width: 180px;
-          height: 42px;
-          padding: 0 14px;
-          background: var(--surface-card);
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-lg);
-          color: var(--text-default);
-          font-size: var(--text-sm);
-        "
-      >
-        <option v-for="opt in DOCUMENTO_TIPO_OPTS" :key="opt" :value="opt">{{ opt }}</option>
-      </select>
+    <div class="flex items-end" style="gap: 12px; width: 100%">
+      <div style="width: 200px; flex-shrink: 0">
+        <SelectField v-model="tipo" label="Tipo do arquivo" :options="[...DOCUMENTO_TIPO_OPTS]" />
+      </div>
+      <div style="flex: 1; min-width: 180px">
+        <div
+          style="
+            font-size: 10px;
+            font-weight: var(--weight-bold);
+            letter-spacing: 0.14em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+          "
+        >
+          Insira o arquivo
+        </div>
+        <button
+          type="button"
+          class="flex items-center"
+          style="
+            gap: 8px;
+            width: 100%;
+            height: 40px;
+            padding: 0 14px;
+            background: var(--surface-sunken);
+            border: 1px dashed var(--border-default);
+            border-radius: var(--radius-lg);
+            color: var(--text-muted);
+            font-size: var(--text-sm);
+            cursor: pointer;
+            text-align: left;
+          "
+          @click="fileRef?.click()"
+        >
+          <Paperclip :size="15" style="flex-shrink: 0" />
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+            {{ arquivoNome || 'Selecionar...' }}
+          </span>
+        </button>
+        <input ref="fileRef" type="file" hidden @change="onFile" />
+      </div>
+      <div style="width: 160px; flex-shrink: 0">
+        <FormField v-model="validoAte" label="Válido até" placeholder="AAAA-MM-DD" />
+      </div>
       <button
         type="button"
         class="flex items-center"
         :disabled="!arquivoNome"
         :style="{
           gap: '8px',
-          height: '42px',
+          height: '40px',
           padding: '0 18px',
           background: arquivoNome ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
           color: arquivoNome ? 'var(--action-primary-text)' : 'var(--text-disabled)',
@@ -1472,6 +2365,7 @@ function confirmExcluir() {
           fontWeight: 'var(--weight-bold)',
           fontSize: 'var(--text-xs)',
           letterSpacing: '0.06em',
+          flexShrink: 0,
         }"
         @click="inserir"
       >
@@ -1661,22 +2555,484 @@ function confirmExcluir() {
 
 ```vue
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+import {
+  CheckCircle2,
+  Clock,
+  MoreVertical,
+  Pencil,
+  RefreshCw,
+  Shield,
+  ShieldCheck,
+  Trash2,
+  XCircle,
+} from 'lucide-vue-next';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
+import ConfirmTypedActionModal from '@/components/ui/ConfirmTypedActionModal.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import Tooltip from '@/components/ui/Tooltip.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import GarantiaMinutaStep from '@/features/solicitacao-operacao/components/modals/minuta/GarantiaMinutaStep.vue';
-import type { GarantiaMinuta } from '@/features/solicitacao-operacao/data/minutaData';
+import {
+  AddButton,
+  EmptyState,
+} from '@/features/solicitacao-operacao/components/modals/adicionar-contrato';
+import {
+  seedGarantiaGrupo,
+  type GarantiaGrupo,
+  type SituacaoRegistroGrupo,
+} from '../../data/gruposCadastroData';
 
-const props = defineProps<{ garantias: GarantiaMinuta[] }>();
-const emit = defineEmits<{ 'update:garantias': [items: GarantiaMinuta[]] }>();
+const props = defineProps<{ garantias: GarantiaGrupo[] }>();
+const emit = defineEmits<{ 'update:garantias': [items: GarantiaGrupo[]]; open: [garantia: GarantiaGrupo] }>();
+
+const minutaRef = ref<InstanceType<typeof GarantiaMinutaStep> | null>(null);
+const menuOpen = ref<number | null>(null);
+const toDelete = ref<GarantiaGrupo | null>(null);
+const toUpdateStatus = ref<GarantiaGrupo | null>(null);
+
+const STATUS_CONFIRM_PHRASE = 'GARANTIA-EM-EXECUCAO';
+
+const COLS =
+  'minmax(200px, 380px) 96px 180px 1fr 112px 100px 84px 100px 112px 48px';
 
 const model = computed({
   get: () => props.garantias,
-  set: (next) => emit('update:garantias', next),
+  set: (next) => {
+    emit(
+      'update:garantias',
+      next.map((g) => (isGarantiaGrupo(g) ? g : seedGarantiaGrupo(g))),
+    );
+  },
 });
+
+function isGarantiaGrupo(g: unknown): g is GarantiaGrupo {
+  return !!g && typeof g === 'object' && 'id' in g && typeof (g as GarantiaGrupo).id === 'string';
+}
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => props.garantias,
+  { defaultPageSize: 10 },
+);
+
+function globalIndex(pageIdx: number) {
+  return (page.value - 1) * pageSize.value + pageIdx;
+}
+
+function closeMenu() {
+  menuOpen.value = null;
+}
+
+function toggleMenu(i: number) {
+  menuOpen.value = menuOpen.value === i ? null : i;
+}
+
+function onClickOutsideMenu(e: MouseEvent) {
+  const t = e.target as HTMLElement | null;
+  if (t?.closest('[data-garantia-grupo-menu]')) return;
+  closeMenu();
+}
+
+onMounted(() => document.addEventListener('mousedown', onClickOutsideMenu));
+onUnmounted(() => document.removeEventListener('mousedown', onClickOutsideMenu));
+
+function shieldColor(g: GarantiaGrupo) {
+  return g.situacaoGarantia === 'em_uso' ? 'var(--gci-base)' : 'var(--success-base, #16a34a)';
+}
+
+function registroCartorioColor(sit: SituacaoRegistroGrupo) {
+  if (sit === 'pendente') return 'var(--text-muted)';
+  if (sit === 'ok') return 'var(--success-base, #16a34a)';
+  return 'var(--action-danger-text-only, #dc2626)';
+}
+
+function registroRegistradoraColor(sit: SituacaoRegistroGrupo) {
+  if (sit === 'ok') return 'var(--success-base, #16a34a)';
+  return 'var(--action-danger-text-only, #dc2626)';
+}
+
+function usoBarColor(pct: number) {
+  if (pct >= 100) return 'var(--success-base, #16a34a)';
+  if (pct >= 50) return 'var(--warning-base, #f59e0b)';
+  return 'var(--neutral-300, #cbd5e1)';
+}
+
+function podeExcluir(g: GarantiaGrupo) {
+  return g.qtdOperacoes === 0;
+}
+
+function openNova() {
+  minutaRef.value?.openNova();
+}
+
+function openDetail(g: GarantiaGrupo) {
+  minutaRef.value?.closeEditor?.();
+  emit('open', g);
+}
+
+function openEdit(i: number) {
+  closeMenu();
+  minutaRef.value?.openEdit(i);
+}
+
+function openUpdateStatus(g: GarantiaGrupo) {
+  closeMenu();
+  toUpdateStatus.value = g;
+}
+
+function confirmUpdateStatus() {
+  if (!toUpdateStatus.value) return;
+  const id = toUpdateStatus.value.id;
+  model.value = props.garantias.map((g) =>
+    g.id === id ? { ...g, situacaoGarantia: 'em_uso' } : g,
+  );
+  toUpdateStatus.value = null;
+}
+
+function askDelete(g: GarantiaGrupo) {
+  if (!podeExcluir(g)) return;
+  closeMenu();
+  toDelete.value = g;
+}
+
+function confirmDelete() {
+  if (!toDelete.value) return;
+  model.value = props.garantias.filter((g) => g.id !== toDelete.value!.id);
+  toDelete.value = null;
+}
 </script>
 
 <template>
-  <GarantiaMinutaStep v-model:garantias="model" :edit-on-row-click="false" />
+  <div class="flex flex-col" style="gap: 20px">
+    <div class="flex items-center justify-end">
+      <AddButton @click="openNova">Adicionar garantia</AddButton>
+    </div>
+
+    <EmptyState
+      v-if="garantias.length === 0"
+      :icon="Shield"
+      title="Nenhuma garantia adicionada"
+      hint="Clique em Adicionar garantia para cadastrar AF. Estoque, Lavoura, Imóvel e demais tipos disponíveis."
+    />
+
+    <div
+      v-else
+      style="
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        background: var(--surface-card);
+      "
+    >
+      <div style="overflow-x: auto">
+        <div class="garantia-grupo-table-inner">
+          <div class="grid items-center garantia-grupo-table-row garantia-grupo-table-header" :style="{ gridTemplateColumns: COLS }">
+            <div class="garantia-grupo-th">Tipo</div>
+            <Tooltip content="Data de Aquisição" side="bottom" variant="light">
+              <div class="garantia-grupo-th">Aquisição</div>
+            </Tooltip>
+            <div class="garantia-grupo-th garantia-grupo-th-num">Valor</div>
+            <div />
+            <Tooltip content="Porcentagem usada" side="bottom" variant="light">
+              <div class="garantia-grupo-th">Uso</div>
+            </Tooltip>
+            <Tooltip content="Quantidade de operações" side="bottom" variant="light">
+              <div class="garantia-grupo-th">Operações</div>
+            </Tooltip>
+            <Tooltip content="Situação da Garantia" side="bottom" variant="light">
+              <div class="garantia-grupo-th garantia-grupo-th-center">Garantia</div>
+            </Tooltip>
+            <Tooltip content="Situação do Registro no Cartório" side="bottom" variant="light">
+              <div class="garantia-grupo-th garantia-grupo-th-center">Cartório</div>
+            </Tooltip>
+            <Tooltip content="Situação do Registro em Registradora" side="bottom" variant="light">
+              <div class="garantia-grupo-th garantia-grupo-th-center">Registradora</div>
+            </Tooltip>
+            <div class="garantia-grupo-th garantia-grupo-th-actions">Ações</div>
+          </div>
+
+          <div
+            v-for="(g, pageIdx) in pageItems"
+            :key="g.id"
+            class="grid items-center garantia-grupo-table-row garantia-grupo-table-row-clickable"
+            :style="{ gridTemplateColumns: COLS }"
+            @click="openDetail(g)"
+          >
+            <div style="font-weight: var(--weight-semibold); color: var(--text-strong); min-width: 0; line-height: 1.35">
+              {{ g.tipo }}
+            </div>
+            <div style="font-variant-numeric: tabular-nums; color: var(--text-default); white-space: nowrap">
+              {{ g.dataAquisicao }}
+            </div>
+            <div class="garantia-grupo-td-num" style="color: var(--text-strong)">
+              {{ g.valor || '—' }}
+            </div>
+            <div />
+            <div class="flex items-center" style="gap: 6px">
+              <div
+                style="
+                  width: 40px;
+                  height: 6px;
+                  border-radius: 999px;
+                  background: var(--neutral-200);
+                  overflow: hidden;
+                  flex-shrink: 0;
+                "
+                :title="`${g.percentualUsado ?? 0}% usado`"
+              >
+                <div
+                  :style="{
+                    width: `${g.percentualUsado ?? 0}%`,
+                    height: '100%',
+                    background: usoBarColor(g.percentualUsado ?? 0),
+                  }"
+                />
+              </div>
+              <span style="font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap">
+                {{ g.percentualUsado ?? 0 }}%
+              </span>
+            </div>
+            <div style="font-variant-numeric: tabular-nums; color: var(--text-default); text-align: center">
+              {{ g.qtdOperacoes }}
+            </div>
+            <div class="flex items-center justify-center">
+              <ShieldCheck :size="16" :stroke-width="2.25" :style="{ color: shieldColor(g), flexShrink: 0 }" />
+            </div>
+            <div class="flex items-center justify-center">
+              <Clock
+                v-if="g.situacaoRegistroCartorio === 'pendente'"
+                :size="16"
+                :stroke-width="2.25"
+                :style="{ color: registroCartorioColor(g.situacaoRegistroCartorio) }"
+              />
+              <XCircle
+                v-else-if="g.situacaoRegistroCartorio === 'nao'"
+                :size="16"
+                :stroke-width="2.25"
+                :style="{ color: registroCartorioColor(g.situacaoRegistroCartorio) }"
+              />
+              <CheckCircle2
+                v-else
+                :size="16"
+                :stroke-width="2.25"
+                :style="{ color: registroCartorioColor(g.situacaoRegistroCartorio) }"
+              />
+            </div>
+            <div class="flex items-center justify-center">
+              <XCircle
+                v-if="g.situacaoRegistroRegistradora === 'nao'"
+                :size="16"
+                :stroke-width="2.25"
+                :style="{ color: registroRegistradoraColor(g.situacaoRegistroRegistradora) }"
+              />
+              <CheckCircle2
+                v-else
+                :size="16"
+                :stroke-width="2.25"
+                :style="{ color: registroRegistradoraColor(g.situacaoRegistroRegistradora) }"
+              />
+            </div>
+            <div class="flex justify-end" style="position: relative" data-garantia-grupo-menu @click.stop>
+              <button
+                type="button"
+                aria-label="Ações"
+                class="flex items-center justify-center"
+                style="
+                  width: 32px;
+                  height: 32px;
+                  border: 1px solid var(--border-default);
+                  border-radius: var(--radius-lg);
+                  background: var(--surface-card);
+                  cursor: pointer;
+                  color: var(--text-muted);
+                "
+                @click.stop="toggleMenu(globalIndex(pageIdx))"
+              >
+                <MoreVertical :size="15" />
+              </button>
+              <div
+                v-if="menuOpen === globalIndex(pageIdx)"
+                class="flex flex-col"
+                style="
+                  position: absolute;
+                  top: 36px;
+                  right: 0;
+                  z-index: 50;
+                  min-width: 248px;
+                  background: var(--surface-card);
+                  border: 1px solid var(--border-default);
+                  border-radius: var(--radius-lg);
+                  box-shadow: var(--shadow-md);
+                  padding: 6px;
+                "
+              >
+                <button
+                  type="button"
+                  class="flex items-center garantia-grupo-action-item"
+                  style="
+                    gap: 8px;
+                    padding: 8px 12px;
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    border-radius: var(--radius-md);
+                    text-align: left;
+                    font-size: var(--text-sm);
+                    font-weight: var(--weight-semibold);
+                    color: var(--text-default);
+                    width: 100%;
+                  "
+                  @click.stop="openEdit(globalIndex(pageIdx))"
+                >
+                  <Pencil :size="14" style="color: var(--text-muted); flex-shrink: 0" />
+                  Editar Garantia
+                </button>
+                <button
+                  type="button"
+                  class="flex items-center garantia-grupo-action-item"
+                  style="
+                    gap: 8px;
+                    padding: 8px 12px;
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    border-radius: var(--radius-md);
+                    text-align: left;
+                    font-size: var(--text-sm);
+                    font-weight: var(--weight-semibold);
+                    color: var(--text-default);
+                    width: 100%;
+                  "
+                  @click.stop="openUpdateStatus(g)"
+                >
+                  <RefreshCw :size="14" style="color: var(--text-muted); flex-shrink: 0" />
+                  Atualizar Status da Garantia
+                </button>
+                <button
+                  type="button"
+                  class="flex items-center garantia-grupo-action-item"
+                  :disabled="!podeExcluir(g)"
+                  :style="{
+                    gap: '8px',
+                    padding: '8px 12px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: podeExcluir(g) ? 'pointer' : 'not-allowed',
+                    borderRadius: 'var(--radius-md)',
+                    textAlign: 'left',
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 'var(--weight-semibold)',
+                    color: podeExcluir(g) ? 'var(--action-danger-text-only)' : 'var(--text-disabled)',
+                    width: '100%',
+                    opacity: podeExcluir(g) ? 1 : 0.55,
+                  }"
+                  @click.stop="askDelete(g)"
+                >
+                  <Trash2 :size="14" style="flex-shrink: 0" />
+                  Excluir
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <TablePagination
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
+    </div>
+
+    <GarantiaMinutaStep
+      ref="minutaRef"
+      v-model:garantias="model"
+      hide-table
+      hide-header
+      :edit-on-row-click="false"
+      :show-possui-toggle="false"
+    />
+
+    <ConfirmTypedActionModal
+      v-if="toUpdateStatus"
+      title="Atualizar status"
+      instruction="Digite o código abaixo para colocar a garantia em execução"
+      :confirm-phrase="STATUS_CONFIRM_PHRASE"
+      confirm-label="Confirmar"
+      @close="toUpdateStatus = null"
+      @confirm="confirmUpdateStatus"
+    />
+
+    <ConfirmDeleteModal
+      v-if="toDelete"
+      :title="`Excluir a garantia «${toDelete.tipo}»?`"
+      description="Esta ação remove a garantia deste grupo. Não será possível desfazer por aqui."
+      @close="toDelete = null"
+      @confirm="confirmDelete"
+    />
+  </div>
 </template>
+
+<style scoped>
+.garantia-grupo-table-inner {
+  width: 100%;
+  min-width: 980px;
+}
+
+.garantia-grupo-table-row {
+  column-gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-default);
+  font-size: var(--text-sm);
+}
+
+.garantia-grupo-table-row-clickable {
+  cursor: pointer;
+}
+
+.garantia-grupo-table-row-clickable:hover {
+  background: var(--surface-sunken);
+}
+
+.garantia-grupo-table-header {
+  border-top: none;
+  padding: 10px 16px;
+  background: var(--surface-sunken);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.garantia-grupo-th {
+  white-space: nowrap;
+}
+
+.garantia-grupo-th-center {
+  text-align: center;
+}
+
+.garantia-grupo-th-num {
+  text-align: right;
+}
+
+.garantia-grupo-th-actions {
+  text-align: right;
+}
+
+.garantia-grupo-td-num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.garantia-grupo-action-item:hover:not(:disabled) {
+  background: var(--surface-sunken);
+}
+</style>
 ```
 
 ### NotificacoesTab

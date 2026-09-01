@@ -1199,6 +1199,7 @@ import GrupoEmpresarialDetailScreen from './GrupoEmpresarialDetailScreen.vue';
 import CreateCraModal, { type NewCraData } from '../components/CreateCraModal.vue';
 import CreateCraOperacaoModal, { type NewCraOperacaoData } from '../components/CreateCraOperacaoModal.vue';
 import { cras as initialCras, type Cra, type CraOperacao, type Cessao, type Sacado, type CraSetup, type GrupoEmpresarialVinculo } from '../data/craData';
+import { PARAMETRIZACOES_ADICIONAIS_SEED } from '../../risco/data/riscoData';
 
 type Route =
   | { level: 'list' }
@@ -1241,6 +1242,7 @@ function defaultSetup(nome: string): CraSetup {
     jurosBoleto: '',
     multaBoleto: '',
     eligibilityTops: [],
+    parametrizacoesAdicionais: PARAMETRIZACOES_ADICIONAIS_SEED.map((p) => ({ ...p })),
   };
 }
 
@@ -3067,11 +3069,12 @@ import ToggleRow from '../../components/create-cra-operacao-modal/ToggleRow.vue'
 import SectionGroup from '../../components/create-cra-operacao-modal/SectionGroup.vue';
 import StepGrid from '../../components/create-cra-operacao-modal/StepGrid.vue';
 import type { CraSetup } from '../../data/craData';
+import ParametrizacoesAdicionaisTab from '@/features/risco/screens/detail-tabs/ParametrizacoesAdicionaisTab.vue';
 
 const props = defineProps<{ setup: CraSetup }>();
 const emit = defineEmits<{ update: [CraSetup] }>();
 
-const SUB_TABS = ['Dados gerais', 'Limites', 'Tipos de título', 'Carteira', 'Cobrança', 'Elegibilidade'] as const;
+const SUB_TABS = ['Dados gerais', 'Limites', 'Tipos de título', 'Carteira', 'Cobrança', 'Elegibilidade', 'Parametrizações adicionais'] as const;
 type SubTab = (typeof SUB_TABS)[number];
 
 function cloneSetup(s: CraSetup): CraSetup {
@@ -3102,6 +3105,15 @@ function toggleBond(id: string) {
   local.value = {
     ...local.value,
     bondTypes: local.value.bondTypes.map((b) => (b.id === id ? { ...b, ativo: !b.ativo } : b)),
+  };
+}
+
+function toggleParamAdicional(id: string) {
+  local.value = {
+    ...local.value,
+    parametrizacoesAdicionais: local.value.parametrizacoesAdicionais.map((p) =>
+      p.id === id ? { ...p, valida: !p.valida } : p,
+    ),
   };
 }
 </script>
@@ -3229,7 +3241,7 @@ function toggleBond(id: string) {
         </SectionGroup>
       </template>
 
-      <template v-else>
+      <template v-else-if="subTab === 'Elegibilidade'">
         <SectionGroup :icon="ListChecks" title="Elegibilidade">
           <div style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
             <div class="grid" style="grid-template-columns: 0.8fr 0.6fr 0.6fr; padding: 14px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase">
@@ -3251,6 +3263,15 @@ function toggleBond(id: string) {
           <p style="font-size: var(--text-xs); color: var(--gci-base); margin-top: 12px; font-weight: var(--weight-semibold); cursor: pointer">
             Ver ranking de concentração →
           </p>
+        </SectionGroup>
+      </template>
+
+      <template v-else>
+        <SectionGroup :icon="SlidersHorizontal" title="Parametrizações adicionais">
+          <ParametrizacoesAdicionaisTab
+            :itens="local.parametrizacoesAdicionais"
+            @toggle="toggleParamAdicional"
+          />
         </SectionGroup>
       </template>
 

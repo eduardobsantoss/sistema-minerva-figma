@@ -159,7 +159,7 @@ function handleDelete() {
 ```vue
 <script setup lang="ts">
 import { onMounted, onUnmounted, reactive, ref, type Component } from 'vue';
-import { ArrowLeft, MoreVertical, Settings2, Users, History, UserCog, BellRing, ShieldCheck, Info, Link2 } from 'lucide-vue-next';
+import { ArrowLeft, MoreVertical, Settings2, Users, History, UserCog, BellRing, ShieldCheck, Info, Link2, SlidersHorizontal } from 'lucide-vue-next';
 import {
   statusOperacaoColor, detalheGrupo,
   type GrupoEmpresarial,
@@ -173,22 +173,31 @@ import { CopyButton } from './detail-tabs/shared';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import DetalhesTab from './detail-tabs/DetalhesTab.vue';
 import ParametrizacoesTab from './detail-tabs/ParametrizacoesTab.vue';
+import ParametrizacoesAdicionaisTab from './detail-tabs/ParametrizacoesAdicionaisTab.vue';
 import CedentesTab from './detail-tabs/CedentesTab.vue';
 import HistoricoTab from './detail-tabs/HistoricoTab.vue';
 import TransferirGerenteModal from '../components/modals/TransferirGerenteModal.vue';
 import ConfigurarNotificacoesModal from '../components/modals/ConfigurarNotificacoesModal.vue';
 import HabilitarOperarModal from '../components/modals/HabilitarOperarModal.vue';
 import VincularAgrupamentoModal from '../components/modals/VincularAgrupamentoModal.vue';
+import { ParteRelacionadaDetailView } from '@/features/solicitacao-operacao/screens/detail-tabs/parte-relacionada';
+import type { ParteRelacionada as ParteCadastro } from '@/features/solicitacao-operacao/data/operacaoData';
+import {
+  applyParteCadastro,
+  toParteCadastro,
+} from '../data/parteRelacionadaMap';
+import type { ParteRelacionada } from '../data/riscoData';
 
 interface Props {
   grupo: GrupoEmpresarial;
 }
 
-type Tab = 'detalhes' | 'parametrizacoes' | 'cedentes' | 'historico';
+type Tab = 'detalhes' | 'parametrizacoes' | 'parametrizacoes-adicionais' | 'cedentes' | 'historico';
 
 const TABS: { key: Tab; label: string; icon: Component }[] = [
   { key: 'detalhes', label: 'Detalhes', icon: Info },
   { key: 'parametrizacoes', label: 'Parametrizações', icon: Settings2 },
+  { key: 'parametrizacoes-adicionais', label: 'Parametrizações Adicionais', icon: SlidersHorizontal },
   { key: 'cedentes', label: 'Cedentes', icon: Users },
   { key: 'historico', label: 'Histórico', icon: History },
 ];
@@ -206,6 +215,9 @@ const transferindo = ref(false);
 const configurandoNotif = ref(false);
 const habilitando = ref(false);
 const vinculandoVeiculo = ref(false);
+
+const editingParteId = ref<string | null>(null);
+const editingParte = ref<ParteCadastro | null>(null);
 
 const actionMenuOpen = ref(false);
 const actionMenuRef = ref<HTMLDivElement | null>(null);
@@ -226,6 +238,23 @@ function handleVinculosUpdate(ops: typeof operacoesVinculaveis.value) {
   det.parametrizacoes.autoatendimento.veiculosOperacao = applyGrupoVinculos(props.grupo.id, ops);
 }
 
+function openParteEdit(parte: ParteRelacionada) {
+  editingParteId.value = parte.id;
+  editingParte.value = toParteCadastro(parte);
+}
+
+function closeParteEdit() {
+  const rich = editingParte.value;
+  const id = editingParteId.value;
+  if (rich && id) {
+    det.partesRelacionadas = det.partesRelacionadas.map((p) =>
+      p.id === id ? applyParteCadastro(p, rich) : p,
+    );
+  }
+  editingParte.value = null;
+  editingParteId.value = null;
+}
+
 function handleClickOutside(e: MouseEvent) {
   if (actionMenuRef.value && !actionMenuRef.value.contains(e.target as Node)) actionMenuOpen.value = false;
 }
@@ -235,7 +264,13 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
 </script>
 
 <template>
-  <div class="flex flex-col" style="gap: 24px">
+  <ParteRelacionadaDetailView
+    v-if="editingParte"
+    :parte="editingParte"
+    :solicitacao-id="grupo.nome"
+    @back="closeParteEdit"
+  />
+  <div v-show="!editingParte" class="flex flex-col" style="gap: 24px">
     <!-- Header -->
     <div class="flex items-center" style="gap: 16px">
       <button aria-label="Voltar" class="flex items-center justify-center" style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: var(--surface-card); border: 1px solid var(--border-default); cursor: pointer; color: var(--text-strong); flex-shrink: 0" @click="emit('back')">
@@ -301,6 +336,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
       :limite="det.parametrizacoes.limite"
       @update:limite="(limite) => { det.parametrizacoes = { ...det.parametrizacoes, limite }; }"
       @update:rating="(rating) => { det.parametrizacoes.limite.indicativoRating = rating; }"
+      @edit-parte="openParteEdit"
     />
     <ParametrizacoesTab
       v-if="tab === 'parametrizacoes'"
@@ -309,6 +345,12 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
       :partes-relacionadas="det.partesRelacionadas"
       @change="(parametrizacoes) => { det.parametrizacoes = parametrizacoes; }"
       @update:partes-relacionadas="(pr) => { det.partesRelacionadas = pr; }"
+      @edit-parte="openParteEdit"
+    />
+    <ParametrizacoesAdicionaisTab
+      v-if="tab === 'parametrizacoes-adicionais'"
+      :itens="det.parametrizacoesAdicionais"
+      @toggle="(id) => { det.parametrizacoesAdicionais = det.parametrizacoesAdicionais.map((p) => (p.id === id ? { ...p, valida: !p.valida } : p)); }"
     />
     <CedentesTab
       v-if="tab === 'cedentes'"
@@ -353,7 +395,7 @@ import { computed, ref, type Component } from 'vue';
 import {
   Filter, ChevronDown,
   MoreVertical, SlidersHorizontal, CheckCircle2, Clock, XCircle, Minus, Building2,
-  Settings2, UserCog, BellRing, ShieldCheck, Search, Link2,
+  Settings2, UserCog, BellRing, ShieldCheck, Search, Link2, Plus,
 } from 'lucide-vue-next';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
@@ -370,7 +412,10 @@ import VincularAgrupamentoModal from '../components/modals/VincularAgrupamentoMo
 import Checkbox from '@/components/ui/Checkbox.vue';
 import Tooltip from '@/components/ui/Tooltip.vue';
 
-const emit = defineEmits<{ open: [id: string] }>();
+const emit = defineEmits<{
+  open: [id: string];
+  create: [];
+}>();
 
 type ColKey = 'statusOperacao' | 'limite' | 'limiteAutoatendimento' | 'riscoTotal' | 'gerente' | 'vencimentoParecer';
 
@@ -521,16 +566,50 @@ function menuActions(g: GrupoEmpresarial) {
 
 <template>
   <div class="flex flex-col" style="gap: 20px">
-    <div>
-      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--accent); font-weight: var(--weight-bold); margin-bottom: 6px">
-        Risco
+    <div class="flex items-end justify-between" style="gap: 16px; flex-wrap: wrap">
+      <div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--accent); font-weight: var(--weight-bold); margin-bottom: 6px">
+          Risco
+        </div>
+        <h1 style="font-size: 26px; font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.02em; line-height: 1.15">
+          Grupos Empresariais
+        </h1>
+        <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+          {{ filtered.length }} {{ filtered.length === 1 ? 'grupo encontrado' : 'grupos encontrados' }}
+        </p>
       </div>
-      <h1 style="font-size: 26px; font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.02em; line-height: 1.15">
-        Grupos Empresariais
-      </h1>
-      <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-        {{ filtered.length }} {{ filtered.length === 1 ? 'grupo encontrado' : 'grupos encontrados' }}
-      </p>
+      <button
+        type="button"
+        class="flex items-center btn-animated btn-agro"
+        style="
+          gap: 8px;
+          height: 48px;
+          padding: 0 20px;
+          background: var(--agro-base);
+          color: #fff;
+          border-radius: var(--radius-xl);
+          border: none;
+          cursor: pointer;
+          font-weight: var(--weight-bold);
+          font-size: var(--text-xs);
+          letter-spacing: 0.10em;
+          box-shadow: 0 10px 24px -8px rgba(242, 125, 38, 0.4);
+        "
+        @click="emit('create')"
+      >
+        <span
+          class="flex items-center justify-center"
+          style="
+            width: 22px;
+            height: 22px;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.2);
+          "
+        >
+          <Plus :size="14" />
+        </span>
+        NOVO GRUPO
+      </button>
     </div>
 
     <!-- Toolbar -->
@@ -808,6 +887,8 @@ import GruposListScreen from './GruposListScreen.vue';
 import GrupoDetailScreen from './GrupoDetailScreen.vue';
 import { GRUPOS_SEED } from '../data/riscoData';
 
+const emit = defineEmits<{ navigate: [key: string] }>();
+
 type Route = { level: 'list' } | { level: 'detail'; grupoId: string };
 
 const route = ref<Route>({ level: 'list' });
@@ -823,10 +904,14 @@ function openDetail(grupoId: string) {
 </script>
 
 <template>
-  <GruposListScreen v-if="route.level === 'list'" @open="openDetail" />
+  <GruposListScreen
+    v-if="route.level === 'list'"
+    @open="openDetail"
+    @create="emit('navigate', 'grupos-cadastro')"
+  />
   <template v-else>
     <GrupoDetailScreen v-if="grupoAtual" :grupo="grupoAtual" @back="route = { level: 'list' }" />
-    <GruposListScreen v-else @open="openDetail" />
+    <GruposListScreen v-else @open="openDetail" @create="emit('navigate', 'grupos-cadastro')" />
   </template>
 </template>
 ```
@@ -2127,10 +2212,12 @@ import { useTablePagination } from '@/composables/useTablePagination';
 
 interface Props {
   cedentes: Cedente[];
+  /** Quando true, o clique na linha emite `open` para o detalhe em página (sem modal). */
+  asPage?: boolean;
 }
 
-const props = defineProps<Props>();
-const emit = defineEmits<{ 'update-cedente': [cedente: Cedente] }>();
+const props = withDefaults(defineProps<Props>(), { asPage: false });
+const emit = defineEmits<{ 'update-cedente': [cedente: Cedente]; open: [cedente: Cedente] }>();
 
 const COLS = '1.2fr 1.8fr 1.6fr 1fr 1fr';
 
@@ -2141,6 +2228,11 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
   () => props.cedentes,
   { defaultPageSize: 10 },
 );
+
+function onRowClick(c: Cedente) {
+  if (props.asPage) emit('open', c);
+  else selecionadoId.value = c.id;
+}
 </script>
 
 <template>
@@ -2155,7 +2247,7 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
         :key="c.id"
         class="grid items-center cedentes-row"
         :style="{ gridTemplateColumns: COLS, padding: '14px 20px', borderTop: '1px solid var(--border-default)', fontSize: 'var(--text-sm)', cursor: 'pointer', transition: 'background var(--duration-fast)' }"
-        @click="selecionadoId = c.id"
+        @click="onRowClick(c)"
       >
         <div style="font-variant-numeric: tabular-nums; color: var(--text-muted)">{{ c.documento }}</div>
         <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ c.nome }}</div>
@@ -2174,7 +2266,7 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
     </div>
 
     <CedenteDetailModal
-      v-if="selecionado"
+      v-if="!asPage && selecionado"
       :cedente="selecionado"
       @close="selecionadoId = null"
       @update="emit('update-cedente', $event)"
@@ -2194,7 +2286,7 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
 ```vue
 <script setup lang="ts">
 import { reactive } from 'vue';
-import { Users, FileText, Star, UserCog, Eye, RefreshCw } from 'lucide-vue-next';
+import { Users, FileText, Star, UserCog, Eye, RefreshCw, Pencil } from 'lucide-vue-next';
 import {
   RATINGS_SEED, gerentePorNome, type GrupoEmpresarial,
   type ParteRelacionada, type ParametrizacaoLimite,
@@ -2210,7 +2302,11 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<{ 'update:limite': [data: ParametrizacaoLimite]; 'update:rating': [rating: string] }>();
+const emit = defineEmits<{
+  'update:limite': [data: ParametrizacaoLimite];
+  'update:rating': [rating: string];
+  'edit-parte': [parte: ParteRelacionada];
+}>();
 
 const form = reactive({ ...props.limite });
 const gerente = gerentePorNome(props.grupo.gerente);
@@ -2231,10 +2327,10 @@ function saveRating() {
   <div class="flex flex-col" style="gap: 20px">
     <TabCard title="Partes Relacionadas" :icon="Users">
       <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
-        <div class="grid items-center" style="grid-template-columns: 1.4fr 1fr 1.2fr 1fr 1fr; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
-          <div>Nome</div><div>Documento</div><div>E-mail</div><div>Telefone</div><div>Estado Civil</div>
+        <div class="grid items-center" style="grid-template-columns: 1.4fr 1fr 1.2fr 1fr 1fr 48px; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
+          <div>Nome</div><div>Documento</div><div>E-mail</div><div>Telefone</div><div>Estado Civil</div><div style="text-align: right">Ação</div>
         </div>
-        <div v-for="p in pageItems" :key="p.id" class="grid items-center" style="grid-template-columns: 1.4fr 1fr 1.2fr 1fr 1fr; padding: 12px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
+        <div v-for="p in pageItems" :key="p.id" class="grid items-center" style="grid-template-columns: 1.4fr 1fr 1.2fr 1fr 1fr 48px; padding: 12px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
           <div>
             <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ p.nome }}</div>
             <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">{{ p.papel }}</div>
@@ -2243,6 +2339,17 @@ function saveRating() {
           <div style="color: var(--text-default)">{{ p.email }}</div>
           <div style="font-variant-numeric: tabular-nums; color: var(--text-default)">{{ p.telefone }}</div>
           <div style="color: var(--text-default)">{{ p.estadoCivil }}</div>
+          <div class="flex justify-end">
+            <button
+              type="button"
+              aria-label="Editar parte relacionada"
+              class="flex items-center justify-center"
+              style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--text-muted)"
+              @click="emit('edit-parte', p)"
+            >
+              <Pencil :size="14" />
+            </button>
+          </div>
         </div>
         <TablePagination
           v-if="partesRelacionadas.length > 0"
@@ -2588,8 +2695,8 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
 
 ```vue
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
-import { ClipboardCheck, Users, Truck, ShieldCheck, UserCheck, Trash2 } from 'lucide-vue-next';
+import { reactive, ref, watch } from 'vue';
+import { ClipboardCheck, Users, Truck, ShieldCheck, UserCheck, Trash2, Pencil } from 'lucide-vue-next';
 import { type ParametrizacaoGeral, type ExcecaoConcentracao, type ParteRelacionada } from '../../data/riscoData';
 import { TabCard, FieldLabel, ToggleRow, PctInput, DiasInput, EmptyState, AddButton } from './shared';
 import Checkbox from '@/components/ui/Checkbox.vue';
@@ -2605,6 +2712,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   save: [data: ParametrizacaoGeral];
   'update:partes-relacionadas': [data: ParteRelacionada[]];
+  'edit-parte': [parte: ParteRelacionada];
 }>();
 
 const form = reactive<ParametrizacaoGeral>({ ...props.data });
@@ -2612,6 +2720,28 @@ const partes = reactive<ParteRelacionada[]>(props.partesRelacionadas.map((p) => 
 const excSacadoDoc = ref('');
 const excSacadoNome = ref('');
 const excPct = ref('');
+
+watch(
+  () => props.partesRelacionadas,
+  (next) => {
+    const localById = new Map(partes.map((p) => [p.id, p]));
+    partes.splice(
+      0,
+      partes.length,
+      ...next.map((p) => {
+        const local = localById.get(p.id);
+        if (!local) return { ...p };
+        return {
+          ...p,
+          conjugeAnuente: local.conjugeAnuente,
+          assinaturaObrigatoria: local.assinaturaObrigatoria,
+          aceitaRestritivo: local.aceitaRestritivo,
+          valorRestritivoAceito: local.valorRestritivoAceito,
+        };
+      }),
+    );
+  },
+);
 
 const {
   page: excecoesPage,
@@ -2771,10 +2901,10 @@ function handleSavePartes() {
     <TabCard title="Partes Relacionadas" :icon="Users" has-save @save="handleSavePartes">
       <EmptyState v-if="partes.length === 0" :icon="Users" title="Nenhuma parte relacionada cadastrada" hint="Partes relacionadas são herdadas do cadastro do grupo." />
       <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; overflow-x: auto">
-        <div class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 0.9fr 80px 80px 80px 120px; min-width: 900px; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
-          <div>Nome + Documento</div><div>E-mail + Telefone</div><div>Estado Civil</div><div>Cônjuge anuente</div><div>Assin. obrig.</div><div>Aceita restritivo</div><div>Valor restritivo</div>
+        <div class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 0.9fr 80px 80px 80px 120px 40px; min-width: 960px; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
+          <div>Nome + Documento</div><div>E-mail + Telefone</div><div>Estado Civil</div><div>Cônjuge anuente</div><div>Assin. obrig.</div><div>Aceita restritivo</div><div>Valor restritivo</div><div style="text-align: right">Ação</div>
         </div>
-        <div v-for="p in partesPageItems" :key="p.id" class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 0.9fr 80px 80px 80px 120px; min-width: 900px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
+        <div v-for="p in partesPageItems" :key="p.id" class="grid items-center" style="grid-template-columns: 1.2fr 1.2fr 0.9fr 80px 80px 80px 120px 40px; min-width: 960px; padding: 10px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
           <div>
             <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ p.nome }}</div>
             <div style="font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums">{{ p.documento }}</div>
@@ -2803,6 +2933,17 @@ function handleSavePartes() {
               @input="handleRestritivoInput(p.id, $event)"
             />
             <span v-else style="color: var(--text-muted); font-size: var(--text-xs)">—</span>
+          </div>
+          <div class="flex justify-end">
+            <button
+              type="button"
+              aria-label="Editar parte relacionada"
+              class="flex items-center justify-center"
+              style="width: 32px; height: 32px; border-radius: var(--radius-md); background: none; border: 1px solid var(--border-default); cursor: pointer; color: var(--text-muted)"
+              @click="emit('edit-parte', p)"
+            >
+              <Pencil :size="14" />
+            </button>
           </div>
         </div>
         <TablePagination
@@ -3151,6 +3292,93 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
 </style>
 ```
 
+### ParametrizacoesAdicionaisTab
+
+```vue
+<script setup lang="ts">
+import type { ParametrizacaoAdicional } from '../../data/riscoData';
+
+defineProps<{ itens: ParametrizacaoAdicional[] }>();
+const emit = defineEmits<{ toggle: [id: string] }>();
+
+const COLS = 'minmax(220px, 1.4fr) minmax(320px, 2.4fr) 120px';
+</script>
+
+<template>
+  <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); overflow: hidden">
+    <div
+      class="grid items-center"
+      :style="{
+        gridTemplateColumns: COLS,
+        padding: '12px 20px',
+        background: 'var(--surface-sunken)',
+        fontSize: '10px',
+        fontWeight: 'var(--weight-bold)',
+        letterSpacing: '0.10em',
+        color: 'var(--text-muted)',
+        textTransform: 'uppercase',
+        columnGap: '16px',
+      }"
+    >
+      <div>Parâmetro</div>
+      <div>Descrição</div>
+      <div style="text-align: center">Validação</div>
+    </div>
+
+    <div
+      v-for="item in itens"
+      :key="item.id"
+      class="grid items-center pa-row"
+      :style="{
+        gridTemplateColumns: COLS,
+        padding: '14px 20px',
+        borderTop: '1px solid var(--border-default)',
+        fontSize: 'var(--text-sm)',
+        columnGap: '16px',
+      }"
+    >
+      <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ item.parametro }}</div>
+      <div style="color: var(--text-default); line-height: 1.45">{{ item.descricao }}</div>
+      <div class="flex justify-center">
+        <button
+          type="button"
+          :aria-label="item.valida ? 'Válida' : 'Não valida'"
+          :aria-pressed="item.valida"
+          style="background: none; border: none; cursor: pointer; padding: 0"
+          @click="emit('toggle', item.id)"
+        >
+          <span
+            :style="{
+              display: 'block',
+              width: '36px',
+              height: '20px',
+              borderRadius: 'var(--radius-full)',
+              background: item.valida ? 'var(--gci-base)' : 'var(--neutral-300)',
+              position: 'relative',
+              transition: 'background var(--duration-base) var(--ease-standard)',
+            }"
+          >
+            <span
+              :style="{
+                position: 'absolute',
+                top: '2px',
+                left: item.valida ? '18px' : '2px',
+                width: '16px',
+                height: '16px',
+                borderRadius: '50%',
+                background: '#fff',
+                boxShadow: 'var(--shadow-xs)',
+                transition: 'left var(--duration-base) var(--ease-standard)',
+              }"
+            />
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
 ### ParametrizacoesTab
 
 ```vue
@@ -3172,6 +3400,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   change: [data: Parametrizacoes];
   'update:partes-relacionadas': [data: ParteRelacionada[]];
+  'edit-parte': [parte: ParteRelacionada];
 }>();
 
 const SUB_TABS = ['Limite', 'Autoatendimento', 'Geral', 'Garantia'] as const;
@@ -3212,6 +3441,7 @@ const tab = ref<SubTab>('Limite');
       :partes-relacionadas="partesRelacionadas"
       @save="(geral) => emit('change', { ...data, geral })"
       @update:partes-relacionadas="(pr) => emit('update:partes-relacionadas', pr)"
+      @edit-parte="(p) => emit('edit-parte', p)"
     />
     <GarantiaSubTab v-if="tab === 'Garantia'" :data="data.garantia" @save="(garantia) => emit('change', { ...data, garantia })" />
   </div>
@@ -3562,10 +3792,11 @@ const knobStyle = computed(() => ({
 
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue';
-import { X, Pencil, FileUp, TrendingUp, MapPin, CalendarDays, Phone, Home, FileText } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import { ArrowLeft, X, Pencil, FileUp, TrendingUp, MapPin, CalendarDays, Phone, Home, FileText } from 'lucide-vue-next';
 import { brl, statusCedenteColor, type Cedente } from '../../data/riscoData';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
+import { CopyButton } from '../../screens/detail-tabs/shared';
 import { KpiCard, ContatosPanel, EnderecosPanel, DocumentosPanel } from './cedente-detail';
 import EditarCadastroCedenteModal from './EditarCadastroCedenteModal.vue';
 
@@ -3577,12 +3808,23 @@ const TABS: { key: Tab; label: string; icon: typeof Phone }[] = [
   { key: 'documentos', label: 'Documentos', icon: FileText },
 ];
 
-const props = defineProps<{ cedente: Cedente }>();
+const props = withDefaults(
+  defineProps<{
+    cedente: Cedente;
+    /** Renderiza como página de detalhe (padrão dos módulos) em vez de overlay. */
+    asPage?: boolean;
+    pageLabel?: string;
+  }>(),
+  { asPage: false, pageLabel: '' },
+);
 const emit = defineEmits<{ close: []; update: [cedente: Cedente] }>();
 
 const tab = ref<Tab>('contatos');
 const editando = ref(false);
-const cor = statusCedenteColor(props.cedente.status);
+const cor = computed(() => statusCedenteColor(props.cedente.status));
+const eyebrow = computed(() =>
+  props.pageLabel ? `${props.pageLabel} · Cedente` : 'Cedente',
+);
 
 function handleUpdate(updated: Cedente) {
   emit('update', updated);
@@ -3591,7 +3833,67 @@ function handleUpdate(updated: Cedente) {
 </script>
 
 <template>
+  <!-- Página de detalhe -->
+  <div v-if="asPage" class="flex flex-col" style="gap: 24px">
+    <div class="flex items-center" style="gap: 16px">
+      <button
+        type="button"
+        aria-label="Voltar"
+        class="flex items-center justify-center"
+        style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: var(--surface-card); border: 1px solid var(--border-default); cursor: pointer; color: var(--text-strong); flex-shrink: 0"
+        @click="emit('close')"
+      >
+        <ArrowLeft :size="20" />
+      </button>
+      <div style="flex: 1; min-width: 0">
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.18em; color: var(--accent); text-transform: uppercase; margin-bottom: 4px">
+          {{ eyebrow }}
+        </div>
+        <h2 class="flex items-center" style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.01em; line-height: 1.2; gap: 10px; flex-wrap: wrap">
+          {{ cedente.nome }}
+          <span class="flex items-center" :style="{ gap: '6px', fontSize: '10px', fontWeight: 'var(--weight-bold)', letterSpacing: '0.10em', padding: '5px 11px', borderRadius: '9999px', background: `color-mix(in srgb, ${cor} 14%, transparent)`, color: cor }">
+            <span :style="{ width: '7px', height: '7px', borderRadius: '9999px', background: cor }" />
+            {{ cedente.status.toUpperCase() }}
+          </span>
+        </h2>
+        <p class="flex items-center" style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px; gap: 6px">
+          <span style="font-variant-numeric: tabular-nums">{{ cedente.documento }}</span>
+          <CopyButton :value="cedente.documento" />
+        </p>
+      </div>
+      <button
+        type="button"
+        class="flex items-center"
+        style="gap: 8px; height: 40px; padding: 0 16px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-card); cursor: pointer; color: var(--text-strong); font-weight: var(--weight-bold); font-size: var(--text-sm); white-space: nowrap; flex-shrink: 0"
+        @click="editando = true"
+      >
+        <Pencil :size="14" /> Editar cadastro
+      </button>
+    </div>
+
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px">
+      <KpiCard :icon="FileUp" label="Qtd. de títulos em aberto" :value="String(cedente.qtdTitulosAberto)" />
+      <KpiCard :icon="TrendingUp" label="Risco tomado" :value="brl(cedente.riscoTomado)" />
+      <KpiCard :icon="MapPin" label="Cidade - UF" :value="`${cedente.cidade} - ${cedente.uf}`" />
+      <KpiCard :icon="CalendarDays" label="Data de abertura" :value="cedente.dataAbertura" />
+    </div>
+
+    <SegmentedToggle
+      :model-value="tab"
+      :options="TABS"
+      variant="brand"
+      style="width: fit-content"
+      @update:model-value="tab = $event as Tab"
+    />
+
+    <ContatosPanel v-if="tab === 'contatos'" :cedente="cedente" @update="emit('update', $event)" />
+    <EnderecosPanel v-else-if="tab === 'enderecos'" :cedente="cedente" @update="emit('update', $event)" />
+    <DocumentosPanel v-else :cedente="cedente" @update="emit('update', $event)" />
+  </div>
+
+  <!-- Overlay (Risco e demais usos) -->
   <div
+    v-else
     style="
       position: fixed; inset: 0;
       background: rgba(8,60,74,0.55); backdrop-filter: blur(8px);
@@ -3608,7 +3910,6 @@ function handleUpdate(updated: Cedente) {
       "
       @click.stop
     >
-      <!-- Header -->
       <div class="flex items-start justify-between" style="padding: 20px 28px; border-bottom: 1px solid var(--border-default); flex-shrink: 0; gap: 16px">
         <div style="min-width: 0">
           <div class="flex items-center" style="gap: 10px; flex-wrap: wrap">
@@ -3643,7 +3944,6 @@ function handleUpdate(updated: Cedente) {
         </div>
       </div>
 
-      <!-- Body -->
       <div class="flex flex-col" style="padding: 24px; gap: 20px; overflow: auto">
         <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 14px">
           <KpiCard :icon="FileUp" label="Qtd. de títulos em aberto" :value="String(cedente.qtdTitulosAberto)" />
@@ -3665,7 +3965,6 @@ function handleUpdate(updated: Cedente) {
         <DocumentosPanel v-if="tab === 'documentos'" :cedente="cedente" @update="emit('update', $event)" />
       </div>
 
-      <!-- Footer -->
       <div class="flex items-center justify-end" style="gap: 12px; padding: 14px 28px; border-top: 1px solid var(--border-default); background: var(--surface-card); flex-shrink: 0">
         <button
           style="height: 40px; padding: 0 20px; background: var(--surface-card); color: var(--text-strong); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"

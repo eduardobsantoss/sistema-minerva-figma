@@ -752,7 +752,7 @@ const initials = computed(() => getUserInitials(CURRENT_USER.fullName));
 
 ```vue
 <script setup lang="ts">
-import { type Component } from 'vue';
+import { type Component } from "vue";
 import {
   LayoutDashboard,
   Landmark,
@@ -780,11 +780,13 @@ import {
   ShieldCheck,
   Package,
   Search,
-} from 'lucide-vue-next';
-import gciLogoMark from '@/assets/gci-logo-mark.png';
-import gciLogoFull from '@/assets/gci-logo-full.png';
-import Tooltip from '@/components/ui/Tooltip.vue';
-import { CURRENT_USER } from '@/lib/userDisplay';
+  Radar,
+  Banknote,
+} from "lucide-vue-next";
+import gciLogoMark from "@/assets/gci-logo-mark.png";
+import gciLogoFull from "@/assets/gci-logo-full.png";
+import Tooltip from "@/components/ui/Tooltip.vue";
+import { CURRENT_USER } from "@/lib/userDisplay";
 
 interface SubItem {
   key: string;
@@ -800,81 +802,106 @@ interface NavItem {
 }
 
 const items: NavItem[] = [
-  { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   {
-    key: 'solicitacoes',
-    label: 'Solicitação de Operação',
+    key: "solicitacoes",
+    label: "Solicitação de Operação",
     icon: ClipboardList,
     children: [
-      { key: 'solicitacoes', label: 'Solicitações', icon: ClipboardList },
-      { key: 'solicitacoes-fundo-padrao', label: 'Fundo Padrão', icon: Wallet },
-      { key: 'solicitacoes-relatorios', label: 'Relatórios', icon: BarChart3 },
-      { key: 'solicitacoes-taxas-veiculos', label: 'Taxas dos Veículos', icon: Percent },
-      { key: 'solicitacoes-validacoes', label: 'Validações', icon: ShieldCheck },
+      { key: "solicitacoes", label: "Solicitações", icon: ClipboardList },
+      { key: "solicitacoes-fundo-padrao", label: "Fundo Padrão", icon: Wallet },
+      { key: "solicitacoes-relatorios", label: "Relatórios", icon: BarChart3 },
+      {
+        key: "solicitacoes-taxas-veiculos",
+        label: "Taxas dos Veículos",
+        icon: Percent,
+      },
+      {
+        key: "solicitacoes-validacoes",
+        label: "Validações",
+        icon: ShieldCheck,
+      },
     ],
   },
-  { key: 'ativos', label: 'Ativos', icon: Package },
+  { key: "ativos", label: "Ativos", icon: Package },
   {
-    key: 'fidcs',
+    key: "fidcs",
     label: "FIDC's",
     icon: Landmark,
     children: [
-      { key: 'fidcs', label: 'Gestão', icon: Landmark },
-      { key: 'fidcs-simulador', label: 'Simulador', icon: Gauge },
-      { key: 'fidcs-relatorios', label: 'Relatórios', icon: BarChart3 },
+      { key: "fidcs", label: "Gestão", icon: Landmark },
+      { key: "fidcs-simulador", label: "Simulador", icon: Gauge },
+      { key: "fidcs-relatorios", label: "Relatórios", icon: BarChart3 },
     ],
   },
   {
-    key: 'cras',
+    key: "cras",
     label: "CRA's",
     icon: Briefcase,
     children: [
-      { key: 'cras', label: 'Gestão', icon: Briefcase },
-      { key: 'cras-simulador', label: 'Simulador', icon: Gauge },
-      { key: 'cras-relatorios', label: 'Relatórios', icon: BarChart3 },
+      { key: "cras", label: "Gestão", icon: Briefcase },
+      { key: "cras-simulador", label: "Simulador", icon: Gauge },
+      { key: "cras-relatorios", label: "Relatórios", icon: BarChart3 },
     ],
   },
   {
-    key: 'semiestruturadas',
-    label: 'Semiestruturadas',
+    key: "semiestruturadas",
+    label: "Semiestruturadas",
     icon: Layers,
-    children: [
-      { key: 'semiestruturadas', label: 'Gestão', icon: Layers },
-    ],
+    children: [{ key: "semiestruturadas", label: "Gestão", icon: Layers }],
   },
   {
-    key: 'cobranca',
-    label: 'Cobrança',
+    key: "cobranca",
+    label: "Cobrança",
     icon: Receipt,
     children: [
-      { key: 'cobranca-dashboard', label: 'Dashboard', icon: Gauge },
-      { key: 'cobranca-titulos', label: 'Títulos', icon: FileText },
-      { key: 'cobranca-notif', label: 'Notificações de Cobrança', icon: BellRing },
-      { key: 'cobranca-notif-cessao', label: 'Notificações de Cessão', icon: ScrollText },
-      { key: 'cobranca-resultado-notif', label: 'Resultado de Notificações', icon: Layers },
-      { key: 'cobranca-rel', label: 'Relatórios', icon: BarChart3 },
+      { key: "cobranca-dashboard", label: "Dashboard", icon: Gauge },
+      { key: "cobranca-titulos", label: "Títulos", icon: FileText },
+      {
+        key: "cobranca-notif",
+        label: "Notificações de Cobrança",
+        icon: BellRing,
+      },
+      {
+        key: "cobranca-notif-cessao",
+        label: "Notificações de Cessão",
+        icon: ScrollText,
+      },
+      {
+        key: "cobranca-resultado-notif",
+        label: "Resultado de Notificações",
+        icon: Layers,
+      },
+      { key: "cobranca-rel", label: "Relatórios", icon: BarChart3 },
     ],
   },
   {
-    key: 'risco',
-    label: 'Risco',
+    key: "risco",
+    label: "Risco",
     icon: AlertCircle,
     children: [
-      { key: 'risco-dashboard', label: 'Dashboard', icon: Gauge },
-      { key: 'risco-grupos', label: 'Grupos Empresariais', icon: Building2 },
-      { key: 'risco-ratings', label: 'Ratings', icon: Layers },
-      { key: 'risco-agrupamentos', label: 'Agrupamentos de Limite', icon: ScrollText },
-      { key: 'risco-serasa', label: 'Consultas', icon: Search },
-      { key: 'risco-rel', label: 'Relatórios', icon: BarChart3 },
+      { key: "risco-dashboard", label: "Dashboard", icon: Gauge },
+      { key: "risco-grupos", label: "Grupos Empresariais", icon: Building2 },
+      { key: "risco-ratings", label: "Ratings", icon: Layers },
+      {
+        key: "risco-agrupamentos",
+        label: "Agrupamentos de Limite",
+        icon: ScrollText,
+      },
+      { key: "risco-serasa", label: "Consultas", icon: Search },
+      { key: "risco-rel", label: "Relatórios", icon: BarChart3 },
     ],
   },
-  { key: 'passivo', label: 'Passivo', icon: Database },
-  { key: 'colab', label: 'Colaboradores', icon: Users },
-  { key: 'rel', label: 'Relatórios', icon: FileText },
-  { key: 'conf', label: 'Configurações', icon: Settings },
+  { key: "grupos-cadastro", label: "Grupos Empresariais", icon: Building2 },
+  { key: "monitoramento", label: "Monitoramento", icon: Radar },
+  { key: "passivo", label: "Passivo", icon: Database },
+  { key: "passivo-novo", label: "Passivo (novo)", icon: Banknote },
+  { key: "colab", label: "Colaboradores", icon: Users },
+  { key: "rel", label: "Relatórios", icon: FileText },
+  { key: "conf", label: "Configurações", icon: Settings },
 ];
 
-const EXPANDED = 'var(--sidebar-width-expanded)';
+const EXPANDED = "var(--sidebar-width-expanded)";
 const COLLAPSED = 80;
 
 interface Props {
@@ -891,15 +918,17 @@ const emit = defineEmits<{
 }>();
 
 function isAnyChildActive(it: NavItem) {
-  return !!it.children?.length && it.children.some((c) => c.key === props.active);
+  return (
+    !!it.children?.length && it.children.some((c) => c.key === props.active)
+  );
 }
 
 function handleItemClick(it: NavItem) {
   if (it.children?.length) {
-    if (!props.collapsed) emit('toggleMenu', it.key);
-    emit('navigate', it.children[0].key);
+    if (!props.collapsed) emit("toggleMenu", it.key);
+    emit("navigate", it.children[0].key);
   } else {
-    emit('navigate', it.key);
+    emit("navigate", it.key);
   }
 }
 </script>
@@ -940,7 +969,12 @@ function handleItemClick(it: NavItem) {
         v-if="collapsed"
         :src="gciLogoMark"
         alt="GCI"
-        :style="{ width: '42px', height: '42px', objectFit: 'contain', flexShrink: 0 }"
+        :style="{
+          width: '42px',
+          height: '42px',
+          objectFit: 'contain',
+          flexShrink: 0,
+        }"
       />
       <img
         v-else
@@ -985,7 +1019,10 @@ function handleItemClick(it: NavItem) {
     </button>
 
     <!-- Nav -->
-    <nav class="sidebar-nav-scroll flex flex-col" style="gap: 4px; flex: 1; min-height: 0; overflow-y: auto">
+    <nav
+      class="sidebar-nav-scroll flex flex-col"
+      style="gap: 4px; flex: 1; min-height: 0; overflow-y: auto"
+    >
       <div v-for="it in items" :key="it.key">
         <Tooltip
           v-if="collapsed"
@@ -996,7 +1033,10 @@ function handleItemClick(it: NavItem) {
         >
           <button
             class="sidebar-nav-btn relative flex items-center"
-            :class="{ 'sidebar-nav-btn--active': it.key === active || isAnyChildActive(it) }"
+            :class="{
+              'sidebar-nav-btn--active':
+                it.key === active || isAnyChildActive(it),
+            }"
             style="
               gap: 16px;
               padding: 12px 0;
@@ -1008,7 +1048,9 @@ function handleItemClick(it: NavItem) {
               border: none;
               cursor: pointer;
               text-align: left;
-              transition: background var(--duration-fast), color var(--duration-fast);
+              transition:
+                background var(--duration-fast),
+                color var(--duration-fast);
             "
             @click="handleItemClick(it)"
           >
@@ -1030,7 +1072,10 @@ function handleItemClick(it: NavItem) {
         <button
           v-else
           class="sidebar-nav-btn relative flex items-center"
-          :class="{ 'sidebar-nav-btn--active': it.key === active || isAnyChildActive(it) }"
+          :class="{
+            'sidebar-nav-btn--active':
+              it.key === active || isAnyChildActive(it),
+          }"
           style="
             gap: 16px;
             padding: 12px;
@@ -1042,7 +1087,10 @@ function handleItemClick(it: NavItem) {
             border: none;
             cursor: pointer;
             text-align: left;
-            transition: background var(--duration-fast), color var(--duration-fast), padding var(--duration-slow);
+            transition:
+              background var(--duration-fast),
+              color var(--duration-fast),
+              padding var(--duration-slow);
           "
           @click="handleItemClick(it)"
         >
@@ -1064,7 +1112,8 @@ function handleItemClick(it: NavItem) {
             v-if="it.children?.length"
             :size="16"
             :style="{
-              transform: openMenu === it.key ? 'rotate(180deg)' : 'rotate(0deg)',
+              transform:
+                openMenu === it.key ? 'rotate(180deg)' : 'rotate(0deg)',
               transition: 'transform var(--duration-base)',
             }"
           />
@@ -1075,13 +1124,17 @@ function handleItemClick(it: NavItem) {
           v-if="it.children?.length && !collapsed"
           :style="{
             overflow: 'hidden',
-            maxHeight: openMenu === it.key ? it.children.length * 40 + 8 + 'px' : '0px',
+            maxHeight:
+              openMenu === it.key ? it.children.length * 40 + 8 + 'px' : '0px',
             opacity: openMenu === it.key ? 1 : 0,
             transition:
               'max-height var(--duration-slow) var(--ease-standard), opacity var(--duration-base)',
           }"
         >
-          <div class="flex flex-col" style="gap: 2px; padding: 6px 0 6px 36px; position: relative">
+          <div
+            class="flex flex-col"
+            style="gap: 2px; padding: 6px 0 6px 36px; position: relative"
+          >
             <span
               style="
                 position: absolute;
@@ -1106,7 +1159,9 @@ function handleItemClick(it: NavItem) {
                 font-size: var(--text-xs);
                 font-weight: var(--weight-medium);
                 text-align: left;
-                transition: background var(--duration-fast), color var(--duration-fast);
+                transition:
+                  background var(--duration-fast),
+                  color var(--duration-fast);
               "
               @click="emit('navigate', c.key)"
             >
