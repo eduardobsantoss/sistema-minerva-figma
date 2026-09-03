@@ -5,10 +5,15 @@ import { useTablePagination } from '@/composables/useTablePagination';
 import { cessaoVinculadaPorLabel } from '@/features/solicitacao-operacao/data/minutaData';
 import type { CessaoGarantiaGrupo } from '../../data/gruposCadastroData';
 
-const props = defineProps<{
-  cessoes: CessaoGarantiaGrupo[];
-  cessaoVinculada?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    cessoes: CessaoGarantiaGrupo[];
+    cessaoVinculada?: string;
+    /** Dentro do card branco do detalhe — sem borda externa duplicada */
+    embedded?: boolean;
+  }>(),
+  { embedded: false },
+);
 
 const cessaoConstituicao = computed(() =>
   props.cessaoVinculada ? cessaoVinculadaPorLabel(props.cessaoVinculada) : undefined,
@@ -46,14 +51,19 @@ function formatBrl(value: number): string {
 
 <template>
   <div
-    style="
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-xl);
-      overflow: hidden;
-      background: var(--surface-card);
+    :style="
+      embedded
+        ? undefined
+        : {
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-xl)',
+            overflow: 'hidden',
+            background: 'var(--surface-card)',
+          }
     "
   >
     <div
+      v-if="!embedded"
       class="flex items-center flex-wrap"
       style="gap: 16px; padding: 20px; border-bottom: 1px solid var(--border-default)"
     >
@@ -138,7 +148,14 @@ function formatBrl(value: number): string {
       Nenhuma cessão vinculada a esta garantia.
     </div>
 
-    <div v-else>
+    <div
+      v-else
+      :style="
+        embedded
+          ? { border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }
+          : undefined
+      "
+    >
       <div
         class="grid"
         :style="{
