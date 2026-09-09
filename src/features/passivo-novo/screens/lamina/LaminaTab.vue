@@ -6,10 +6,11 @@ import { brl, type Veiculo } from '../../data/passivoNovoData';
 import { getLamina } from '../../data/laminaData';
 import ResumoSubTab from './sub-tabs/ResumoSubTab.vue';
 import RentabilidadeSubTab from './sub-tabs/RentabilidadeSubTab.vue';
+import CarteiraSubTab from './sub-tabs/CarteiraSubTab.vue';
 
 const props = defineProps<{ veiculo: Veiculo }>();
 
-const LAMINA_TABS = ['Resumo', 'Rentabilidade'] as const;
+const LAMINA_TABS = ['Resumo', 'Rentabilidade', 'Carteira'] as const;
 type LaminaTabId = (typeof LAMINA_TABS)[number];
 
 const activeTab = ref<LaminaTabId>('Resumo');
@@ -52,6 +53,7 @@ const lamina = computed(() => getLamina(props.veiculo));
     <UnderlineSubTabs v-model="activeTab" :tabs="[...LAMINA_TABS]" />
 
     <ResumoSubTab v-if="activeTab === 'Resumo'" :veiculo="veiculo" :lamina="lamina" />
-    <RentabilidadeSubTab v-else :veiculo="veiculo" :lamina="lamina" />
+    <RentabilidadeSubTab v-else-if="activeTab === 'Rentabilidade'" :veiculo="veiculo" :lamina="lamina" />
+    <CarteiraSubTab v-else :veiculo="veiculo" :lamina="lamina" />
   </div>
 </template>

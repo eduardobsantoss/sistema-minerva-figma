@@ -5,6 +5,7 @@ defineProps<{
   icon: Component;
   label: string;
   value: string;
+  hint?: string;
   tone: { bg: string; fg: string };
 }>();
 </script>
@@ -57,6 +58,16 @@ defineProps<{
         "
       >
         {{ value }}
+      </div>
+      <div
+        v-if="hint"
+        style="
+          font-size: var(--text-xs);
+          color: var(--text-muted);
+          margin-top: 4px;
+        "
+      >
+        {{ hint }}
       </div>
     </div>
   </div>

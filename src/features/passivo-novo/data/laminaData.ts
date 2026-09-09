@@ -1,5 +1,6 @@
 import type { Veiculo } from './passivoNovoData';
 import { brl, pct, pu } from './passivoNovoData';
+import { buildCarteira, type CarteiraBundle } from './carteiraData';
 
 export interface PosicaoCotaRow {
   id: string;
@@ -69,6 +70,7 @@ export interface LaminaBundle {
   historicoMensalSub: HistoricoMensalSubRow[];
   evolucaoPu: PuEvolucaoPoint[];
   evolucaoSeriesLabels: string[];
+  carteira: CarteiraBundle;
 }
 
 const CRA42_LAMINA: LaminaBundle = {
@@ -142,6 +144,7 @@ const CRA42_LAMINA: LaminaBundle = {
     { data: '31/07/2026', dataIso: '2026-07-31', series: { 'Sênior 1ª': 1017.5, 'Sênior 2ª': 1016.1, 'Sênior 3ª': 1013.8, Subordinada: 1001.01 } },
     { data: '25/08/2026', dataIso: '2026-08-25', series: { 'Sênior 1ª': 1016.77682, 'Sênior 2ª': 1015.12, 'Sênior 3ª': 1013.45, Subordinada: 1005.589131 } },
   ],
+  carteira: buildCarteira({ id: 'cra-42' } as Veiculo),
 };
 
 function buildCompactLamina(veiculo: Veiculo): LaminaBundle {
@@ -221,6 +224,7 @@ function buildCompactLamina(veiculo: Veiculo): LaminaBundle {
     historicoMensalSub,
     evolucaoPu,
     evolucaoSeriesLabels: labels,
+    carteira: buildCarteira(veiculo),
   };
 }
 
