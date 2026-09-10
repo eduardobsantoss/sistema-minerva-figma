@@ -18,7 +18,7 @@ const chartData = computed(() => ({
   labels: sorted.value.map((r) => r.data),
   datasets: [
     {
-      label: 'PU divulgado',
+      label: 'PU atualizado',
       data: sorted.value.map((r) =>
         r.statusTaxa === 'Projetada' ? null : r.puAtualizado,
       ),
@@ -101,7 +101,7 @@ const chartOptions: ChartOptions<'line'> = {
     <div class="flex items-center" style="gap: 8px; margin-bottom: 12px">
       <TrendingUp :size="16" style="color: var(--gci-base)" />
       <h4 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-        PU histórico x projetado
+        PU atualizado
       </h4>
     </div>
     <div

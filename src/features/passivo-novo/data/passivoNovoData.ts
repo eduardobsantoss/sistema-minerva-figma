@@ -513,7 +513,7 @@ export const VEICULOS: Veiculo[] = [
     series: [
       makeSerie({
         id: 'cra-42-sr1',
-        nome: 'Sênior 1ª',
+        nome: 'Senior 1a',
         classe: 'SR',
         ifCodigo: 'CRA0225C42-1',
         tipo: '110% DI',
@@ -533,7 +533,7 @@ export const VEICULOS: Veiculo[] = [
       }),
       makeSerie({
         id: 'cra-42-sr2',
-        nome: 'Sênior 2ª',
+        nome: 'Senior 2a',
         classe: 'SR',
         ifCodigo: 'CRA0225C42-2',
         tipo: '110% DI',
@@ -551,7 +551,7 @@ export const VEICULOS: Veiculo[] = [
       }),
       makeSerie({
         id: 'cra-42-sr3',
-        nome: 'Sênior 3ª',
+        nome: 'Senior 3a',
         classe: 'SR',
         ifCodigo: 'CRA0225C42-3',
         tipo: '110% DI',

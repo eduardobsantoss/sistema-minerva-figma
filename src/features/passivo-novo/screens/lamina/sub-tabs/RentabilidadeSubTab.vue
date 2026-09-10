@@ -18,7 +18,7 @@ function resultClass(n: number) {
   return 'var(--text-muted)';
 }
 
-const COTAS_COLS = '1.4fr 1fr 1.4fr 1.1fr 1.4fr 0.9fr 0.9fr 1.1fr';
+const COTAS_COLS = '1.4fr 1fr 1.4fr 1.1fr 1.4fr 0.9fr 0.9fr 1.1fr 1.6fr';
 
 const cotasPrecificacao = computed(() => props.lamina.cotasPrecificacao);
 const {
@@ -102,6 +102,7 @@ const HIST_SUB_COLS = '0.8fr 1fr 1fr 1fr 1fr';
             <div>Dia</div>
             <div>Mês</div>
             <div>30 dias</div>
+            <div>Desde o ultimo pagamento</div>
           </div>
           <div
             v-for="row in cotasPageItems"
@@ -129,6 +130,9 @@ const HIST_SUB_COLS = '0.8fr 1fr 1fr 1fr 1fr';
             </div>
             <div :style="{ fontVariantNumeric: 'tabular-nums', color: resultClass(row.resultado30Dias) }">
               {{ pct(row.resultado30Dias, 2) }}
+            </div>
+            <div :style="{ fontVariantNumeric: 'tabular-nums', color: resultClass(row.resultadoDesdePagamento) }">
+              {{ formatRentPct(row.resultadoDesdePagamento, 2) }}
             </div>
           </div>
         </div>
@@ -177,7 +181,7 @@ const HIST_SUB_COLS = '0.8fr 1fr 1fr 1fr 1fr';
             <div v-for="name in seriesNames" :key="name">{{ name }}</div>
             <div>SUB acum. mês</div>
             <div>PU SR</div>
-            <div>PL SR</div>
+            <div>PL senior</div>
             <div>PU SUB</div>
             <div>PL SUB</div>
           </div>
@@ -249,7 +253,7 @@ const HIST_SUB_COLS = '0.8fr 1fr 1fr 1fr 1fr';
         }"
       >
         <div>Mês</div>
-        <div>Resultado</div>
+        <div>Resultado mensal</div>
         <div>CDI período</div>
         <div>% CDI</div>
         <div>PU fechamento</div>
@@ -270,7 +274,7 @@ const HIST_SUB_COLS = '0.8fr 1fr 1fr 1fr 1fr';
           {{ formatRentPct(row.resultadoMensal, 2) }}
         </div>
         <div style="font-variant-numeric: tabular-nums">{{ pct(row.cdiPeriodo, 2) }}</div>
-        <div style="font-variant-numeric: tabular-nums">{{ num(row.pctCdi, 2) }}x</div>
+        <div style="font-variant-numeric: tabular-nums">{{ pct(row.pctCdi, 2) }}</div>
         <div style="font-variant-numeric: tabular-nums; font-weight: var(--weight-semibold)">
           {{ pu(row.puFechamento, 4) }}
         </div>

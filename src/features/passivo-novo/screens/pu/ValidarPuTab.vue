@@ -65,7 +65,7 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
 const kpis = computed(() => [
   {
     icon: Landmark,
-    label: 'Valor total sênior',
+    label: 'Valor sênior',
     value: brl(senior.value?.valor ?? 0, true),
     tone: { bg: 'var(--gci-light)', fg: 'var(--gci-base)' },
   },

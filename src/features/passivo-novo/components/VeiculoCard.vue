@@ -81,7 +81,7 @@ const { hover, onMouseenter, onMouseleave } = useCardHover();
       <div class="flex items-center" style="gap: 6px; color: var(--text-muted); margin-bottom: 14px">
         <Calendar :size="12" />
         <span style="font-size: 11px; font-weight: var(--weight-semibold)">
-          Base D-1 · {{ veiculo.dataBase }}
+          Data-base · {{ veiculo.dataBase }}
         </span>
       </div>
 
@@ -99,7 +99,7 @@ const { hover, onMouseenter, onMouseleave } = useCardHover();
         </div>
         <div>
           <p style="font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px">
-            PU Sênior
+            PU SR
           </p>
           <p style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
             {{ pu(veiculo.puSenior, 4) }}

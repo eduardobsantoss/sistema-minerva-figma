@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { TrendingUp } from 'lucide-vue-next';
 import UnderlineSubTabs from '../../components/UnderlineSubTabs.vue';
 import { brl, type Veiculo } from '../../data/passivoNovoData';
@@ -14,7 +14,16 @@ const LAMINA_TABS = ['Resumo', 'Rentabilidade', 'Carteira'] as const;
 type LaminaTabId = (typeof LAMINA_TABS)[number];
 
 const activeTab = ref<LaminaTabId>('Resumo');
-const lamina = computed(() => getLamina(props.veiculo));
+const dateIso = ref(props.veiculo.dataBaseIso);
+const dateChips = computed(() => props.veiculo.dateChips.slice(0, 3));
+const lamina = computed(() => getLamina(props.veiculo, dateIso.value));
+
+watch(
+  () => props.veiculo.id,
+  () => {
+    dateIso.value = props.veiculo.dataBaseIso;
+  },
+);
 </script>
 
 <template>
@@ -33,13 +42,37 @@ const lamina = computed(() => getLamina(props.veiculo));
       <div style="position: absolute; bottom: -120px; right: 80px; width: 240px; height: 240px; border-radius: 9999px; background: rgba(242,125,38,0.04)" />
       <div style="flex: 1; position: relative; z-index: 1">
         <div style="font-size: 11px; font-weight: var(--weight-bold); letter-spacing: 0.18em; color: var(--agro-base); text-transform: uppercase; margin-bottom: 10px">
-          Total do ativo
+          Ativo total
         </div>
         <div style="font-size: 36px; font-weight: var(--weight-bold); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1">
           {{ brl(veiculo.ativoTotal) }}
         </div>
         <div style="font-size: var(--text-xs); color: rgba(255,255,255,0.65); margin-top: 8px">
           {{ veiculo.series.length }} séries · Funding {{ brl(veiculo.funding, true) }} · Caixa {{ brl(veiculo.caixa, true) }}
+        </div>
+        <div class="flex items-center" style="gap: 8px; margin-top: 16px; flex-wrap: wrap">
+          <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.55)">
+            Data-base
+          </span>
+          <button
+            v-for="chip in dateChips"
+            :key="chip.iso"
+            type="button"
+            :style="{
+              height: '28px',
+              padding: '0 12px',
+              borderRadius: '9999px',
+              border: dateIso === chip.iso ? '1px solid #fff' : '1px solid rgba(255,255,255,0.22)',
+              cursor: 'pointer',
+              fontSize: '11px',
+              fontWeight: 'var(--weight-bold)',
+              background: dateIso === chip.iso ? '#fff' : 'transparent',
+              color: dateIso === chip.iso ? 'var(--gci-base)' : '#fff',
+            }"
+            @click="dateIso = chip.iso"
+          >
+            {{ chip.label }}
+          </button>
         </div>
       </div>
       <div

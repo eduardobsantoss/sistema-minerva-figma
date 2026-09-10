@@ -18,8 +18,8 @@ const kpis = computed(() => [
   { label: 'Prazo médio', value: `${num(props.carteira.prazoMedioDias, 0)} dias`, icon: Calendar, tone: { bg: 'var(--status-warning-bg)', fg: 'var(--status-warning-text)' } },
   { label: 'Taxa média', value: pct(props.carteira.taxaMediaPct), icon: Percent, tone: { bg: 'var(--agro-light)', fg: 'var(--agro-base)' } },
   { label: 'Carrego CRA', value: pct(props.carteira.carregoCraPct), hint: props.carteira.carregoCraAa, icon: Percent, tone: { bg: 'var(--gci-light)', fg: 'var(--gci-base)' } },
-  { label: 'Pré-fixado', value: brl(props.carteira.preFixado, true), icon: Wallet, tone: { bg: 'var(--success-light)', fg: 'var(--success-base)' } },
-  { label: 'Pós-fixado', value: brl(props.carteira.posFixado, true), icon: Wallet, tone: { bg: 'var(--accent-bg)', fg: 'var(--accent)' } },
+  { label: 'Pre fixado', value: brl(props.carteira.preFixado, true), icon: Wallet, tone: { bg: 'var(--success-light)', fg: 'var(--success-base)' } },
+  { label: 'Pos fixado', value: brl(props.carteira.posFixado, true), icon: Wallet, tone: { bg: 'var(--accent-bg)', fg: 'var(--accent)' } },
 ]);
 
 function concRows(rows: CarteiraBundle['topCedentes']) {

@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   FileSpreadsheet,
   ChevronRight,
-  Download,
   Wallet,
   BellRing,
   Receipt,
@@ -20,8 +19,7 @@ import {
   type PortfolioReportKey,
 } from '../data/relatoriosData';
 import Checkbox from '@/components/ui/Checkbox.vue';
-import TablePagination from '@/components/ui/TablePagination.vue';
-import { useTablePagination } from '@/composables/useTablePagination';
+import { useBackgroundReport } from '@/composables/useBackgroundReport';
 
 const REPORT_ICONS: Record<PortfolioReportKey, Component> = {
   ger001: Wallet,
@@ -35,7 +33,7 @@ const selected = ref<PortfolioReportKey | null>(null);
 const hoveredKey = ref<PortfolioReportKey | null>(null);
 const draft = reactive({ situacao: '' });
 const selectedIds = ref<string[]>([]);
-const applied = ref(false);
+const { enqueueReport } = useBackgroundReport();
 
 const report = computed(() => PORTFOLIO_REPORTS.find((r) => r.key === selected.value) ?? null);
 
@@ -52,22 +50,10 @@ const allFilteredSelected = computed(
     filteredFunds.value.every((f) => selectedIds.value.includes(f.id)),
 );
 
-const results = computed(() => {
-  if (!applied.value || !selected.value) return [];
-  const funds = filteredFunds.value.filter((f) => selectedIds.value.includes(f.id));
-  return mockFidcPortfolioRows(selected.value, funds);
-});
-
-const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
-  () => results.value,
-  { defaultPageSize: 10 },
-);
-
 function selectReport(key: PortfolioReportKey) {
   selected.value = key;
   draft.situacao = '';
   selectedIds.value = fidcs.map((f) => f.id);
-  applied.value = false;
 }
 
 function toggleFund(id: string) {
@@ -87,20 +73,21 @@ function toggleAllFiltered() {
 }
 
 function handleGerar() {
-  applied.value = true;
-  setPage(1);
-}
-
-function handleExportCsv() {
-  if (!report.value) return;
-  const csv = toPortfolioCsv(results.value);
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = report.value.fileName;
-  a.click();
-  URL.revokeObjectURL(url);
+  if (!report.value || !selected.value) return;
+  const key = selected.value;
+  const fileName = report.value.fileName;
+  const funds = filteredFunds.value.filter((f) => selectedIds.value.includes(f.id));
+  const rows = mockFidcPortfolioRows(key, funds);
+  enqueueReport({
+    reportName: report.value.title,
+    buildFile: () => {
+      const csv = toPortfolioCsv(rows);
+      return {
+        blob: new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }),
+        filename: fileName,
+      };
+    },
+  });
 }
 
 const labelStyle = {
@@ -285,60 +272,6 @@ const inputStyle = {
           <FileSpreadsheet :size="15" /> GERAR RELATÓRIO
         </button>
       </div>
-    </div>
-
-    <div v-if="applied" style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); overflow: hidden">
-      <div class="flex items-center justify-between" style="padding: 14px 20px; border-bottom: 1px solid var(--border-default)">
-        <span style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-          {{ results.length }} {{ results.length === 1 ? 'resultado' : 'resultados' }}
-        </span>
-        <button
-          type="button"
-          :disabled="results.length === 0"
-          class="flex items-center"
-          :style="{
-            gap: '6px',
-            height: '34px',
-            padding: '0 14px',
-            background: 'none',
-            border: '1px solid var(--border-default)',
-            borderRadius: 'var(--radius-lg)',
-            cursor: results.length === 0 ? 'not-allowed' : 'pointer',
-            color: results.length === 0 ? 'var(--text-disabled)' : 'var(--text-default)',
-            fontSize: 'var(--text-xs)',
-            fontWeight: 'var(--weight-bold)',
-          }"
-          @click="handleExportCsv"
-        >
-          <Download :size="13" /> EXPORTAR CSV
-        </button>
-      </div>
-
-      <div v-if="results.length === 0" style="padding: 40px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)">
-        Selecione ao menos um FIDC e gere o relatório.
-      </div>
-      <template v-else>
-        <div
-          class="grid"
-          style="grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr 1fr; padding: 10px 20px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase"
-        >
-          <div>Fundo</div><div>CNPJ</div><div>Categoria</div><div>Status</div><div>Métrica</div><div>Valor</div>
-        </div>
-        <div
-          v-for="row in pageItems"
-          :key="row.id"
-          class="grid items-center"
-          style="grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr 1fr; padding: 12px 20px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
-        >
-          <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ row.fundo }}</div>
-          <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ row.cnpj }}</div>
-          <div style="color: var(--text-default)">{{ row.categoria }}</div>
-          <div style="color: var(--text-muted)">{{ row.status }}</div>
-          <div style="color: var(--text-default)">{{ row.metrica }}</div>
-          <div style="font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">{{ row.valor }}</div>
-        </div>
-        <TablePagination :total="total" :page="page" :page-size="pageSize" @update:page="setPage" @update:page-size="setPageSize" />
-      </template>
     </div>
   </div>
 </template>

@@ -7,7 +7,22 @@ export type CarteiraSliceKey =
   | 'pdd-estresse'
   | 'waterfall'
   | 'abertura-pdd'
-  | 'movimentacao';
+  | 'movimentacao'
+  | 'enquadramento';
+
+export interface EnquadramentoRow {
+  id: string;
+  label: string;
+  permitido: number | null;
+  posicaoAtual: number;
+  vp?: number;
+  status: 'OK' | 'Alerta';
+}
+
+export interface BaseEnquadramento {
+  label: string;
+  valor: number;
+}
 
 export interface ConcentracaoRow {
   id: string;
@@ -164,6 +179,10 @@ export interface CarteiraBundle {
   maiorLiquidacaoValor: number;
   aberturaAquisicoes: MovimentoRow[];
   aberturaLiquidacoes: MovimentoRow[];
+  baseEnquadramento: BaseEnquadramento;
+  tipoAtivo: EnquadramentoRow[];
+  limitesCedente: EnquadramentoRow[];
+  limitesSacado: EnquadramentoRow[];
 }
 
 const CRA42_CARTEIRA: CarteiraBundle = {
@@ -437,6 +456,25 @@ const CRA42_CARTEIRA: CarteiraBundle = {
     { id: 'lq11', cedente: 'SMARTFRIG COMERCIAL', valorNominal: 22_100, valor: 22_100, pctPl: 0 },
     { id: 'lq12', cedente: 'SUPREMO CARNES LTDA', valorNominal: 16_400, valor: 16_400, pctPl: 0 },
   ],
+  baseEnquadramento: { label: 'Patrimônio líquido', valor: 1_012_301_744 },
+  tipoAtivo: [
+    { id: 'ta1', label: 'CPR Financeira', permitido: 1, posicaoAtual: 0.412, vp: 251_200_000, status: 'OK' },
+    { id: 'ta2', label: 'Notas Promissórias', permitido: 0.4, posicaoAtual: 0.186, vp: 113_400_000, status: 'OK' },
+    { id: 'ta3', label: 'Outros Direitos Creditórios', permitido: 0.3, posicaoAtual: 0.221, vp: 134_800_000, status: 'OK' },
+    { id: 'ta4', label: 'Cessão de crédito', permitido: null, posicaoAtual: 0.181, vp: 110_545_210, status: 'OK' },
+  ],
+  limitesCedente: [
+    { id: 'lc1', label: 'Maior cedente', permitido: 0.2, posicaoAtual: 0.0581, status: 'OK' },
+    { id: 'lc2', label: '5 maiores cedentes', permitido: 0.5, posicaoAtual: 0.2385, status: 'OK' },
+    { id: 'lc3', label: '10 maiores cedentes', permitido: 0.7, posicaoAtual: 0.36, status: 'OK' },
+    { id: 'lc4', label: 'Cedente relacionado', permitido: 0.1, posicaoAtual: 0.018, status: 'OK' },
+  ],
+  limitesSacado: [
+    { id: 'ls1', label: 'Maior sacado', permitido: 0.15, posicaoAtual: 0.0581, status: 'OK' },
+    { id: 'ls2', label: '5 maiores sacados', permitido: 0.4, posicaoAtual: 0.218, status: 'OK' },
+    { id: 'ls3', label: '10 maiores sacados', permitido: 0.6, posicaoAtual: 0.3346, status: 'OK' },
+    { id: 'ls4', label: 'Sacado relacionado', permitido: 0.08, posicaoAtual: 0.0211, status: 'OK' },
+  ],
 };
 
 function scaleMoney<T extends object>(row: T, keys: (keyof T)[], factor: number): T {
@@ -490,6 +528,10 @@ export function buildCarteira(veiculo: Veiculo): CarteiraBundle {
     aberturaPdd: src.aberturaPdd.slice(0, 5).map((r) => scaleMoney(r, ['valorAberto', 'pdd'], factor)),
     aberturaAquisicoes: src.aberturaAquisicoes.map((r) => scaleMoney(r, ['valorNominal', 'valor'], factor)),
     aberturaLiquidacoes: src.aberturaLiquidacoes.slice(0, 6).map((r) => scaleMoney(r, ['valorNominal', 'valor'], factor)),
+    baseEnquadramento: { label: src.baseEnquadramento.label, valor: veiculo.ativoTotal },
+    tipoAtivo: src.tipoAtivo.map((r) => scaleMoney(r, ['vp'], factor)),
+    limitesCedente: src.limitesCedente,
+    limitesSacado: src.limitesSacado,
   };
 }
 

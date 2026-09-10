@@ -35,7 +35,7 @@ const kpis = computed(() => {
       tone: { bg: 'var(--gci-light)', fg: 'var(--gci-base)' },
     },
     {
-      label: 'Funding consolidado',
+      label: 'Funding',
       value: brl(funding, true),
       icon: Landmark,
       tone: { bg: 'var(--success-light)', fg: 'var(--success-base)' },
@@ -47,7 +47,7 @@ const kpis = computed(() => {
       tone: { bg: 'var(--accent-bg)', fg: 'var(--accent)' },
     },
     {
-      label: 'Base D-1',
+      label: 'Data-base',
       value: list[0]?.dataBase ?? '—',
       icon: Calendar,
       tone: { bg: 'var(--status-warning-bg)', fg: 'var(--status-warning-text)' },

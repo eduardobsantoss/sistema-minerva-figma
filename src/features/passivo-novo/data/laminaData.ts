@@ -16,12 +16,19 @@ export interface ResumoComplementar {
   cedentes: number;
   sacados: number;
   lastrosAtivos: number;
-  proximoPagamentoSenior: string;
+  proximoPagamentoSeniorValor: number;
+  proximoPagamentoSeniorData: string;
   farolPagamento: string;
+  farolHint: string;
   carregoCraPct: number;
   carregoCraAa: string;
   prazoMedioDias: number;
   taxaMediaPct: number;
+  saldoRevolvencia: number;
+  patrimonioLiquido: number;
+  direitosCreditoriosVn: number;
+  direitosCreditoriosVp: number;
+  dcAtraso: number;
 }
 
 export interface CotaPrecificacaoRow {
@@ -34,6 +41,7 @@ export interface CotaPrecificacaoRow {
   resultadoDia: number;
   resultadoMes: number;
   resultado30Dias: number;
+  resultadoDesdePagamento: number;
 }
 
 export interface RentabilidadeDiariaRow {
@@ -75,9 +83,9 @@ export interface LaminaBundle {
 
 const CRA42_LAMINA: LaminaBundle = {
   posicaoCotas: [
-    { id: 'sr1', serie: 'Sênior 1ª', quantidade: 360_000, taxa: '110,00% DI', pu: 1016.77682, valorTotal: 366_039_655.2 },
-    { id: 'sr2', serie: 'Sênior 2ª', quantidade: 140_000, taxa: '110,00% DI', pu: 1016.77682, valorTotal: 142_348_754.8 },
-    { id: 'sr3', serie: 'Sênior 3ª', quantidade: 100_000, taxa: '110,00% DI', pu: 1016.77682, valorTotal: 101_677_682 },
+    { id: 'sr1', serie: 'Senior 1a', quantidade: 360_000, taxa: '110,00% DI', pu: 1016.77682, valorTotal: 366_039_655.2 },
+    { id: 'sr2', serie: 'Senior 2a', quantidade: 140_000, taxa: '110,00% DI', pu: 1016.77682, valorTotal: 142_348_754.8 },
+    { id: 'sr3', serie: 'Senior 3a', quantidade: 100_000, taxa: '110,00% DI', pu: 1016.77682, valorTotal: 101_677_682 },
     { id: 'sub', serie: 'Subordinada', quantidade: 400_000, taxa: '—', pu: 1005.589131, valorTotal: 402_235_652.41 },
   ],
   resumoComplementar: {
@@ -85,33 +93,40 @@ const CRA42_LAMINA: LaminaBundle = {
     cedentes: 136,
     sacados: 1185,
     lastrosAtivos: 18_123,
-    proximoPagamentoSenior: '—',
-    farolPagamento: 'Sem evento projetado',
+    proximoPagamentoSeniorValor: 14_120_000,
+    proximoPagamentoSeniorData: '15/09/2026',
+    farolPagamento: 'Atencao',
+    farolHint: 'Caixa R$ 12,1 mi | cobertura 86,00%',
     carregoCraPct: 0.0152,
     carregoCraAa: '19,86% a.a. | DI 21/08/2026',
     prazoMedioDias: 548,
     taxaMediaPct: 0.0188,
+    saldoRevolvencia: 4_820_000,
+    patrimonioLiquido: 1_012_301_744,
+    direitosCreditoriosVn: 625_059_954.12,
+    direitosCreditoriosVp: 609_945_210.31,
+    dcAtraso: 40_100_000,
   },
   cotasPrecificacao: [
-    { id: 'sr1', serie: 'Sênior 1ª', quantidade: 360_000, taxa: '110,00% DI', pu: 1016.77682, valorTotal: 366_039_655.2, resultadoDia: 0.0006, resultadoMes: 0.0098, resultado30Dias: 0.0174 },
-    { id: 'sr2', serie: 'Sênior 2ª', quantidade: 140_000, taxa: '110,00% DI', pu: 1016.77682, valorTotal: 142_348_754.8, resultadoDia: 0.0006, resultadoMes: 0.0098, resultado30Dias: 0.0174 },
-    { id: 'sr3', serie: 'Sênior 3ª', quantidade: 100_000, taxa: '110,00% DI', pu: 1016.77682, valorTotal: 101_677_682, resultadoDia: 0.0006, resultadoMes: 0.0098, resultado30Dias: 0.0174 },
-    { id: 'sub', serie: 'Subordinada', quantidade: 400_000, taxa: '—', pu: 1005.589131, valorTotal: 402_235_652.41, resultadoDia: 0.0002, resultadoMes: 0.0046, resultado30Dias: 0.0367 },
+    { id: 'sr1', serie: 'Senior 1a', quantidade: 360_000, taxa: '110,00% DI', pu: 1016.77682, valorTotal: 366_039_655.2, resultadoDia: 0.0006, resultadoMes: 0.0098, resultado30Dias: 0.0174, resultadoDesdePagamento: 0.0168 },
+    { id: 'sr2', serie: 'Senior 2a', quantidade: 140_000, taxa: '110,00% DI', pu: 1016.77682, valorTotal: 142_348_754.8, resultadoDia: 0.0006, resultadoMes: 0.0098, resultado30Dias: 0.0174, resultadoDesdePagamento: 0.0168 },
+    { id: 'sr3', serie: 'Senior 3a', quantidade: 100_000, taxa: '110,00% DI', pu: 1016.77682, valorTotal: 101_677_682, resultadoDia: 0.0006, resultadoMes: 0.0098, resultado30Dias: 0.0174, resultadoDesdePagamento: 0.0168 },
+    { id: 'sub', serie: 'Subordinada', quantidade: 400_000, taxa: '—', pu: 1005.589131, valorTotal: 402_235_652.41, resultadoDia: 0.0002, resultadoMes: 0.0046, resultado30Dias: 0.0367, resultadoDesdePagamento: 0.0056 },
   ],
   rentabilidadeDiaria: [
-    { id: 'd0', data: '25/08/2026', seriesPct: { 'Sênior 1ª': 0.0006, 'Sênior 2ª': 0.0006, 'Sênior 3ª': 0.0006, Subordinada: 0.0002 }, subAcumMes: 0.0046, puSr: 1016.77682, plSenior: 610_066_092, puSub: 1005.589131, plSub: 402_235_652 },
-    { id: 'd1', data: '24/08/2026', seriesPct: { 'Sênior 1ª': 0.0006, 'Sênior 2ª': 0.0006, 'Sênior 3ª': 0.0006, Subordinada: 0.0005 }, subAcumMes: 0.0044, puSr: 1016.19935, plSenior: 609_700_000, puSub: 1005.375897, plSub: 402_150_000 },
-    { id: 'd2', data: '21/08/2026', seriesPct: { 'Sênior 1ª': 0.0006, 'Sênior 2ª': 0.0006, 'Sênior 3ª': 0.0006, Subordinada: 0.0006 }, subAcumMes: 0.0039, puSr: 1015.62221, plSenior: 609_400_000, puSub: 1004.875109, plSub: 402_000_000 },
-    { id: 'd3', data: '20/08/2026', seriesPct: { 'Sênior 1ª': 0.0006, 'Sênior 2ª': 0.0006, 'Sênior 3ª': 0.0006, Subordinada: 0.0002 }, subAcumMes: 0.0033, puSr: 1015.0454, plSenior: 609_000_000, puSub: 1004.322386, plSub: 401_700_000 },
-    { id: 'd4', data: '19/08/2026', seriesPct: { 'Sênior 1ª': 0.0006, 'Sênior 2ª': 0.0006, 'Sênior 3ª': 0.0006, Subordinada: 0.0003 }, subAcumMes: 0.0031, puSr: 1014.46892, plSenior: 608_700_000, puSub: 1004.116602, plSub: 401_600_000 },
-    { id: 'd5', data: '18/08/2026', seriesPct: { 'Sênior 1ª': 0.0006, 'Sênior 2ª': 0.0006, 'Sênior 3ª': 0.0006, Subordinada: 0.0003 }, subAcumMes: 0.0028, puSr: 1013.892763, plSenior: 608_300_000, puSub: 1003.841147, plSub: 401_500_000 },
-    { id: 'd6', data: '17/08/2026', seriesPct: { 'Sênior 1ª': 0.0006, 'Sênior 2ª': 0.0006, 'Sênior 3ª': 0.0006, Subordinada: 0.0005 }, subAcumMes: 0.0026, puSr: 1013.316936, plSenior: 608_000_000, puSub: 1003.578275, plSub: 401_400_000 },
-    { id: 'd7', data: '14/08/2026', seriesPct: { 'Sênior 1ª': 0.0006, 'Sênior 2ª': 0.0006, 'Sênior 3ª': 0.0006, Subordinada: 0.0004 }, subAcumMes: 0.0021, puSr: 1012.741435, plSenior: 607_600_000, puSub: 1003.071608, plSub: 401_200_000 },
-    { id: 'd8', data: '13/08/2026', seriesPct: { 'Sênior 1ª': 0.0006, 'Sênior 2ª': 0.0006, 'Sênior 3ª': 0.0006, Subordinada: 0.0002 }, subAcumMes: 0.0016, puSr: 1012.166262, plSenior: 607_300_000, puSub: 1002.632797, plSub: 401_100_000 },
-    { id: 'd9', data: '12/08/2026', seriesPct: { 'Sênior 1ª': 0.0006, 'Sênior 2ª': 0.0006, 'Sênior 3ª': 0.0006, Subordinada: 0.0002 }, subAcumMes: 0.0014, puSr: 1011.591415, plSenior: 607_000_000, puSub: 1002.396111, plSub: 401_000_000 },
-    { id: 'd10', data: '11/08/2026', seriesPct: { 'Sênior 1ª': 0.0006, 'Sênior 2ª': 0.0006, 'Sênior 3ª': 0.0006, Subordinada: 0.0002 }, subAcumMes: 0.0012, puSr: 1011.016894, plSenior: 606_600_000, puSub: 1002.234752, plSub: 400_900_000 },
-    { id: 'd11', data: '10/08/2026', seriesPct: { 'Sênior 1ª': 0.0006, 'Sênior 2ª': 0.0006, 'Sênior 3ª': 0.0006, Subordinada: 0.0005 }, subAcumMes: 0.001, puSr: 1010.4427, plSenior: 606_300_000, puSub: 1001.989631, plSub: 400_800_000 },
-    { id: 'd12', data: '07/08/2026', seriesPct: { 'Sênior 1ª': 0.0006, 'Sênior 2ª': 0.0006, 'Sênior 3ª': 0.0006, Subordinada: 0.0002 }, subAcumMes: 0.0005, puSr: 1009.868832, plSenior: 605_900_000, puSub: 1001.481064, plSub: 400_600_000 },
+    { id: 'd0', data: '25/08/2026', seriesPct: { 'Senior 1a': 0.0006, 'Senior 2a': 0.0006, 'Senior 3a': 0.0006, Subordinada: 0.0002 }, subAcumMes: 0.0046, puSr: 1016.77682, plSenior: 610_066_092, puSub: 1005.589131, plSub: 402_235_652 },
+    { id: 'd1', data: '24/08/2026', seriesPct: { 'Senior 1a': 0.0006, 'Senior 2a': 0.0006, 'Senior 3a': 0.0006, Subordinada: 0.0005 }, subAcumMes: 0.0044, puSr: 1016.19935, plSenior: 609_700_000, puSub: 1005.375897, plSub: 402_150_000 },
+    { id: 'd2', data: '21/08/2026', seriesPct: { 'Senior 1a': 0.0006, 'Senior 2a': 0.0006, 'Senior 3a': 0.0006, Subordinada: 0.0006 }, subAcumMes: 0.0039, puSr: 1015.62221, plSenior: 609_400_000, puSub: 1004.875109, plSub: 402_000_000 },
+    { id: 'd3', data: '20/08/2026', seriesPct: { 'Senior 1a': 0.0006, 'Senior 2a': 0.0006, 'Senior 3a': 0.0006, Subordinada: 0.0002 }, subAcumMes: 0.0033, puSr: 1015.0454, plSenior: 609_000_000, puSub: 1004.322386, plSub: 401_700_000 },
+    { id: 'd4', data: '19/08/2026', seriesPct: { 'Senior 1a': 0.0006, 'Senior 2a': 0.0006, 'Senior 3a': 0.0006, Subordinada: 0.0003 }, subAcumMes: 0.0031, puSr: 1014.46892, plSenior: 608_700_000, puSub: 1004.116602, plSub: 401_600_000 },
+    { id: 'd5', data: '18/08/2026', seriesPct: { 'Senior 1a': 0.0006, 'Senior 2a': 0.0006, 'Senior 3a': 0.0006, Subordinada: 0.0003 }, subAcumMes: 0.0028, puSr: 1013.892763, plSenior: 608_300_000, puSub: 1003.841147, plSub: 401_500_000 },
+    { id: 'd6', data: '17/08/2026', seriesPct: { 'Senior 1a': 0.0006, 'Senior 2a': 0.0006, 'Senior 3a': 0.0006, Subordinada: 0.0005 }, subAcumMes: 0.0026, puSr: 1013.316936, plSenior: 608_000_000, puSub: 1003.578275, plSub: 401_400_000 },
+    { id: 'd7', data: '14/08/2026', seriesPct: { 'Senior 1a': 0.0006, 'Senior 2a': 0.0006, 'Senior 3a': 0.0006, Subordinada: 0.0004 }, subAcumMes: 0.0021, puSr: 1012.741435, plSenior: 607_600_000, puSub: 1003.071608, plSub: 401_200_000 },
+    { id: 'd8', data: '13/08/2026', seriesPct: { 'Senior 1a': 0.0006, 'Senior 2a': 0.0006, 'Senior 3a': 0.0006, Subordinada: 0.0002 }, subAcumMes: 0.0016, puSr: 1012.166262, plSenior: 607_300_000, puSub: 1002.632797, plSub: 401_100_000 },
+    { id: 'd9', data: '12/08/2026', seriesPct: { 'Senior 1a': 0.0006, 'Senior 2a': 0.0006, 'Senior 3a': 0.0006, Subordinada: 0.0002 }, subAcumMes: 0.0014, puSr: 1011.591415, plSenior: 607_000_000, puSub: 1002.396111, plSub: 401_000_000 },
+    { id: 'd10', data: '11/08/2026', seriesPct: { 'Senior 1a': 0.0006, 'Senior 2a': 0.0006, 'Senior 3a': 0.0006, Subordinada: 0.0002 }, subAcumMes: 0.0012, puSr: 1011.016894, plSenior: 606_600_000, puSub: 1002.234752, plSub: 400_900_000 },
+    { id: 'd11', data: '10/08/2026', seriesPct: { 'Senior 1a': 0.0006, 'Senior 2a': 0.0006, 'Senior 3a': 0.0006, Subordinada: 0.0005 }, subAcumMes: 0.001, puSr: 1010.4427, plSenior: 606_300_000, puSub: 1001.989631, plSub: 400_800_000 },
+    { id: 'd12', data: '07/08/2026', seriesPct: { 'Senior 1a': 0.0006, 'Senior 2a': 0.0006, 'Senior 3a': 0.0006, Subordinada: 0.0002 }, subAcumMes: 0.0005, puSr: 1009.868832, plSenior: 605_900_000, puSub: 1001.481064, plSub: 400_600_000 },
   ],
   historicoMensalSub: [
     { id: 'm0', mes: '08/26', resultadoMensal: 0.0046, cdiPeriodo: 0.0089, pctCdi: 0.5164, puFechamento: 1005.589131 },
@@ -127,22 +142,22 @@ const CRA42_LAMINA: LaminaBundle = {
     { id: 'm10', mes: '10/25', resultadoMensal: 0.0074, cdiPeriodo: 0.0128, pctCdi: 0.5801, puFechamento: 1072.291023 },
     { id: 'm11', mes: '09/25', resultadoMensal: 0.0133, cdiPeriodo: 0.0122, pctCdi: 1.0932, puFechamento: 1064.413672 },
   ],
-  evolucaoSeriesLabels: ['Sênior 1ª', 'Sênior 2ª', 'Sênior 3ª', 'Subordinada'],
+  evolucaoSeriesLabels: ['Senior 1a', 'Senior 2a', 'Senior 3a', 'Subordinada'],
   evolucaoPu: [
-    { data: '30/05/2025', dataIso: '2025-05-30', series: { 'Sênior 1ª': 994.7, 'Sênior 2ª': 993.2, 'Sênior 3ª': 991.8, Subordinada: 988.5 } },
-    { data: '31/07/2025', dataIso: '2025-07-31', series: { 'Sênior 1ª': 1012.3, 'Sênior 2ª': 1010.1, 'Sênior 3ª': 1008.0, Subordinada: 1018.6 } },
-    { data: '30/09/2025', dataIso: '2025-09-30', series: { 'Sênior 1ª': 1035.8, 'Sênior 2ª': 1032.4, 'Sênior 3ª': 1029.0, Subordinada: 1048.2 } },
-    { data: '31/10/2025', dataIso: '2025-10-31', series: { 'Sênior 1ª': 1048.5, 'Sênior 2ª': 1044.9, 'Sênior 3ª': 1041.2, Subordinada: 1072.3 } },
-    { data: '30/11/2025', dataIso: '2025-11-30', series: { 'Sênior 1ª': 1055.2, 'Sênior 2ª': 1051.0, 'Sênior 3ª': 1046.8, Subordinada: 1112.6 } },
-    { data: '31/12/2025', dataIso: '2025-12-31', series: { 'Sênior 1ª': 1062.04, 'Sênior 2ª': 1057.5, 'Sênior 3ª': 1053.0, Subordinada: 1129.39 } },
-    { data: '31/01/2026', dataIso: '2026-01-31', series: { 'Sênior 1ª': 1054.8, 'Sênior 2ª': 1050.2, 'Sênior 3ª': 1045.6, Subordinada: 1010.02 } },
-    { data: '28/02/2026', dataIso: '2026-02-28', series: { 'Sênior 1ª': 1042.1, 'Sênior 2ª': 1037.8, 'Sênior 3ª': 1033.5, Subordinada: 1023.94 } },
-    { data: '31/03/2026', dataIso: '2026-03-31', series: { 'Sênior 1ª': 1030.5, 'Sênior 2ª': 1026.4, 'Sênior 3ª': 1022.3, Subordinada: 1041.31 } },
-    { data: '30/04/2026', dataIso: '2026-04-30', series: { 'Sênior 1ª': 1024.2, 'Sênior 2ª': 1020.1, 'Sênior 3ª': 1016.0, Subordinada: 1054.24 } },
-    { data: '31/05/2026', dataIso: '2026-05-31', series: { 'Sênior 1ª': 1020.8, 'Sênior 2ª': 1018.5, 'Sênior 3ª': 1015.2, Subordinada: 1070.18 } },
-    { data: '30/06/2026', dataIso: '2026-06-30', series: { 'Sênior 1ª': 1018.9, 'Sênior 2ª': 1017.2, 'Sênior 3ª': 1014.5, Subordinada: 1085.91 } },
-    { data: '31/07/2026', dataIso: '2026-07-31', series: { 'Sênior 1ª': 1017.5, 'Sênior 2ª': 1016.1, 'Sênior 3ª': 1013.8, Subordinada: 1001.01 } },
-    { data: '25/08/2026', dataIso: '2026-08-25', series: { 'Sênior 1ª': 1016.77682, 'Sênior 2ª': 1015.12, 'Sênior 3ª': 1013.45, Subordinada: 1005.589131 } },
+    { data: '30/05/2025', dataIso: '2025-05-30', series: { 'Senior 1a': 994.7, 'Senior 2a': 993.2, 'Senior 3a': 991.8, Subordinada: 988.5 } },
+    { data: '31/07/2025', dataIso: '2025-07-31', series: { 'Senior 1a': 1012.3, 'Senior 2a': 1010.1, 'Senior 3a': 1008.0, Subordinada: 1018.6 } },
+    { data: '30/09/2025', dataIso: '2025-09-30', series: { 'Senior 1a': 1035.8, 'Senior 2a': 1032.4, 'Senior 3a': 1029.0, Subordinada: 1048.2 } },
+    { data: '31/10/2025', dataIso: '2025-10-31', series: { 'Senior 1a': 1048.5, 'Senior 2a': 1044.9, 'Senior 3a': 1041.2, Subordinada: 1072.3 } },
+    { data: '30/11/2025', dataIso: '2025-11-30', series: { 'Senior 1a': 1055.2, 'Senior 2a': 1051.0, 'Senior 3a': 1046.8, Subordinada: 1112.6 } },
+    { data: '31/12/2025', dataIso: '2025-12-31', series: { 'Senior 1a': 1062.04, 'Senior 2a': 1057.5, 'Senior 3a': 1053.0, Subordinada: 1129.39 } },
+    { data: '31/01/2026', dataIso: '2026-01-31', series: { 'Senior 1a': 1054.8, 'Senior 2a': 1050.2, 'Senior 3a': 1045.6, Subordinada: 1010.02 } },
+    { data: '28/02/2026', dataIso: '2026-02-28', series: { 'Senior 1a': 1042.1, 'Senior 2a': 1037.8, 'Senior 3a': 1033.5, Subordinada: 1023.94 } },
+    { data: '31/03/2026', dataIso: '2026-03-31', series: { 'Senior 1a': 1030.5, 'Senior 2a': 1026.4, 'Senior 3a': 1022.3, Subordinada: 1041.31 } },
+    { data: '30/04/2026', dataIso: '2026-04-30', series: { 'Senior 1a': 1024.2, 'Senior 2a': 1020.1, 'Senior 3a': 1016.0, Subordinada: 1054.24 } },
+    { data: '31/05/2026', dataIso: '2026-05-31', series: { 'Senior 1a': 1020.8, 'Senior 2a': 1018.5, 'Senior 3a': 1015.2, Subordinada: 1070.18 } },
+    { data: '30/06/2026', dataIso: '2026-06-30', series: { 'Senior 1a': 1018.9, 'Senior 2a': 1017.2, 'Senior 3a': 1014.5, Subordinada: 1085.91 } },
+    { data: '31/07/2026', dataIso: '2026-07-31', series: { 'Senior 1a': 1017.5, 'Senior 2a': 1016.1, 'Senior 3a': 1013.8, Subordinada: 1001.01 } },
+    { data: '25/08/2026', dataIso: '2026-08-25', series: { 'Senior 1a': 1016.77682, 'Senior 2a': 1015.12, 'Senior 3a': 1013.45, Subordinada: 1005.589131 } },
   ],
   carteira: buildCarteira({ id: 'cra-42' } as Veiculo),
 };
@@ -167,6 +182,7 @@ function buildCompactLamina(veiculo: Veiculo): LaminaBundle {
     resultadoDia: s.resultadoDia,
     resultadoMes: s.resultadoMes,
     resultado30Dias: s.resultadoMes * 1.8,
+    resultadoDesdePagamento: s.resultadoMes * 1.6,
   }));
 
   const sub = veiculo.series.find((s) => s.classe === 'SUB');
@@ -212,12 +228,19 @@ function buildCompactLamina(veiculo: Veiculo): LaminaBundle {
       cedentes: Math.round(veiculo.carteiraVp / 4_500_000),
       sacados: Math.round(veiculo.carteiraVp / 520_000),
       lastrosAtivos: Math.round(veiculo.carteiraVp / 34_000),
-      proximoPagamentoSenior: brl(veiculo.proximoPagamento, true),
-      farolPagamento: 'Sem evento projetado',
+      proximoPagamentoSeniorValor: veiculo.proximoPagamento,
+      proximoPagamentoSeniorData: veiculo.vencimento,
+      farolPagamento: veiculo.coberturaCaixa >= 1 ? 'OK' : 'Atencao',
+      farolHint: `Caixa ${brl(veiculo.caixa, true)} | cobertura ${pct(veiculo.coberturaCaixa)}`,
       carregoCraPct: 0.012,
       carregoCraAa: '—',
       prazoMedioDias: 420,
       taxaMediaPct: 0.015,
+      saldoRevolvencia: veiculo.caixa * 0.35,
+      patrimonioLiquido: veiculo.ativoTotal,
+      direitosCreditoriosVn: veiculo.carteiraVp * 1.025,
+      direitosCreditoriosVp: veiculo.carteiraVp,
+      dcAtraso: veiculo.carteiraVp * 0.04,
     },
     cotasPrecificacao,
     rentabilidadeDiaria,
@@ -228,9 +251,46 @@ function buildCompactLamina(veiculo: Veiculo): LaminaBundle {
   };
 }
 
-export function getLamina(veiculo: Veiculo): LaminaBundle {
-  if (veiculo.id === 'cra-42') return CRA42_LAMINA;
-  return buildCompactLamina(veiculo);
+function shiftLamina(bundle: LaminaBundle, dateIso: string): LaminaBundle {
+  const day = Number(dateIso.slice(-2)) || 25;
+  const factor = 1 - (25 - day) * 0.0012;
+  const shiftPu = (25 - day) * 0.42;
+  return {
+    ...bundle,
+    posicaoCotas: bundle.posicaoCotas.map((r) => ({
+      ...r,
+      pu: r.pu - shiftPu,
+      valorTotal: r.valorTotal * factor,
+    })),
+    cotasPrecificacao: bundle.cotasPrecificacao.map((r) => ({
+      ...r,
+      pu: r.pu - shiftPu,
+      valorTotal: r.valorTotal * factor,
+    })),
+    resumoComplementar: {
+      ...bundle.resumoComplementar,
+      valorNominal: bundle.resumoComplementar.valorNominal * factor,
+      direitosCreditoriosVn: bundle.resumoComplementar.direitosCreditoriosVn * factor,
+      direitosCreditoriosVp: bundle.resumoComplementar.direitosCreditoriosVp * factor,
+    },
+    evolucaoPu: bundle.evolucaoPu.map((p) => ({
+      ...p,
+      series: Object.fromEntries(Object.entries(p.series).map(([k, v]) => [k, v - shiftPu * 0.15])),
+    })),
+    carteira: {
+      ...bundle.carteira,
+      valorPresente: bundle.carteira.valorPresente * factor,
+      valorNominal: bundle.carteira.valorNominal * factor,
+      pddTotal: bundle.carteira.pddTotal * factor,
+    },
+  };
+}
+
+export function getLamina(veiculo: Veiculo, dateIso?: string): LaminaBundle {
+  const base = veiculo.id === 'cra-42' ? CRA42_LAMINA : buildCompactLamina(veiculo);
+  const key = dateIso || veiculo.dataBaseIso;
+  if (key === veiculo.dataBaseIso) return base;
+  return shiftLamina(base, key);
 }
 
 export function formatRentPct(n: number, decimals = 2): string {

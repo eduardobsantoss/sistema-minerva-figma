@@ -13,6 +13,7 @@ import {
   Landmark,
   Users,
   AlertTriangle,
+  Scale,
 } from 'lucide-vue-next';
 import KpiStripCard from '../../../components/KpiStripCard.vue';
 import { brl, num } from '../../../data/passivoNovoData';
@@ -26,6 +27,7 @@ import PddEstresseView from './carteira/PddEstresseView.vue';
 import WaterfallPddView from './carteira/WaterfallPddView.vue';
 import AberturaPddView from './carteira/AberturaPddView.vue';
 import MovimentacaoDiaView from './carteira/MovimentacaoDiaView.vue';
+import EnquadramentoView from './carteira/EnquadramentoView.vue';
 
 const props = defineProps<{ veiculo: Veiculo; lamina: LaminaBundle }>();
 
@@ -49,10 +51,16 @@ const hubKpis = computed(() => [
     tone: { bg: 'var(--gci-light)', fg: 'var(--gci-base)' },
   },
   {
-    label: 'Cedentes / sacados',
-    value: `${num(carteira.value.cedentes, 0)} / ${num(carteira.value.sacados, 0)}`,
+    label: 'Cedentes',
+    value: num(carteira.value.cedentes, 0),
     icon: Users,
     tone: { bg: 'var(--accent-bg)', fg: 'var(--accent)' },
+  },
+  {
+    label: 'Sacados',
+    value: num(carteira.value.sacados, 0),
+    icon: Users,
+    tone: { bg: '#EEF0FF', fg: '#4F46E5' },
   },
   {
     label: 'PDD total',
@@ -120,6 +128,12 @@ const SLICES: SliceCard[] = [
     description: 'Aquisições e liquidações do dia, com abertura por cedente.',
     icon: ArrowLeftRight,
   },
+  {
+    key: 'enquadramento',
+    title: 'Enquadramento e limites',
+    description: 'Tipo de ativo, limites de cedente e sacado e status.',
+    icon: Scale,
+  },
 ];
 
 const current = computed(() => SLICES.find((s) => s.key === selected.value) ?? null);
@@ -127,7 +141,7 @@ const current = computed(() => SLICES.find((s) => s.key === selected.value) ?? n
 
 <template>
   <div v-if="!selected" class="flex flex-col" style="gap: 24px">
-    <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
+    <div class="grid" style="grid-template-columns: repeat(5, 1fr); gap: 16px">
       <KpiStripCard v-for="kpi in hubKpis" :key="kpi.label" v-bind="kpi" />
     </div>
     <div>
@@ -219,5 +233,6 @@ const current = computed(() => SLICES.find((s) => s.key === selected.value) ?? n
     <WaterfallPddView v-else-if="selected === 'waterfall'" :carteira="carteira" />
     <AberturaPddView v-else-if="selected === 'abertura-pdd'" :carteira="carteira" />
     <MovimentacaoDiaView v-else-if="selected === 'movimentacao'" :carteira="carteira" />
+    <EnquadramentoView v-else-if="selected === 'enquadramento'" :carteira="carteira" />
   </div>
 </template>

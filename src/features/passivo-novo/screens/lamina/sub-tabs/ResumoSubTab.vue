@@ -7,16 +7,19 @@ import {
   LayoutGrid,
   Clock,
   ShieldAlert,
-  Percent,
   FileText,
   Users,
   Calendar,
+  Percent,
+  AlertTriangle,
 } from 'lucide-vue-next';
 import KpiStripCard from '../../../components/KpiStripCard.vue';
 import { brl, pct, num, pu, type Veiculo } from '../../../data/passivoNovoData';
 import { type LaminaBundle } from '../../../data/laminaData';
 
 const props = defineProps<{ veiculo: Veiculo; lamina: LaminaBundle }>();
+
+const BTG_FEE = 24_929_717.76;
 
 const kpis = computed(() => [
   {
@@ -45,9 +48,18 @@ const kpis = computed(() => [
   },
 ]);
 
+const resumo = computed(() => props.lamina.resumoComplementar);
+
+const farolTone = computed(() => {
+  const f = resumo.value.farolPagamento;
+  if (f === 'OK') return { bg: 'var(--success-light)', fg: 'var(--success-base)' };
+  if (f === 'Atencao') return { bg: 'var(--status-warning-bg)', fg: 'var(--status-warning-text)' };
+  return { bg: 'var(--status-neutral-bg)', fg: 'var(--text-muted)' };
+});
+
 const kpisSecundarios = computed(() => [
   {
-    label: 'Despesas / provisões',
+    label: 'Despesas/provisões',
     value: brl(props.veiculo.despesas + props.veiculo.provisoes, true),
     icon: Clock,
     tone: { bg: 'var(--status-warning-bg)', fg: 'var(--status-warning-text)' },
@@ -59,17 +71,60 @@ const kpisSecundarios = computed(() => [
     tone: { bg: 'var(--danger-light)', fg: 'var(--danger-base)' },
   },
   {
-    label: 'Cobertura de caixa',
-    value: pct(props.veiculo.coberturaCaixa),
-    icon: Percent,
-    tone: { bg: 'var(--agro-light)', fg: 'var(--agro-base)' },
+    label: 'Farol pagamento',
+    value: resumo.value.farolPagamento,
+    hint: resumo.value.farolHint,
+    icon: AlertTriangle,
+    tone: farolTone.value,
   },
 ]);
 
-const resumo = computed(() => props.lamina.resumoComplementar);
+const cra65Btg = computed(() => {
+  if (props.veiculo.id !== 'cra-65') return null;
+  const sub = props.veiculo.series.find((s) => s.classe === 'SUB');
+  const qty = sub?.quantidade || 0;
+  const official = props.veiculo.subordinada;
+  if (!qty) return null;
+  const simulated = official + BTG_FEE;
+  const simulatedPu = simulated / qty;
+  const base = sub?.valorNominalInicial || 100;
+  return {
+    pu: simulatedPu,
+    rent: simulatedPu / base - 1,
+    hint: `Sub + taxa BTG ${brl(BTG_FEE, true)}`,
+  };
+});
+
+const complementares = computed(() => {
+  const r = resumo.value;
+  const items = [
+    { label: 'Valor nominal', value: brl(r.valorNominal) },
+    { label: 'Cedentes', value: num(r.cedentes, 0) },
+    { label: 'Sacados', value: num(r.sacados, 0) },
+    {
+      label: 'Prox. pag. Senior',
+      value: r.proximoPagamentoSeniorValor ? brl(r.proximoPagamentoSeniorValor, true) : '—',
+      hint: r.proximoPagamentoSeniorData || undefined,
+    },
+    { label: 'Carrego CRA', value: pct(r.carregoCraPct, 2), hint: r.carregoCraAa },
+    { label: 'Prazo médio', value: `${num(r.prazoMedioDias, 0)} dias` },
+    { label: 'Taxa média', value: pct(r.taxaMediaPct, 2) },
+    { label: 'Saldo revolvencia', value: brl(r.saldoRevolvencia, true) },
+    { label: 'Patrimonio liquido', value: brl(r.patrimonioLiquido, true) },
+    { label: 'Direitos cred. VN', value: brl(r.direitosCreditoriosVn, true) },
+    { label: 'Direitos cred. VP', value: brl(r.direitosCreditoriosVp, true) },
+    { label: 'DC em atraso', value: brl(r.dcAtraso, true) },
+  ];
+  if (cra65Btg.value) {
+    items.push(
+      { label: 'PU SUB sem taxa BTG', value: pu(cra65Btg.value.pu, 6), hint: cra65Btg.value.hint },
+      { label: 'Rentabilidade acumulada sem taxa BTG', value: pct(cra65Btg.value.rent, 2), hint: `Valor simulado ${brl(props.veiculo.subordinada + BTG_FEE, true)}` },
+    );
+  }
+  return items;
+});
 
 const POS_COLS = '1.4fr 1fr 1.4fr 1.1fr 1.4fr';
-const COMP_COLS = '1fr 1fr 1fr';
 </script>
 
 <template>
@@ -145,73 +200,36 @@ const COMP_COLS = '1fr 1fr 1fr';
         overflow: hidden;
       "
     >
-      <div class="flex items-center" style="gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border-default)">
-        <FileText :size="16" style="color: var(--gci-base)" />
-        <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-          Dados complementares
-        </h3>
+      <div class="flex items-center justify-between" style="padding: 16px 20px; border-bottom: 1px solid var(--border-default)">
+        <div class="flex items-center" style="gap: 10px">
+          <FileText :size="16" style="color: var(--gci-base)" />
+          <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Dados complementares da posição
+          </h3>
+        </div>
+        <span style="font-size: var(--text-xs); color: var(--text-muted)">
+          {{ num(resumo.lastrosAtivos, 0) }} lastros ativos
+        </span>
       </div>
-      <div
-        class="grid"
-        :style="{
-          gridTemplateColumns: COMP_COLS,
-          padding: '16px',
-          gap: '16px',
-        }"
-      >
-        <div style="padding: 12px 16px; border: 1px solid var(--border-default); border-radius: var(--radius-lg)">
+      <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; padding: 16px; gap: 16px">
+        <div
+          v-for="item in complementares"
+          :key="item.label"
+          style="padding: 12px 16px; border: 1px solid var(--border-default); border-radius: var(--radius-lg)"
+        >
           <p style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px">
-            Valor nominal
+            {{ item.label }}
           </p>
           <p style="font-size: var(--text-sm); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums">
-            {{ brl(resumo.valorNominal) }}
+            <Users v-if="item.label === 'Cedentes' || item.label === 'Sacados'" :size="14" style="display: inline; vertical-align: -2px; margin-right: 4px; color: var(--gci-base)" />
+            <Calendar v-else-if="item.label === 'Prox. pag. Senior'" :size="14" style="display: inline; vertical-align: -2px; margin-right: 4px; color: var(--gci-base)" />
+            <Percent v-else-if="item.label === 'Carrego CRA' || item.label === 'Taxa média'" :size="14" style="display: inline; vertical-align: -2px; margin-right: 4px; color: var(--gci-base)" />
+            {{ item.value }}
+          </p>
+          <p v-if="item.hint" style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">
+            {{ item.hint }}
           </p>
         </div>
-        <div style="padding: 12px 16px; border: 1px solid var(--border-default); border-radius: var(--radius-lg)">
-          <p style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px">
-            Cedentes / Sacados
-          </p>
-          <p style="font-size: var(--text-sm); font-weight: var(--weight-semibold)">
-            <Users :size="14" style="display: inline; vertical-align: -2px; margin-right: 4px; color: var(--gci-base)" />
-            {{ num(resumo.cedentes, 0) }} / {{ num(resumo.sacados, 0) }}
-          </p>
-        </div>
-        <div style="padding: 12px 16px; border: 1px solid var(--border-default); border-radius: var(--radius-lg)">
-          <p style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px">
-            Lastros ativos
-          </p>
-          <p style="font-size: var(--text-sm); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums">
-            {{ num(resumo.lastrosAtivos, 0) }}
-          </p>
-        </div>
-        <div style="padding: 12px 16px; border: 1px solid var(--border-default); border-radius: var(--radius-lg)">
-          <p style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px">
-            Próx. pagamento sênior
-          </p>
-          <p style="font-size: var(--text-sm); font-weight: var(--weight-semibold)">
-            <Calendar :size="14" style="display: inline; vertical-align: -2px; margin-right: 4px; color: var(--gci-base)" />
-            {{ resumo.proximoPagamentoSenior }}
-          </p>
-        </div>
-        <div style="padding: 12px 16px; border: 1px solid var(--border-default); border-radius: var(--radius-lg)">
-          <p style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px">
-            Carrego CRA
-          </p>
-          <p style="font-size: var(--text-sm); font-weight: var(--weight-semibold)">
-            {{ pct(resumo.carregoCraPct, 2) }} · {{ resumo.carregoCraAa }}
-          </p>
-        </div>
-        <div style="padding: 12px 16px; border: 1px solid var(--border-default); border-radius: var(--radius-lg)">
-          <p style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px">
-            Prazo / taxa média
-          </p>
-          <p style="font-size: var(--text-sm); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums">
-            {{ num(resumo.prazoMedioDias, 0) }} dias · {{ pct(resumo.taxaMediaPct, 2) }}
-          </p>
-        </div>
-      </div>
-      <div style="padding: 0 16px 16px; font-size: var(--text-xs); color: var(--text-muted)">
-        Farol de pagamento: {{ resumo.farolPagamento }}
       </div>
     </div>
   </div>

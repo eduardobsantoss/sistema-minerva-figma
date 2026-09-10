@@ -68,7 +68,14 @@ function handleAction() {
       overflow: 'hidden',
     }"
   >
-    <div class="flex" style="gap: 12px; padding: 14px 14px 0 14px; align-items: flex-start">
+    <div
+      class="flex"
+      :style="{
+        gap: '12px',
+        padding: toast.action ? '14px 14px 0 14px' : '14px',
+        alignItems: 'flex-start',
+      }"
+    >
       <div
         class="flex items-center justify-center"
         :style="{
@@ -139,11 +146,11 @@ function handleAction() {
     </div>
 
     <div
-      class="flex items-center justify-between"
+      v-if="toast.action"
+      class="flex items-center justify-end"
       style="padding: 12px 14px 14px; gap: 12px"
     >
       <button
-        v-if="toast.action"
         type="button"
         class="btn-animated"
         :style="{
@@ -160,24 +167,6 @@ function handleAction() {
         @click="handleAction"
       >
         {{ toast.action.label }}
-      </button>
-      <span v-else />
-      <button
-        type="button"
-        class="btn-animated"
-        style="
-          height: 32px;
-          padding: 0 4px;
-          border: none;
-          background: transparent;
-          color: var(--text-muted);
-          font-size: var(--text-xs);
-          font-weight: var(--weight-semibold);
-          cursor: pointer;
-        "
-        @click="emit('dismiss')"
-      >
-        Dismiss
       </button>
     </div>
   </div>
