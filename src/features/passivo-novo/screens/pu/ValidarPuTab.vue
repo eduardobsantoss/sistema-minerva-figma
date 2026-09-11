@@ -61,12 +61,12 @@ function confirmNovaCota(input: NovaCotaInput) {
   const created = addNovaCota(props.veiculo, input);
   serieId.value = created.id;
   showNovaCota.value = false;
-  success(`${created.nome} criada com estoque 0.`);
+  success(`${created.nome} criada.`);
 }
 
 const history = computed(() => serie.value.historicoPu);
 const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(history, {
-  defaultPageSize: 10,
+  defaultPageSize: 5,
 });
 
 const kpis = computed(() => [

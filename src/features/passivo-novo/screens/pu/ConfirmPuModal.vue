@@ -19,6 +19,7 @@ const copy =
 </script>
 
 <template>
+  <Teleport to="body">
   <div
     style="
       position: fixed;
@@ -137,4 +138,5 @@ const copy =
       </div>
     </div>
   </div>
+  </Teleport>
 </template>

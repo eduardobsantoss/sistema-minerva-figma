@@ -14,7 +14,7 @@ const props = defineProps<{
 
 const source = computed(() => props.rows);
 const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(source, {
-  defaultPageSize: 10,
+  defaultPageSize: 5,
 });
 </script>
 

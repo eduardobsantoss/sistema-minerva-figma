@@ -28,7 +28,7 @@ const {
   pageItems: cotasPageItems,
   setPage: setCotasPage,
   setPageSize: setCotasPageSize,
-} = useTablePagination(cotasPrecificacao, { defaultPageSize: 10 });
+} = useTablePagination(cotasPrecificacao, { defaultPageSize: 5 });
 
 const rentDiaria = computed(() => props.lamina.rentabilidadeDiaria);
 const {
@@ -38,7 +38,7 @@ const {
   pageItems,
   setPage,
   setPageSize,
-} = useTablePagination(rentDiaria, { defaultPageSize: 10 });
+} = useTablePagination(rentDiaria, { defaultPageSize: 5 });
 
 const historicoMensalSub = computed(() => props.lamina.historicoMensalSub);
 const {
@@ -48,7 +48,7 @@ const {
   pageItems: histSubPageItems,
   setPage: setHistSubPage,
   setPageSize: setHistSubPageSize,
-} = useTablePagination(historicoMensalSub, { defaultPageSize: 10 });
+} = useTablePagination(historicoMensalSub, { defaultPageSize: 5 });
 
 const seriesNames = computed(() =>
   props.lamina.cotasPrecificacao.map((c) => c.serie),

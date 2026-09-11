@@ -887,12 +887,19 @@ export interface NovaCotaInput {
   tipo: string;
   dataInicioIso: string;
   vencimentoIso: string;
+  valorNominalInicial: number;
+  quantidade: number;
+  principalResidual: number;
+  pu: number;
+  valorTotal: number;
+  remuneracao: string;
+  proximoPagamentoValor: number;
 }
 
 export function addNovaCota(veiculo: Veiculo, input: NovaCotaInput): Serie {
-  const template =
-    veiculo.series.find((s) => s.classe === input.classe) ?? veiculo.series[0];
-  const vnu = template?.valorNominalInicial || 1000;
+  const vnu = input.valorNominalInicial || 1000;
+  const puValue = input.pu || vnu;
+  const quantidade = Math.max(0, input.quantidade);
   const serie = makeSerie({
     id: `${veiculo.id}-${input.classe.toLowerCase()}-${Date.now()}`,
     classe: input.classe,
@@ -902,15 +909,16 @@ export function addNovaCota(veiculo: Veiculo, input: NovaCotaInput): Serie {
     dataInicio: isoToBr(input.dataInicioIso),
     vencimentoIso: input.vencimentoIso,
     vnu,
-    quantidade: 0,
-    principalResidual: vnu,
-    pu: vnu,
-    remuneracao: input.tipo.trim() || '—',
+    quantidade,
+    principalResidual: input.principalResidual || vnu,
+    pu: puValue,
+    remuneracao: input.remuneracao.trim() || input.tipo.trim() || '—',
     taxaAa: 0,
     resultadoDia: 0,
     resultadoMes: 0,
-    proximoPagamentoValor: 0,
+    proximoPagamentoValor: Math.max(0, input.proximoPagamentoValor),
   });
+  serie.valor = input.valorTotal || puValue * quantidade;
   veiculo.series.push(serie);
   refreshAggregates(veiculo);
   return serie;

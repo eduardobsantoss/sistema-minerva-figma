@@ -9,7 +9,7 @@ export function useTablePagination<T>(
   },
 ) {
   const page = ref(1);
-  const pageSize = ref(options?.defaultPageSize ?? 10);
+  const pageSize = ref(options?.defaultPageSize ?? 5);
 
   const total = computed(() => toValue(source).length);
   const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)));

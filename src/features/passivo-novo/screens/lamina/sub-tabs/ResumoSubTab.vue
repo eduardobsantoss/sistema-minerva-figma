@@ -13,6 +13,8 @@ import {
   Percent,
   AlertTriangle,
 } from 'lucide-vue-next';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import KpiStripCard from '../../../components/KpiStripCard.vue';
 import { brl, pct, num, pu, type Veiculo } from '../../../data/passivoNovoData';
 import { type LaminaBundle } from '../../../data/laminaData';
@@ -125,6 +127,16 @@ const complementares = computed(() => {
 });
 
 const POS_COLS = '1.4fr 1fr 1.4fr 1.1fr 1.4fr';
+
+const posicaoCotas = computed(() => props.lamina.posicaoCotas);
+const {
+  page: posicaoPage,
+  pageSize: posicaoPageSize,
+  total: posicaoTotal,
+  pageItems: posicaoPageItems,
+  setPage: setPosicaoPage,
+  setPageSize: setPosicaoPageSize,
+} = useTablePagination(posicaoCotas, { defaultPageSize: 5 });
 </script>
 
 <template>
@@ -172,7 +184,7 @@ const POS_COLS = '1.4fr 1fr 1.4fr 1.1fr 1.4fr';
         <div>Valor total</div>
       </div>
       <div
-        v-for="row in lamina.posicaoCotas"
+        v-for="row in posicaoPageItems"
         :key="row.id"
         class="grid items-center"
         :style="{
@@ -190,6 +202,15 @@ const POS_COLS = '1.4fr 1fr 1.4fr 1.1fr 1.4fr';
         </div>
         <div style="font-variant-numeric: tabular-nums">{{ brl(row.valorTotal) }}</div>
       </div>
+      <TablePagination
+        sunken
+        compact
+        :total="posicaoTotal"
+        :page="posicaoPage"
+        :page-size="posicaoPageSize"
+        @update:page="setPosicaoPage"
+        @update:page-size="setPosicaoPageSize"
+      />
     </div>
 
     <div

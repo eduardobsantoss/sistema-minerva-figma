@@ -28,6 +28,7 @@ const fieldStyle =
 </script>
 
 <template>
+  <Teleport to="body">
   <div
     style="
       position: fixed;
@@ -106,4 +107,5 @@ const fieldStyle =
       </div>
     </div>
   </div>
+  </Teleport>
 </template>

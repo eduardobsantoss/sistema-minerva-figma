@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from 'lucide-vue-next';
 import { DEFAULT_PAGE_SIZE_OPTIONS } from '@/composables/useTablePagination';
 
@@ -25,6 +26,11 @@ const emit = defineEmits<{
   'update:pageSize': [pageSize: number];
 }>();
 
+const selectedPageSize = computed({
+  get: () => String(props.pageSize),
+  set: (value: string) => emit('update:pageSize', Number(value)),
+});
+
 const totalPages = () => Math.max(1, Math.ceil(props.total / props.pageSize));
 const clampedPage = () => Math.min(props.page, totalPages());
 
@@ -47,9 +53,6 @@ function pageButtonStyle(disabled: boolean) {
   };
 }
 
-function onPageSizeChange(e: Event) {
-  emit('update:pageSize', Number((e.target as HTMLSelectElement).value));
-}
 </script>
 
 <template>
@@ -69,11 +72,10 @@ function onPageSizeChange(e: Event) {
     <div class="flex items-center" style="gap: 8px">
       <span>Itens por página</span>
       <select
-        :value="pageSize"
+        v-model="selectedPageSize"
         style="height: 30px; padding: 0 8px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); color: var(--text-default); font-size: var(--text-xs)"
-        @change="onPageSizeChange"
       >
-        <option v-for="opt in pageSizeOptions" :key="opt" :value="opt">{{ opt }}</option>
+        <option v-for="opt in pageSizeOptions" :key="opt" :value="String(opt)">{{ opt }}</option>
       </select>
     </div>
     <div class="flex items-center" style="gap: 14px">
