@@ -137,6 +137,11 @@ const {
   setPage: setPosicaoPage,
   setPageSize: setPosicaoPageSize,
 } = useTablePagination(posicaoCotas, { defaultPageSize: 5 });
+
+const posicaoTotais = computed(() => ({
+  quantidade: posicaoCotas.value.reduce((sum, row) => sum + row.quantidade, 0),
+  valorTotal: posicaoCotas.value.reduce((sum, row) => sum + row.valorTotal, 0),
+}));
 </script>
 
 <template>
@@ -201,6 +206,23 @@ const {
           {{ pu(row.pu, row.pu >= 100 ? 4 : 6) }}
         </div>
         <div style="font-variant-numeric: tabular-nums">{{ brl(row.valorTotal) }}</div>
+      </div>
+      <div
+        class="grid items-center"
+        :style="{
+          gridTemplateColumns: POS_COLS,
+          padding: '12px 16px',
+          borderTop: '1px solid var(--border-default)',
+          background: 'var(--surface-sunken)',
+          fontSize: 'var(--text-sm)',
+          fontWeight: 'var(--weight-bold)',
+        }"
+      >
+        <div style="color: var(--text-strong)">Total</div>
+        <div style="font-variant-numeric: tabular-nums">{{ num(posicaoTotais.quantidade, 0) }}</div>
+        <div />
+        <div />
+        <div style="font-variant-numeric: tabular-nums">{{ brl(posicaoTotais.valorTotal) }}</div>
       </div>
       <TablePagination
         sunken

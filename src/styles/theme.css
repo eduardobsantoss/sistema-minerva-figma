@@ -161,6 +161,19 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
 }
 
+#root {
+  isolation: isolate;
+  position: relative;
+  z-index: 0;
+}
+
+.minerva-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  isolation: isolate;
+}
+
 * { box-sizing: border-box; }
 
 /* Vuetify's base stylesheet resets native form control appearance (e.g. hides

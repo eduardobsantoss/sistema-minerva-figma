@@ -62,10 +62,8 @@ const fieldStyle =
 <template>
   <Teleport to="body">
   <div
+    class="minerva-modal-overlay"
     style="
-      position: fixed;
-      inset: 0;
-      z-index: var(--z-modal);
       background: rgba(8, 60, 74, 0.55);
       backdrop-filter: blur(8px);
       display: flex;
