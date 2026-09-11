@@ -70,7 +70,15 @@ const items: NavItem[] = [
       },
     ],
   },
-  { key: "ativos", label: "Ativos", icon: Package },
+  {
+    key: "ativos",
+    label: "Ativos",
+    icon: Package,
+    children: [
+      { key: "ativos", label: "Gestão", icon: Package },
+      { key: "ativos-relatorios", label: "Relatórios", icon: BarChart3 },
+    ],
+  },
   {
     key: "fidcs",
     label: "FIDC's",

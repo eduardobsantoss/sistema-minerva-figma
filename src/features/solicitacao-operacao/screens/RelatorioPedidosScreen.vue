@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   FileSpreadsheet,
   ChevronRight,
+  Download,
   ClipboardList,
   FileText,
   Percent,
@@ -12,6 +13,8 @@ import {
 } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import ToggleRow from '../components/modals/adicionar-contrato/ToggleRow.vue';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import { useBackgroundReport } from '@/composables/useBackgroundReport';
 import {
   REQUEST_REPORTS,
@@ -41,6 +44,7 @@ const REPORT_ICONS: Record<RequestReportValue, Component> = {
 const selected = ref<RequestReportValue | null>(null);
 const hoveredKey = ref<RequestReportValue | null>(null);
 const draft = reactive<RelatorioPedidosFilters>(emptyRelatorioFilters());
+const applied = ref<RelatorioPedidosFilters | null>(null);
 const { enqueueReport } = useBackgroundReport();
 
 const errors = reactive({
@@ -51,6 +55,7 @@ const errors = reactive({
 const report = computed(() => REQUEST_REPORTS.find((r) => r.value === selected.value) ?? null);
 const showAbaixoDaTaxa = computed(() => isAbaixoDaTaxa(selected.value));
 const showQuitacao = computed(() => isTitulosReport(selected.value));
+const isPdfReport = computed(() => isChecklistPdf(selected.value));
 
 function resultColumnsFor(tipo: RequestReportValue): string[] {
   if (isAbaixoDaTaxa(tipo)) {
@@ -64,6 +69,24 @@ function resultColumnsFor(tipo: RequestReportValue): string[] {
   }
   return ['Nº solicitação', 'Gerente comercial', 'Grupo empresarial', 'Tipo solicitação'];
 }
+
+const results = computed<RelatorioResultRow[]>(() => {
+  if (!applied.value || selected.value === null) return [];
+  return buildMockResults(selected.value, applied.value);
+});
+
+const resultColumns = computed(() =>
+  selected.value === null ? [] : resultColumnsFor(selected.value),
+);
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => results.value,
+  { defaultPageSize: 10 },
+);
+
+const resultGridCols = computed(() =>
+  resultColumns.value.length === 5 ? '1.2fr 1fr 1.4fr 1.4fr 1fr' : '1.2fr 1.2fr 1.4fr 1.6fr',
+);
 
 const labelStyle = {
   fontSize: '10px',
@@ -96,11 +119,13 @@ const errorTextStyle = {
 function selectReport(value: RequestReportValue) {
   selected.value = value;
   Object.assign(draft, emptyRelatorioFilters());
+  applied.value = null;
   clearValidation();
 }
 
 function goBack() {
   selected.value = null;
+  applied.value = null;
   clearValidation();
 }
 
@@ -156,45 +181,52 @@ function validateBeforeGerar(): boolean {
   return true;
 }
 
+function handleExportCsv() {
+  if (selected.value === null || results.value.length === 0 || !report.value) return;
+  const header = resultColumns.value;
+  const lines = results.value.map((r) => {
+    const cells = [r.col1, r.col2, r.col3, r.col4];
+    if (header.length > 4) cells.push(r.col5 ?? '');
+    return cells.map(escapeCsvCell).join(';');
+  });
+  const csv = [header.join(';'), ...lines].join('\n');
+  const filename = reportFileName(selected.value, 'csv');
+  enqueueReport({
+    reportName: report.value.text,
+    buildFile: () => ({
+      blob: new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }),
+      filename,
+    }),
+  });
+}
+
+function handleExportPdf() {
+  if (selected.value === null || results.value.length === 0 || !report.value) return;
+  const body = [
+    'RELATÓRIO DE CHECKLIST DA SOLICITAÇÃO',
+    '',
+    ...results.value.map(
+      (r) =>
+        `Solicitação ${r.col1} | Status: ${r.col2} | Valor: ${r.col3} | Taxa: ${r.col4} | Avaliador: ${r.col5}`,
+    ),
+  ].join('\n');
+  enqueueReport({
+    reportName: report.value.text,
+    buildFile: () => ({
+      blob: new Blob([body], { type: 'text/plain;charset=utf-8' }),
+      filename: reportFileName(22, 'txt'),
+    }),
+  });
+}
+
 function handleGerar() {
   if (!validateBeforeGerar() || selected.value === null || !report.value) return;
-  const tipo = selected.value;
   const filters: RelatorioPedidosFilters = {
     ...draft,
     veiculos: [...draft.veiculos],
   };
-  const reportName = report.value.text;
-  enqueueReport({
-    reportName,
-    buildFile: () => {
-      const rows = buildMockResults(tipo, filters);
-      if (isChecklistPdf(tipo)) {
-        const body = [
-          'RELATÓRIO DE CHECKLIST DA SOLICITAÇÃO',
-          '',
-          ...rows.map(
-            (r) =>
-              `Solicitação ${r.col1} | Status: ${r.col2} | Valor: ${r.col3} | Taxa: ${r.col4} | Avaliador: ${r.col5}`,
-          ),
-        ].join('\n');
-        return {
-          blob: new Blob([body], { type: 'text/plain;charset=utf-8' }),
-          filename: reportFileName(22, 'txt'),
-        };
-      }
-      const header = resultColumnsFor(tipo);
-      const lines = rows.map((r) => {
-        const cells = [r.col1, r.col2, r.col3, r.col4];
-        if (header.length > 4) cells.push(r.col5 ?? '');
-        return cells.map(escapeCsvCell).join(';');
-      });
-      const csv = [header.join(';'), ...lines].join('\n');
-      return {
-        blob: new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }),
-        filename: reportFileName(tipo, 'csv'),
-      };
-    },
-  });
+  applied.value = filters;
+  setPage(1);
 }
 
 function buildMockResults(
@@ -605,9 +637,117 @@ function escapeCsvCell(value: string): string {
           "
           @click="handleGerar"
         >
-          <FileSpreadsheet :size="15" /> GERAR RELATÓRIO
+          <FileSpreadsheet :size="15" /> VER RESULTADOS
         </button>
       </div>
+    </div>
+
+    <!-- Resultado -->
+    <div
+      v-if="applied"
+      style="
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-xl);
+        background: var(--surface-card);
+        overflow: hidden;
+      "
+    >
+      <div
+        class="flex items-center justify-between"
+        style="padding: 14px 20px; border-bottom: 1px solid var(--border-default)"
+      >
+        <span style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+          {{ results.length }} {{ results.length === 1 ? 'resultado' : 'resultados' }}
+        </span>
+        <button
+          v-if="isPdfReport"
+          :disabled="results.length === 0"
+          class="flex items-center"
+          :style="{
+            gap: '6px',
+            height: '34px',
+            padding: '0 14px',
+            background: 'none',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-lg)',
+            cursor: results.length === 0 ? 'not-allowed' : 'pointer',
+            color: results.length === 0 ? 'var(--text-disabled)' : 'var(--text-default)',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 'var(--weight-bold)',
+          }"
+          @click="handleExportPdf"
+        >
+          <Download :size="13" /> EXPORTAR PDF
+        </button>
+        <button
+          v-else
+          :disabled="results.length === 0"
+          class="flex items-center"
+          :style="{
+            gap: '6px',
+            height: '34px',
+            padding: '0 14px',
+            background: 'none',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-lg)',
+            cursor: results.length === 0 ? 'not-allowed' : 'pointer',
+            color: results.length === 0 ? 'var(--text-disabled)' : 'var(--text-default)',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 'var(--weight-bold)',
+          }"
+          @click="handleExportCsv"
+        >
+          <Download :size="13" /> EXPORTAR CSV
+        </button>
+      </div>
+
+      <div
+        v-if="results.length === 0"
+        style="padding: 40px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+      >
+        Nenhum resultado encontrado para os filtros selecionados.
+      </div>
+      <template v-else>
+        <div
+          class="grid"
+          :style="{
+            gridTemplateColumns: resultGridCols,
+            padding: '10px 20px',
+            background: 'var(--surface-sunken)',
+            fontSize: '10px',
+            fontWeight: 'var(--weight-bold)',
+            letterSpacing: '0.10em',
+            color: 'var(--text-muted)',
+            textTransform: 'uppercase',
+          }"
+        >
+          <div v-for="col in resultColumns" :key="col">{{ col }}</div>
+        </div>
+        <div
+          v-for="row in pageItems"
+          :key="row.id"
+          class="grid items-center"
+          :style="{
+            gridTemplateColumns: resultGridCols,
+            padding: '12px 20px',
+            borderTop: '1px solid var(--border-default)',
+            fontSize: 'var(--text-sm)',
+          }"
+        >
+          <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ row.col1 }}</div>
+          <div style="color: var(--text-default)">{{ row.col2 }}</div>
+          <div style="color: var(--text-muted)">{{ row.col3 }}</div>
+          <div style="color: var(--text-default)">{{ row.col4 }}</div>
+          <div v-if="resultColumns.length > 4" style="color: var(--text-default)">{{ row.col5 }}</div>
+        </div>
+        <TablePagination
+          :total="total"
+          :page="page"
+          :page-size="pageSize"
+          @update:page="setPage"
+          @update:page-size="setPageSize"
+        />
+      </template>
     </div>
   </div>
 </template>

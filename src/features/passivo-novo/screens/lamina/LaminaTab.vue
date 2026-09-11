@@ -1,14 +1,40 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { TrendingUp } from 'lucide-vue-next';
+import { TrendingUp, Upload, Wallet } from 'lucide-vue-next';
 import UnderlineSubTabs from '../../components/UnderlineSubTabs.vue';
-import { brl, type Veiculo } from '../../data/passivoNovoData';
+import { useToast } from '@/composables/useToast';
+import {
+  applyBankBalance,
+  applyLaminaUpload,
+  brl,
+  type BankBalanceInput,
+  type LaminaUploadKind,
+  type Veiculo,
+} from '../../data/passivoNovoData';
 import { getLamina } from '../../data/laminaData';
 import ResumoSubTab from './sub-tabs/ResumoSubTab.vue';
 import RentabilidadeSubTab from './sub-tabs/RentabilidadeSubTab.vue';
 import CarteiraSubTab from './sub-tabs/CarteiraSubTab.vue';
+import UploadLaminaModal from './UploadLaminaModal.vue';
+import CaixasModal from './CaixasModal.vue';
 
 const props = defineProps<{ veiculo: Veiculo }>();
+const { success, error } = useToast();
+const showUpload = ref(false);
+const showCaixas = ref(false);
+
+function confirmUpload(payload: { kind: LaminaUploadKind; fileName: string }) {
+  const msg = applyLaminaUpload(props.veiculo, payload.kind, payload.fileName);
+  showUpload.value = false;
+  if (msg.startsWith('Não há')) error(msg);
+  else success(msg);
+}
+
+function confirmCaixas(input: BankBalanceInput) {
+  applyBankBalance(props.veiculo, input);
+  showCaixas.value = false;
+  success('Caixas atualizadas (protótipo).');
+}
 
 const LAMINA_TABS = ['Resumo', 'Rentabilidade', 'Carteira'] as const;
 type LaminaTabId = (typeof LAMINA_TABS)[number];
@@ -83,10 +109,46 @@ watch(
       </div>
     </div>
 
+    <div class="flex items-center justify-end" style="gap: 8px; flex-wrap: wrap">
+      <button type="button" class="ghost-btn flex items-center" style="gap: 8px" @click="showUpload = true">
+        <Upload :size="14" />
+        Subir arquivo
+      </button>
+      <button type="button" class="ghost-btn flex items-center" style="gap: 8px" @click="showCaixas = true">
+        <Wallet :size="14" />
+        Editar caixas
+      </button>
+    </div>
+
     <UnderlineSubTabs v-model="activeTab" :tabs="[...LAMINA_TABS]" />
 
     <ResumoSubTab v-if="activeTab === 'Resumo'" :veiculo="veiculo" :lamina="lamina" />
     <RentabilidadeSubTab v-else-if="activeTab === 'Rentabilidade'" :veiculo="veiculo" :lamina="lamina" />
     <CarteiraSubTab v-else :veiculo="veiculo" :lamina="lamina" />
+
+    <UploadLaminaModal v-if="showUpload" @close="showUpload = false" @confirm="confirmUpload" />
+    <CaixasModal
+      v-if="showCaixas"
+      :default-date-iso="veiculo.dataBaseIso"
+      :accounts="veiculo.caixaAccounts"
+      @close="showCaixas = false"
+      @confirm="confirmCaixas"
+    />
   </div>
 </template>
+
+<style scoped>
+.ghost-btn {
+  height: 40px;
+  padding: 0 16px;
+  background: var(--surface-card);
+  color: var(--text-strong);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+</style>

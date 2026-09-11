@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
-import { ArrowLeft, FileSpreadsheet, ChevronRight, ClipboardCheck } from 'lucide-vue-next';
+import { ArrowLeft, FileSpreadsheet, ChevronRight, Download, ClipboardCheck } from 'lucide-vue-next';
 import {
   GRUPOS_SEED, GERENTES_SEED, STATUS_GRUPO_RELATORIO_OPTS, STATUS_PARECER_RELATORIO_OPTS,
-  parecerLabel,
+  parecerLabel, parecerColor, statusOperacaoColor,
 } from '../data/riscoData';
+import TablePagination from '@/components/ui/TablePagination.vue';
+import { useTablePagination } from '@/composables/useTablePagination';
 import { useBackgroundReport } from '@/composables/useBackgroundReport';
 
 type ReportKey = 'parecer-credito';
@@ -41,6 +43,7 @@ function toCsv(rows: { nome: string; documento: string; statusGrupo: string; ger
 const selected = ref<ReportKey | null>(null);
 const hoveredKey = ref<ReportKey | null>(null);
 const draft = reactive<Filters>({ ...EMPTY_FILTERS });
+const applied = ref<Filters | null>(null);
 const { enqueueReport } = useBackgroundReport();
 
 function filterGrupos(f: Filters) {
@@ -56,30 +59,41 @@ function filterGrupos(f: Filters) {
 
 const report = computed(() => REPORTS.find((r) => r.key === selected.value) ?? null);
 
+const results = computed(() => (applied.value ? filterGrupos(applied.value) : []));
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(
+  () => results.value,
+  { defaultPageSize: 10 },
+);
+
 function selectReport(key: ReportKey) {
   selected.value = key;
   Object.assign(draft, EMPTY_FILTERS);
+  applied.value = null;
+}
+
+function handleExportCsv() {
+  if (!report.value) return;
+  const csv = toCsv(results.value.map((g) => ({
+    nome: g.nome,
+    documento: g.documento,
+    statusGrupo: g.statusOperacao,
+    gerente: g.gerente,
+    parecer: parecerLabel(g.parecerCredito),
+  })));
+  enqueueReport({
+    reportName: report.value.title,
+    buildFile: () => ({
+      blob: new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }),
+      filename: 'relatorio-parecer-de-credito.csv',
+    }),
+  });
 }
 
 function handleGerar() {
   if (!report.value) return;
-  const f = { ...draft };
-  enqueueReport({
-    reportName: report.value.title,
-    buildFile: () => {
-      const csv = toCsv(filterGrupos(f).map((g) => ({
-        nome: g.nome,
-        documento: g.documento,
-        statusGrupo: g.statusOperacao,
-        gerente: g.gerente,
-        parecer: parecerLabel(g.parecerCredito),
-      })));
-      return {
-        blob: new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }),
-        filename: 'relatorio-parecer-de-credito.csv',
-      };
-    },
-  });
+  applied.value = { ...draft };
+  setPage(1);
 }
 </script>
 
@@ -206,9 +220,47 @@ function handleGerar() {
           style="gap: 8px; height: 42px; padding: 0 20px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em"
           @click="handleGerar"
         >
-          <FileSpreadsheet :size="15" /> GERAR RELATÓRIO
+          <FileSpreadsheet :size="15" /> VER RESULTADOS
         </button>
       </div>
+    </div>
+
+    <!-- Resultado -->
+    <div v-if="applied" style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); overflow: hidden">
+      <div class="flex items-center justify-between" style="padding: 14px 20px; border-bottom: 1px solid var(--border-default)">
+        <span style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+          {{ results.length }} {{ results.length === 1 ? 'resultado' : 'resultados' }}
+        </span>
+        <button
+          :disabled="results.length === 0"
+          class="flex items-center"
+          :style="{ gap: '6px', height: '34px', padding: '0 14px', background: 'none', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', cursor: results.length === 0 ? 'not-allowed' : 'pointer', color: results.length === 0 ? 'var(--text-disabled)' : 'var(--text-default)', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)' }"
+          @click="handleExportCsv"
+        >
+          <Download :size="13" /> EXPORTAR CSV
+        </button>
+      </div>
+
+      <div v-if="results.length === 0" style="padding: 40px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)">
+        Nenhum grupo encontrado para os filtros selecionados.
+      </div>
+      <div v-else class="grid" style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr; padding: 10px 20px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase">
+        <div>Nome do Grupo</div><div>Documento</div><div>Status do Grupo</div><div>Gerente</div><div>Parecer de Crédito</div>
+      </div>
+      <div v-for="g in pageItems" :key="g.id" class="grid items-center" style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr; padding: 12px 20px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)">
+        <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ g.nome }}</div>
+        <div style="font-variant-numeric: tabular-nums; color: var(--text-muted)">{{ g.documento }}</div>
+        <div :style="{ color: statusOperacaoColor(g.statusOperacao), fontWeight: 'var(--weight-semibold)' }">{{ g.statusOperacao }}</div>
+        <div style="color: var(--text-default)">{{ g.gerente }}</div>
+        <div :style="{ color: parecerColor(g.parecerCredito), fontWeight: 'var(--weight-semibold)' }">{{ parecerLabel(g.parecerCredito) }}</div>
+      </div>
+      <TablePagination
+        :total="total"
+        :page="page"
+        :page-size="pageSize"
+        @update:page="setPage"
+        @update:page-size="setPageSize"
+      />
     </div>
   </div>
 </template>

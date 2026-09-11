@@ -1,60 +1,67 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import type { Component } from 'vue';
-import { Landmark, Calendar, TrendingUp, Wallet, History, Layers, LayoutGrid } from 'lucide-vue-next';
+import { Landmark, Calendar, TrendingUp, Wallet, History, Plus } from 'lucide-vue-next';
 import TablePagination from '@/components/ui/TablePagination.vue';
-import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { useToast } from '@/composables/useToast';
 import KpiStripCard from '../../components/KpiStripCard.vue';
 import PuHistoricoProjetadoChart from '../../components/charts/PuHistoricoProjetadoChart.vue';
+import UnderlineSubTabs from '../../components/UnderlineSubTabs.vue';
 import ConfirmPuModal from './ConfirmPuModal.vue';
+import NovaCotaModal from './NovaCotaModal.vue';
 import {
+  addNovaCota,
   brl,
   pu,
   pct,
   num,
-  CLASSE_LABEL,
   TAXA_TONE,
-  type SerieClasse,
+  type NovaCotaInput,
   type Serie,
   type Veiculo,
 } from '../../data/passivoNovoData';
 
 const props = defineProps<{ veiculo: Veiculo }>();
+const serieId = defineModel<string>('serieId', { default: '' });
 const { success } = useToast();
 
-const serieIndex = ref(0);
 const dateIso = ref(props.veiculo.dataBaseIso);
 const modalMode = ref<'validar' | 'atualizar' | null>(null);
-
-const SERIE_ICONS: Record<SerieClasse, Component> = {
-  SR: Landmark,
-  MEZ: Layers,
-  SUB: LayoutGrid,
-};
+const showNovaCota = ref(false);
 
 watch(
   () => props.veiculo.id,
   () => {
-    serieIndex.value = 0;
     dateIso.value = props.veiculo.dataBaseIso;
   },
 );
 
-const serie = computed<Serie>(() => props.veiculo.series[serieIndex.value] ?? props.veiculo.series[0]!);
-const senior = computed(() => props.veiculo.series.find((s) => s.classe === 'SR'));
-const serieTabs = computed(() =>
-  props.veiculo.series.map((s) => ({
-    key: s.id,
-    label: s.nome,
-    icon: SERIE_ICONS[s.classe],
-  })),
+watch(
+  () => props.veiculo.series.map((s) => s.id).join('|'),
+  () => {
+    if (!props.veiculo.series.some((s) => s.id === serieId.value)) {
+      serieId.value = props.veiculo.series[0]?.id ?? '';
+    }
+  },
+  { immediate: true },
 );
 
-function setSerie(id: string) {
-  const i = props.veiculo.series.findIndex((s) => s.id === id);
-  if (i >= 0) serieIndex.value = i;
+const serie = computed<Serie>(() => props.veiculo.series.find((s) => s.id === serieId.value) ?? props.veiculo.series[0]!);
+const senior = computed(() => props.veiculo.series.find((s) => s.classe === 'SR'));
+const serieTabs = computed(() => props.veiculo.series.map((s) => s.nome));
+const activeSerieTab = computed({
+  get: () => serie.value?.nome ?? '',
+  set: (nome: string) => {
+    const found = props.veiculo.series.find((s) => s.nome === nome);
+    if (found) serieId.value = found.id;
+  },
+});
+
+function confirmNovaCota(input: NovaCotaInput) {
+  const created = addNovaCota(props.veiculo, input);
+  serieId.value = created.id;
+  showNovaCota.value = false;
+  success(`${created.nome} criada com estoque 0.`);
 }
 
 const history = computed(() => serie.value.historicoPu);
@@ -175,12 +182,34 @@ const fields = computed(() => [
       <KpiStripCard v-for="kpi in kpis" :key="kpi.label" v-bind="kpi" />
     </div>
 
-    <SegmentedToggle
-      :model-value="serie.id"
-      :options="serieTabs"
-      variant="brand"
-      @update:model-value="setSerie"
-    />
+    <div class="flex items-end justify-between" style="gap: 16px; flex-wrap: wrap">
+      <div style="flex: 1; min-width: 0">
+        <UnderlineSubTabs v-model="activeSerieTab" :tabs="serieTabs" />
+      </div>
+      <button
+        type="button"
+        class="flex items-center"
+        style="
+          gap: 8px;
+          height: 40px;
+          padding: 0 16px;
+          background: var(--surface-card);
+          color: var(--text-strong);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-lg);
+          cursor: pointer;
+          font-size: 10px;
+          font-weight: var(--weight-bold);
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          flex-shrink: 0;
+        "
+        @click="showNovaCota = true"
+      >
+        <Plus :size="14" />
+        Nova Cota
+      </button>
+    </div>
 
     <div
       style="
@@ -328,7 +357,7 @@ const fields = computed(() => [
               Nenhum evento nesta série.
             </p>
             <div v-else class="flex flex-col" style="gap: 10px">
-              <div v-for="ev in serie.eventosRealizados" :key="ev.data + ev.componente">
+              <div v-for="(ev, i) in serie.eventosRealizados" :key="ev.data + ev.componente + i">
                 <p style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
                   {{ ev.data }} · {{ ev.componente }}
                 </p>
@@ -362,6 +391,12 @@ const fields = computed(() => [
       :serie-nome="serie.nome"
       @close="modalMode = null"
       @confirm="confirmModal"
+    />
+    <NovaCotaModal
+      v-if="showNovaCota"
+      :default-date-iso="veiculo.dataBaseIso"
+      @close="showNovaCota = false"
+      @confirm="confirmNovaCota"
     />
   </div>
 </template>

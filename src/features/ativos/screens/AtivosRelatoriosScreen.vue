@@ -1,74 +1,54 @@
 <script setup lang="ts">
 import { computed, reactive, ref, type Component } from 'vue';
+import { ArrowLeft, FileSpreadsheet, ChevronRight, Download, Wallet, FileText } from 'lucide-vue-next';
+import { SITUACAO_OPTS, brl, situacaoLabel, type ContratoAtivoGlobal, type TituloAtivoGlobal } from '../data/ativosData';
 import {
-  ArrowLeft,
-  FileSpreadsheet,
-  ChevronRight,
-  Download,
-  Wallet,
-  BellRing,
-  Receipt,
-  FileText,
-  Users,
-} from 'lucide-vue-next';
-import { cras } from '../data/craData';
-import {
-  PORTFOLIO_REPORTS,
+  ATIVOS_REPORTS,
+  ATIVOS_FUNDOS,
   SITUACAO_FUNDO_OPTS,
-  STATUS_PAGAMENTO_PREVIEW,
-  STATUS_NOTIFICACAO_PREVIEW,
-  mockPortfolioTitulos,
-  mockPortfolioSacados,
+  TIPO_VEICULO_OPTS,
+  filterTitulosByFunds,
+  filterContratosByFunds,
+  filterTitulosPreview,
+  filterContratosPreview,
   toTitulosCsv,
-  toSacadosCsv,
-  isSacadosReport,
-  isNotificacoesReport,
-  type PortfolioReportKey,
-  type PortfolioTituloRow,
-  type PortfolioSacadoRow,
+  toContratosCsv,
+  isContratosReport,
+  type AtivosReportKey,
 } from '../data/relatoriosData';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { useBackgroundReport } from '@/composables/useBackgroundReport';
 
-const REPORT_ICONS: Record<PortfolioReportKey, Component> = {
-  ger001: Wallet,
-  ger002: Receipt,
-  ger003: BellRing,
-  ger004: FileText,
-  ger005: Users,
+const REPORT_ICONS: Record<AtivosReportKey, Component> = {
+  wallet: Wallet,
+  'asset-contract-listing': FileText,
 };
 
-const selected = ref<PortfolioReportKey | null>(null);
-const hoveredKey = ref<PortfolioReportKey | null>(null);
-const draft = reactive({ situacao: '', cessionaria: '' });
+const selected = ref<AtivosReportKey | null>(null);
+const hoveredKey = ref<AtivosReportKey | null>(null);
+const draft = reactive({ tipo: '', situacao: '' });
 const selectedIds = ref<string[]>([]);
 const applied = ref(false);
-const previewTitulos = ref<PortfolioTituloRow[]>([]);
-const previewSacados = ref<PortfolioSacadoRow[]>([]);
+const previewTitulos = ref<TituloAtivoGlobal[]>([]);
+const previewContratos = ref<ContratoAtivoGlobal[]>([]);
 const previewFilters = reactive({
   sacado: '',
-  statusPagamento: '',
+  situacao: '',
   vencimentoDe: '',
   vencimentoAte: '',
-  statusNotificacao: '',
 });
 const { enqueueReport } = useBackgroundReport();
 
-const report = computed(() => PORTFOLIO_REPORTS.find((r) => r.key === selected.value) ?? null);
-const sacadosMode = computed(() => isSacadosReport(selected.value));
-const notificacoesMode = computed(() => isNotificacoesReport(selected.value));
-const verLabel = computed(() => (sacadosMode.value ? 'VER SACADOS' : 'VER TÍTULOS'));
-
-const cessionarias = computed(() =>
-  Array.from(new Set(cras.map((c) => c.cessionaria))).sort(),
-);
+const report = computed(() => ATIVOS_REPORTS.find((r) => r.key === selected.value) ?? null);
+const contratosMode = computed(() => isContratosReport(selected.value));
+const verLabel = computed(() => (contratosMode.value ? 'VER CONTRATOS' : 'VER TÍTULOS'));
 
 const filteredFunds = computed(() =>
-  cras.filter((c) => {
-    if (draft.situacao && c.status !== draft.situacao) return false;
-    if (draft.cessionaria && c.cessionaria !== draft.cessionaria) return false;
+  ATIVOS_FUNDOS.filter((f) => {
+    if (draft.tipo && f.tipo !== draft.tipo) return false;
+    if (draft.situacao && f.situacao !== draft.situacao) return false;
     return true;
   }),
 );
@@ -79,22 +59,8 @@ const allFilteredSelected = computed(
     filteredFunds.value.every((f) => selectedIds.value.includes(f.id)),
 );
 
-const filteredTitulos = computed(() => {
-  const q = previewFilters.sacado.trim().toLowerCase();
-  return previewTitulos.value.filter((r) => {
-    if (q && !r.sacado.toLowerCase().includes(q)) return false;
-    if (previewFilters.statusPagamento && r.statusPagamento !== previewFilters.statusPagamento) return false;
-    if (previewFilters.statusNotificacao && r.statusNotificacao !== previewFilters.statusNotificacao) return false;
-    if (previewFilters.vencimentoDe && r.vencimento < previewFilters.vencimentoDe) return false;
-    if (previewFilters.vencimentoAte && r.vencimento > previewFilters.vencimentoAte) return false;
-    return true;
-  });
-});
-
-const filteredSacados = computed(() => {
-  const q = previewFilters.sacado.trim().toLowerCase();
-  return previewSacados.value.filter((r) => !q || r.sacado.toLowerCase().includes(q));
-});
+const filteredTitulos = computed(() => filterTitulosPreview(previewTitulos.value, previewFilters));
+const filteredContratos = computed(() => filterContratosPreview(previewContratos.value, previewFilters));
 
 const {
   page: titulosPage,
@@ -106,32 +72,31 @@ const {
 } = useTablePagination(() => filteredTitulos.value, { defaultPageSize: 10 });
 
 const {
-  page: sacadosPage,
-  pageSize: sacadosPageSize,
-  total: sacadosTotal,
-  pageItems: sacadosPageItems,
-  setPage: setSacadosPage,
-  setPageSize: setSacadosPageSize,
-} = useTablePagination(() => filteredSacados.value, { defaultPageSize: 10 });
+  page: contratosPage,
+  pageSize: contratosPageSize,
+  total: contratosTotal,
+  pageItems: contratosPageItems,
+  setPage: setContratosPage,
+  setPageSize: setContratosPageSize,
+} = useTablePagination(() => filteredContratos.value, { defaultPageSize: 10 });
 
-const previewTotal = computed(() => (sacadosMode.value ? sacadosTotal.value : titulosTotal.value));
+const previewTotal = computed(() => (contratosMode.value ? contratosTotal.value : titulosTotal.value));
 
 function resetPreviewFilters() {
   previewFilters.sacado = '';
-  previewFilters.statusPagamento = '';
+  previewFilters.situacao = '';
   previewFilters.vencimentoDe = '';
   previewFilters.vencimentoAte = '';
-  previewFilters.statusNotificacao = '';
 }
 
-function selectReport(key: PortfolioReportKey) {
+function selectReport(key: AtivosReportKey) {
   selected.value = key;
+  draft.tipo = '';
   draft.situacao = '';
-  draft.cessionaria = '';
-  selectedIds.value = cras.map((c) => c.id);
+  selectedIds.value = ATIVOS_FUNDOS.map((f) => f.id);
   applied.value = false;
   previewTitulos.value = [];
-  previewSacados.value = [];
+  previewContratos.value = [];
   resetPreviewFilters();
 }
 
@@ -139,7 +104,7 @@ function goBack() {
   if (applied.value) {
     applied.value = false;
     previewTitulos.value = [];
-    previewSacados.value = [];
+    previewContratos.value = [];
     resetPreviewFilters();
     return;
   }
@@ -164,28 +129,23 @@ function toggleAllFiltered() {
 
 function handleVer() {
   if (!report.value || !selected.value) return;
-  const funds = filteredFunds.value
-    .filter((f) => selectedIds.value.includes(f.id))
-    .map((f) => ({ id: f.id, nome: f.nome }));
+  const ids = filteredFunds.value.filter((f) => selectedIds.value.includes(f.id)).map((f) => f.id);
   resetPreviewFilters();
-  if (sacadosMode.value) {
-    previewSacados.value = mockPortfolioSacados(funds);
+  if (contratosMode.value) {
+    previewContratos.value = filterContratosByFunds(ids);
     previewTitulos.value = [];
   } else {
-    previewTitulos.value = mockPortfolioTitulos(funds);
-    previewSacados.value = [];
+    previewTitulos.value = filterTitulosByFunds(ids);
+    previewContratos.value = [];
   }
   applied.value = true;
   setTitulosPage(1);
-  setSacadosPage(1);
+  setContratosPage(1);
 }
 
 function handleExportCsv() {
   if (!report.value) return;
-  const includeNotificacao = notificacoesMode.value;
-  const csv = sacadosMode.value
-    ? toSacadosCsv(filteredSacados.value)
-    : toTitulosCsv(filteredTitulos.value, includeNotificacao);
+  const csv = contratosMode.value ? toContratosCsv(filteredContratos.value) : toTitulosCsv(filteredTitulos.value);
   enqueueReport({
     reportName: report.value.title,
     buildFile: () => ({
@@ -221,7 +181,7 @@ const inputStyle = {
   <div v-if="!selected" class="flex flex-col" style="gap: 24px">
     <div>
       <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--accent); font-weight: var(--weight-bold); margin-bottom: 6px">
-        CRA's
+        Ativos
       </div>
       <h1 style="font-size: 26px; font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.02em; line-height: 1.15">
         Relatórios
@@ -233,7 +193,7 @@ const inputStyle = {
 
     <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px">
       <button
-        v-for="r in PORTFOLIO_REPORTS"
+        v-for="r in ATIVOS_REPORTS"
         :key="r.key"
         class="flex flex-col"
         type="button"
@@ -300,7 +260,7 @@ const inputStyle = {
       </button>
       <div>
         <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--accent); font-weight: var(--weight-bold); margin-bottom: 4px">
-          Relatórios · CRA's
+          Relatórios · Ativos
         </div>
         <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.01em">
           {{ report?.title }}
@@ -311,54 +271,54 @@ const inputStyle = {
     <div v-if="!applied" style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); padding: 22px">
       <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 18px">
         <div>
-          <div :style="labelStyle">Situação do fundo</div>
-          <select v-model="draft.situacao" :style="inputStyle">
+          <div :style="labelStyle">Veículo</div>
+          <select v-model="draft.tipo" :style="inputStyle">
             <option value="">Todos</option>
-            <option v-for="o in SITUACAO_FUNDO_OPTS" :key="o" :value="o">{{ o }}</option>
+            <option v-for="o in TIPO_VEICULO_OPTS" :key="o" :value="o">{{ o }}</option>
           </select>
         </div>
         <div>
-          <div :style="labelStyle">Cessionária</div>
-          <select v-model="draft.cessionaria" :style="inputStyle">
+          <div :style="labelStyle">Situação do fundo</div>
+          <select v-model="draft.situacao" :style="inputStyle">
             <option value="">Todas</option>
-            <option v-for="o in cessionarias" :key="o" :value="o">{{ o }}</option>
+            <option v-for="o in SITUACAO_FUNDO_OPTS" :key="o" :value="o">{{ o }}</option>
           </select>
         </div>
       </div>
 
       <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px">
-        Selecionar CRA's
+        Selecionar fundos
       </div>
       <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 18px">
         <div
           class="grid items-center"
-          style="grid-template-columns: 40px 2fr 1.2fr 1.4fr 1fr; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase"
+          style="grid-template-columns: 40px 2fr 0.8fr 1.2fr 1fr; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase"
         >
           <div class="flex items-center justify-center">
             <Checkbox :checked="allFilteredSelected" @change="toggleAllFiltered" />
           </div>
           <div>Nome</div>
+          <div>Tipo</div>
           <div>CNPJ</div>
-          <div>Cessionária</div>
           <div>Status</div>
         </div>
         <div
           v-for="f in filteredFunds"
           :key="f.id"
           class="grid items-center"
-          style="grid-template-columns: 40px 2fr 1.2fr 1.4fr 1fr; padding: 12px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm); cursor: pointer"
+          style="grid-template-columns: 40px 2fr 0.8fr 1.2fr 1fr; padding: 12px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm); cursor: pointer"
           @click="toggleFund(f.id)"
         >
           <div class="flex items-center justify-center" @click.stop>
             <Checkbox :checked="selectedIds.includes(f.id)" @change="toggleFund(f.id)" />
           </div>
           <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ f.nome }}</div>
+          <div style="color: var(--text-default)">{{ f.tipo }}</div>
           <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ f.cnpj }}</div>
-          <div style="color: var(--text-default)">{{ f.cessionaria }}</div>
-          <div style="color: var(--text-muted)">{{ f.status }}</div>
+          <div style="color: var(--text-muted)">{{ f.situacao }}</div>
         </div>
         <div v-if="filteredFunds.length === 0" style="padding: 28px; text-align: center; color: var(--text-muted); font-size: var(--text-sm)">
-          Nenhum CRA para os filtros.
+          Nenhum fundo para os filtros.
         </div>
       </div>
 
@@ -415,17 +375,17 @@ const inputStyle = {
         </button>
       </div>
 
-      <div class="grid" :style="{ gridTemplateColumns: notificacoesMode ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: '12px', padding: '16px 20px', borderBottom: '1px solid var(--border-default)' }">
+      <div class="grid" :style="{ gridTemplateColumns: contratosMode ? '1fr' : 'repeat(3, 1fr)', gap: '12px', padding: '16px 20px', borderBottom: '1px solid var(--border-default)' }">
         <div>
           <div :style="labelStyle">Sacado</div>
           <input v-model="previewFilters.sacado" type="text" placeholder="Buscar sacado" :style="inputStyle" />
         </div>
-        <template v-if="!sacadosMode">
+        <template v-if="!contratosMode">
           <div>
-            <div :style="labelStyle">Status pagamento</div>
-            <select v-model="previewFilters.statusPagamento" :style="inputStyle">
-              <option value="">Todos</option>
-              <option v-for="o in STATUS_PAGAMENTO_PREVIEW" :key="o" :value="o">{{ o }}</option>
+            <div :style="labelStyle">Situação</div>
+            <select v-model="previewFilters.situacao" :style="inputStyle">
+              <option value="">Todas</option>
+              <option v-for="o in SITUACAO_OPTS" :key="o" :value="o">{{ situacaoLabel(o) }}</option>
             </select>
           </div>
           <div>
@@ -436,75 +396,56 @@ const inputStyle = {
             <div :style="labelStyle">Vencimento até</div>
             <input v-model="previewFilters.vencimentoAte" type="date" :style="inputStyle" />
           </div>
-          <div v-if="notificacoesMode">
-            <div :style="labelStyle">Status notificação</div>
-            <select v-model="previewFilters.statusNotificacao" :style="inputStyle">
-              <option value="">Todos</option>
-              <option v-for="o in STATUS_NOTIFICACAO_PREVIEW" :key="o" :value="o">{{ o }}</option>
-            </select>
-          </div>
         </template>
       </div>
 
       <div v-if="previewTotal === 0" style="padding: 40px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)">
         Nenhum resultado para os filtros.
       </div>
-      <template v-else-if="sacadosMode">
+      <template v-else-if="contratosMode">
         <div
           class="grid"
-          style="grid-template-columns: 2fr 2fr 1.4fr 1.2fr; padding: 10px 20px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase"
+          style="grid-template-columns: 1fr 1.4fr 0.7fr 1.4fr 1.4fr 1fr 1fr 0.7fr; padding: 10px 20px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase"
         >
-          <div>Fundo</div><div>Sacado</div><div>Documento</div><div>Limite / exposição</div>
+          <div>Nº Contrato</div><div>Fundo</div><div>Tipo</div><div>Cedente</div><div>Sacado</div><div>Valor nominal</div><div>Último vencimento</div><div>Parcelas</div>
         </div>
         <div
-          v-for="row in sacadosPageItems"
+          v-for="row in contratosPageItems"
           :key="row.id"
           class="grid items-center"
-          style="grid-template-columns: 2fr 2fr 1.4fr 1.2fr; padding: 12px 20px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
+          style="grid-template-columns: 1fr 1.4fr 0.7fr 1.4fr 1.4fr 1fr 1fr 0.7fr; padding: 12px 20px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
         >
-          <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ row.fundo }}</div>
-          <div style="color: var(--text-default)">{{ row.sacado }}</div>
-          <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ row.documento }}</div>
-          <div style="font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">{{ row.limite }}</div>
+          <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ row.numero }}</div>
+          <div style="color: var(--text-default)">{{ row.veiculoNome }}</div>
+          <div style="color: var(--text-muted)">{{ row.tipoAtivo }}</div>
+          <div style="color: var(--text-default)">{{ row.cedenteNome }}</div>
+          <div style="color: var(--text-default)">{{ row.sacadoNome }}</div>
+          <div style="font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">{{ brl(row.valorNominal) }}</div>
+          <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ row.ultimoVencimento }}</div>
+          <div style="color: var(--text-muted)">{{ row.qtdParcelas }}</div>
         </div>
-        <TablePagination :total="sacadosTotal" :page="sacadosPage" :page-size="sacadosPageSize" @update:page="setSacadosPage" @update:page-size="setSacadosPageSize" />
+        <TablePagination :total="contratosTotal" :page="contratosPage" :page-size="contratosPageSize" @update:page="setContratosPage" @update:page-size="setContratosPageSize" />
       </template>
       <template v-else>
         <div
           class="grid"
-          :style="{
-            gridTemplateColumns: notificacoesMode ? '1.6fr 1.6fr 1fr 0.7fr 1fr 1fr 1.1fr 1.2fr' : '1.6fr 1.6fr 1fr 0.7fr 1fr 1fr 1.1fr',
-            padding: '10px 20px',
-            background: 'var(--surface-sunken)',
-            fontSize: '10px',
-            fontWeight: 'var(--weight-bold)',
-            letterSpacing: '0.10em',
-            color: 'var(--text-muted)',
-            textTransform: 'uppercase',
-          }"
+          style="grid-template-columns: 1.4fr 1.4fr 1fr 1fr 1fr 1fr 1fr; padding: 10px 20px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase"
         >
-          <div>Fundo</div><div>Sacado</div><div>Nº NF</div><div>Parcela</div><div>Vencimento</div><div>Valor</div><div>Status pagamento</div>
-          <div v-if="notificacoesMode">Status notificação</div>
+          <div>Fundo</div><div>Sacado</div><div>Nº Título</div><div>Contrato</div><div>Vencimento</div><div>Valor aberto</div><div>Situação</div>
         </div>
         <div
           v-for="row in titulosPageItems"
           :key="row.id"
           class="grid items-center"
-          :style="{
-            gridTemplateColumns: notificacoesMode ? '1.6fr 1.6fr 1fr 0.7fr 1fr 1fr 1.1fr 1.2fr' : '1.6fr 1.6fr 1fr 0.7fr 1fr 1fr 1.1fr',
-            padding: '12px 20px',
-            borderTop: '1px solid var(--border-default)',
-            fontSize: 'var(--text-sm)',
-          }"
+          style="grid-template-columns: 1.4fr 1.4fr 1fr 1fr 1fr 1fr 1fr; padding: 12px 20px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
         >
-          <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ row.fundo }}</div>
-          <div style="color: var(--text-default)">{{ row.sacado }}</div>
-          <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ row.nfe }}</div>
-          <div style="color: var(--text-muted)">{{ row.parcela }}</div>
+          <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ row.veiculoNome }}</div>
+          <div style="color: var(--text-default)">{{ row.sacadoNome }}</div>
+          <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ row.numero }}</div>
+          <div style="color: var(--text-muted)">{{ row.contratoNumero }}</div>
           <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ row.vencimento }}</div>
-          <div style="font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">{{ row.valor }}</div>
-          <div style="color: var(--text-default)">{{ row.statusPagamento }}</div>
-          <div v-if="notificacoesMode" style="color: var(--text-default)">{{ row.statusNotificacao }}</div>
+          <div style="font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">{{ brl(row.valorAberto) }}</div>
+          <div style="color: var(--text-default)">{{ situacaoLabel(row.situacao) }}</div>
         </div>
         <TablePagination :total="titulosTotal" :page="titulosPage" :page-size="titulosPageSize" @update:page="setTitulosPage" @update:page-size="setTitulosPageSize" />
       </template>

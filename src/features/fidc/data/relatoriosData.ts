@@ -50,45 +50,115 @@ export const PORTFOLIO_REPORTS: PortfolioReportDef[] = [
 
 export const SITUACAO_FUNDO_OPTS = ['EM ANDAMENTO'] as const;
 
-export interface PortfolioResultRow {
+export const STATUS_PAGAMENTO_PREVIEW = ['Confirmado', 'Pendente', 'Vencido'] as const;
+export const STATUS_NOTIFICACAO_PREVIEW = ['Notificado', 'Pendente', 'Não notificado'] as const;
+
+export interface PortfolioFundRef {
+  id: string;
+  nome: string;
+}
+
+export interface PortfolioTituloRow {
   id: string;
   fundo: string;
-  cnpj: string;
-  categoria: string;
-  status: string;
-  metrica: string;
+  fundoId: string;
+  sacado: string;
+  nfe: string;
+  parcela: string;
+  vencimento: string;
   valor: string;
+  valorNum: number;
+  statusPagamento: (typeof STATUS_PAGAMENTO_PREVIEW)[number];
+  statusNotificacao: (typeof STATUS_NOTIFICACAO_PREVIEW)[number];
 }
 
-export function mockFidcPortfolioRows(
-  reportKey: PortfolioReportKey,
-  funds: { id: string; name: string; cnpj: string; category: string; status: string }[],
-): PortfolioResultRow[] {
-  const suffix: Record<PortfolioReportKey, { metrica: string; valor: (i: number) => string }> = {
-    ger001: { metrica: 'Carteira', valor: (i) => `R$ ${(12.4 + i * 3.1).toFixed(1)}M` },
-    ger002: { metrica: 'Em cobrança', valor: (i) => `R$ ${(1.1 + i * 0.6).toFixed(1)}M` },
-    ger003: { metrica: 'Notificações', valor: (i) => String(20 + i * 8) },
-    ger004: { metrica: 'Títulos', valor: (i) => String(48 + i * 15) },
-    ger005: { metrica: 'Sacados', valor: (i) => String(22 + i * 9) },
-  };
-  const s = suffix[reportKey];
-  return funds.map((f, i) => ({
-    id: f.id,
-    fundo: f.name,
-    cnpj: f.cnpj,
-    categoria: f.category,
-    status: f.status,
-    metrica: s.metrica,
-    valor: s.valor(i),
-  }));
+export interface PortfolioSacadoRow {
+  id: string;
+  fundo: string;
+  fundoId: string;
+  sacado: string;
+  documento: string;
+  limite: string;
 }
 
-export function toPortfolioCsv(rows: PortfolioResultRow[]): string {
-  const header = ['Fundo', 'CNPJ', 'Categoria', 'Status', 'Métrica', 'Valor'];
-  const lines = rows.map((r) =>
-    [r.fundo, r.cnpj, r.categoria, r.status, r.metrica, r.valor]
-      .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-      .join(';'),
+const SACADOS = [
+  'Exportações Agro LTDA',
+  'Coop. Agroindustrial Sul',
+  'Cerealista Norte LTDA',
+  'Distribuidora Campo Verde',
+  'Tradings do Brasil S/A',
+];
+
+function pad(n: number) {
+  return String(n).padStart(3, '0');
+}
+
+function brl(n: number) {
+  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function csvCell(v: string) {
+  return `"${String(v).replace(/"/g, '""')}"`;
+}
+
+export function mockPortfolioTitulos(funds: PortfolioFundRef[]): PortfolioTituloRow[] {
+  return funds.flatMap((f, fi) =>
+    Array.from({ length: 4 }, (_, i) => {
+      const statusPagamento = STATUS_PAGAMENTO_PREVIEW[(fi + i) % STATUS_PAGAMENTO_PREVIEW.length];
+      const statusNotificacao = STATUS_NOTIFICACAO_PREVIEW[(fi + i * 2) % STATUS_NOTIFICACAO_PREVIEW.length];
+      const month = String(((fi + i) % 12) + 1).padStart(2, '0');
+      const valorNum = 120_000 + fi * 55_000 + i * 31_000;
+      return {
+        id: `${f.id}-t${i + 1}`,
+        fundo: f.nome,
+        fundoId: f.id,
+        sacado: SACADOS[(fi + i) % SACADOS.length],
+        nfe: `${f.id.replace(/\W/g, '').slice(0, 6).toUpperCase()}-${pad(i + 1)}`,
+        parcela: `${(i % 3) + 1}/3`,
+        vencimento: `2026-${month}-15`,
+        valor: brl(valorNum),
+        valorNum,
+        statusPagamento,
+        statusNotificacao,
+      };
+    }),
   );
+}
+
+export function mockPortfolioSacados(funds: PortfolioFundRef[]): PortfolioSacadoRow[] {
+  return funds.flatMap((f, fi) =>
+    SACADOS.slice(0, 3).map((sacado, i) => ({
+      id: `${f.id}-s${i + 1}`,
+      fundo: f.nome,
+      fundoId: f.id,
+      sacado,
+      documento: `${String(20 + fi).padStart(2, '0')}.${String(110 + i * 11).padStart(3, '0')}.${String(210 + fi).padStart(3, '0')}/0001-${String(20 + i).padStart(2, '0')}`,
+      limite: brl(2_400_000 + fi * 420_000 + i * 210_000),
+    })),
+  );
+}
+
+export function toTitulosCsv(rows: PortfolioTituloRow[], includeNotificacao = false): string {
+  const header = ['Fundo', 'Sacado', 'Nº NF', 'Parcela', 'Vencimento', 'Valor', 'Status pagamento'];
+  if (includeNotificacao) header.push('Status notificação');
+  const lines = rows.map((r) => {
+    const cells = [r.fundo, r.sacado, r.nfe, r.parcela, r.vencimento, r.valor, r.statusPagamento];
+    if (includeNotificacao) cells.push(r.statusNotificacao);
+    return cells.map(csvCell).join(';');
+  });
   return [header.join(';'), ...lines].join('\n');
+}
+
+export function toSacadosCsv(rows: PortfolioSacadoRow[]): string {
+  const header = ['Fundo', 'Sacado', 'Documento', 'Limite / exposição'];
+  const lines = rows.map((r) => [r.fundo, r.sacado, r.documento, r.limite].map(csvCell).join(';'));
+  return [header.join(';'), ...lines].join('\n');
+}
+
+export function isSacadosReport(key: PortfolioReportKey | null) {
+  return key === 'ger005';
+}
+
+export function isNotificacoesReport(key: PortfolioReportKey | null) {
+  return key === 'ger003';
 }

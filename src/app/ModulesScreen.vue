@@ -24,7 +24,7 @@ import {
 } from '@/features/solicitacao-operacao';
 import { PassivoScreen } from '@/features/passivo';
 import { PassivoNovoScreen } from '@/features/passivo-novo';
-import { AtivosScreen } from '@/features/ativos';
+import { AtivosScreen, AtivosRelatoriosScreen } from '@/features/ativos';
 import { ConfiguracoesScreen } from '@/features/configuracoes';
 
 import {
@@ -46,6 +46,7 @@ type View =
   | 'solicitacoes-taxas-veiculos'
   | 'solicitacoes-validacoes'
   | 'ativos'
+  | 'ativos-relatorios'
   | 'fidcs'
   | 'fidcs-simulador'
   | 'fidcs-relatorios'
@@ -82,6 +83,7 @@ const titleMap: Record<View, string> = {
   'solicitacoes-taxas-veiculos': 'Taxas dos Veículos',
   'solicitacoes-validacoes': 'Validações',
   ativos: 'Ativos',
+  'ativos-relatorios': 'Relatórios',
   fidcs: "Gestão de FIDC's",
   'fidcs-simulador': 'Simulador',
   'fidcs-relatorios': 'Relatórios',
@@ -113,7 +115,7 @@ const titleMap: Record<View, string> = {
 
 const VALID_VIEWS = new Set<View>([
   'dashboard', 'solicitacoes', 'solicitacoes-fundo-padrao', 'solicitacoes-relatorios', 'solicitacoes-taxas-veiculos', 'solicitacoes-validacoes',
-  'ativos',
+  'ativos', 'ativos-relatorios',
   'fidcs', 'fidcs-simulador', 'fidcs-relatorios',
   'cras', 'cras-simulador', 'cras-relatorios',
   'semiestruturadas',
@@ -141,6 +143,7 @@ const openMenu = ref<string | null>((() => {
   if (v.startsWith('cras')) return 'cras';
   if (v.startsWith('fidcs')) return 'fidcs';
   if (v.startsWith('semiestruturadas')) return 'semiestruturadas';
+  if (v.startsWith('ativos')) return 'ativos';
   return null;
 })());
 const userToggledSidebar = ref(false);
@@ -184,6 +187,7 @@ function handleModuleClick(title: string) {
     openMenu.value = 'solicitacoes';
   } else if (title === 'Ativos') {
     view.value = 'ativos';
+    openMenu.value = 'ativos';
   } else if (title === "FIDC's") {
     view.value = 'fidcs';
     openMenu.value = 'fidcs';
@@ -233,6 +237,7 @@ function handleModuleClick(title: string) {
           <TaxasVeiculosScreen v-else-if="view === 'solicitacoes-taxas-veiculos'" />
           <ValidacoesConfigScreen v-else-if="view === 'solicitacoes-validacoes'" />
           <AtivosScreen v-else-if="view === 'ativos'" />
+          <AtivosRelatoriosScreen v-else-if="view === 'ativos-relatorios'" />
           <FidcScreen v-else-if="view === 'fidcs'" />
           <FidcSimuladorScreen v-else-if="view === 'fidcs-simulador'" />
           <FidcRelatoriosScreen v-else-if="view === 'fidcs-relatorios'" />

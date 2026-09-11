@@ -506,9 +506,9 @@ export const VEICULOS: Veiculo[] = [
     proximoPagamento: 14_120_000,
     dateChips: DATE_CHIPS,
     caixaAccounts: [
-      { label: 'Conta centralizadora', value: 9_420_000 },
-      { label: 'Conta reserva', value: 1_850_000 },
-      { label: 'Provisões', value: 870_000 },
+      { label: 'Conta corrente', value: 9_420_000 },
+      { label: 'Conta investimentos', value: 1_850_000 },
+      { label: 'Fundo de zeragem', value: 870_000 },
     ],
     series: [
       makeSerie({
@@ -610,9 +610,9 @@ export const VEICULOS: Veiculo[] = [
     proximoPagamento: 3_820_000,
     dateChips: DATE_CHIPS,
     caixaAccounts: [
-      { label: 'Conta centralizadora', value: 3_410_000 },
-      { label: 'Conta reserva', value: 620_000 },
-      { label: 'Provisões', value: 250_000 },
+      { label: 'Conta corrente', value: 3_410_000 },
+      { label: 'Conta investimentos', value: 620_000 },
+      { label: 'Fundo de zeragem', value: 250_000 },
     ],
     series: [
       makeSerie({
@@ -691,9 +691,9 @@ export const VEICULOS: Veiculo[] = [
     proximoPagamento: 6_540_000,
     dateChips: DATE_CHIPS,
     caixaAccounts: [
-      { label: 'Conta do fundo', value: 7_110_000 },
-      { label: 'Reserva de liquidez', value: 1_150_000 },
-      { label: 'Provisões', value: 500_000 },
+      { label: 'Conta corrente', value: 7_110_000 },
+      { label: 'Conta investimentos', value: 1_150_000 },
+      { label: 'Fundo de zeragem', value: 500_000 },
     ],
     series: [
       makeSerie({
@@ -767,4 +767,275 @@ export function getVeiculo(id: string): Veiculo | undefined {
 
 export function serieSenior(veiculo: Veiculo): Serie | undefined {
   return veiculo.series.find((s) => s.classe === 'SR');
+}
+
+/* ------------------------------------------------------------------ */
+/* Session mutations (prototype)                                      */
+/* ------------------------------------------------------------------ */
+
+export const CAIXA_LABELS = ['Conta corrente', 'Conta investimentos', 'Fundo de zeragem'] as const;
+export type CaixaLabel = (typeof CAIXA_LABELS)[number];
+
+export type PuEventType =
+  | 'subscription'
+  | 'interest'
+  | 'amortization'
+  | 'extraordinaryAmortization'
+  | 'premium'
+  | 'nonCashWithdrawal';
+
+export const PU_EVENT_TYPES: { id: PuEventType; label: string }[] = [
+  { id: 'subscription', label: 'Integralização' },
+  { id: 'interest', label: 'Pagamento de juros' },
+  { id: 'amortization', label: 'Amortização' },
+  { id: 'extraordinaryAmortization', label: 'Amortização extraordinária' },
+  { id: 'premium', label: 'Pagamento de prêmio' },
+  { id: 'nonCashWithdrawal', label: 'Retirada de cotas sem financeiro' },
+];
+
+export function puEventLabel(type: PuEventType): string {
+  return PU_EVENT_TYPES.find((t) => t.id === type)?.label ?? type;
+}
+
+export function puEventUsesQuantity(type: PuEventType): boolean {
+  return type === 'subscription' || type === 'nonCashWithdrawal';
+}
+
+export function puEventUsesAmount(type: PuEventType): boolean {
+  return (
+    type === 'interest' ||
+    type === 'amortization' ||
+    type === 'extraordinaryAmortization' ||
+    type === 'premium'
+  );
+}
+
+export interface CreatePuEventInput {
+  type: PuEventType;
+  date: string;
+  amount?: number;
+  quantity?: number;
+  payAllAccruedInterest?: boolean;
+}
+
+export type LaminaUploadKind =
+  | 'cota-subordinada'
+  | 'cota-senior'
+  | 'conta-corrente'
+  | 'conta-investimentos'
+  | 'fundo-zeragem';
+
+export const LAMINA_UPLOAD_KINDS: { id: LaminaUploadKind; label: string }[] = [
+  { id: 'cota-subordinada', label: 'Cota subordinada' },
+  { id: 'cota-senior', label: 'Cota sênior' },
+  { id: 'conta-corrente', label: 'Conta corrente' },
+  { id: 'conta-investimentos', label: 'Conta investimentos' },
+  { id: 'fundo-zeragem', label: 'Fundo de zeragem' },
+];
+
+export interface BankBalanceInput {
+  date: string;
+  currentAccountBalance: number;
+  investmentsBalance: number;
+  sweepFundBalance: number;
+}
+
+export function cloneVeiculo(src: Veiculo): Veiculo {
+  const v = structuredClone(src);
+  v.caixaAccounts = normalizeCaixaAccounts(v.caixaAccounts, v.caixa);
+  v.caixa = v.caixaAccounts.reduce((s, a) => s + a.value, 0);
+  return v;
+}
+
+function normalizeCaixaAccounts(existing: CaixaAccount[], total: number): CaixaAccount[] {
+  const byLabel = new Map(existing.map((a) => [a.label, a.value]));
+  if (CAIXA_LABELS.every((label) => byLabel.has(label))) {
+    return CAIXA_LABELS.map((label) => ({ label, value: byLabel.get(label) ?? 0 }));
+  }
+  return CAIXA_LABELS.map((label, i) => ({
+    label,
+    value: existing[i]?.value ?? (i === 0 ? total : 0),
+  }));
+}
+
+function refreshAggregates(veiculo: Veiculo) {
+  const seniors = veiculo.series.filter((s) => s.classe === 'SR');
+  veiculo.funding = seniors.reduce((s, x) => s + x.valor, 0);
+  const sub = veiculo.series.find((s) => s.classe === 'SUB');
+  veiculo.subordinada = sub?.valor ?? 0;
+  veiculo.puSenior = seniors[0]?.pu ?? veiculo.puSenior;
+  veiculo.puSubResidual = sub?.pu ?? veiculo.puSubResidual;
+  veiculo.caixa = veiculo.caixaAccounts.reduce((s, a) => s + a.value, 0);
+}
+
+export function nextSerieNome(veiculo: Veiculo, classe: SerieClasse): string {
+  if (classe === 'SUB') {
+    const n = veiculo.series.filter((s) => s.classe === 'SUB').length;
+    return n === 0 ? 'Subordinada' : `Subordinada ${n + 1}a`;
+  }
+  if (classe === 'MEZ') {
+    const n = veiculo.series.filter((s) => s.classe === 'MEZ').length;
+    return n === 0 ? 'Mezanino' : `Mezanino ${n + 1}a`;
+  }
+  const n = veiculo.series.filter((s) => s.classe === 'SR').length + 1;
+  return `Senior ${n}a`;
+}
+
+export interface NovaCotaInput {
+  classe: SerieClasse;
+  ifCodigo: string;
+  tipo: string;
+  dataInicioIso: string;
+  vencimentoIso: string;
+}
+
+export function addNovaCota(veiculo: Veiculo, input: NovaCotaInput): Serie {
+  const template =
+    veiculo.series.find((s) => s.classe === input.classe) ?? veiculo.series[0];
+  const vnu = template?.valorNominalInicial || 1000;
+  const serie = makeSerie({
+    id: `${veiculo.id}-${input.classe.toLowerCase()}-${Date.now()}`,
+    classe: input.classe,
+    nome: nextSerieNome(veiculo, input.classe),
+    ifCodigo: input.ifCodigo.trim() || '—',
+    tipo: input.tipo.trim() || '—',
+    dataInicio: isoToBr(input.dataInicioIso),
+    vencimentoIso: input.vencimentoIso,
+    vnu,
+    quantidade: 0,
+    principalResidual: vnu,
+    pu: vnu,
+    remuneracao: input.tipo.trim() || '—',
+    taxaAa: 0,
+    resultadoDia: 0,
+    resultadoMes: 0,
+    proximoPagamentoValor: 0,
+  });
+  veiculo.series.push(serie);
+  refreshAggregates(veiculo);
+  return serie;
+}
+
+function debitCaixa(veiculo: Veiculo, amount: number) {
+  let remaining = amount;
+  for (const acc of veiculo.caixaAccounts) {
+    const take = Math.min(Math.max(0, acc.value), remaining);
+    acc.value -= take;
+    remaining -= take;
+    if (remaining <= 0) break;
+  }
+  if (remaining > 0 && veiculo.caixaAccounts[0]) {
+    veiculo.caixaAccounts[0].value -= remaining;
+  }
+}
+
+function accruedInterestValue(serie: Serie): number {
+  return Math.max(0, serie.quantidade * serie.acumulacaoD1.juros);
+}
+
+export function applyPuEvent(veiculo: Veiculo, serieId: string, input: CreatePuEventInput): string {
+  const idx = veiculo.series.findIndex((s) => s.id === serieId);
+  if (idx < 0) return 'Série não encontrada.';
+  const serie: Serie = {
+    ...veiculo.series[idx]!,
+    eventosRealizados: [...veiculo.series[idx]!.eventosRealizados],
+    acumulacaoD1: { ...veiculo.series[idx]!.acumulacaoD1 },
+  };
+
+  const dateBr = isoToBr(input.date);
+  const label = puEventLabel(input.type);
+
+  if (puEventUsesQuantity(input.type)) {
+    const q = input.quantity ?? 0;
+    if (q <= 0) return 'Quantidade de cotas deve ser maior que 0.';
+    if (input.type === 'subscription') {
+      serie.quantidade += q;
+      serie.valor = serie.pu * serie.quantidade;
+      serie.eventosRealizados.unshift({
+        data: dateBr,
+        componente: label,
+        puEvento: 0,
+        valorEvento: 0,
+        puApos: serie.pu,
+        detalhe: `${num(q, 0)} cotas`,
+      });
+    } else {
+      if (q > serie.quantidade) return 'Quantidade maior que o estoque da série.';
+      serie.quantidade -= q;
+      serie.valor = serie.pu * serie.quantidade;
+      serie.eventosRealizados.unshift({
+        data: dateBr,
+        componente: label,
+        puEvento: 0,
+        valorEvento: 0,
+        puApos: serie.pu,
+        detalhe: `${num(q, 0)} cotas`,
+      });
+    }
+  } else {
+    let amount = input.amount ?? 0;
+    if (input.type === 'interest' && input.payAllAccruedInterest) {
+      amount = accruedInterestValue(serie);
+    }
+    if (amount <= 0) return 'Valor deve ser maior que 0.';
+
+    debitCaixa(veiculo, amount);
+
+    if (input.type === 'amortization' || input.type === 'extraordinaryAmortization') {
+      const deltaPu = serie.quantidade > 0 ? amount / serie.quantidade : 0;
+      serie.pu = Math.max(0, serie.pu - deltaPu);
+      serie.principalResidual = Math.max(0, serie.principalResidual - deltaPu);
+      serie.valor = serie.pu * serie.quantidade;
+      serie.acumulacaoD1.pu = serie.pu;
+      serie.acumulacaoD1.juros = Math.max(0, serie.pu - serie.principalResidual);
+    }
+
+    serie.eventosRealizados.unshift({
+      data: dateBr,
+      componente: label,
+      puEvento: input.type === 'premium' || input.type === 'interest' ? 0 : amount,
+      valorEvento: amount,
+      puApos: serie.pu,
+      detalhe: input.payAllAccruedInterest ? 'Pagar 100% dos juros do dia' : brl(amount, true),
+    });
+  }
+
+  veiculo.series.splice(idx, 1, serie);
+  refreshAggregates(veiculo);
+  return '';
+}
+
+export function applyBankBalance(veiculo: Veiculo, input: BankBalanceInput) {
+  veiculo.caixaAccounts = [
+    { label: 'Conta corrente', value: input.currentAccountBalance },
+    { label: 'Conta investimentos', value: input.investmentsBalance },
+    { label: 'Fundo de zeragem', value: input.sweepFundBalance },
+  ];
+  refreshAggregates(veiculo);
+}
+
+export function applyLaminaUpload(veiculo: Veiculo, kind: LaminaUploadKind, fileName: string): string {
+  const stem = fileName.replace(/\.[^.]+$/, '').slice(0, 18) || 'ARQ';
+  if (kind === 'cota-subordinada') {
+    const sub = veiculo.series.find((s) => s.classe === 'SUB');
+    if (!sub) return 'Não há cota subordinada neste veículo.';
+    sub.ifCodigo = stem;
+    return `Cota subordinada preenchida a partir de ${fileName}.`;
+  }
+  if (kind === 'cota-senior') {
+    const sr = veiculo.series.find((s) => s.classe === 'SR');
+    if (!sr) return 'Não há cota sênior neste veículo.';
+    sr.ifCodigo = stem;
+    return `Cota sênior preenchida a partir de ${fileName}.`;
+  }
+  const label: CaixaLabel =
+    kind === 'conta-corrente'
+      ? 'Conta corrente'
+      : kind === 'conta-investimentos'
+        ? 'Conta investimentos'
+        : 'Fundo de zeragem';
+  const acc = veiculo.caixaAccounts.find((a) => a.label === label);
+  if (acc) acc.value += 10_000;
+  refreshAggregates(veiculo);
+  return `${label} atualizada a partir de ${fileName}.`;
 }
