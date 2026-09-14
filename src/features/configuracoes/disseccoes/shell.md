@@ -823,7 +823,15 @@ const items: NavItem[] = [
       },
     ],
   },
-  { key: "ativos", label: "Ativos", icon: Package },
+  {
+    key: "ativos",
+    label: "Ativos",
+    icon: Package,
+    children: [
+      { key: "ativos", label: "Gestão", icon: Package },
+      { key: "ativos-relatorios", label: "Relatórios", icon: BarChart3 },
+    ],
+  },
   {
     key: "fidcs",
     label: "FIDC's",
@@ -1460,13 +1468,19 @@ function handleAction() {
       maxWidth: '100%',
       background: 'var(--surface-card)',
       border: '1px solid var(--border-default)',
-      borderLeft: `4px solid ${tone.fg}`,
       borderRadius: 'var(--radius-xl)',
       boxShadow: 'var(--shadow-lg)',
       overflow: 'hidden',
     }"
   >
-    <div class="flex" style="gap: 12px; padding: 14px 14px 0 14px; align-items: flex-start">
+    <div
+      class="flex"
+      :style="{
+        gap: '12px',
+        padding: toast.action ? '14px 14px 0 14px' : '14px',
+        alignItems: 'flex-start',
+      }"
+    >
       <div
         class="flex items-center justify-center"
         :style="{
@@ -1537,11 +1551,11 @@ function handleAction() {
     </div>
 
     <div
-      class="flex items-center justify-between"
+      v-if="toast.action"
+      class="flex items-center justify-end"
       style="padding: 12px 14px 14px; gap: 12px"
     >
       <button
-        v-if="toast.action"
         type="button"
         class="btn-animated"
         :style="{
@@ -1558,24 +1572,6 @@ function handleAction() {
         @click="handleAction"
       >
         {{ toast.action.label }}
-      </button>
-      <span v-else />
-      <button
-        type="button"
-        class="btn-animated"
-        style="
-          height: 32px;
-          padding: 0 4px;
-          border: none;
-          background: transparent;
-          color: var(--text-muted);
-          font-size: var(--text-xs);
-          font-weight: var(--weight-semibold);
-          cursor: pointer;
-        "
-        @click="emit('dismiss')"
-      >
-        Dismiss
       </button>
     </div>
   </div>
@@ -1794,7 +1790,6 @@ const tone = computed(() => {
       width: '100%',
       background: tone.bg,
       border: `1px solid color-mix(in srgb, ${tone.border} 28%, transparent)`,
-      borderLeft: `4px solid ${tone.border}`,
       borderRadius: 'var(--radius-xl)',
       padding: '14px 16px',
     }"

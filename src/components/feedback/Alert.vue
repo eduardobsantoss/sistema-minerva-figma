@@ -75,7 +75,6 @@ const tone = computed(() => {
       width: '100%',
       background: tone.bg,
       border: `1px solid color-mix(in srgb, ${tone.border} 28%, transparent)`,
-      borderLeft: `4px solid ${tone.border}`,
       borderRadius: 'var(--radius-xl)',
       padding: '14px 16px',
     }"
