@@ -80,7 +80,7 @@ const filtered = computed(() =>
     const q = searchQuery.value.trim().toLowerCase();
     if (
       q &&
-      !n.protocolo.toLowerCase().includes(q) &&
+      !n.lastro.toLowerCase().includes(q) &&
       !n.tituloNumero.toLowerCase().includes(q) &&
       !n.cedente.toLowerCase().includes(q) &&
       !n.sacado.toLowerCase().includes(q) &&
@@ -235,7 +235,7 @@ function menuActions(n: NotificacaoCessao) {
         />
         <input
           v-model="searchQuery"
-          placeholder="Buscar por protocolo, título, cedente ou sacado"
+          placeholder="Buscar por lastro, título, cedente ou sacado"
           style="
             width: 100%;
             height: 38px;
@@ -439,7 +439,7 @@ function menuActions(n: NotificacaoCessao) {
       <div style="overflow-x: auto">
         <div style="width: max-content; min-width: 100%">
           <div class="grid nc-table-row nc-table-header" :style="{ gridTemplateColumns: gridTemplate }">
-            <div>Protocolo</div>
+            <div>Lastro</div>
             <div v-for="c in cols" :key="c.key" :style="{ textAlign: c.align }">{{ c.label }}</div>
             <div style="text-align: right">Ações</div>
           </div>
@@ -466,8 +466,8 @@ function menuActions(n: NotificacaoCessao) {
             @click="emit('open', n.id)"
           >
             <div>
-              <div style="font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
-                {{ n.protocolo }}
+              <div style="font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: 0.04em">
+                {{ n.lastro }}
               </div>
               <span
                 style="

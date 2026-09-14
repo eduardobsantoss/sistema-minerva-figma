@@ -5,6 +5,7 @@ export type VeiculoTipoCessao = 'CRA' | 'FIDC';
 export interface NotificacaoCessao {
   id: string;
   protocolo: string;
+  lastro: string;
   tituloNumero: string;
   tituloId: string;
   veiculoTipo: VeiculoTipoCessao;
@@ -71,6 +72,7 @@ export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = [
   {
     id: 'nc-1',
     protocolo: 'NC-2026-1001',
+    lastro: 'CPR-F',
     tituloNumero: 'CRA-SEA4-002',
     tituloId: 'tit-2',
     veiculoTipo: 'CRA',
@@ -92,6 +94,7 @@ export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = [
   {
     id: 'nc-2',
     protocolo: 'NC-2026-1002',
+    lastro: 'NFE',
     tituloNumero: 'FIDC-TITEC-118',
     tituloId: 'tit-5',
     veiculoTipo: 'FIDC',
@@ -113,6 +116,7 @@ export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = [
   {
     id: 'nc-3',
     protocolo: 'NC-2026-1003',
+    lastro: 'CPR-F',
     tituloNumero: 'CRA-FUT-022',
     tituloId: 'tit-9',
     veiculoTipo: 'CRA',
@@ -134,6 +138,7 @@ export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = [
   {
     id: 'nc-4',
     protocolo: 'NC-2026-1004',
+    lastro: 'NC',
     tituloNumero: 'FIDC-AGRO-033',
     tituloId: 'tit-6',
     veiculoTipo: 'FIDC',
@@ -155,6 +160,7 @@ export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = [
   {
     id: 'nc-5',
     protocolo: 'NC-2026-1005',
+    lastro: 'DM',
     tituloNumero: 'FIDC-CER-055',
     tituloId: 'tit-10',
     veiculoTipo: 'FIDC',
@@ -176,6 +182,7 @@ export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = [
   {
     id: 'nc-6',
     protocolo: 'NC-2026-1006',
+    lastro: 'CCB',
     tituloNumero: 'CRA-BTG2-001',
     tituloId: 'tit-3',
     veiculoTipo: 'CRA',
@@ -197,6 +204,7 @@ export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = [
   {
     id: 'nc-7',
     protocolo: 'NC-2026-1007',
+    lastro: 'CPR-F',
     tituloNumero: 'CRA-NAT-014',
     tituloId: 'tit-7',
     veiculoTipo: 'CRA',
@@ -218,6 +226,7 @@ export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = [
   {
     id: 'nc-8',
     protocolo: 'NC-2026-1008',
+    lastro: 'CDCA',
     tituloNumero: 'FIDC-VAL-007',
     tituloId: 'tit-8',
     veiculoTipo: 'FIDC',
@@ -239,6 +248,7 @@ export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = [
   {
     id: 'nc-9',
     protocolo: 'NC-2026-1009',
+    lastro: 'NFE',
     tituloNumero: 'CRA-SEA4-001',
     tituloId: 'tit-1',
     veiculoTipo: 'CRA',
@@ -260,6 +270,7 @@ export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = [
   {
     id: 'nc-10',
     protocolo: 'NC-2026-1010',
+    lastro: 'DM',
     tituloNumero: 'FIDC-TITEC-101',
     tituloId: 'tit-4',
     veiculoTipo: 'FIDC',
