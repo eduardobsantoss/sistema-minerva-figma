@@ -16,6 +16,7 @@ const tipoTone: Record<TipoOperacaoSemi, { bg: string; fg: string }> = {
   CCB: { bg: 'var(--gci-light)', fg: 'var(--gci-base)' },
   CDCA: { bg: 'var(--success-light)', fg: 'var(--success-dark)' },
   CDA: { bg: '#EEF0FF', fg: '#4F46E5' },
+  NP: { bg: 'var(--warning-light)', fg: 'var(--warning-dark)' },
 };
 </script>
 

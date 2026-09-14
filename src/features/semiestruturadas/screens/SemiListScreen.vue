@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Search, Briefcase, Wallet, Layers, ShieldCheck } from 'lucide-vue-next';
+import { Search, Plus, Briefcase, Wallet, Layers, ShieldCheck } from 'lucide-vue-next';
 import { brl, num, type SemiOperacao } from '../data/semiestruturadasData';
 import SemiCard from '../components/SemiCard.vue';
 
 const props = defineProps<{ operacoes: SemiOperacao[] }>();
-const emit = defineEmits<{ open: [id: string] }>();
+const emit = defineEmits<{ open: [id: string]; new: [] }>();
 
 const q = ref('');
 const focus = ref(false);
@@ -111,6 +111,33 @@ const kpis = computed(() => [
           PESQUISAR
         </button>
       </div>
+      <button
+        class="flex items-center btn-animated btn-agro"
+        style="
+          gap: 8px;
+          height: 56px;
+          padding: 0 24px;
+          background: var(--agro-base);
+          color: #fff;
+          border-radius: var(--radius-xl);
+          border: none;
+          cursor: pointer;
+          font-weight: var(--weight-bold);
+          font-size: var(--text-xs);
+          letter-spacing: 0.10em;
+          box-shadow: 0 10px 24px -8px rgba(242, 125, 38, 0.4);
+          white-space: nowrap;
+        "
+        @click="emit('new')"
+      >
+        <span
+          class="flex items-center justify-center"
+          style="width: 22px; height: 22px; border-radius: 9999px; background: rgba(255,255,255,0.20)"
+        >
+          <Plus :size="14" />
+        </span>
+        NOVA SEMIESTRUTURADA
+      </button>
     </div>
 
     <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">

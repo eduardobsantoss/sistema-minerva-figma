@@ -1,4 +1,61 @@
-export type TipoOperacaoSemi = 'NC' | 'CPRF' | 'CCB' | 'CDCA' | 'CDA' | 'CPR';
+export type TipoOperacaoSemi = 'NC' | 'CPRF' | 'CCB' | 'CDCA' | 'CDA' | 'CPR' | 'NP';
+
+export const TIPOS_CONTRATO: TipoOperacaoSemi[] = ['NC', 'CCB', 'CDCA', 'CPRF', 'CPR', 'NP', 'CDA'];
+
+export interface SemiCatalogItem {
+  id: string;
+  nome: string;
+}
+
+export const CREDORES_SEED: SemiCatalogItem[] = [
+  { id: 'cred-gci', nome: 'GCI Securitizadora S.A.' },
+  { id: 'cred-vert', nome: 'VERT Companhia Securitizadora' },
+  { id: 'cred-true', nome: 'True Securitizadora S.A.' },
+  { id: 'cred-oliveira', nome: 'Oliveira Trust DTVM' },
+  { id: 'cred-vortx', nome: 'Vórtx Distribuidora de Títulos' },
+];
+
+export const ESCRITURADORES_SEED: SemiCatalogItem[] = [
+  { id: 'esc-oliveira', nome: 'Oliveira Trust DTVM S.A.' },
+  { id: 'esc-vortx', nome: 'Vórtx DTVM Ltda.' },
+  { id: 'esc-pentagono', nome: 'Pentágono S.A. DTVM' },
+  { id: 'esc-planner', nome: 'Planner Trustee DTVM Ltda.' },
+];
+
+export interface WarrantyType {
+  id: number;
+  nome: string;
+}
+
+export const WARRANTY_TYPES: WarrantyType[] = [
+  { id: 7, nome: 'AF. Estoque' },
+  { id: 8, nome: 'AF. Ativos Biológicos' },
+  { id: 9, nome: 'AF. Lavoura / AF Agrícola' },
+  { id: 10, nome: 'AF. Imóvel' },
+  { id: 11, nome: 'Cessão Fiduciária de Direitos Creditórios (DUPLICATA)' },
+  { id: 12, nome: 'Cessão Fiduciária de Direitos Creditórios (CONTRATO)' },
+  { id: 13, nome: 'AF. Bens Móveis' },
+  { id: 14, nome: 'Penhor de Estoque' },
+];
+
+export function warrantyTypeName(id: number): string {
+  return WARRANTY_TYPES.find((t) => t.id === id)?.nome ?? String(id);
+}
+
+export function slugGrupo(nome: string): string {
+  return nome
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '')
+    .slice(0, 24);
+}
+
+export function defaultSemiNome(contractType: string, cedenteSlug = ''): string {
+  return cedenteSlug
+    ? `semiestruturada_${contractType}_${cedenteSlug}`
+    : `semiestruturada_${contractType}_`;
+}
 
 export type SemiLastroStatus = 'CONFIRMADO' | 'PENDENTE' | 'VENCIDO';
 
