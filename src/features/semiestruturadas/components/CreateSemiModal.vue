@@ -61,7 +61,12 @@ function isValidPct(n: number) {
 function syncRequired() {
   const prev = new Map(form.value.required.map((r) => [r.warrantyTypeId, r]));
   form.value.required = form.value.accepted.map(
-    (a) => prev.get(a.warrantyTypeId) ?? { warrantyTypeId: a.warrantyTypeId, mode: 'value' as const },
+    (a) =>
+      prev.get(a.warrantyTypeId) ?? {
+        warrantyTypeId: a.warrantyTypeId,
+        mode: 'value' as const,
+        value: 0,
+      },
   );
 }
 
@@ -128,7 +133,9 @@ const canAdvance = computed(() => {
   return (
     f.required.length >= 1 &&
     f.required.every((r) =>
-      r.mode === 'value' ? r.value != null && r.value >= 0 : r.percentage != null && isValidPct(r.percentage),
+      r.mode === 'value'
+        ? r.value != null && Number.isFinite(r.value) && r.value >= 0
+        : r.percentage != null && isValidPct(r.percentage),
     )
   );
 });

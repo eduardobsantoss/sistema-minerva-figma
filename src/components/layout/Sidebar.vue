@@ -114,7 +114,7 @@ const items: NavItem[] = [
       { key: "cobranca-titulos", label: "Títulos", icon: FileText },
       {
         key: "cobranca-notif",
-        label: "Notificações de Cobrança",
+        label: "Notf. de Régua de Cobrança",
         icon: BellRing,
       },
       {

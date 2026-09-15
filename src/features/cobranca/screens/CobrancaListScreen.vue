@@ -113,6 +113,36 @@ function handleDelete(id: string) {
 
 <template>
   <div class="flex flex-col" style="gap: 24px">
+    <div>
+      <div
+        style="
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.18em;
+          color: var(--accent);
+          font-weight: var(--weight-bold);
+          margin-bottom: 6px;
+        "
+      >
+        Cobrança
+      </div>
+      <h1
+        style="
+          font-size: 26px;
+          font-weight: var(--weight-bold);
+          color: var(--text-strong);
+          letter-spacing: -0.02em;
+          line-height: 1.15;
+        "
+      >
+        Notificação de Régua de Cobrança
+      </h1>
+      <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+        {{ filtered.length }}
+        {{ filtered.length === 1 ? 'régua encontrada' : 'réguas encontradas' }}
+      </p>
+    </div>
+
     <!-- Search + actions bar -->
     <div class="flex items-center" style="gap: 16px">
       <div

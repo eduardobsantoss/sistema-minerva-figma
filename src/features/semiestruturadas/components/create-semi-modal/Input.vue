@@ -3,7 +3,11 @@ import { useAttrs } from 'vue';
 
 defineOptions({ inheritAttrs: false });
 defineProps<{ disabled?: boolean }>();
-const model = defineModel<string>();
+const model = defineModel<string>({
+  set(v) {
+    return v == null ? '' : String(v);
+  },
+});
 const attrs = useAttrs();
 </script>
 

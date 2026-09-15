@@ -171,7 +171,7 @@ const kpis = computed(() => [
       Nenhuma operação semiestruturada encontrada.
     </div>
 
-    <div v-else class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 20px">
+    <div v-else class="grid items-stretch" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px">
       <SemiCard
         v-for="op in filtered"
         :key="op.id"

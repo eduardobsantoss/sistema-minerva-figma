@@ -21,17 +21,23 @@ function setMode(id: number, mode: 'value' | 'percentage') {
   );
 }
 
-function setValue(id: number, raw: string) {
-  const n = Number(raw.replace(',', '.'));
+function parseInput(raw: string | number | null | undefined): number | undefined {
+  if (raw === '' || raw == null) return undefined;
+  const n = Number(String(raw).replace(/\s/g, '').replace(',', '.'));
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function setValue(id: number, raw: string | number) {
+  const n = parseInput(raw);
   form.value.required = form.value.required.map((r) =>
-    r.warrantyTypeId === id ? { ...r, value: Number.isFinite(n) ? n : 0 } : r,
+    r.warrantyTypeId === id ? { ...r, value: n } : r,
   );
 }
 
-function setPct(id: number, raw: string) {
-  const n = Number(raw.replace(',', '.'));
+function setPct(id: number, raw: string | number) {
+  const n = parseInput(raw);
   form.value.required = form.value.required.map((r) =>
-    r.warrantyTypeId === id ? { ...r, percentage: Number.isFinite(n) ? n : 0 } : r,
+    r.warrantyTypeId === id ? { ...r, percentage: n } : r,
   );
 }
 </script>
@@ -97,7 +103,8 @@ function setPct(id: number, raw: string) {
         <FieldLabel>Valor exigido</FieldLabel>
         <Input
           :model-value="row.value != null ? String(row.value) : ''"
-          type="number"
+          type="text"
+          inputmode="decimal"
           placeholder="0,00"
           @update:model-value="setValue(row.warrantyTypeId, $event)"
         />
@@ -106,7 +113,8 @@ function setPct(id: number, raw: string) {
         <FieldLabel>Percentual exigido sobre saldo em aberto</FieldLabel>
         <Input
           :model-value="row.percentage != null ? String(row.percentage) : ''"
-          type="number"
+          type="text"
+          inputmode="decimal"
           placeholder="0"
           @update:model-value="setPct(row.warrantyTypeId, $event)"
         />

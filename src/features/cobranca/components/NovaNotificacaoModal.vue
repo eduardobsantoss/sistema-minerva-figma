@@ -115,7 +115,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
       <div class="flex items-start justify-between" style="padding: 24px 32px; border-bottom: 1px solid var(--border-default); flex-shrink: 0">
         <div>
           <h2 style="font-size: var(--text-2xl); font-weight: 900; color: var(--text-strong); letter-spacing: -0.025em; line-height: 1.2; margin-bottom: 4px">
-            Nova Notificação de Cobrança
+            Nova Notificação de Régua de Cobrança
           </h2>
           <p style="font-size: var(--text-sm); color: var(--text-muted)">
             Configure a régua de notificação · Etapa {{ stepIdx + 1 }} de {{ steps.length }}

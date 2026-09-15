@@ -15,11 +15,14 @@ import {
   VEICULO_CESSAO_OPTS,
   CANAL_CESSAO_OPTS,
   STATUS_CESSAO_OPTS,
+  TIPO_NOTIFICACAO_OPTS,
   brl,
   statusCessaoColor,
   statusCessaoLabel,
+  tipoNotificacaoLabel,
   type NotificacaoCessao,
   type StatusNotificacaoCessao,
+  type TipoNotificacao,
 } from '../data/notificacoesCessaoData';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
@@ -57,6 +60,7 @@ interface Filters {
 const EMPTY_FILTERS: Filters = { veiculoId: '', canal: '', status: '', cedente: '' };
 
 const searchQuery = ref('');
+const tipoFilter = ref<TipoNotificacao | ''>('');
 const quickFilter = ref<QuickFilter>(null);
 const filterOpen = ref(false);
 const filterPlacement = ref<'below' | 'above'>('below');
@@ -88,6 +92,7 @@ const filtered = computed(() =>
     ) {
       return false;
     }
+    if (tipoFilter.value && n.tipo !== tipoFilter.value) return false;
     if (quickFilter.value && n.status !== quickFilter.value) return false;
     if (applied.value.veiculoId && n.veiculoId !== applied.value.veiculoId) return false;
     if (applied.value.canal && n.canal !== applied.value.canal) return false;
@@ -228,18 +233,37 @@ function menuActions(n: NotificacaoCessao) {
     </div>
 
     <div class="flex items-center justify-between" style="gap: 10px; flex-wrap: wrap">
-      <div style="position: relative; flex: 1 1 50%; min-width: 240px; max-width: 50%">
-        <Search
-          :size="15"
-          style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted)"
-        />
-        <input
-          v-model="searchQuery"
-          placeholder="Buscar por lastro, título, cedente ou sacado"
+      <div class="flex items-center" style="gap: 10px; flex: 1 1 50%; min-width: 240px">
+        <div style="position: relative; flex: 1; min-width: 200px">
+          <Search
+            :size="15"
+            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted)"
+          />
+          <input
+            v-model="searchQuery"
+            placeholder="Buscar por lastro, título, cedente ou sacado"
+            style="
+              width: 100%;
+              height: 38px;
+              padding: 0 12px 0 36px;
+              background: var(--surface-card);
+              border: 1px solid var(--border-default);
+              border-radius: var(--radius-lg);
+              outline: none;
+              font-size: var(--text-sm);
+              color: var(--text-strong);
+            "
+            @input="setPage(1)"
+          />
+        </div>
+        <select
+          v-model="tipoFilter"
+          aria-label="Tipo"
           style="
-            width: 100%;
+            width: 160px;
+            flex-shrink: 0;
             height: 38px;
-            padding: 0 12px 0 36px;
+            padding: 0 12px;
             background: var(--surface-card);
             border: 1px solid var(--border-default);
             border-radius: var(--radius-lg);
@@ -247,8 +271,11 @@ function menuActions(n: NotificacaoCessao) {
             font-size: var(--text-sm);
             color: var(--text-strong);
           "
-          @input="setPage(1)"
-        />
+          @change="setPage(1)"
+        >
+          <option value="">Tipo</option>
+          <option v-for="t in TIPO_NOTIFICACAO_OPTS" :key="t.key" :value="t.key">{{ t.label }}</option>
+        </select>
       </div>
 
       <div class="flex items-center" style="gap: 10px; flex-wrap: wrap">
@@ -483,6 +510,22 @@ function menuActions(n: NotificacaoCessao) {
                 "
               >
                 {{ n.veiculoTipo }}
+              </span>
+              <span
+                style="
+                  display: inline-block;
+                  margin-top: 4px;
+                  margin-left: 4px;
+                  font-size: 10px;
+                  font-weight: var(--weight-bold);
+                  letter-spacing: 0.08em;
+                  padding: 2px 8px;
+                  border-radius: var(--radius-sm);
+                  background: var(--surface-sunken);
+                  color: var(--text-muted);
+                "
+              >
+                {{ tipoNotificacaoLabel(n.tipo) }}
               </span>
             </div>
 

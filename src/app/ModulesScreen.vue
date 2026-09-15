@@ -94,7 +94,7 @@ const titleMap: Record<View, string> = {
   cobranca: 'Cobrança',
   'cobranca-titulos': 'Títulos',
   'cobranca-dashboard': 'Dashboard de Cobrança',
-  'cobranca-notif': 'Notificações de Cobrança',
+  'cobranca-notif': 'Notificação de Régua de Cobrança',
   'cobranca-notif-cessao': 'Notificações de Cessão',
   'cobranca-resultado-notif': 'Resultado de Notificações',
   'cobranca-rel': 'Relatórios de Cobrança',

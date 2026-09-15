@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { TrendingUp, Wallet, Layers } from 'lucide-vue-next';
 import { brl, type SemiOperacao, type TipoOperacaoSemi } from '../data/semiestruturadasData';
 import DonutRing from './semi-card/DonutRing.vue';
 
-defineProps<{ operacao: SemiOperacao }>();
+const props = defineProps<{ operacao: SemiOperacao }>();
 const emit = defineEmits<{ open: [id: string] }>();
 
 const hover = ref(false);
@@ -18,12 +18,21 @@ const tipoTone: Record<TipoOperacaoSemi, { bg: string; fg: string }> = {
   CDA: { bg: '#EEF0FF', fg: '#4F46E5' },
   NP: { bg: 'var(--warning-light)', fg: 'var(--warning-dark)' },
 };
+
+const statusTone = computed(() => {
+  const s = props.operacao.status.toUpperCase();
+  if (s.includes('AGUARDANDO')) return { bg: 'var(--warning-light)', fg: 'var(--warning-dark)' };
+  if (s.includes('FINALIZ')) return { bg: 'var(--status-neutral-bg)', fg: 'var(--status-neutral-text)' };
+  return { bg: 'var(--success-light)', fg: 'var(--success-dark)' };
+});
 </script>
 
 <template>
   <div
     class="relative flex flex-col"
     :style="{
+      height: '100%',
+      minWidth: 0,
       background: 'var(--surface-card)',
       borderWidth: '1px',
       borderStyle: 'solid',
@@ -40,62 +49,69 @@ const tipoTone: Record<TipoOperacaoSemi, { bg: string; fg: string }> = {
     @mouseleave="hover = false"
     @click="emit('open', operacao.id)"
   >
-    <div class="flex items-start justify-between" style="gap: 8px">
-      <div style="flex: 1; min-width: 0">
-        <div class="flex items-center" style="gap: 8px; margin-bottom: 6px">
-          <span
-            :style="{
-              fontSize: '10px',
-              fontWeight: 'var(--weight-bold)',
-              letterSpacing: '0.12em',
-              padding: '3px 8px',
-              borderRadius: 'var(--radius-sm)',
-              background: tipoTone[operacao.tipo].bg,
-              color: tipoTone[operacao.tipo].fg,
-            }"
-          >
-            {{ operacao.tipo }}
-          </span>
-        </div>
-        <div
-          style="
-            font-size: var(--text-md);
-            font-weight: var(--weight-bold);
-            color: var(--text-strong);
-            letter-spacing: -0.01em;
-            line-height: 1.25;
-            margin-bottom: 4px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-          "
-        >
-          {{ operacao.nome }}
-        </div>
-        <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4">
-          {{ operacao.cedente }} · {{ operacao.cedenteCnpj }}
-        </div>
-      </div>
+    <div class="flex items-center justify-between" style="gap: 8px; min-width: 0">
+      <span
+        :style="{
+          fontSize: '10px',
+          fontWeight: 'var(--weight-bold)',
+          letterSpacing: '0.12em',
+          padding: '3px 8px',
+          borderRadius: 'var(--radius-sm)',
+          background: tipoTone[operacao.tipo].bg,
+          color: tipoTone[operacao.tipo].fg,
+          flexShrink: 0,
+        }"
+      >
+        {{ operacao.tipo }}
+      </span>
       <span
         class="flex items-center"
-        style="
-          gap: 5px;
-          flex-shrink: 0;
-          margin-top: 4px;
-          white-space: nowrap;
-          font-size: 9px;
-          font-weight: var(--weight-bold);
-          letter-spacing: 0.10em;
-          color: var(--success-dark);
-          background: var(--success-light);
-          padding: 5px 10px;
-          border-radius: 9999px;
-        "
+        :style="{
+          gap: '5px',
+          flexShrink: 1,
+          minWidth: 0,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          fontSize: '9px',
+          fontWeight: 'var(--weight-bold)',
+          letterSpacing: '0.08em',
+          color: statusTone.fg,
+          background: statusTone.bg,
+          padding: '4px 8px',
+          borderRadius: '9999px',
+        }"
       >
-        <TrendingUp :size="10" :stroke-width="2.5" />
+        <TrendingUp :size="10" :stroke-width="2.5" style="flex-shrink: 0" />
         {{ operacao.status }}
       </span>
+    </div>
+    <div>
+      <div
+        :title="operacao.nome"
+        style="
+          font-size: var(--text-md);
+          font-weight: var(--weight-bold);
+          color: var(--text-strong);
+          letter-spacing: -0.01em;
+          line-height: 1.3;
+          height: calc(1.3em * 2);
+          margin-bottom: 4px;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          word-break: break-word;
+        "
+      >
+        {{ operacao.nome }}
+      </div>
+      <div
+        :title="`${operacao.cedente} · ${operacao.cedenteCnpj}`"
+        style="font-size: 11px; color: var(--text-muted); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis"
+      >
+        {{ operacao.cedente }} · {{ operacao.cedenteCnpj }}
+      </div>
     </div>
 
     <div
@@ -126,15 +142,15 @@ const tipoTone: Record<TipoOperacaoSemi, { bg: string; fg: string }> = {
       </div>
     </div>
 
-    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 2px">
-      <div class="flex items-center" style="gap: 10px">
+    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 2px; min-width: 0; margin-top: auto">
+      <div class="flex items-center" style="gap: 8px; min-width: 0">
         <DonutRing
           :pct="operacao.garantiasDuplicatas.pct"
           color="var(--gci-base)"
           track-color="var(--gci-light)"
         />
-        <div>
-          <div style="font-size: 10px; font-weight: var(--weight-bold); color: var(--gci-base); letter-spacing: 0.04em; margin-bottom: 3px">
+        <div style="min-width: 0">
+          <div style="font-size: 10px; font-weight: var(--weight-bold); color: var(--gci-base); letter-spacing: 0.04em; margin-bottom: 3px; line-height: 1.25">
             Garantias Duplicatas
           </div>
           <div style="font-size: 11px; font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
@@ -142,14 +158,14 @@ const tipoTone: Record<TipoOperacaoSemi, { bg: string; fg: string }> = {
           </div>
         </div>
       </div>
-      <div class="flex items-center" style="gap: 10px; justify-content: flex-end; flex-direction: row">
+      <div class="flex items-center" style="gap: 8px; min-width: 0; justify-content: flex-end">
         <DonutRing
           :pct="operacao.demaisGarantias.pct"
           color="var(--agro-base)"
           track-color="var(--agro-light)"
         />
-        <div style="text-align: right">
-          <div style="font-size: 10px; font-weight: var(--weight-bold); color: var(--agro-base); letter-spacing: 0.04em; margin-bottom: 3px">
+        <div style="text-align: right; min-width: 0">
+          <div style="font-size: 10px; font-weight: var(--weight-bold); color: var(--agro-base); letter-spacing: 0.04em; margin-bottom: 3px; line-height: 1.25">
             Demais Garantias
           </div>
           <div style="font-size: 11px; font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
