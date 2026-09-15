@@ -36,12 +36,12 @@ export const STATUS_CESSAO_OPTS: StatusNotificacaoCessao[] = [
 
 export const CANAL_CESSAO_OPTS: CanalCessao[] = ['Email', 'WhatsApp', 'SMS', 'Carta'];
 export const TIPO_NOTIFICACAO_OPTS: { key: TipoNotificacao; label: string }[] = [
-  { key: 'Regua', label: 'Régua' },
+  { key: 'Regua', label: 'Cobrança' },
   { key: 'Cessao', label: 'Cessão' },
 ];
 
 export function tipoNotificacaoLabel(t: TipoNotificacao): string {
-  return t === 'Regua' ? 'Régua' : 'Cessão';
+  return t === 'Regua' ? 'Cobrança' : 'Cessão';
 }
 
 export function statusCessaoLabel(s: StatusNotificacaoCessao): string {
