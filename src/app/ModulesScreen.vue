@@ -22,7 +22,7 @@ import {
   TaxasVeiculosScreen,
   ValidacoesConfigScreen,
 } from '@/features/solicitacao-operacao';
-import { PassivoScreen } from '@/features/passivo';
+// import { PassivoScreen } from '@/features/passivo';
 import { PassivoNovoScreen } from '@/features/passivo-novo';
 import { AtivosScreen, AtivosRelatoriosScreen } from '@/features/ativos';
 import { ConfiguracoesScreen } from '@/features/configuracoes';
@@ -107,7 +107,7 @@ const titleMap: Record<View, string> = {
   'grupos-cadastro': 'Grupos Empresariais',
   monitoramento: 'Monitoramento Pós Desembolso',
   passivo: 'Passivo',
-  'passivo-novo': 'Passivo (novo)',
+  'passivo-novo': 'Passivo',
   colab: 'Colaboradores',
   rel: 'Relatórios',
   conf: 'Configurações',
@@ -126,9 +126,13 @@ const VALID_VIEWS = new Set<View>([
   'passivo', 'passivo-novo', 'colab', 'rel', 'conf',
 ]);
 
+function normalizeView(key: string | null): View {
+  if (key === 'passivo-novo') return 'passivo';
+  return VALID_VIEWS.has(key as View) ? (key as View) : 'dashboard';
+}
+
 function getViewFromUrl(): View {
-  const v = new URLSearchParams(window.location.search).get('view') as View;
-  return VALID_VIEWS.has(v) ? v : 'dashboard';
+  return normalizeView(new URLSearchParams(window.location.search).get('view'));
 }
 
 const LAPTOP_BREAKPOINT = 1366;
@@ -149,8 +153,7 @@ const openMenu = ref<string | null>((() => {
 const userToggledSidebar = ref(false);
 
 function handlePopstate() {
-  const v = new URLSearchParams(window.location.search).get('view') as View;
-  if (VALID_VIEWS.has(v)) view.value = v;
+  view.value = normalizeView(new URLSearchParams(window.location.search).get('view'));
 }
 
 function handleResize() {
@@ -169,7 +172,7 @@ onUnmounted(() => {
 });
 
 function handleNavigate(key: string) {
-  view.value = key as View;
+  view.value = normalizeView(key);
 }
 
 function onToggleMenu(key: string) {
@@ -262,8 +265,10 @@ function handleModuleClick(title: string) {
           <RiscoDashboardScreen v-else-if="view === 'risco-dashboard'" />
           <SerasaScreen v-else-if="view === 'risco-serasa'" />
           <MonitoramentoScreen v-else-if="view === 'monitoramento'" />
-          <PassivoScreen v-else-if="view === 'passivo'" />
-          <PassivoNovoScreen v-else-if="view === 'passivo-novo'" />
+          <PassivoNovoScreen v-else-if="view === 'passivo'" />
+          <!-- Passivo (antigo) — mantido para reaproveitar componentes
+          <PassivoScreen v-else-if="view === 'passivo-antigo'" />
+          -->
           <ConfiguracoesScreen v-else-if="view === 'conf'" />
           <Placeholder v-else :name="titleMap[view]" />
         </div>

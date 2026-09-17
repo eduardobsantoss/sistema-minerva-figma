@@ -25,7 +25,7 @@ const eventType = ref<PuEventType | null>(null);
 
 const TABS = [
   { key: 'lamina', label: 'Lâmina', icon: FileText },
-  { key: 'pu', label: 'Validar PU', icon: TrendingUp },
+  { key: 'pu', label: 'Preço Unitário', icon: TrendingUp },
   { key: 'eventos', label: 'Simular evento', icon: Calculator },
 ];
 

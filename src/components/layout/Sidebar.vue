@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Landmark,
   Briefcase,
-  Database,
   Users,
   FileText,
   Settings,
@@ -49,7 +48,7 @@ interface NavItem {
 }
 
 const items: NavItem[] = [
-  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { key: "dashboard", label: "Home", icon: LayoutDashboard },
   {
     key: "solicitacoes",
     label: "Solicitação de Operação",
@@ -149,8 +148,9 @@ const items: NavItem[] = [
   },
   { key: "grupos-cadastro", label: "Grupos Empresariais", icon: Building2 },
   { key: "monitoramento", label: "Monitoramento", icon: Radar },
-  { key: "passivo", label: "Passivo", icon: Database },
-  { key: "passivo-novo", label: "Passivo (novo)", icon: Banknote },
+  // Passivo (antigo) — oculto; componentes ainda em @/features/passivo
+  // { key: "passivo-antigo", label: "Passivo (antigo)", icon: Database },
+  { key: "passivo", label: "Passivo", icon: Banknote },
   { key: "colab", label: "Colaboradores", icon: Users },
   { key: "rel", label: "Relatórios", icon: FileText },
   { key: "conf", label: "Configurações", icon: Settings },

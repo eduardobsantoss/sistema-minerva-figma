@@ -128,30 +128,12 @@ const fields = computed(() => [
 <template>
   <div class="flex flex-col" style="gap: 24px">
     <div class="flex items-center justify-between" style="gap: 16px; flex-wrap: wrap">
-      <div class="flex items-center" style="gap: 8px; flex-wrap: wrap">
+      <label class="flex items-center" style="gap: 8px; flex-wrap: wrap">
         <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted)">
           Data-base
         </span>
-        <button
-          v-for="chip in veiculo.dateChips"
-          :key="chip.iso"
-          type="button"
-          :style="{
-            height: '32px',
-            padding: '0 12px',
-            borderRadius: '9999px',
-            border: '1px solid var(--border-default)',
-            cursor: 'pointer',
-            fontSize: '11px',
-            fontWeight: 'var(--weight-bold)',
-            background: dateIso === chip.iso ? 'var(--gci-base)' : 'var(--surface-card)',
-            color: dateIso === chip.iso ? '#fff' : 'var(--text-strong)',
-          }"
-          @click="dateIso = chip.iso"
-        >
-          {{ chip.label }}
-        </button>
-      </div>
+        <input v-model="dateIso" type="date" class="date-input" />
+      </label>
       <div class="flex" style="gap: 8px">
         <button type="button" class="ghost-btn" @click="modalMode = 'atualizar'">
           Atualizar PU
@@ -402,6 +384,20 @@ const fields = computed(() => [
 </template>
 
 <style scoped>
+.date-input {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+  color: var(--text-strong);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+.date-input:focus {
+  border-color: var(--gci-base);
+}
 .ghost-btn {
   height: 40px;
   padding: 0 16px;
