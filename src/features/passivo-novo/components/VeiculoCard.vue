@@ -1,12 +1,15 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Calendar } from 'lucide-vue-next';
 import { useCardHover } from '@/composables/useCardHover';
-import { brl, pu, type Veiculo } from '../data/passivoNovoData';
+import { brl, pct, pu, type Veiculo } from '../data/passivoNovoData';
 
-defineProps<{ veiculo: Veiculo }>();
+const props = defineProps<{ veiculo: Veiculo }>();
 const emit = defineEmits<{ open: [] }>();
 
 const { hover, onMouseenter, onMouseleave } = useCardHover();
+
+const sub = computed(() => props.veiculo.series.find((s) => s.classe === 'SUB'));
 </script>
 
 <template>
@@ -86,34 +89,81 @@ const { hover, onMouseenter, onMouseleave } = useCardHover();
       </div>
 
       <div
-        class="grid"
-        style="grid-template-columns: 1fr 1fr 1fr; gap: 8px; background: var(--surface-sunken); border-radius: var(--radius-lg); padding: 12px"
+        class="flex flex-col"
+        style="gap: 12px; background: var(--surface-sunken); border-radius: var(--radius-lg); padding: 12px"
       >
-        <div>
-          <p style="font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px">
-            Funding
-          </p>
-          <p style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
-            {{ brl(veiculo.funding, true) }}
-          </p>
+        <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 8px">
+          <div>
+            <p class="metric-label">Funding</p>
+            <p class="metric-value">{{ brl(veiculo.funding, true) }}</p>
+          </div>
+          <div>
+            <p class="metric-label">PU SR</p>
+            <p class="metric-value">{{ pu(veiculo.puSenior, 4) }}</p>
+          </div>
+          <div>
+            <p class="metric-label">Caixa</p>
+            <p class="metric-value">{{ brl(veiculo.caixa, true) }}</p>
+          </div>
         </div>
-        <div>
-          <p style="font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px">
-            PU SR
-          </p>
-          <p style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
-            {{ pu(veiculo.puSenior, 4) }}
-          </p>
+
+        <div style="border-top: 1px solid var(--border-default); padding-top: 10px">
+          <p class="metric-group">Subordinada</p>
+          <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 8px">
+            <div>
+              <p class="metric-label">Valor</p>
+              <p class="metric-value">{{ sub ? brl(sub.valor, true) : '—' }}</p>
+            </div>
+            <div>
+              <p class="metric-label">PU</p>
+              <p class="metric-value">{{ sub ? pu(sub.pu, 4) : '—' }}</p>
+            </div>
+            <div>
+              <p class="metric-label">Rendimento</p>
+              <p class="metric-value">{{ sub ? pct(sub.resultadoMes) : '—' }}</p>
+            </div>
+          </div>
         </div>
-        <div>
-          <p style="font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px">
-            Caixa
-          </p>
-          <p style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
-            {{ brl(veiculo.caixa, true) }}
-          </p>
+
+        <div style="border-top: 1px solid var(--border-default); padding-top: 10px">
+          <p class="metric-group">Sênior · próximo pagamento</p>
+          <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 8px">
+            <div>
+              <p class="metric-label">Valor</p>
+              <p class="metric-value">{{ brl(veiculo.proximoPagamento, true) }}</p>
+            </div>
+            <div>
+              <p class="metric-label">Data</p>
+              <p class="metric-value">{{ veiculo.proximoPagamentoData }}</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </button>
 </template>
+
+<style scoped>
+.metric-group {
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gci-base);
+  margin-bottom: 8px;
+}
+.metric-label {
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.metric-value {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+}
+</style>

@@ -1,22 +1,66 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import {
-  Layers, AlertTriangle, Files, CheckCircle2, Clock, XCircle, Loader2,
+  Layers, AlertTriangle, Files, CheckCircle2, Clock, XCircle, Loader2, Plus,
 } from 'lucide-vue-next';
 import {
   LOTE_STATUS_LABEL,
   LOTE_STATUS_TONE,
   seedLotesProcessamento,
+  type ArquivoLote,
   type LoteProcessamento,
 } from '../../data/lotesProcessamentoData';
-import { Section, EmptyState } from './shared';
+import { Section, EmptyState, GhostButton } from './shared';
 import VerArquivosLoteModal from '../../components/modals/VerArquivosLoteModal.vue';
 import VerErrosLoteModal from '../../components/modals/VerErrosLoteModal.vue';
+import InserirXmlsModal from '../../components/modals/InserirXmlsModal.vue';
 
 const lotes = ref(seedLotesProcessamento());
 const hoveredId = ref<string | null>(null);
 const loteArquivos = ref<LoteProcessamento | null>(null);
 const loteErros = ref<LoteProcessamento | null>(null);
+const showInserir = ref(false);
+
+function formatTamanho(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function arquivosFromFiles(files: File[]): ArquivoLote[] {
+  return files.map((file, i) => ({
+    id: `arq-${Date.now()}-${i}`,
+    nome: file.name,
+    status: 'PENDENTE',
+    processadoEm: null,
+    tamanho: formatTamanho(file.size),
+    chaveNfe: '—',
+    numeroNf: '—',
+    emitente: '—',
+    destinatario: '—',
+    valor: '—',
+    erros: [],
+  }));
+}
+
+function addLote(files: File[]) {
+  if (!files.length) return;
+  const arquivos = arquivosFromFiles(files);
+  lotes.value = [
+    {
+      id: `lote-${Date.now()}`,
+      nome: files.length === 1 ? files[0]!.name : `Lote XML — ${files.length} arquivos`,
+      status: 'PENDENTE',
+      total: arquivos.length,
+      processados: 0,
+      pendentes: arquivos.length,
+      falhas: 0,
+      arquivos,
+    },
+    ...lotes.value,
+  ];
+  showInserir.value = false;
+}
 
 function openArquivos(lote: LoteProcessamento) {
   loteArquivos.value = lote;
@@ -29,11 +73,15 @@ function openErros(lote: LoteProcessamento) {
 
 <template>
   <Section title="Lotes em Processamento">
+    <template #action>
+      <GhostButton :icon="Plus" @click="showInserir = true">Inserir Novos XMLs</GhostButton>
+    </template>
+
     <EmptyState
       v-if="lotes.length === 0"
       :icon="Layers"
       title="Nenhum lote em processamento"
-      hint="Os lotes de arquivos XML enviados nesta solicitação aparecerão aqui."
+      hint="Use “Inserir Novos XMLs” para enviar arquivos .xml, .xsl, .xbl ou .xslt."
     />
 
     <div
@@ -241,5 +289,11 @@ function openErros(lote: LoteProcessamento) {
     v-if="loteErros"
     :lote="loteErros"
     @close="loteErros = null"
+  />
+
+  <InserirXmlsModal
+    v-if="showInserir"
+    @close="showInserir = false"
+    @confirm="addLote"
   />
 </template>

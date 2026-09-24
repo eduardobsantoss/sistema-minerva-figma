@@ -229,7 +229,7 @@ function buildCompactLamina(veiculo: Veiculo): LaminaBundle {
       sacados: Math.round(veiculo.carteiraVp / 520_000),
       lastrosAtivos: Math.round(veiculo.carteiraVp / 34_000),
       proximoPagamentoSeniorValor: veiculo.proximoPagamento,
-      proximoPagamentoSeniorData: veiculo.vencimento,
+      proximoPagamentoSeniorData: veiculo.proximoPagamentoData,
       farolPagamento: veiculo.coberturaCaixa >= 1 ? 'OK' : 'Atencao',
       farolHint: `Caixa ${brl(veiculo.caixa, true)} | cobertura ${pct(veiculo.coberturaCaixa)}`,
       carregoCraPct: 0.012,

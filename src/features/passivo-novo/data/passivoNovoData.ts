@@ -89,6 +89,7 @@ export interface Veiculo {
   puSubResidual: number;
   coberturaCaixa: number;
   proximoPagamento: number;
+  proximoPagamentoData: string;
   dateChips: DateChip[];
   series: Serie[];
   caixaAccounts: CaixaAccount[];
@@ -504,6 +505,7 @@ export const VEICULOS: Veiculo[] = [
     puSubResidual: 1005.589131,
     coberturaCaixa: 0.86,
     proximoPagamento: 14_120_000,
+    proximoPagamentoData: '15/09/2026',
     dateChips: DATE_CHIPS,
     caixaAccounts: [
       { label: 'Conta corrente', value: 9_420_000 },
@@ -608,6 +610,7 @@ export const VEICULOS: Veiculo[] = [
     puSubResidual: 91.02,
     coberturaCaixa: 1.12,
     proximoPagamento: 3_820_000,
+    proximoPagamentoData: '15/09/2026',
     dateChips: DATE_CHIPS,
     caixaAccounts: [
       { label: 'Conta corrente', value: 3_410_000 },
@@ -689,6 +692,7 @@ export const VEICULOS: Veiculo[] = [
     puSubResidual: 0.9412,
     coberturaCaixa: 1.34,
     proximoPagamento: 6_540_000,
+    proximoPagamentoData: '20/09/2026',
     dateChips: DATE_CHIPS,
     caixaAccounts: [
       { label: 'Conta corrente', value: 7_110_000 },
