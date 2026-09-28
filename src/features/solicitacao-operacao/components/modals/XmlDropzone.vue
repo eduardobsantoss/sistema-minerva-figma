@@ -1,9 +1,24 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { CloudUpload } from 'lucide-vue-next';
 
-const ALLOWED_EXT = ['.xml', '.xsl', '.xbl', '.xslt'] as const;
-const ACCEPT = ALLOWED_EXT.join(',');
+const XML_EXT = ['.xml', '.xsl', '.xbl', '.xslt'] as const;
+
+const props = withDefaults(
+  defineProps<{
+    /** Extensões com ponto. Omitido: XML. `['*']` aceita qualquer arquivo. */
+    extensions?: string[];
+    multiple?: boolean;
+    heading?: string;
+    actionLabel?: string;
+    hint?: string;
+  }>(),
+  {
+    multiple: true,
+    heading: 'Solte os arquivos aqui',
+    actionLabel: 'clique para procurar no computador',
+  },
+);
 
 const emit = defineEmits<{
   files: [files: File[]];
@@ -12,6 +27,17 @@ const emit = defineEmits<{
 
 const dragging = ref(false);
 const inputRef = ref<HTMLInputElement | null>(null);
+
+const allowed = computed(() => props.extensions ?? [...XML_EXT]);
+const allowAll = computed(() => allowed.value.includes('*'));
+const acceptAttr = computed(() => (allowAll.value ? undefined : allowed.value.join(',')));
+const hintText = computed(() => {
+  if (props.hint) return props.hint;
+  if (allowAll.value) return '';
+  const list = allowed.value;
+  if (list.length <= 1) return list[0] ?? '';
+  return `${list.slice(0, -1).join(', ')} e ${list[list.length - 1]}`;
+});
 
 function extensionOf(name: string) {
   const dot = name.lastIndexOf('.');
@@ -22,7 +48,7 @@ function splitFiles(list: FileList | File[]) {
   const accepted: File[] = [];
   const rejected: string[] = [];
   for (const file of list) {
-    if ((ALLOWED_EXT as readonly string[]).includes(extensionOf(file.name))) accepted.push(file);
+    if (allowAll.value || allowed.value.includes(extensionOf(file.name))) accepted.push(file);
     else rejected.push(file.name);
   }
   if (accepted.length) emit('files', accepted);
@@ -76,20 +102,20 @@ function onDrop(e: DragEvent) {
       <CloudUpload :size="26" />
     </div>
     <div style="font-size: var(--text-base); font-weight: var(--weight-bold); color: var(--text-strong)">
-      Solte os arquivos aqui
+      {{ heading }}
     </div>
     <div style="font-size: var(--text-sm); color: var(--text-muted)">ou</div>
     <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--gci-base)">
-      clique para procurar no computador
+      {{ actionLabel }}
     </div>
-    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px">
-      .xml, .xsl, .xbl e .xslt
+    <div v-if="hintText" style="font-size: 11px; color: var(--text-muted); margin-top: 4px">
+      {{ hintText }}
     </div>
     <input
       ref="inputRef"
       type="file"
-      multiple
-      :accept="ACCEPT"
+      :multiple="multiple"
+      :accept="acceptAttr"
       style="display: none"
       @change="onInput"
     />

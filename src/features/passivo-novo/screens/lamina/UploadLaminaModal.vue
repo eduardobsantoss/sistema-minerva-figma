@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { X } from 'lucide-vue-next';
+import XmlDropzone from '@/features/solicitacao-operacao/components/modals/XmlDropzone.vue';
 import { LAMINA_UPLOAD_KINDS, type LaminaUploadKind } from '../../data/passivoNovoData';
 
 const emit = defineEmits<{
@@ -13,9 +14,8 @@ const fileName = ref('');
 
 const canSave = computed(() => Boolean(kind.value && fileName.value));
 
-function onFile(e: Event) {
-  const input = e.target as HTMLInputElement;
-  fileName.value = input.files?.[0]?.name ?? '';
+function onFiles(files: File[]) {
+  fileName.value = files[0]?.name ?? '';
 }
 
 function submit() {
@@ -68,11 +68,22 @@ const fieldStyle =
             <option v-for="k in LAMINA_UPLOAD_KINDS" :key="k.id" :value="k.id">{{ k.label }}</option>
           </select>
         </label>
-        <label class="flex flex-col" style="gap: 6px">
+        <div class="flex flex-col" style="gap: 6px">
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Arquivo</span>
-          <input type="file" @change="onFile" />
-          <span v-if="fileName" style="font-size: var(--text-xs); color: var(--text-muted)">{{ fileName }}</span>
-        </label>
+          <XmlDropzone
+            :multiple="false"
+            :extensions="['*']"
+            heading="Solte o arquivo aqui"
+            hint="Planilha da cota ou da caixa"
+            @files="onFiles"
+          />
+          <div
+            v-if="fileName"
+            style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
+          >
+            {{ fileName }}
+          </div>
+        </div>
         <p style="font-size: var(--text-xs); color: var(--text-muted)">
           O tipo descreve o conteúdo (cota ou caixa), não a extensão. Protótipo: preenche os dados sem ler a planilha.
         </p>

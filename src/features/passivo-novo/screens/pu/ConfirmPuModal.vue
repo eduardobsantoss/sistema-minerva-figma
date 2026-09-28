@@ -32,9 +32,10 @@ const selectedDate = computed(() => props.dates?.find((d) => d.iso === selectedI
 const shownPu = computed(() =>
   props.mode === 'validar' && selectedDate.value ? selectedDate.value.pu : props.puValue,
 );
-const shownDate = computed(() =>
-  props.mode === 'validar' && selectedDate.value ? selectedDate.value.label : isoToBr(props.dateIso),
-);
+const shownDate = computed(() => {
+  const iso = props.mode === 'validar' ? selectedIso.value : props.dateIso;
+  return iso.includes('-') ? isoToBr(iso) : '—';
+});
 
 const title = props.mode === 'validar' ? 'Validar PU programado' : 'Atualizar PU D-1';
 const confirmLabel = props.mode === 'validar' ? 'Confirmar e notificar AF' : 'Confirmar atualização';
@@ -84,32 +85,12 @@ const copy =
       </div>
 
       <div class="flex flex-col" style="padding: 24px; gap: 20px">
-        <div v-if="mode === 'validar' && dates?.length" class="flex flex-col" style="gap: 8px">
+        <label v-if="mode === 'validar'" class="flex flex-col" style="gap: 8px">
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted)">
             Data do PU
           </span>
-          <div class="flex" style="gap: 8px; flex-wrap: wrap">
-            <button
-              v-for="d in dates"
-              :key="d.iso"
-              type="button"
-              :style="{
-                height: '32px',
-                padding: '0 12px',
-                borderRadius: '9999px',
-                border: '1px solid var(--border-default)',
-                cursor: 'pointer',
-                fontSize: '11px',
-                fontWeight: 'var(--weight-bold)',
-                background: selectedIso === d.iso ? 'var(--gci-base)' : 'var(--surface-card)',
-                color: selectedIso === d.iso ? '#fff' : 'var(--text-strong)',
-              }"
-              @click="selectedIso = d.iso"
-            >
-              {{ d.label }}<span v-if="d.payment"> · Pgto</span>
-            </button>
-          </div>
-        </div>
+          <input v-model="selectedIso" type="date" class="date-input" />
+        </label>
         <div
           style="
             background: var(--gci-light);
@@ -190,3 +171,21 @@ const copy =
   </div>
   </Teleport>
 </template>
+
+<style scoped>
+.date-input {
+  height: 40px;
+  width: 100%;
+  padding: 0 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+  color: var(--text-strong);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+.date-input:focus {
+  border-color: var(--gci-base);
+}
+</style>
