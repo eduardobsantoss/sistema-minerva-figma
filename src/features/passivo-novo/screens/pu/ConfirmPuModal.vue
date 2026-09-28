@@ -1,14 +1,40 @@
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue';
 import { X } from 'lucide-vue-next';
 import { pu, isoToBr } from '../../data/passivoNovoData';
+
+export interface ValidarDateOption {
+  iso: string;
+  label: string;
+  pu: number;
+  payment?: boolean;
+}
 
 const props = defineProps<{
   mode: 'validar' | 'atualizar';
   puValue: number;
   dateIso: string;
   serieNome: string;
+  dates?: ValidarDateOption[];
 }>();
 const emit = defineEmits<{ close: []; confirm: [] }>();
+
+const selectedIso = ref(props.dateIso);
+
+watch(
+  () => props.dateIso,
+  (iso) => {
+    selectedIso.value = iso;
+  },
+);
+
+const selectedDate = computed(() => props.dates?.find((d) => d.iso === selectedIso.value));
+const shownPu = computed(() =>
+  props.mode === 'validar' && selectedDate.value ? selectedDate.value.pu : props.puValue,
+);
+const shownDate = computed(() =>
+  props.mode === 'validar' && selectedDate.value ? selectedDate.value.label : isoToBr(props.dateIso),
+);
 
 const title = props.mode === 'validar' ? 'Validar PU programado' : 'Atualizar PU D-1';
 const confirmLabel = props.mode === 'validar' ? 'Confirmar e notificar AF' : 'Confirmar atualização';
@@ -35,7 +61,7 @@ const copy =
     <div
       style="
         width: 100%;
-        max-width: 480px;
+        max-width: 560px;
         background: var(--surface-card);
         border-radius: var(--radius-xl);
         border: 1px solid var(--border-default);
@@ -58,6 +84,32 @@ const copy =
       </div>
 
       <div class="flex flex-col" style="padding: 24px; gap: 20px">
+        <div v-if="mode === 'validar' && dates?.length" class="flex flex-col" style="gap: 8px">
+          <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted)">
+            Data do PU
+          </span>
+          <div class="flex" style="gap: 8px; flex-wrap: wrap">
+            <button
+              v-for="d in dates"
+              :key="d.iso"
+              type="button"
+              :style="{
+                height: '32px',
+                padding: '0 12px',
+                borderRadius: '9999px',
+                border: '1px solid var(--border-default)',
+                cursor: 'pointer',
+                fontSize: '11px',
+                fontWeight: 'var(--weight-bold)',
+                background: selectedIso === d.iso ? 'var(--gci-base)' : 'var(--surface-card)',
+                color: selectedIso === d.iso ? '#fff' : 'var(--text-strong)',
+              }"
+              @click="selectedIso = d.iso"
+            >
+              {{ d.label }}<span v-if="d.payment"> · Pgto</span>
+            </button>
+          </div>
+        </div>
         <div
           style="
             background: var(--gci-light);
@@ -77,7 +129,7 @@ const copy =
                 opacity: 0.7;
               "
             >
-              {{ serieNome }} · {{ isoToBr(dateIso) }}
+              {{ serieNome }} · {{ shownDate }}
             </p>
           </div>
           <h3
@@ -89,7 +141,7 @@ const copy =
               line-height: 1.1;
             "
           >
-            {{ pu(puValue, 5) }}
+            {{ pu(shownPu, 5) }}
           </h3>
         </div>
         <p style="font-size: var(--text-sm); color: var(--text-muted); line-height: var(--leading-relaxed); font-weight: var(--weight-medium)">

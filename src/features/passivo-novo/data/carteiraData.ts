@@ -1,14 +1,6 @@
 import { brl, type Veiculo } from './passivoNovoData';
 
-export type CarteiraSliceKey =
-  | 'posicao'
-  | 'aging'
-  | 'pmts'
-  | 'pdd-estresse'
-  | 'waterfall'
-  | 'abertura-pdd'
-  | 'movimentacao'
-  | 'enquadramento';
+export type CarteiraSliceKey = 'posicao' | 'aging' | 'pdd-estresse';
 
 export interface EnquadramentoRow {
   id: string;

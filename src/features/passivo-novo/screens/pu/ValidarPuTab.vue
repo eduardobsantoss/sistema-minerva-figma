@@ -15,11 +15,15 @@ import {
   pu,
   pct,
   num,
+  isoToBr,
   TAXA_TONE,
+  type HistoricoPuRow,
   type NovaCotaInput,
   type Serie,
+  type TaxaStatus,
   type Veiculo,
 } from '../../data/passivoNovoData';
+import type { ValidarDateOption } from './ConfirmPuModal.vue';
 
 const props = defineProps<{ veiculo: Veiculo }>();
 const serieId = defineModel<string>('serieId', { default: '' });
@@ -64,9 +68,93 @@ function confirmNovaCota(input: NovaCotaInput) {
   success(`${created.nome} criada.`);
 }
 
-const history = computed(() => serie.value.historicoPu);
-const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(history, {
+type PuBand = 'passado' | 'hoje' | 'futuro';
+
+interface TimelineRow extends HistoricoPuRow {
+  band: PuBand;
+}
+
+const BAND_TABS: { key: PuBand; label: string }[] = [
+  { key: 'passado', label: 'Passado' },
+  { key: 'hoje', label: 'Presente' },
+  { key: 'futuro', label: 'Futuro' },
+];
+
+const bandTab = ref<PuBand>('hoje');
+
+const timeline = computed<TimelineRow[]>(() => {
+  const today = dateIso.value;
+  const hist = [...serie.value.historicoPu].sort((a, b) => a.dataIso.localeCompare(b.dataIso));
+  const anchor = hist.find((h) => h.dataIso === today) ?? hist[hist.length - 1];
+  const known = new Set(hist.map((h) => h.dataIso));
+  const fromHist: TimelineRow[] = hist
+    .filter((h) => h.dataIso !== today)
+    .map((h) => ({
+      ...h,
+      band: h.dataIso < today ? 'passado' : 'futuro',
+    }));
+  const hoje: TimelineRow = anchor && anchor.dataIso === today
+    ? { ...anchor, band: 'hoje' }
+    : {
+        id: `hoje-${today}`,
+        data: isoToBr(today),
+        dataIso: today,
+        taxaAa: anchor?.taxaAa ?? 0,
+        du: anchor?.du ?? serie.value.acumulacaoD1.du,
+        valorNominal: anchor?.valorNominal ?? serie.value.principalResidual,
+        puAtualizado: serie.value.pu,
+        puJuros: Math.max(0, serie.value.pu - serie.value.principalResidual),
+        evento: '—',
+        statusTaxa: 'Divulgada' satisfies TaxaStatus,
+        band: 'hoje',
+      };
+  const vn = anchor?.valorNominal ?? serie.value.principalResidual;
+  const future: TimelineRow[] = serie.value.previsao
+    .filter((p) => p.dataIso !== today && !known.has(p.dataIso))
+    .map((p, i) => ({
+      id: `prev-${serie.value.id}-${p.dataIso}`,
+      data: p.data,
+      dataIso: p.dataIso,
+      taxaAa: anchor?.taxaAa ?? 0,
+      du: (anchor?.du ?? 0) + i + 1,
+      valorNominal: vn,
+      puAtualizado: p.pu,
+      puJuros: Math.max(0, p.pu - vn),
+      evento: p.ehDataPagamentoTs ? 'Pgto TS' : '—',
+      statusTaxa: 'Projetada',
+      band: p.dataIso < today ? 'passado' : 'futuro',
+    }));
+  return [...fromHist, hoje, ...future].sort((a, b) => a.dataIso.localeCompare(b.dataIso));
+});
+
+const visibleRows = computed(() => timeline.value.filter((row) => row.band === bandTab.value));
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(visibleRows, {
   defaultPageSize: 5,
+});
+
+watch(bandTab, () => setPage(1));
+
+const validarDates = computed<ValidarDateOption[]>(() => {
+  const base = dateIso.value;
+  const byIso = new Map<string, ValidarDateOption>();
+  const histHit = serie.value.historicoPu.find((h) => h.dataIso === base);
+  byIso.set(base, {
+    iso: base,
+    label: isoToBr(base),
+    pu: histHit?.puAtualizado ?? serie.value.pu,
+  });
+  for (const row of serie.value.previsao) {
+    if (byIso.has(row.dataIso)) continue;
+    const hist = serie.value.historicoPu.find((h) => h.dataIso === row.dataIso);
+    byIso.set(row.dataIso, {
+      iso: row.dataIso,
+      label: row.data,
+      pu: hist?.puAtualizado ?? row.pu,
+      payment: row.ehDataPagamentoTs,
+    });
+  }
+  return [...byIso.values()].sort((a, b) => a.iso.localeCompare(b.iso));
 });
 
 const kpis = computed(() => [
@@ -201,8 +289,7 @@ const fields = computed(() => [
         padding: 24px;
       "
     >
-      <div class="grid" style="grid-template-columns: 1.6fr 1fr; gap: 24px; align-items: start">
-        <div class="flex flex-col" style="gap: 24px">
+      <div class="flex flex-col" style="gap: 24px">
           <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 0; border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
             <div
               v-for="f in fields"
@@ -221,11 +308,30 @@ const fields = computed(() => [
           <PuHistoricoProjetadoChart :historico="serie.historicoPu" />
 
           <div>
-            <div class="flex items-center" style="gap: 8px; margin-bottom: 12px">
-              <History :size="16" style="color: var(--gci-base)" />
-              <h4 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-                Histórico diário
-              </h4>
+            <div class="flex items-center justify-between" style="gap: 16px; margin-bottom: 12px; flex-wrap: wrap">
+              <div class="flex items-center" style="gap: 8px">
+                <History :size="16" style="color: var(--gci-base)" />
+                <div>
+                  <h4 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+                    Histórico e projeção
+                  </h4>
+                  <p style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-top: 2px">
+                    {{ visibleRows.length }} {{ visibleRows.length === 1 ? 'dia' : 'dias' }}
+                  </p>
+                </div>
+              </div>
+              <div class="flex" style="padding: 4px; background: var(--surface-sunken); border-radius: var(--radius-lg)">
+                <button
+                  v-for="tab in BAND_TABS"
+                  :key="tab.key"
+                  type="button"
+                  class="band-tab"
+                  :class="{ 'band-tab--active': bandTab === tab.key }"
+                  @click="bandTab = tab.key"
+                >
+                  {{ tab.label }}
+                </button>
+              </div>
             </div>
             <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
               <div style="overflow-x: auto">
@@ -252,6 +358,12 @@ const fields = computed(() => [
                     <div>Evento</div>
                     <div>Status taxa</div>
                   </div>
+                  <p
+                    v-if="!pageItems.length"
+                    style="padding: 24px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm); color: var(--text-muted)"
+                  >
+                    Nenhum dia neste período.
+                  </p>
                   <div
                     v-for="row in pageItems"
                     :key="row.id"
@@ -261,33 +373,34 @@ const fields = computed(() => [
                       padding: '12px 16px',
                       borderTop: '1px solid var(--border-default)',
                       fontSize: 'var(--text-sm)',
-                      background: row.dataIso === dateIso ? 'var(--gci-light)' : 'transparent',
+                      background: row.band === 'hoje' ? 'var(--gci-light)' : 'transparent',
+                      boxShadow: row.band === 'hoje' ? 'inset 3px 0 0 var(--gci-base)' : 'none',
                     }"
                   >
-                    <div style="font-weight: var(--weight-bold); white-space: nowrap">{{ row.data }}</div>
-                    <div style="font-variant-numeric: tabular-nums">{{ pct(row.taxaAa) }}</div>
-                    <div style="font-variant-numeric: tabular-nums">{{ row.du }}</div>
-                    <div style="font-variant-numeric: tabular-nums">{{ pu(row.valorNominal, 4) }}</div>
-                    <div style="font-variant-numeric: tabular-nums; font-weight: var(--weight-semibold)">{{ pu(row.puAtualizado, 6) }}</div>
-                    <div style="font-variant-numeric: tabular-nums">{{ pu(row.puJuros, 6) }}</div>
-                    <div>{{ row.evento }}</div>
-                    <div>
-                      <span
-                        :style="{
-                          fontSize: '10px',
-                          fontWeight: 'var(--weight-bold)',
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          padding: '4px 8px',
-                          borderRadius: '9999px',
-                          background: TAXA_TONE[row.statusTaxa].bg,
-                          color: TAXA_TONE[row.statusTaxa].fg,
-                        }"
-                      >
-                        {{ row.statusTaxa }}
-                      </span>
+                      <div style="font-weight: var(--weight-bold); white-space: nowrap">{{ row.data }}</div>
+                      <div style="font-variant-numeric: tabular-nums">{{ pct(row.taxaAa) }}</div>
+                      <div style="font-variant-numeric: tabular-nums">{{ row.du }}</div>
+                      <div style="font-variant-numeric: tabular-nums">{{ pu(row.valorNominal, 4) }}</div>
+                      <div style="font-variant-numeric: tabular-nums; font-weight: var(--weight-semibold)">{{ pu(row.puAtualizado, 6) }}</div>
+                      <div style="font-variant-numeric: tabular-nums">{{ pu(row.puJuros, 6) }}</div>
+                      <div>{{ row.evento }}</div>
+                      <div>
+                        <span
+                          :style="{
+                            fontSize: '10px',
+                            fontWeight: 'var(--weight-bold)',
+                            letterSpacing: '0.08em',
+                            textTransform: 'uppercase',
+                            padding: '4px 8px',
+                            borderRadius: '9999px',
+                            background: TAXA_TONE[row.statusTaxa].bg,
+                            color: TAXA_TONE[row.statusTaxa].fg,
+                          }"
+                        >
+                          {{ row.statusTaxa }}
+                        </span>
+                      </div>
                     </div>
-                  </div>
                 </div>
               </div>
               <TablePagination
@@ -301,35 +414,6 @@ const fields = computed(() => [
               />
             </div>
           </div>
-        </div>
-
-        <aside class="flex flex-col" style="gap: 16px">
-          <section style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 16px">
-            <h4 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); margin-bottom: 12px">
-              Previsão próximos dias
-            </h4>
-            <div class="flex flex-col" style="gap: 8px">
-              <div
-                v-for="row in serie.previsao"
-                :key="row.dataIso"
-                class="flex items-center justify-between"
-                style="gap: 8px"
-              >
-                <span style="font-size: var(--text-sm); color: var(--text-muted)">
-                  {{ row.data }}
-                  <span
-                    v-if="row.ehDataPagamentoTs"
-                    style="margin-left: 6px; font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent)"
-                  >
-                    Pgto TS
-                  </span>
-                </span>
-                <span style="font-size: var(--text-sm); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums">
-                  {{ pu(row.pu, 4) }}
-                </span>
-              </div>
-            </div>
-          </section>
 
           <section style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 16px">
             <h4 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); margin-bottom: 12px">
@@ -349,19 +433,6 @@ const fields = computed(() => [
               </div>
             </div>
           </section>
-
-          <section style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 16px">
-            <h4 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); margin-bottom: 12px">
-              Acumulação D-1
-            </h4>
-            <div class="flex flex-col" style="gap: 8px">
-              <div class="flex justify-between"><span style="font-size: var(--text-sm); color: var(--text-muted)">PU</span><strong style="font-size: var(--text-sm); font-variant-numeric: tabular-nums">{{ pu(serie.acumulacaoD1.pu, 6) }}</strong></div>
-              <div class="flex justify-between"><span style="font-size: var(--text-sm); color: var(--text-muted)">Juros</span><strong style="font-size: var(--text-sm); font-variant-numeric: tabular-nums">{{ pu(serie.acumulacaoD1.juros, 6) }}</strong></div>
-              <div class="flex justify-between"><span style="font-size: var(--text-sm); color: var(--text-muted)">Fator</span><strong style="font-size: var(--text-sm); font-variant-numeric: tabular-nums">{{ pu(serie.acumulacaoD1.fator, 6) }}</strong></div>
-              <div class="flex justify-between"><span style="font-size: var(--text-sm); color: var(--text-muted)">DU</span><strong style="font-size: var(--text-sm); font-variant-numeric: tabular-nums">{{ serie.acumulacaoD1.du }}</strong></div>
-            </div>
-          </section>
-        </aside>
       </div>
     </div>
 
@@ -371,6 +442,7 @@ const fields = computed(() => [
       :pu-value="serie.pu"
       :date-iso="dateIso"
       :serie-nome="serie.nome"
+      :dates="modalMode === 'validar' ? validarDates : undefined"
       @close="modalMode = null"
       @confirm="confirmModal"
     />
@@ -410,6 +482,24 @@ const fields = computed(() => [
   font-weight: var(--weight-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+.band-tab {
+  padding: 8px 14px;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--text-muted);
+  box-shadow: none;
+}
+.band-tab--active {
+  background: var(--surface-card);
+  color: var(--text-strong);
+  box-shadow: var(--shadow-xs);
 }
 .hist-row {
   transition: background var(--duration-fast);

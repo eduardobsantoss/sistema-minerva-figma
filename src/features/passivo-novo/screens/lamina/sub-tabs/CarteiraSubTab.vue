@@ -5,15 +5,10 @@ import {
   ChevronRight,
   Briefcase,
   Calendar,
-  FileWarning,
   ShieldAlert,
-  Layers,
-  PieChart,
-  ArrowLeftRight,
   Landmark,
   Users,
   AlertTriangle,
-  Scale,
 } from 'lucide-vue-next';
 import KpiStripCard from '../../../components/KpiStripCard.vue';
 import { brl, num } from '../../../data/passivoNovoData';
@@ -89,50 +84,20 @@ const SLICES: SliceCard[] = [
   {
     key: 'posicao',
     title: 'Posição e concentração',
-    description: 'VN, VP, pré/pós e Top 10 de cedentes e sacados.',
+    description: 'VN, VP e Top 10, movimentação do dia e enquadramento e limites.',
     icon: Briefcase,
-  },
-  {
-    key: 'aging',
-    title: 'Aging e vencimentos',
-    description: 'Faixas de prazo, maiores vencimentos em 30 dias e cedentes vencidos.',
-    icon: Calendar,
-  },
-  {
-    key: 'pmts',
-    title: 'PMTs vencidas',
-    description: 'Títulos com parcelas em atraso, lastro, cedente e valor.',
-    icon: FileWarning,
   },
   {
     key: 'pdd-estresse',
     title: 'PDD e estresse',
-    description: 'Provisão, VP vencido, mudanças de faixa e série diária de PDD.',
+    description: 'Provisão e série diária, projeção waterfall e abertura de PDD.',
     icon: ShieldAlert,
   },
   {
-    key: 'waterfall',
-    title: 'Projeção waterfall',
-    description: 'PDD projetado e rolagens vencidas / a vencer nas próximas janelas.',
-    icon: Layers,
-  },
-  {
-    key: 'abertura-pdd',
-    title: 'Abertura de PDD',
-    description: 'Maiores PDDs por sacado e cedente, aging list e abertura.',
-    icon: PieChart,
-  },
-  {
-    key: 'movimentacao',
-    title: 'Movimentação do dia',
-    description: 'Aquisições e liquidações do dia, com abertura por cedente.',
-    icon: ArrowLeftRight,
-  },
-  {
-    key: 'enquadramento',
-    title: 'Enquadramento e limites',
-    description: 'Tipo de ativo, limites de cedente e sacado e status.',
-    icon: Scale,
+    key: 'aging',
+    title: 'Aging e vencimentos',
+    description: 'Faixas de prazo, maiores vencimentos e títulos com PMTs vencidas.',
+    icon: Calendar,
   },
 ];
 
@@ -226,13 +191,53 @@ const current = computed(() => SLICES.find((s) => s.key === selected.value) ?? n
       </div>
     </div>
 
-    <PosicaoConcentracaoView v-if="selected === 'posicao'" :carteira="carteira" />
-    <AgingVencimentosView v-else-if="selected === 'aging'" :carteira="carteira" />
-    <PmtsVencidasView v-else-if="selected === 'pmts'" :carteira="carteira" />
-    <PddEstresseView v-else-if="selected === 'pdd-estresse'" :carteira="carteira" />
-    <WaterfallPddView v-else-if="selected === 'waterfall'" :carteira="carteira" />
-    <AberturaPddView v-else-if="selected === 'abertura-pdd'" :carteira="carteira" />
-    <MovimentacaoDiaView v-else-if="selected === 'movimentacao'" :carteira="carteira" />
-    <EnquadramentoView v-else-if="selected === 'enquadramento'" :carteira="carteira" />
+    <div v-if="selected === 'posicao'" class="flex flex-col" style="gap: 32px">
+      <section class="flex flex-col" style="gap: 16px">
+        <h4 class="slice-section">Posição e concentração</h4>
+        <PosicaoConcentracaoView :carteira="carteira" />
+      </section>
+      <section class="flex flex-col" style="gap: 16px">
+        <h4 class="slice-section">Movimentação do dia</h4>
+        <MovimentacaoDiaView :carteira="carteira" />
+      </section>
+      <section class="flex flex-col" style="gap: 16px">
+        <h4 class="slice-section">Enquadramento e limites</h4>
+        <EnquadramentoView :carteira="carteira" />
+      </section>
+    </div>
+    <div v-else-if="selected === 'pdd-estresse'" class="flex flex-col" style="gap: 32px">
+      <section class="flex flex-col" style="gap: 16px">
+        <h4 class="slice-section">PDD e estresse</h4>
+        <PddEstresseView :carteira="carteira" />
+      </section>
+      <section class="flex flex-col" style="gap: 16px">
+        <h4 class="slice-section">Projeção waterfall</h4>
+        <WaterfallPddView :carteira="carteira" />
+      </section>
+      <section class="flex flex-col" style="gap: 16px">
+        <h4 class="slice-section">Abertura de PDD</h4>
+        <AberturaPddView :carteira="carteira" />
+      </section>
+    </div>
+    <div v-else-if="selected === 'aging'" class="flex flex-col" style="gap: 32px">
+      <section class="flex flex-col" style="gap: 16px">
+        <h4 class="slice-section">Aging e vencimentos</h4>
+        <AgingVencimentosView :carteira="carteira" />
+      </section>
+      <section class="flex flex-col" style="gap: 16px">
+        <h4 class="slice-section">PMTs vencidas</h4>
+        <PmtsVencidasView :carteira="carteira" />
+      </section>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.slice-section {
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gci-base);
+}
+</style>
