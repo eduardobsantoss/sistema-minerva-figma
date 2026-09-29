@@ -1,13 +1,20 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { brl, type CraTitulo } from '../../data/craData';
+import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 
-const props = defineProps<{
-  rows: CraTitulo[];
-  classMap: Record<string, string>;
-}>();
+const props = withDefaults(
+  defineProps<{
+    rows: CraTitulo[];
+    classMap: Record<string, string>;
+    selectable?: boolean;
+  }>(),
+  { selectable: false },
+);
 const emit = defineEmits<{ open: [row: CraTitulo] }>();
+const selectedIds = defineModel<string[]>('selectedIds', { default: () => [] });
 
 const {
   page,
@@ -18,7 +25,34 @@ const {
   setPageSize,
 } = useTablePagination(() => props.rows, { defaultPageSize: 10 });
 
-const cols = '0.5fr 0.8fr 0.6fr 1.4fr 1.4fr 0.7fr 0.9fr 0.65fr';
+const cols = computed(() =>
+  `${props.selectable ? '36px ' : ''}0.5fr 0.8fr 0.6fr 1.4fr 1.4fr 0.7fr 0.9fr 0.65fr`,
+);
+
+const pageIds = computed(() => pageItems.value.map((r) => r.id));
+const pageAllSelected = computed(
+  () => pageIds.value.length > 0 && pageIds.value.every((id) => selectedIds.value.includes(id)),
+);
+const pageSomeSelected = computed(
+  () => pageIds.value.some((id) => selectedIds.value.includes(id)) && !pageAllSelected.value,
+);
+
+function togglePage() {
+  const next = new Set(selectedIds.value);
+  if (pageAllSelected.value) {
+    for (const id of pageIds.value) next.delete(id);
+  } else {
+    for (const id of pageIds.value) next.add(id);
+  }
+  selectedIds.value = [...next];
+}
+
+function toggleRow(id: string) {
+  const next = new Set(selectedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selectedIds.value = [...next];
+}
 
 function statusStyle(s: CraTitulo['status']) {
   return {
@@ -35,7 +69,7 @@ function statusStyle(s: CraTitulo['status']) {
   </div>
   <div v-else>
     <div
-      class="grid"
+      class="grid items-center"
       :style="{
         gridTemplateColumns: cols,
         padding: '14px 20px',
@@ -47,6 +81,9 @@ function statusStyle(s: CraTitulo['status']) {
         textTransform: 'uppercase',
       }"
     >
+      <div v-if="selectable" @click.stop>
+        <Checkbox :checked="pageAllSelected" :indeterminate="pageSomeSelected" @change="togglePage" />
+      </div>
       <div>Classe</div>
       <div>Nº Título</div>
       <div>Tipo</div>
@@ -67,9 +104,13 @@ function statusStyle(s: CraTitulo['status']) {
         fontSize: 'var(--text-sm)',
         cursor: 'pointer',
         transition: 'background var(--duration-fast)',
+        background: selectable && selectedIds.includes(r.id) ? 'var(--surface-selected)' : undefined,
       }"
       @click="emit('open', r)"
     >
+      <div v-if="selectable" @click.stop>
+        <Checkbox :checked="selectedIds.includes(r.id)" @change="toggleRow(r.id)" />
+      </div>
       <div>
         <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; padding: 4px 8px; border-radius: var(--radius-sm); background: var(--status-neutral-bg); color: var(--status-neutral-text); white-space: nowrap">
           {{ classMap[r.operacaoId] ?? '—' }}

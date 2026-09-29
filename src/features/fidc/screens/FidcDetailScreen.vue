@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, type Component } from 'vue';
+import { ref, computed, watch, type Component } from 'vue';
 import {
   ArrowLeft,
   TrendingUp,
@@ -42,6 +42,8 @@ import SetupTab from './fidc-detail-tabs/SetupTab.vue';
 import CessaoFormModal from '../components/modals/CessaoFormModal.vue';
 import SubirContratoMaeModal from '../components/modals/SubirContratoMaeModal.vue';
 import EditarParametrosGrupoModal from '../components/modals/EditarParametrosGrupoModal.vue';
+import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
+import type { TituloSelecionado } from '@/components/titulos/types';
 
 const props = defineProps<{ fidc: Fidc }>();
 const emit = defineEmits<{
@@ -73,6 +75,7 @@ const section = ref<Section>('classes');
 const viewTab = ref<ViewTab>('classes');
 const q = ref('');
 const showColPanel = ref(false);
+const selectedIds = ref<string[]>([]);
 
 const cessaoModalOpen = ref(false);
 const editingCessao = ref<Cessao | null>(null);
@@ -98,6 +101,28 @@ const isMulticlasse = computed(() => props.fidc.category === 'MULTICLASSE');
 const classMap = computed(() =>
   Object.fromEntries(props.fidc.classes.map((c, i) => [c.id, String(i + 1)])),
 );
+
+const titulosSelecionados = computed<TituloSelecionado[]>(() =>
+  filteredTitles.value
+    .filter((t) => selectedIds.value.includes(t.id))
+    .map((t) => ({
+      id: t.id,
+      numero: t.numero,
+      valor: t.vrNominal,
+      valorAberto: null,
+      vencimento: t.vencimento,
+    })),
+);
+
+watch(filteredTitles, (rows) => {
+  const ids = new Set(rows.map((t) => t.id));
+  const next = selectedIds.value.filter((id) => ids.has(id));
+  if (next.length !== selectedIds.value.length) selectedIds.value = next;
+});
+
+watch([viewTab, section], () => {
+  if (section.value !== 'classes' || viewTab.value !== 'titulos') selectedIds.value = [];
+});
 
 function handleOpenTitle(t: Title) {
   emit('openTitle', t.classId, t.id);
@@ -347,7 +372,14 @@ function handleSetupUpdate(setup: FidcSetup) {
       </div>
 
       <ClassesTable v-if="viewTab === 'classes'" :rows="fidc.classes" @open="emit('openClass', $event)" />
-      <TitlesTable v-else :rows="filteredTitles" :class-map="classMap" @open="handleOpenTitle" />
+      <TitlesTable
+        v-else
+        v-model:selected-ids="selectedIds"
+        selectable
+        :rows="filteredTitles"
+        :class-map="classMap"
+        @open="handleOpenTitle"
+      />
 
       <div class="flex items-center justify-end" style="padding: 16px 20px; border-top: 1px solid var(--border-default)">
         <div class="flex items-center" style="gap: 12px">
@@ -422,6 +454,11 @@ function handleSetupUpdate(setup: FidcSetup) {
       :grupo="editParamsGrupo"
       @close="closeEditParamsModal"
       @save="saveGrupoParams"
+    />
+
+    <TituloAcoesLote
+      v-if="section === 'classes' && viewTab === 'titulos' && titulosSelecionados.length > 0"
+      :titulos="titulosSelecionados"
     />
   </div>
 </template>

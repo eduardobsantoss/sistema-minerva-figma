@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, type Component } from 'vue';
+import { computed, ref, watch, type Component } from 'vue';
 import {
   Search,
   ChevronDown,
@@ -17,6 +17,8 @@ import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import AtivosFiltersPanel from '../components/AtivosFiltersPanel.vue';
 import TabBtn from '../components/TabBtn.vue';
+import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
+import type { TituloSelecionado } from '@/components/titulos/types';
 import {
   EMPTY_FILTERS,
   brl,
@@ -206,6 +208,7 @@ const showFilters = ref(false);
 const filterPlacement = ref<'below' | 'above'>('below');
 const filterBtnRef = ref<HTMLButtonElement | null>(null);
 const colsMenuOpen = ref(false);
+const selectedIds = ref<string[]>([]);
 
 const visibleColsContrato = ref<Set<ContratoColKey>>(
   new Set(CONTRATO_COLS.map((c) => c.key)),
@@ -270,6 +273,52 @@ const total = computed(() =>
 );
 const pageContratos = computed(() => contratosPage.pageItems.value);
 const pageTitulos = computed(() => titulosPage.pageItems.value);
+const pageTituloIds = computed(() => pageTitulos.value.map((t) => t.id));
+const pageAllSelected = computed(
+  () => pageTituloIds.value.length > 0 && pageTituloIds.value.every((id) => selectedIds.value.includes(id)),
+);
+const pageSomeSelected = computed(
+  () => pageTituloIds.value.some((id) => selectedIds.value.includes(id)) && !pageAllSelected.value,
+);
+
+const titulosSelecionados = computed<TituloSelecionado[]>(() =>
+  filteredTitulos.value
+    .filter((t) => selectedIds.value.includes(t.id))
+    .map((t) => ({
+      id: t.id,
+      numero: t.numero,
+      valor: t.valorNominal,
+      valorAberto: t.valorAberto,
+      vencimento: t.vencimento,
+    })),
+);
+
+watch(filteredTitulos, (rows) => {
+  const ids = new Set(rows.map((t) => t.id));
+  const next = selectedIds.value.filter((id) => ids.has(id));
+  if (next.length !== selectedIds.value.length) selectedIds.value = next;
+});
+
+watch(viewMode, (mode) => {
+  if (mode !== 'titulos') selectedIds.value = [];
+});
+
+function toggleTitulo(id: string) {
+  const next = new Set(selectedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selectedIds.value = [...next];
+}
+
+function togglePageTitulos() {
+  const next = new Set(selectedIds.value);
+  if (pageAllSelected.value) {
+    for (const id of pageTituloIds.value) next.delete(id);
+  } else {
+    for (const id of pageTituloIds.value) next.add(id);
+  }
+  selectedIds.value = [...next];
+}
 
 function setPage(next: number) {
   if (viewMode.value === 'contratos') contratosPage.setPage(next);
@@ -292,7 +341,7 @@ const contratoGrid = computed(() =>
   visibleContratoCols.value.map((c) => CONTRATO_COL_WIDTHS[c.key]).join(' '),
 );
 const tituloGrid = computed(() =>
-  visibleTituloCols.value.map((c) => TITULO_COL_WIDTHS[c.key]).join(' '),
+  ['36px', ...visibleTituloCols.value.map((c) => TITULO_COL_WIDTHS[c.key])].join(' '),
 );
 
 const filterPanelStyle = computed(() => ({
@@ -626,6 +675,9 @@ function tituloCell(t: TituloAtivoGlobal, key: TituloColKey): string {
               class="ativos-table-row ativos-table-header"
               :style="{ gridTemplateColumns: tituloGrid }"
             >
+              <div @click.stop>
+                <Checkbox :checked="pageAllSelected" :indeterminate="pageSomeSelected" @change="togglePageTitulos" />
+              </div>
               <div
                 v-for="col in visibleTituloCols"
                 :key="col.key"
@@ -644,9 +696,15 @@ function tituloCell(t: TituloAtivoGlobal, key: TituloColKey): string {
               v-for="t in pageTitulos"
               :key="t.id"
               class="ativos-table-row ativos-table-body"
-              :style="{ gridTemplateColumns: tituloGrid }"
+              :style="{
+                gridTemplateColumns: tituloGrid,
+                background: selectedIds.includes(t.id) ? 'var(--surface-selected)' : undefined,
+              }"
               @click="emit('openTitulo', t.id)"
             >
+              <div @click.stop>
+                <Checkbox :checked="selectedIds.includes(t.id)" @change="toggleTitulo(t.id)" />
+              </div>
               <div
                 v-for="col in visibleTituloCols"
                 :key="col.key"
@@ -717,6 +775,11 @@ function tituloCell(t: TituloAtivoGlobal, key: TituloColKey): string {
         @update:page-size="setPageSize"
       />
     </div>
+
+    <TituloAcoesLote
+      v-if="viewMode === 'titulos' && titulosSelecionados.length > 0"
+      :titulos="titulosSelecionados"
+    />
   </div>
 </template>
 

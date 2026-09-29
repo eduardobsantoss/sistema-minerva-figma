@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, type Component } from 'vue';
+import { ref, computed, watch, type Component } from 'vue';
 import {
   ArrowLeft, Wallet, FileText, Search, Filter,
   ChevronUp, ChevronDown, Plus, Settings2, Clock,
@@ -19,6 +19,8 @@ import GruposEmpresariaisTab from './cra-detail-tabs/GruposEmpresariaisTab.vue';
 import SetupTab from './cra-detail-tabs/SetupTab.vue';
 import CessaoFormModal from '../components/modals/CessaoFormModal.vue';
 import SubirContratoMaeModal from '../components/modals/SubirContratoMaeModal.vue';
+import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
+import type { TituloSelecionado } from '@/components/titulos/types';
 
 const props = defineProps<{ cra: Cra }>();
 const emit = defineEmits<{
@@ -50,6 +52,7 @@ const section = ref<Section>('operacoes');
 const viewTab = ref<ViewTab>('operacoes');
 const q = ref('');
 const showColPanel = ref(false);
+const selectedIds = ref<string[]>([]);
 
 const cessaoModalOpen = ref(false);
 const editingCessao = ref<Cessao | null>(null);
@@ -79,6 +82,28 @@ const totalEmissao = computed(() => props.cra.operacoes.reduce((a, o) => a + o.v
 const operacaoClassMap = computed(() =>
   Object.fromEntries(props.cra.operacoes.map((o, i) => [o.id, String(i + 1)])),
 );
+
+const titulosSelecionados = computed<TituloSelecionado[]>(() =>
+  filteredTitulos.value
+    .filter((t) => selectedIds.value.includes(t.id))
+    .map((t) => ({
+      id: t.id,
+      numero: t.numero,
+      valor: t.vrNominal,
+      valorAberto: t.vrAberto ?? null,
+      vencimento: t.vencimento,
+    })),
+);
+
+watch(filteredTitulos, (rows) => {
+  const ids = new Set(rows.map((t) => t.id));
+  const next = selectedIds.value.filter((id) => ids.has(id));
+  if (next.length !== selectedIds.value.length) selectedIds.value = next;
+});
+
+watch([viewTab, section], () => {
+  if (section.value !== 'operacoes' || viewTab.value !== 'titulos') selectedIds.value = [];
+});
 
 function handleOpenTitulo(r: CraTitulo) {
   emit('openTitulo', r.operacaoId, r.id);
@@ -316,7 +341,14 @@ function handleSetupUpdate(setup: CraSetup) {
       </div>
 
       <OperacoesTable v-if="viewTab === 'operacoes'" :rows="cra.operacoes" @open="emit('openOperacao', $event)" />
-      <TitulosTable v-else :rows="filteredTitulos" :class-map="operacaoClassMap" @open="handleOpenTitulo" />
+      <TitulosTable
+        v-else
+        v-model:selected-ids="selectedIds"
+        selectable
+        :rows="filteredTitulos"
+        :class-map="operacaoClassMap"
+        @open="handleOpenTitulo"
+      />
 
       <div class="flex items-center justify-end" style="padding: 16px 20px; border-top: 1px solid var(--border-default)">
         <div class="flex items-center" style="gap: 12px">
@@ -384,6 +416,11 @@ function handleSetupUpdate(setup: CraSetup) {
       :initial-date="uploadGrupo.masterContractDate"
       @close="closeContratoModal"
       @save="saveContratoMae"
+    />
+
+    <TituloAcoesLote
+      v-if="section === 'operacoes' && viewTab === 'titulos' && titulosSelecionados.length > 0"
+      :titulos="titulosSelecionados"
     />
   </div>
 </template>

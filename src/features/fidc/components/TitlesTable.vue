@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { brl, type Title, type TitleStatus } from '../data/fidcsData';
+import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 
@@ -14,10 +15,12 @@ interface Props {
   rows: Title[];
   /** classId → class display label (e.g. { leite: 'LEITE', animais: 'ANIMAIS' }) */
   classMap?: Record<string, string>;
+  selectable?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), { selectable: false });
 const emit = defineEmits<{ open: [t: Title] }>();
+const selectedIds = defineModel<string[]>('selectedIds', { default: () => [] });
 
 const {
   page,
@@ -30,11 +33,37 @@ const {
 
 const hasClass = computed(() => !!props.classMap);
 
-const cols = computed(() =>
-  hasClass.value
+const cols = computed(() => {
+  const base = hasClass.value
     ? '0.5fr 1fr 0.65fr 1.5fr 1.5fr 0.95fr 1fr 0.9fr'
-    : '1fr 0.7fr 1.6fr 1.6fr 1fr 1.1fr 1fr',
+    : '1fr 0.7fr 1.6fr 1.6fr 1fr 1.1fr 1fr';
+  return props.selectable ? `36px ${base}` : base;
+});
+
+const pageIds = computed(() => pageItems.value.map((t) => t.id));
+const pageAllSelected = computed(
+  () => pageIds.value.length > 0 && pageIds.value.every((id) => selectedIds.value.includes(id)),
 );
+const pageSomeSelected = computed(
+  () => pageIds.value.some((id) => selectedIds.value.includes(id)) && !pageAllSelected.value,
+);
+
+function togglePage() {
+  const next = new Set(selectedIds.value);
+  if (pageAllSelected.value) {
+    for (const id of pageIds.value) next.delete(id);
+  } else {
+    for (const id of pageIds.value) next.add(id);
+  }
+  selectedIds.value = [...next];
+}
+
+function toggleRow(id: string) {
+  const next = new Set(selectedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selectedIds.value = [...next];
+}
 
 const rowHover = ref<string | null>(null);
 </script>
@@ -52,7 +81,7 @@ const rowHover = ref<string | null>(null);
     <template v-else>
       <!-- Cabeçalho -->
       <div
-        class="grid"
+        class="grid items-center"
         :style="{
           gridTemplateColumns: cols,
           padding: '14px 20px',
@@ -64,6 +93,9 @@ const rowHover = ref<string | null>(null);
           textTransform: 'uppercase',
         }"
       >
+        <div v-if="selectable" @click.stop>
+          <Checkbox :checked="pageAllSelected" :indeterminate="pageSomeSelected" @change="togglePage" />
+        </div>
         <div v-if="hasClass">Classe</div>
         <div>Nº Título</div>
         <div>Lastro</div>
@@ -86,12 +118,19 @@ const rowHover = ref<string | null>(null);
           fontSize: 'var(--text-sm)',
           cursor: 'pointer',
           transition: 'background var(--duration-fast)',
-          background: rowHover === t.id ? 'var(--surface-sunken)' : 'transparent',
+          background: selectable && selectedIds.includes(t.id)
+            ? 'var(--surface-selected)'
+            : rowHover === t.id
+              ? 'var(--surface-sunken)'
+              : 'transparent',
         }"
         @click="emit('open', t)"
         @mouseenter="rowHover = t.id"
         @mouseleave="rowHover = null"
       >
+        <div v-if="selectable" @click.stop>
+          <Checkbox :checked="selectedIds.includes(t.id)" @change="toggleRow(t.id)" />
+        </div>
         <div v-if="hasClass && classMap?.[t.classId]">
           <span
             style="
