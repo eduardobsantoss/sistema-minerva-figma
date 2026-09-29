@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { ArrowLeft, FileText, TrendingUp, Calendar, AlertCircle, Search, Filter } from 'lucide-vue-next';
 import { brl, type Fidc, type FidcClass, type Title } from '../data/fidcsData';
 import PLHero from '../components/PLHero.vue';
 import TitlesTable from '../components/TitlesTable.vue';
 import ClassKPI from './class-detail/ClassKPI.vue';
+import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
+import type { TituloSelecionado } from '@/components/titulos/types';
 
 const props = defineProps<{ fidc: Fidc; klass: FidcClass }>();
 const emit = defineEmits<{ back: []; openTitle: [titleId: string] }>();
 
 const q = ref('');
+const selectedIds = ref<string[]>([]);
 const filtered = computed(() =>
   props.klass.titulos.filter(
     (t) =>
@@ -27,6 +30,24 @@ const classMap = computed(() => ({
 function handleOpenTitle(t: Title) {
   emit('openTitle', t.id);
 }
+
+const selecionados = computed<TituloSelecionado[]>(() =>
+  filtered.value
+    .filter((t) => selectedIds.value.includes(t.id))
+    .map((t) => ({
+      id: t.id,
+      lastro: t.lastro,
+      numero: t.numero,
+      valor: t.vrNominal,
+      valorAberto: null,
+      vencimento: t.vencimento,
+    })),
+);
+
+watch(filtered, (rows) => {
+  const ids = new Set(rows.map((t) => t.id));
+  selectedIds.value = selectedIds.value.filter((id) => ids.has(id));
+});
 </script>
 
 <template>
@@ -148,7 +169,9 @@ function handleOpenTitle(t: Title) {
         </div>
       </div>
 
-      <TitlesTable :rows="filtered" :class-map="classMap" @open="handleOpenTitle" />
+      <TitlesTable v-model:selected-ids="selectedIds" selectable :rows="filtered" :class-map="classMap" @open="handleOpenTitle" />
     </div>
+
+    <TituloAcoesLote v-if="selecionados.length" :titulos="selecionados" />
   </div>
 </template>

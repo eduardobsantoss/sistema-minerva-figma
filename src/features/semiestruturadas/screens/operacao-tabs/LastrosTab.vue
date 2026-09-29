@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { brl, type SemiLastro, type SemiLastroStatus } from '../../data/semiestruturadasData';
+import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{ rows: SemiLastro[] }>();
+const selectedIds = defineModel<string[]>('selectedIds', { default: () => [] });
 
 const statusTone: Record<SemiLastroStatus, { bg: string; fg: string }> = {
   CONFIRMADO: { bg: 'var(--success-light)', fg: 'var(--success-dark)' },
@@ -21,7 +23,32 @@ const {
   setPageSize,
 } = useTablePagination(() => props.rows, { defaultPageSize: 10 });
 
-const cols = 'minmax(120px, 1fr) minmax(80px, 0.7fr) minmax(160px, 1.6fr) minmax(160px, 1.6fr) minmax(110px, 1fr) minmax(130px, 1.1fr) minmax(110px, 1fr)';
+const cols = '36px minmax(120px, 1fr) minmax(80px, 0.7fr) minmax(160px, 1.6fr) minmax(160px, 1.6fr) minmax(110px, 1fr) minmax(130px, 1.1fr) minmax(110px, 1fr)';
+
+const pageIds = computed(() => pageItems.value.map((t) => t.id));
+const pageAllSelected = computed(
+  () => pageIds.value.length > 0 && pageIds.value.every((id) => selectedIds.value.includes(id)),
+);
+const pageSomeSelected = computed(
+  () => pageIds.value.some((id) => selectedIds.value.includes(id)) && !pageAllSelected.value,
+);
+
+function togglePage() {
+  const next = new Set(selectedIds.value);
+  if (pageAllSelected.value) {
+    for (const id of pageIds.value) next.delete(id);
+  } else {
+    for (const id of pageIds.value) next.add(id);
+  }
+  selectedIds.value = [...next];
+}
+
+function toggleRow(id: string) {
+  const next = new Set(selectedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selectedIds.value = [...next];
+}
 const rowHover = ref<string | null>(null);
 </script>
 
@@ -36,7 +63,7 @@ const rowHover = ref<string | null>(null);
 
     <template v-else>
       <div
-        class="grid"
+        class="grid items-center"
         :style="{
           gridTemplateColumns: cols,
           columnGap: '16px',
@@ -49,6 +76,9 @@ const rowHover = ref<string | null>(null);
           textTransform: 'uppercase',
         }"
       >
+        <div @click.stop>
+          <Checkbox :checked="pageAllSelected" :indeterminate="pageSomeSelected" @change="togglePage" />
+        </div>
         <div>Nº Título</div>
         <div>Lastro</div>
         <div>Cedente</div>
@@ -69,11 +99,18 @@ const rowHover = ref<string | null>(null);
           borderTop: '1px solid var(--border-default)',
           fontSize: 'var(--text-sm)',
           transition: 'background var(--duration-fast)',
-          background: rowHover === t.id ? 'var(--surface-sunken)' : 'transparent',
+          background: selectedIds.includes(t.id)
+            ? 'var(--surface-selected)'
+            : rowHover === t.id
+              ? 'var(--surface-sunken)'
+              : 'transparent',
         }"
         @mouseenter="rowHover = t.id"
         @mouseleave="rowHover = null"
       >
+        <div @click.stop>
+          <Checkbox :checked="selectedIds.includes(t.id)" @change="toggleRow(t.id)" />
+        </div>
         <div style="font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
           #{{ t.numero }}
         </div>

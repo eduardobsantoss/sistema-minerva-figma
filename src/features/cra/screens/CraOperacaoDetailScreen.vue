@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import {
   ArrowLeft, FileText, TrendingUp, AlertCircle, Search, Filter, Settings2,
 } from 'lucide-vue-next';
@@ -7,6 +7,8 @@ import type { Component } from 'vue';
 import { brl, num, type Cra, type CraOperacao, type CraTitulo } from '../data/craData';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
+import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
+import type { TituloSelecionado } from '@/components/titulos/types';
 import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{ cra: Cra; operacao: CraOperacao }>();
@@ -15,6 +17,7 @@ const emit = defineEmits<{ back: []; openTitulo: [tituloId: string] }>();
 const TITULO_COLS = ['Classe', 'Nº Título', 'Tipo', 'Cedente', 'Sacado', 'Vencimento', 'VR. Nominal', 'Status'] as const;
 
 const q = ref('');
+const selectedIds = ref<string[]>([]);
 const showColPanel = ref(false);
 const visibleCols = ref<Record<string, boolean>>(Object.fromEntries(TITULO_COLS.map((c) => [c, true])));
 
@@ -54,7 +57,50 @@ function statusStyle(s: CraTitulo['status']) {
   }[s];
 }
 
-const cols = '0.5fr 0.8fr 0.6fr 1.4fr 1.4fr 0.7fr 0.9fr 0.65fr';
+const cols = '36px 0.5fr 0.8fr 0.6fr 1.4fr 1.4fr 0.7fr 0.9fr 0.65fr';
+
+const pageIds = computed(() => pageItems.value.map((r) => r.id));
+const pageAllSelected = computed(
+  () => pageIds.value.length > 0 && pageIds.value.every((id) => selectedIds.value.includes(id)),
+);
+const pageSomeSelected = computed(
+  () => pageIds.value.some((id) => selectedIds.value.includes(id)) && !pageAllSelected.value,
+);
+
+function togglePage() {
+  const next = new Set(selectedIds.value);
+  if (pageAllSelected.value) {
+    for (const id of pageIds.value) next.delete(id);
+  } else {
+    for (const id of pageIds.value) next.add(id);
+  }
+  selectedIds.value = [...next];
+}
+
+function toggleRow(id: string) {
+  const next = new Set(selectedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selectedIds.value = [...next];
+}
+
+const selecionados = computed<TituloSelecionado[]>(() =>
+  filtered.value
+    .filter((t) => selectedIds.value.includes(t.id))
+    .map((t) => ({
+      id: t.id,
+      lastro: t.tipo,
+      numero: t.numero,
+      valor: t.vrNominal,
+      valorAberto: t.vrAberto ?? null,
+      vencimento: t.vencimento,
+    })),
+);
+
+watch(filtered, (rows) => {
+  const ids = new Set(rows.map((t) => t.id));
+  selectedIds.value = selectedIds.value.filter((id) => ids.has(id));
+});
 
 interface Kpi {
   icon: Component;
@@ -180,9 +226,12 @@ const kpis = computed<Kpi[]>(() => [
       <div v-if="filtered.length === 0" style="padding: 60px; text-align: center; color: var(--text-muted); font-size: var(--text-sm)">Nenhum título encontrado.</div>
       <div v-else>
         <div
-          class="grid"
+          class="grid items-center"
           :style="{ gridTemplateColumns: cols, padding: '14px 20px', background: 'var(--surface-sunken)', fontSize: '10px', fontWeight: 'var(--weight-bold)', letterSpacing: '0.14em', color: 'var(--text-muted)', textTransform: 'uppercase' }"
         >
+          <div @click.stop>
+            <Checkbox :checked="pageAllSelected" :indeterminate="pageSomeSelected" @change="togglePage" />
+          </div>
           <div>Classe</div>
           <div>Nº Título</div>
           <div>Tipo</div>
@@ -196,9 +245,12 @@ const kpis = computed<Kpi[]>(() => [
           v-for="r in pageItems"
           :key="r.id"
           class="cra-op-detail-row grid items-center"
-          :style="{ gridTemplateColumns: cols, padding: '16px 20px', borderTop: '1px solid var(--border-default)', fontSize: 'var(--text-sm)', cursor: 'pointer', transition: 'background var(--duration-fast)' }"
+          :style="{ gridTemplateColumns: cols, padding: '16px 20px', borderTop: '1px solid var(--border-default)', fontSize: 'var(--text-sm)', cursor: 'pointer', transition: 'background var(--duration-fast)', background: selectedIds.includes(r.id) ? 'var(--surface-selected)' : undefined }"
           @click="emit('openTitulo', r.id)"
         >
+          <div @click.stop>
+            <Checkbox :checked="selectedIds.includes(r.id)" @change="toggleRow(r.id)" />
+          </div>
           <div>
             <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; padding: 4px 8px; border-radius: var(--radius-sm); background: var(--status-neutral-bg); color: var(--status-neutral-text)">
               {{ classMap[r.operacaoId] ?? '1' }}
@@ -232,6 +284,8 @@ const kpis = computed<Kpi[]>(() => [
         />
       </div>
     </div>
+
+    <TituloAcoesLote v-if="selecionados.length" :titulos="selecionados" />
   </div>
 </template>
 

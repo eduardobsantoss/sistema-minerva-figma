@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { Cra, Sacado } from '../../data/craData';
 import TitulosTable from '../cra-detail/TitulosTable.vue';
+import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
+import type { TituloSelecionado } from '@/components/titulos/types';
 
 const props = defineProps<{ cra: Cra; sacado: Sacado }>();
+const selectedIds = ref<string[]>([]);
 
 const filteredTitulos = computed(() =>
   props.cra.operacoes.flatMap((o) => o.titulos).filter(
@@ -16,6 +19,24 @@ const filteredTitulos = computed(() =>
 const classMap = computed(() =>
   Object.fromEntries(props.cra.operacoes.map((o, i) => [o.id, String(i + 1)])),
 );
+
+const selecionados = computed<TituloSelecionado[]>(() =>
+  filteredTitulos.value
+    .filter((t) => selectedIds.value.includes(t.id))
+    .map((t) => ({
+      id: t.id,
+      lastro: t.tipo,
+      numero: t.numero,
+      valor: t.vrNominal,
+      valorAberto: t.vrAberto ?? null,
+      vencimento: t.vencimento,
+    })),
+);
+
+watch(filteredTitulos, (rows) => {
+  const ids = new Set(rows.map((t) => t.id));
+  selectedIds.value = selectedIds.value.filter((id) => ids.has(id));
+});
 </script>
 
 <template>
@@ -28,6 +49,7 @@ const classMap = computed(() =>
         {{ filteredTitulos.length }} título(s) vinculados
       </div>
     </div>
-    <TitulosTable :rows="filteredTitulos" :class-map="classMap" />
+    <TitulosTable v-model:selected-ids="selectedIds" selectable :rows="filteredTitulos" :class-map="classMap" />
   </div>
+  <TituloAcoesLote v-if="selecionados.length" :titulos="selecionados" />
 </template>

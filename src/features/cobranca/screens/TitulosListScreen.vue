@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import {
   Filter,
   ChevronDown,
@@ -34,6 +34,8 @@ import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import Tooltip from '@/components/ui/Tooltip.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
+import type { TituloSelecionado } from '@/components/titulos/types';
 
 const props = defineProps<{ titulos: Titulo[] }>();
 const emit = defineEmits<{
@@ -129,6 +131,7 @@ const visibleCols = ref<Set<ColKey>>(
   ]),
 );
 const colsMenuOpen = ref(false);
+const selectedIds = ref<string[]>([]);
 const menuOpenId = ref<string | null>(null);
 
 const QUICK_FILTERS: { key: NonNullable<QuickFilter>; label: string; color: string }[] = [
@@ -202,8 +205,51 @@ const COL_WIDTHS: Record<ColKey, string> = {
 
 const cols = computed(() => ALL_COLS.filter((c) => visibleCols.value.has(c.key)));
 const gridTemplate = computed(
-  () => `minmax(160px, 1.4fr) ${cols.value.map((c) => COL_WIDTHS[c.key]).join(' ')} 56px`,
+  () => `36px minmax(160px, 1.4fr) ${cols.value.map((c) => COL_WIDTHS[c.key]).join(' ')} 56px`,
 );
+
+const pageIds = computed(() => pageItems.value.map((t) => t.id));
+const pageAllSelected = computed(
+  () => pageIds.value.length > 0 && pageIds.value.every((id) => selectedIds.value.includes(id)),
+);
+const pageSomeSelected = computed(
+  () => pageIds.value.some((id) => selectedIds.value.includes(id)) && !pageAllSelected.value,
+);
+
+function togglePage() {
+  const next = new Set(selectedIds.value);
+  if (pageAllSelected.value) {
+    for (const id of pageIds.value) next.delete(id);
+  } else {
+    for (const id of pageIds.value) next.add(id);
+  }
+  selectedIds.value = [...next];
+}
+
+function toggleRow(id: string) {
+  const next = new Set(selectedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selectedIds.value = [...next];
+}
+
+const selecionados = computed<TituloSelecionado[]>(() =>
+  filtered.value
+    .filter((t) => selectedIds.value.includes(t.id))
+    .map((t) => ({
+      id: t.id,
+      lastro: t.lastro,
+      numero: t.numero,
+      valor: t.vrNominal,
+      valorAberto: t.vrAberto,
+      vencimento: t.vencimento,
+    })),
+);
+
+watch(filtered, (rows) => {
+  const ids = new Set(rows.map((t) => t.id));
+  selectedIds.value = selectedIds.value.filter((id) => ids.has(id));
+});
 
 function handleFilter() {
   applied.value = { ...draft.value };
@@ -582,7 +628,10 @@ function menuActions(t: Titulo) {
     >
       <div style="overflow-x: auto">
         <div style="width: max-content; min-width: 100%">
-          <div class="grid titulos-table-row titulos-table-header" :style="{ gridTemplateColumns: gridTemplate }">
+          <div class="grid items-center titulos-table-row titulos-table-header" :style="{ gridTemplateColumns: gridTemplate }">
+            <div @click.stop>
+              <Checkbox :checked="pageAllSelected" :indeterminate="pageSomeSelected" @change="togglePage" />
+            </div>
             <div>Nº Título</div>
             <div v-for="c in cols" :key="c.key" :style="{ textAlign: c.align }">{{ c.label }}</div>
             <div style="text-align: right">Ações</div>
@@ -606,9 +655,15 @@ function menuActions(t: Titulo) {
             v-for="t in pageItems"
             :key="t.id"
             class="grid items-center titulos-row titulos-table-row"
-            :style="{ gridTemplateColumns: gridTemplate }"
+            :style="{
+              gridTemplateColumns: gridTemplate,
+              background: selectedIds.includes(t.id) ? 'var(--surface-selected)' : undefined,
+            }"
             @click="emit('open', t.id)"
           >
+            <div @click.stop>
+              <Checkbox :checked="selectedIds.includes(t.id)" @change="toggleRow(t.id)" />
+            </div>
             <div>
               <div
                 style="
@@ -848,6 +903,8 @@ function menuActions(t: Titulo) {
         @update:page-size="setPageSize"
       />
     </div>
+
+    <TituloAcoesLote v-if="selecionados.length" :titulos="selecionados" />
   </div>
 </template>
 

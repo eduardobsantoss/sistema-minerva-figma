@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, type Component } from 'vue';
+import { computed, reactive, ref, watch, type Component } from 'vue';
 import {
   ArrowLeft,
   FileSpreadsheet,
@@ -25,7 +25,10 @@ import {
   taxaEntrega,
   fmtPct,
 } from '../data/resultadoNotificacoesData';
+import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
+import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
+import type { TituloSelecionado } from '@/components/titulos/types';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { useBackgroundReport } from '@/composables/useBackgroundReport';
 
@@ -68,6 +71,7 @@ interface Filters {
 const EMPTY_FILTERS: Filters = { veiculoId: '', status: '', campanha: '' };
 
 const selected = ref<ReportKey | null>(null);
+const selectedIds = ref<string[]>([]);
 const hoveredKey = ref<ReportKey | null>(null);
 const draft = reactive<Filters>({ ...EMPTY_FILTERS });
 const applied = ref<Filters | null>(null);
@@ -125,8 +129,52 @@ const {
   setPageSize: setTitulosPageSize,
 } = useTablePagination(() => resultadosTitulos.value, { defaultPageSize: 10 });
 
+const tituloPageIds = computed(() => titulosPageItems.value.map((t) => t.id));
+const tituloPageAll = computed(
+  () => tituloPageIds.value.length > 0 && tituloPageIds.value.every((id) => selectedIds.value.includes(id)),
+);
+const tituloPageSome = computed(
+  () => tituloPageIds.value.some((id) => selectedIds.value.includes(id)) && !tituloPageAll.value,
+);
+
+function toggleTituloPage() {
+  const next = new Set(selectedIds.value);
+  if (tituloPageAll.value) {
+    for (const id of tituloPageIds.value) next.delete(id);
+  } else {
+    for (const id of tituloPageIds.value) next.add(id);
+  }
+  selectedIds.value = [...next];
+}
+
+function toggleTitulo(id: string) {
+  const next = new Set(selectedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selectedIds.value = [...next];
+}
+
+const selecionados = computed<TituloSelecionado[]>(() =>
+  resultadosTitulos.value
+    .filter((t) => selectedIds.value.includes(t.id))
+    .map((t) => ({
+      id: t.id,
+      lastro: t.lastro,
+      numero: t.numero,
+      valor: t.vrNominal,
+      valorAberto: t.vrAberto,
+      vencimento: t.vencimento,
+    })),
+);
+
+watch(resultadosTitulos, (rows) => {
+  const ids = new Set(rows.map((t) => t.id));
+  selectedIds.value = selectedIds.value.filter((id) => ids.has(id));
+});
+
 function selectReport(key: ReportKey) {
   selected.value = key;
+  selectedIds.value = [];
   Object.assign(draft, EMPTY_FILTERS);
   applied.value = null;
 }
@@ -621,7 +669,7 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
           <div
             class="grid"
             style="
-              grid-template-columns: 1.2fr 1.4fr 1.4fr 1fr 1fr 0.8fr 1fr;
+              grid-template-columns: 36px 1.2fr 1.4fr 1.4fr 1fr 1fr 0.8fr 1fr;
               padding: 10px 20px;
               background: var(--surface-sunken);
               font-size: 10px;
@@ -631,6 +679,9 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
               text-transform: uppercase;
             "
           >
+            <div @click.stop>
+              <Checkbox :checked="tituloPageAll" :indeterminate="tituloPageSome" @change="toggleTituloPage" />
+            </div>
             <div>Nº Título</div>
             <div>Veículo</div>
             <div>Sacado</div>
@@ -643,13 +694,17 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
             v-for="t in titulosPageItems"
             :key="t.id"
             class="grid items-center"
-            style="
-              grid-template-columns: 1.2fr 1.4fr 1.4fr 1fr 1fr 0.8fr 1fr;
-              padding: 12px 20px;
-              border-top: 1px solid var(--border-default);
-              font-size: var(--text-sm);
-            "
+            :style="{
+              gridTemplateColumns: '36px 1.2fr 1.4fr 1.4fr 1fr 1fr 0.8fr 1fr',
+              padding: '12px 20px',
+              borderTop: '1px solid var(--border-default)',
+              fontSize: 'var(--text-sm)',
+              background: selectedIds.includes(t.id) ? 'var(--surface-selected)' : undefined,
+            }"
           >
+            <div @click.stop>
+              <Checkbox :checked="selectedIds.includes(t.id)" @change="toggleTitulo(t.id)" />
+            </div>
             <div style="font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">
               #{{ t.numero }}
             </div>
@@ -676,5 +731,7 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
         </template>
       </template>
     </div>
+
+    <TituloAcoesLote v-if="selecionados.length" :titulos="selecionados" />
   </div>
 </template>

@@ -42,8 +42,13 @@ const situacoesNotificacao = [
 
 const lista = computed(() => (alvo.value === 'notificacao' ? situacoesNotificacao : situacoesTitulo));
 const titulo = computed(() =>
-  alvo.value === 'notificacao' ? 'Alterar situação de notificação' : 'Alterar situação do título',
+  alvo.value === 'notificacao' ? 'Alterar situação de notificação' : alvo.value === 'titulo' ? 'Alterar situação do título' : 'Alterar situação',
 );
+const subtitulo = computed(() => {
+  if (alvo.value === 'notificacao') return 'Selecione a nova situação de notificação';
+  if (alvo.value === 'titulo') return 'Selecione a nova situação do título';
+  return 'Escolha a situação que deseja alterar';
+});
 
 function escolher(key: Alvo) {
   alvo.value = key;
@@ -59,28 +64,34 @@ function voltar() {
 <template>
   <div
     class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 500; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px); padding: 24px"
-    @click.self="emit('close')"
+    style="position: fixed; inset: 0; z-index: 500; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 32px"
   >
     <div
       style="width: 100%; max-width: 480px; background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden"
       @click.stop
     >
-      <div class="flex items-center justify-between" style="padding: 20px 22px 16px; border-bottom: 1px solid var(--border-default)">
-        <h3 style="font-size: var(--text-base); font-weight: var(--weight-bold); color: var(--text-strong); margin: 0">
-          {{ alvo ? titulo : 'Alterar situação' }}
-        </h3>
-        <button type="button" aria-label="Fechar" class="lote-icon-btn" @click="emit('close')">
-          <X :size="16" />
+      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
+            {{ titulo }}
+          </h2>
+          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            {{ subtitulo }}
+          </p>
+        </div>
+        <button
+          type="button"
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
+          @click="emit('close')"
+        >
+          <X :size="18" />
         </button>
       </div>
 
       <template v-if="!alvo">
-        <p style="font-size: var(--text-sm); color: var(--text-muted); line-height: 1.5; margin: 0; padding: 20px 22px 0">
-          Escolha a situação que deseja alterar.
-        </p>
-
-        <div class="flex flex-col" style="gap: 8px; padding: 16px 22px 20px">
+        <div class="flex flex-col" style="gap: 8px; padding: 24px 28px 20px">
           <button
             v-for="opcao in opcoes"
             :key="opcao.key"
@@ -120,18 +131,6 @@ function voltar() {
 </template>
 
 <style scoped>
-.lote-icon-btn {
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--surface-card);
-  cursor: pointer;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .lote-choice,
 .lote-secondary {
   height: 40px;

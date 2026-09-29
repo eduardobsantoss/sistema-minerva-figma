@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, ref, type Component } from 'vue';
+import { computed, ref, watch, type Component } from 'vue';
 import { ArrowLeft, Info, FileText, History } from 'lucide-vue-next';
 import { brl, type ContratoAtivoGlobal, type TituloAtivoGlobal } from '../data/ativosData';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import DetalhesTab from './contrato-detail/DetalhesTab.vue';
 import TitulosTab from './contrato-detail/TitulosTab.vue';
 import HistoricoTab from './contrato-detail/HistoricoTab.vue';
+import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
+import type { TituloSelecionado } from '@/components/titulos/types';
 
 const props = defineProps<{ contrato: ContratoAtivoGlobal; titulos: TituloAtivoGlobal[] }>();
 const emit = defineEmits<{ back: []; openTitulo: [id: string] }>();
@@ -19,10 +21,28 @@ const TABS: { key: Tab; label: string; icon: Component }[] = [
 ];
 
 const tab = ref<Tab>('detalhes');
+const selectedIds = ref<string[]>([]);
 
 const titulosContrato = computed(() =>
   props.titulos.filter((t) => t.contratoId === props.contrato.id),
 );
+
+const selecionados = computed<TituloSelecionado[]>(() =>
+  titulosContrato.value
+    .filter((t) => selectedIds.value.includes(t.id))
+    .map((t) => ({
+      id: t.id,
+      lastro: t.lastro,
+      numero: t.numero,
+      valor: t.valorNominal,
+      valorAberto: t.valorAberto,
+      vencimento: t.vencimento,
+    })),
+);
+
+watch(tab, () => {
+  selectedIds.value = [];
+});
 </script>
 
 <template>
@@ -70,8 +90,15 @@ const titulosContrato = computed(() =>
 
     <div style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 24px">
       <DetalhesTab v-if="tab === 'detalhes'" :contrato="contrato" />
-      <TitulosTab v-else-if="tab === 'titulos'" :titulos="titulosContrato" @open-titulo="emit('openTitulo', $event)" />
+      <TitulosTab
+        v-else-if="tab === 'titulos'"
+        v-model:selected-ids="selectedIds"
+        :titulos="titulosContrato"
+        @open-titulo="emit('openTitulo', $event)"
+      />
       <HistoricoTab v-else-if="tab === 'historico'" :contrato="contrato" :titulos="titulosContrato" />
     </div>
+
+    <TituloAcoesLote v-if="tab === 'titulos' && selecionados.length" :titulos="selecionados" />
   </div>
 </template>

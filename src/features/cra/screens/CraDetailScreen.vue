@@ -88,6 +88,7 @@ const titulosSelecionados = computed<TituloSelecionado[]>(() =>
     .filter((t) => selectedIds.value.includes(t.id))
     .map((t) => ({
       id: t.id,
+      lastro: t.tipo,
       numero: t.numero,
       valor: t.vrNominal,
       valorAberto: t.vrAberto ?? null,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, type Component } from 'vue';
+import { computed, reactive, ref, watch, type Component } from 'vue';
 import { ArrowLeft, FileSpreadsheet, ChevronRight, Download, Wallet, FileText } from 'lucide-vue-next';
 import { SITUACAO_OPTS, brl, situacaoLabel, type ContratoAtivoGlobal, type TituloAtivoGlobal } from '../data/ativosData';
 import {
@@ -18,6 +18,8 @@ import {
 } from '../data/relatoriosData';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
+import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
+import type { TituloSelecionado } from '@/components/titulos/types';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { useBackgroundReport } from '@/composables/useBackgroundReport';
 
@@ -30,6 +32,7 @@ const selected = ref<AtivosReportKey | null>(null);
 const hoveredKey = ref<AtivosReportKey | null>(null);
 const draft = reactive({ tipo: '', situacao: '' });
 const selectedIds = ref<string[]>([]);
+const tituloIds = ref<string[]>([]);
 const applied = ref(false);
 const previewTitulos = ref<TituloAtivoGlobal[]>([]);
 const previewContratos = ref<ContratoAtivoGlobal[]>([]);
@@ -82,6 +85,49 @@ const {
 
 const previewTotal = computed(() => (contratosMode.value ? contratosTotal.value : titulosTotal.value));
 
+const tituloPageIds = computed(() => titulosPageItems.value.map((r) => r.id));
+const tituloPageAll = computed(
+  () => tituloPageIds.value.length > 0 && tituloPageIds.value.every((id) => tituloIds.value.includes(id)),
+);
+const tituloPageSome = computed(
+  () => tituloPageIds.value.some((id) => tituloIds.value.includes(id)) && !tituloPageAll.value,
+);
+
+function toggleTituloPage() {
+  const next = new Set(tituloIds.value);
+  if (tituloPageAll.value) {
+    for (const id of tituloPageIds.value) next.delete(id);
+  } else {
+    for (const id of tituloPageIds.value) next.add(id);
+  }
+  tituloIds.value = [...next];
+}
+
+function toggleTitulo(id: string) {
+  const next = new Set(tituloIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  tituloIds.value = [...next];
+}
+
+const selecionados = computed<TituloSelecionado[]>(() =>
+  filteredTitulos.value
+    .filter((r) => tituloIds.value.includes(r.id))
+    .map((r) => ({
+      id: r.id,
+      lastro: r.lastro,
+      numero: r.numero,
+      valor: r.valorNominal,
+      valorAberto: r.valorAberto,
+      vencimento: r.vencimento,
+    })),
+);
+
+watch(filteredTitulos, (rows) => {
+  const ids = new Set(rows.map((r) => r.id));
+  tituloIds.value = tituloIds.value.filter((id) => ids.has(id));
+});
+
 function resetPreviewFilters() {
   previewFilters.sacado = '';
   previewFilters.situacao = '';
@@ -94,6 +140,7 @@ function selectReport(key: AtivosReportKey) {
   draft.tipo = '';
   draft.situacao = '';
   selectedIds.value = ATIVOS_FUNDOS.map((f) => f.id);
+  tituloIds.value = [];
   applied.value = false;
   previewTitulos.value = [];
   previewContratos.value = [];
@@ -429,16 +476,28 @@ const inputStyle = {
       <template v-else>
         <div
           class="grid"
-          style="grid-template-columns: 1.4fr 1.4fr 1fr 1fr 1fr 1fr 1fr; padding: 10px 20px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase"
+          style="grid-template-columns: 36px 1.4fr 1.4fr 1fr 1fr 1fr 1fr 1fr; padding: 10px 20px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase"
         >
+          <div @click.stop>
+            <Checkbox :checked="tituloPageAll" :indeterminate="tituloPageSome" @change="toggleTituloPage" />
+          </div>
           <div>Fundo</div><div>Sacado</div><div>Nº Título</div><div>Contrato</div><div>Vencimento</div><div>Valor aberto</div><div>Situação</div>
         </div>
         <div
           v-for="row in titulosPageItems"
           :key="row.id"
           class="grid items-center"
-          style="grid-template-columns: 1.4fr 1.4fr 1fr 1fr 1fr 1fr 1fr; padding: 12px 20px; border-top: 1px solid var(--border-default); font-size: var(--text-sm)"
+          :style="{
+            gridTemplateColumns: '36px 1.4fr 1.4fr 1fr 1fr 1fr 1fr 1fr',
+            padding: '12px 20px',
+            borderTop: '1px solid var(--border-default)',
+            fontSize: 'var(--text-sm)',
+            background: tituloIds.includes(row.id) ? 'var(--surface-selected)' : undefined,
+          }"
         >
+          <div @click.stop>
+            <Checkbox :checked="tituloIds.includes(row.id)" @change="toggleTitulo(row.id)" />
+          </div>
           <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ row.veiculoNome }}</div>
           <div style="color: var(--text-default)">{{ row.sacadoNome }}</div>
           <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ row.numero }}</div>
@@ -450,5 +509,7 @@ const inputStyle = {
         <TablePagination :total="titulosTotal" :page="titulosPage" :page-size="titulosPageSize" @update:page="setTitulosPage" @update:page-size="setTitulosPageSize" />
       </template>
     </div>
+
+    <TituloAcoesLote v-if="!contratosMode && selecionados.length" :titulos="selecionados" />
   </div>
 </template>

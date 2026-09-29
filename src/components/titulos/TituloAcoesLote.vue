@@ -4,6 +4,8 @@ import {
   BadgeCheck,
   ChevronUp,
   Download,
+  FileDown,
+  FileX,
   Landmark,
   Receipt,
   RefreshCw,
@@ -16,11 +18,12 @@ import AlterarSituacaoModal from './AlterarSituacaoModal.vue';
 import BaixarArquivosModal from './BaixarArquivosModal.vue';
 import PagamentoLoteModal from './PagamentoLoteModal.vue';
 import RegistrarConfirmacaoModal from './RegistrarConfirmacaoModal.vue';
+import TitulosMotivoModal from './TitulosMotivoModal.vue';
 import type { TituloSelecionado } from './types';
 
 const props = defineProps<{ titulos: TituloSelecionado[] }>();
 
-type Acao = 'cerc' | 'situacao' | 'pagamento' | 'arquivos' | 'confirmacao' | 'boleto' | 'excluir';
+type Acao = 'cerc' | 'baixa-registro' | 'desregistro' | 'situacao' | 'pagamento' | 'arquivos' | 'confirmacao' | 'boleto' | 'excluir';
 
 const menuOpen = ref(false);
 const acao = ref<Acao | null>(null);
@@ -28,6 +31,8 @@ const rootRef = ref<HTMLElement | null>(null);
 
 const itens: { key: Acao; label: string; icon: Component; danger?: boolean }[] = [
   { key: 'cerc', label: 'Ações CERC', icon: Landmark },
+  { key: 'baixa-registro', label: 'Baixa de registro', icon: FileDown },
+  { key: 'desregistro', label: 'Desregistro na CERC', icon: FileX },
   { key: 'situacao', label: 'Alterar situação', icon: RefreshCw },
   { key: 'pagamento', label: 'Pagamento em lote', icon: Wallet },
   { key: 'arquivos', label: 'Baixar arquivos', icon: Download },
@@ -132,14 +137,41 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick));
     </div>
   </div>
 
-  <AcoesCercModal v-if="acao === 'cerc'" @close="fechar" />
+  <AcoesCercModal
+    v-if="acao === 'cerc'"
+    @close="fechar"
+    @baixar="acao = 'baixa-registro'"
+    @desregistrar="acao = 'desregistro'"
+  />
+  <TitulosMotivoModal
+    v-if="acao === 'baixa-registro'"
+    title="Baixar títulos"
+    subtitle="Motivo da baixa e títulos selecionados"
+    motivo-label="Motivo da baixa"
+    :motivos="['Pago', 'Recompra', 'Liberação de garantia']"
+    confirm-label="Baixar"
+    :titulos="titulos"
+    @close="fechar"
+  />
+  <TitulosMotivoModal
+    v-if="acao === 'desregistro'"
+    title="Desregistrar títulos"
+    subtitle="Motivo do desregistro e títulos selecionados"
+    motivo-label="Motivo do desregistro"
+    :motivos="['Cancelamento', 'Operação não realizada']"
+    confirm-label="Desregistrar"
+    :titulos="titulos"
+    @close="fechar"
+  />
   <AlterarSituacaoModal v-if="acao === 'situacao'" @close="fechar" />
   <PagamentoLoteModal v-if="acao === 'pagamento'" :titulos="titulos" @close="fechar" />
   <BaixarArquivosModal v-if="acao === 'arquivos'" @close="fechar" />
   <RegistrarConfirmacaoModal v-if="acao === 'confirmacao'" @close="fechar" />
   <ConfirmTypedActionModal
     v-if="acao === 'boleto'"
+    persistent
     title="Gerar boleto"
+    subtitle="Confirmação da geração de boleto"
     :instruction="instrucaoBoleto"
     confirm-phrase="GERAR/BOLETO"
     confirm-label="Confirmar"
@@ -148,7 +180,9 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick));
   />
   <ConfirmTypedActionModal
     v-if="acao === 'excluir'"
+    persistent
     title="Excluir títulos"
+    subtitle="Confirmação da exclusão dos títulos selecionados"
     :instruction="instrucaoExcluir"
     confirm-phrase="EXCLUIR/TÍTULOS"
     confirm-label="Confirmar"

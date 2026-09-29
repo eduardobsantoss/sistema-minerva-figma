@@ -5,6 +5,7 @@ import { X } from 'lucide-vue-next';
 const props = withDefaults(
   defineProps<{
     title: string;
+    subtitle?: string;
     /** Texto orientando o usuário (ex.: “Digite o código abaixo…”). */
     instruction: string;
     /** Código que deve ser digitado exatamente (use hífens, ex.: GARANTIA-EM-EXECUCAO). */
@@ -12,11 +13,15 @@ const props = withDefaults(
     confirmLabel?: string;
     cancelLabel?: string;
     variant?: 'primary' | 'danger';
+    /** Quando verdadeiro, clique no overlay não fecha o modal. */
+    persistent?: boolean;
   }>(),
   {
+    subtitle: '',
     confirmLabel: 'Confirmar',
     cancelLabel: 'Cancelar',
     variant: 'primary',
+    persistent: false,
   },
 );
 
@@ -56,8 +61,8 @@ watch(
 <template>
   <div
     class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 500; background: rgba(15, 23, 42, 0.45); padding: 24px"
-    @click.self="emit('close')"
+    style="position: fixed; inset: 0; z-index: 500; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 32px"
+    @click.self="!persistent && emit('close')"
   >
     <div
       style="
@@ -70,29 +75,23 @@ watch(
       "
       @click.stop
     >
-      <div
-        class="flex items-center justify-between"
-        style="padding: 20px 22px 16px; border-bottom: 1px solid var(--border-default)"
-      >
-        <h3 style="font-size: var(--text-base); font-weight: var(--weight-bold); color: var(--text-strong); margin: 0">
-          {{ title }}
-        </h3>
+      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
+            {{ title }}
+          </h2>
+          <p v-if="subtitle" style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            {{ subtitle }}
+          </p>
+        </div>
         <button
           type="button"
           aria-label="Fechar"
           class="flex items-center justify-center"
-          style="
-            width: 32px;
-            height: 32px;
-            border: 1px solid var(--border-default);
-            border-radius: var(--radius-md);
-            background: var(--surface-card);
-            cursor: pointer;
-            color: var(--text-muted);
-          "
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
           @click="emit('close')"
         >
-          <X :size="16" />
+          <X :size="18" />
         </button>
       </div>
 

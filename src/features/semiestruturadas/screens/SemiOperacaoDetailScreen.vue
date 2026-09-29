@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, type Component } from 'vue';
+import { ref, computed, watch, type Component } from 'vue';
 import {
   ArrowLeft,
   ShieldCheck,
@@ -17,6 +17,8 @@ import CotasTab from './operacao-tabs/CotasTab.vue';
 import LastrosTab from './operacao-tabs/LastrosTab.vue';
 import GarantiasTab from './operacao-tabs/GarantiasTab.vue';
 import TabBtn from './operacao-tabs/TabBtn.vue';
+import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
+import type { TituloSelecionado } from '@/components/titulos/types';
 
 const props = defineProps<{ operacao: SemiOperacao }>();
 const emit = defineEmits<{ back: []; openCota: [cotaId: string] }>();
@@ -24,6 +26,7 @@ const emit = defineEmits<{ back: []; openCota: [cotaId: string] }>();
 type ViewTab = 'cotas' | 'lastros' | 'garantias';
 const tab = ref<ViewTab>('cotas');
 const q = ref('');
+const selectedIds = ref<string[]>([]);
 
 interface Kpi {
   icon: Component;
@@ -90,6 +93,23 @@ const filteredCotas = computed(() => {
   return props.operacao.cotas.filter((c) => c.veiculoAdquirente.toLowerCase().includes(term));
 });
 
+const selecionados = computed<TituloSelecionado[]>(() =>
+  filteredLastros.value
+    .filter((t) => selectedIds.value.includes(t.id))
+    .map((t) => ({
+      id: t.id,
+      lastro: t.lastro,
+      numero: t.numero,
+      valor: t.vrNominal,
+      valorAberto: null,
+      vencimento: t.vencimento,
+    })),
+);
+
+watch(tab, (value) => {
+  if (value !== 'lastros') selectedIds.value = [];
+});
+
 const filteredLastros = computed(() => {
   const term = q.value.trim().toLowerCase();
   if (!term) return props.operacao.lastros;
@@ -100,6 +120,11 @@ const filteredLastros = computed(() => {
       t.cedente.toLowerCase().includes(term) ||
       t.sacado.toLowerCase().includes(term),
   );
+});
+
+watch(filteredLastros, (rows) => {
+  const ids = new Set(rows.map((t) => t.id));
+  selectedIds.value = selectedIds.value.filter((id) => ids.has(id));
 });
 
 const filteredGarantias = computed(() => {
@@ -245,7 +270,7 @@ const filteredGarantias = computed(() => {
       </div>
 
       <CotasTab v-if="tab === 'cotas'" :rows="filteredCotas" @open="emit('openCota', $event)" />
-      <LastrosTab v-else-if="tab === 'lastros'" :rows="filteredLastros" />
+      <LastrosTab v-else-if="tab === 'lastros'" v-model:selected-ids="selectedIds" :rows="filteredLastros" />
       <GarantiasTab v-else :rows="filteredGarantias" />
 
       <div class="flex items-center justify-end" style="padding: 16px 20px; border-top: 1px solid var(--border-default)">
@@ -259,5 +284,7 @@ const filteredGarantias = computed(() => {
         </div>
       </div>
     </div>
+
+    <TituloAcoesLote v-if="tab === 'lastros' && selecionados.length" :titulos="selecionados" />
   </div>
 </template>

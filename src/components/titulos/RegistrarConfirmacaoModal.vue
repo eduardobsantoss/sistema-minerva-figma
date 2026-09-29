@@ -29,19 +29,29 @@ function onFile(event: Event) {
 <template>
   <div
     class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 500; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px); padding: 24px"
-    @click.self="emit('close')"
+    style="position: fixed; inset: 0; z-index: 500; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 32px"
   >
     <div
       style="width: 100%; max-width: 640px; background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden"
       @click.stop
     >
-      <div class="flex items-center justify-between" style="padding: 20px 22px 16px; border-bottom: 1px solid var(--border-default)">
-        <h3 style="font-size: var(--text-base); font-weight: var(--weight-bold); color: var(--text-strong); margin: 0">
-          Registrar confirmação
-        </h3>
-        <button type="button" aria-label="Fechar" class="lote-icon-btn" @click="emit('close')">
-          <X :size="16" />
+      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
+        <div>
+          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Registrar confirmação
+          </h2>
+          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
+            Status, evidência, data e observação
+          </p>
+        </div>
+        <button
+          type="button"
+          aria-label="Fechar"
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
+          @click="emit('close')"
+        >
+          <X :size="18" />
         </button>
       </div>
 
@@ -93,18 +103,6 @@ function onFile(event: Event) {
 </template>
 
 <style scoped>
-.lote-icon-btn {
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--surface-card);
-  cursor: pointer;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .lote-field {
   display: flex;
   flex-direction: column;

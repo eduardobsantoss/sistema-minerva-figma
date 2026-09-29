@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, type Component } from 'vue';
+import { computed, reactive, ref, watch, type Component } from 'vue';
 import {
   ArrowLeft,
   FileSpreadsheet,
@@ -29,6 +29,8 @@ import {
 } from '../data/relatoriosData';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
+import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
+import type { TituloSelecionado } from '@/components/titulos/types';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { useBackgroundReport } from '@/composables/useBackgroundReport';
 
@@ -44,6 +46,7 @@ const selected = ref<PortfolioReportKey | null>(null);
 const hoveredKey = ref<PortfolioReportKey | null>(null);
 const draft = reactive({ situacao: '', cessionaria: '' });
 const selectedIds = ref<string[]>([]);
+const tituloIds = ref<string[]>([]);
 const applied = ref(false);
 const previewTitulos = ref<PortfolioTituloRow[]>([]);
 const previewSacados = ref<PortfolioSacadoRow[]>([]);
@@ -116,6 +119,49 @@ const {
 
 const previewTotal = computed(() => (sacadosMode.value ? sacadosTotal.value : titulosTotal.value));
 
+const tituloPageIds = computed(() => titulosPageItems.value.map((r) => r.id));
+const tituloPageAll = computed(
+  () => tituloPageIds.value.length > 0 && tituloPageIds.value.every((id) => tituloIds.value.includes(id)),
+);
+const tituloPageSome = computed(
+  () => tituloPageIds.value.some((id) => tituloIds.value.includes(id)) && !tituloPageAll.value,
+);
+
+function toggleTituloPage() {
+  const next = new Set(tituloIds.value);
+  if (tituloPageAll.value) {
+    for (const id of tituloPageIds.value) next.delete(id);
+  } else {
+    for (const id of tituloPageIds.value) next.add(id);
+  }
+  tituloIds.value = [...next];
+}
+
+function toggleTitulo(id: string) {
+  const next = new Set(tituloIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  tituloIds.value = [...next];
+}
+
+const selecionados = computed<TituloSelecionado[]>(() =>
+  filteredTitulos.value
+    .filter((r) => tituloIds.value.includes(r.id))
+    .map((r) => ({
+      id: r.id,
+      lastro: r.parcela,
+      numero: r.nfe,
+      valor: r.valorNum,
+      valorAberto: null,
+      vencimento: r.vencimento,
+    })),
+);
+
+watch(filteredTitulos, (rows) => {
+  const ids = new Set(rows.map((r) => r.id));
+  tituloIds.value = tituloIds.value.filter((id) => ids.has(id));
+});
+
 function resetPreviewFilters() {
   previewFilters.sacado = '';
   previewFilters.statusPagamento = '';
@@ -129,6 +175,7 @@ function selectReport(key: PortfolioReportKey) {
   draft.situacao = '';
   draft.cessionaria = '';
   selectedIds.value = cras.map((c) => c.id);
+  tituloIds.value = [];
   applied.value = false;
   previewTitulos.value = [];
   previewSacados.value = [];
@@ -473,7 +520,7 @@ const inputStyle = {
         <div
           class="grid"
           :style="{
-            gridTemplateColumns: notificacoesMode ? '1.6fr 1.6fr 1fr 0.7fr 1fr 1fr 1.1fr 1.2fr' : '1.6fr 1.6fr 1fr 0.7fr 1fr 1fr 1.1fr',
+            gridTemplateColumns: notificacoesMode ? '36px 1.6fr 1.6fr 1fr 0.7fr 1fr 1fr 1.1fr 1.2fr' : '36px 1.6fr 1.6fr 1fr 0.7fr 1fr 1fr 1.1fr',
             padding: '10px 20px',
             background: 'var(--surface-sunken)',
             fontSize: '10px',
@@ -483,6 +530,9 @@ const inputStyle = {
             textTransform: 'uppercase',
           }"
         >
+          <div @click.stop>
+            <Checkbox :checked="tituloPageAll" :indeterminate="tituloPageSome" @change="toggleTituloPage" />
+          </div>
           <div>Fundo</div><div>Sacado</div><div>Nº NF</div><div>Parcela</div><div>Vencimento</div><div>Valor</div><div>Status pagamento</div>
           <div v-if="notificacoesMode">Status notificação</div>
         </div>
@@ -491,12 +541,16 @@ const inputStyle = {
           :key="row.id"
           class="grid items-center"
           :style="{
-            gridTemplateColumns: notificacoesMode ? '1.6fr 1.6fr 1fr 0.7fr 1fr 1fr 1.1fr 1.2fr' : '1.6fr 1.6fr 1fr 0.7fr 1fr 1fr 1.1fr',
+            gridTemplateColumns: notificacoesMode ? '36px 1.6fr 1.6fr 1fr 0.7fr 1fr 1fr 1.1fr 1.2fr' : '36px 1.6fr 1.6fr 1fr 0.7fr 1fr 1fr 1.1fr',
             padding: '12px 20px',
             borderTop: '1px solid var(--border-default)',
             fontSize: 'var(--text-sm)',
+            background: tituloIds.includes(row.id) ? 'var(--surface-selected)' : undefined,
           }"
         >
+          <div @click.stop>
+            <Checkbox :checked="tituloIds.includes(row.id)" @change="toggleTitulo(row.id)" />
+          </div>
           <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ row.fundo }}</div>
           <div style="color: var(--text-default)">{{ row.sacado }}</div>
           <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ row.nfe }}</div>
@@ -509,5 +563,7 @@ const inputStyle = {
         <TablePagination :total="titulosTotal" :page="titulosPage" :page-size="titulosPageSize" @update:page="setTitulosPage" @update:page-size="setTitulosPageSize" />
       </template>
     </div>
+
+    <TituloAcoesLote v-if="!sacadosMode && selecionados.length" :titulos="selecionados" />
   </div>
 </template>

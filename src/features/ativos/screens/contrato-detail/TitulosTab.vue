@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import {
   brl,
   situacaoLabel,
@@ -7,10 +8,27 @@ import {
   statusTituloColor,
   type TituloAtivoGlobal,
 } from '../../data/ativosData';
+import Checkbox from '@/components/ui/Checkbox.vue';
 import Section from './Section.vue';
 
-defineProps<{ titulos: TituloAtivoGlobal[] }>();
+const props = defineProps<{ titulos: TituloAtivoGlobal[] }>();
 const emit = defineEmits<{ openTitulo: [id: string] }>();
+const selectedIds = defineModel<string[]>('selectedIds', { default: () => [] });
+
+const ids = computed(() => props.titulos.map((t) => t.id));
+const allSelected = computed(() => ids.value.length > 0 && ids.value.every((id) => selectedIds.value.includes(id)));
+const someSelected = computed(() => ids.value.some((id) => selectedIds.value.includes(id)) && !allSelected.value);
+
+function toggleAll() {
+  selectedIds.value = allSelected.value ? [] : [...ids.value];
+}
+
+function toggleRow(id: string) {
+  const next = new Set(selectedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selectedIds.value = [...next];
+}
 </script>
 
 <template>
@@ -22,8 +40,11 @@ const emit = defineEmits<{ openTitulo: [id: string] }>();
       <div style="min-width: 900px">
         <div
           class="grid"
-          style="grid-template-columns: 100px 90px 1.2fr 1fr 110px 120px 120px 120px; padding: 12px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase"
+          style="grid-template-columns: 36px 100px 90px 1.2fr 1fr 110px 120px 120px 120px; padding: 12px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase"
         >
+          <div @click.stop>
+            <Checkbox :checked="allSelected" :indeterminate="someSelected" @change="toggleAll" />
+          </div>
           <div>Número</div>
           <div>Lastro</div>
           <div>Sacado</div>
@@ -37,9 +58,19 @@ const emit = defineEmits<{ openTitulo: [id: string] }>();
           v-for="t in titulos"
           :key="t.id"
           class="grid items-center titulo-row"
-          style="grid-template-columns: 100px 90px 1.2fr 1fr 110px 120px 120px 120px; padding: 14px 16px; border-top: 1px solid var(--border-default); font-size: var(--text-sm); cursor: pointer"
+          :style="{
+            gridTemplateColumns: '36px 100px 90px 1.2fr 1fr 110px 120px 120px 120px',
+            padding: '14px 16px',
+            borderTop: '1px solid var(--border-default)',
+            fontSize: 'var(--text-sm)',
+            cursor: 'pointer',
+            background: selectedIds.includes(t.id) ? 'var(--surface-selected)' : undefined,
+          }"
           @click="emit('openTitulo', t.id)"
         >
+          <div @click.stop>
+            <Checkbox :checked="selectedIds.includes(t.id)" @change="toggleRow(t.id)" />
+          </div>
           <div style="font-weight: var(--weight-bold); color: var(--text-strong)">{{ t.numero }}</div>
           <div style="color: var(--text-muted)">{{ t.lastro }}</div>
           <div>
