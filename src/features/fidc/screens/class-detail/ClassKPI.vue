@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Component } from 'vue';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 
 defineProps<{
   icon: Component;
@@ -7,6 +8,7 @@ defineProps<{
   value: string;
   tone: { bg: string; fg: string };
   danger?: boolean;
+  hint?: boolean;
 }>();
 </script>
 
@@ -28,8 +30,9 @@ defineProps<{
       >
         <component :is="icon" :size="18" :stroke-width="1.75" />
       </div>
-      <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase">
+      <div class="flex items-center" style="gap: 6px; font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase">
         {{ label }}
+        <ValorPresenteInfo v-if="hint" :size="12" />
       </div>
     </div>
     <div

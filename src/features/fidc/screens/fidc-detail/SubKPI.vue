@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import type { Component } from 'vue';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 
 defineProps<{
   icon: Component;
   label: string;
   value: string;
   tone: { bg: string; fg: string };
-  badge?: string;
-}>();
+    badge?: string;
+    hint?: boolean;
+  }>();
 </script>
 
 <template>
@@ -47,7 +49,10 @@ defineProps<{
           margin-bottom: 4px;
         "
       >
-        {{ label }}
+        <span class="flex items-center" style="gap: 6px">
+          {{ label }}
+          <ValorPresenteInfo v-if="hint" :size="12" />
+        </span>
       </div>
       <div class="flex items-center" style="gap: 8px">
         <span

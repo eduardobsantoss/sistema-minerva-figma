@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { brl, type FidcClass } from '../../data/fidcsData';
 import TablePagination from '@/components/ui/TablePagination.vue';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{ rows: FidcClass[] }>();
@@ -43,7 +44,7 @@ const rowHover = ref<string | null>(null);
       <div>Nome da Unidade</div>
       <div>Status</div>
       <div>VR. Nominal</div>
-      <div>VR. Aberto</div>
+      <div class="flex items-center" style="gap: 6px">VR. Presente<ValorPresenteInfo :size="12" /></div>
       <div>VR. Presente</div>
       <div style="text-align: right">VR. Vencido</div>
     </div>

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { X } from 'lucide-vue-next';
+import Alert from '@/components/feedback/Alert.vue';
 import type { TituloSelecionado } from './types';
 
 defineProps<{
   title: string;
   subtitle: string;
+  aviso?: string;
   motivoLabel: string;
   motivos: string[];
   confirmLabel: string;
@@ -52,6 +54,7 @@ function brl(n: number) {
       </div>
 
       <div style="flex: 1; overflow: auto; padding: 24px 28px; display: flex; flex-direction: column; gap: 20px">
+        <Alert v-if="aviso" type="warning" title="Parte da seleção fica de fora" :message="aviso" :dismissible="false" />
         <label class="lote-field">
           <span class="lote-label">{{ motivoLabel }}</span>
           <select v-model="motivo" class="lote-input" :data-empty="motivo === ''">

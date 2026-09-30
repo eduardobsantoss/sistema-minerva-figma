@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { X } from 'lucide-vue-next';
+import Alert from '@/components/feedback/Alert.vue';
 
 const props = withDefaults(
   defineProps<{
     title: string;
     subtitle?: string;
+    aviso?: string;
+    /** Cancelar à esquerda e confirmar à direita. */
+    spreadFooter?: boolean;
     /** Texto orientando o usuário (ex.: “Digite o código abaixo…”). */
     instruction: string;
     /** Código que deve ser digitado exatamente (use hífens, ex.: GARANTIA-EM-EXECUCAO). */
@@ -18,6 +22,8 @@ const props = withDefaults(
   }>(),
   {
     subtitle: '',
+    aviso: '',
+    spreadFooter: false,
     confirmLabel: 'Confirmar',
     cancelLabel: 'Cancelar',
     variant: 'primary',
@@ -40,8 +46,8 @@ const confirmButtonStyle = computed(() => {
   }
   if (props.variant === 'danger') {
     return {
-      background: 'var(--action-danger-bg)',
-      color: 'var(--action-danger-text)',
+      background: 'var(--danger-base)',
+      color: 'var(--text-on-danger)',
     };
   }
   return {
@@ -96,6 +102,14 @@ watch(
       </div>
 
       <div style="padding: 20px 22px 22px">
+        <Alert
+          v-if="aviso"
+          type="warning"
+          title="Parte da seleção fica de fora"
+          :message="aviso"
+          :dismissible="false"
+          style="margin-bottom: 16px"
+        />
         <p style="font-size: var(--text-sm); color: var(--text-muted); line-height: 1.5; margin: 0 0 14px">
           {{ instruction }}
         </p>
@@ -137,7 +151,10 @@ watch(
           "
         />
 
-        <div class="flex items-center justify-end" style="gap: 10px; margin-top: 22px">
+        <div
+          class="flex items-center"
+          :style="{ gap: '10px', marginTop: '22px', justifyContent: spreadFooter ? 'space-between' : 'flex-end' }"
+        >
           <button
             type="button"
             style="

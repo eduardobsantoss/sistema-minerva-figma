@@ -95,7 +95,8 @@ watch(filtered, (rows) => {
       />
       <ClassKPI
         :icon="TrendingUp"
-        label="Valor em Aberto"
+        label="Valor presente"
+        hint
         :value="brl(klass.vrAberto)"
         :tone="{ bg: 'var(--gci-light)', fg: 'var(--gci-base)' }"
       />

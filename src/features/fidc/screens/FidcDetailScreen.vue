@@ -286,7 +286,8 @@ function handleSetupUpdate(setup: FidcSetup) {
         />
         <SubKPI
           :icon="TrendingUp"
-          label="Valor em Aberto"
+          label="Valor presente"
+          hint
           :value="brl(fidc.carteira.valor)"
           :tone="{ bg: 'var(--gci-light)', fg: 'var(--gci-base)' }"
         />

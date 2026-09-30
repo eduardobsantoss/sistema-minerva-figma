@@ -5,6 +5,7 @@ import Section from './Section.vue';
 import Field from './Field.vue';
 import Participant from './Participant.vue';
 import CopyButton from './CopyButton.vue';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 
 defineProps<{ contrato: ContratoAtivoGlobal }>();
 </script>
@@ -31,7 +32,10 @@ defineProps<{ contrato: ContratoAtivoGlobal }>();
         <Field label="Valor Emissão">{{ brl(contrato.valorEmissao) }}</Field>
         <Field label="Valor Aquisição">{{ brl(contrato.valorAquisicao) }}</Field>
         <Field label="Valor Presente">{{ brl(contrato.valorPresente) }}</Field>
-        <Field label="Valor Aberto">{{ brl(contrato.valorAberto) }}</Field>
+        <Field label="Valor Presente">
+          <template #hint><ValorPresenteInfo :size="12" /></template>
+          {{ brl(contrato.valorAberto) }}
+        </Field>
       </div>
     </Section>
 

@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { Plus, Download, MoreVertical, Pencil, Trash2 } from 'lucide-vue-next';
 import TablePagination from '@/components/ui/TablePagination.vue';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import {
   brl,
@@ -157,7 +158,7 @@ function onDelete(id: string) {
         <div>Nome</div>
         <div>Data do termo</div>
         <div>Tipo</div>
-        <div>Valor Aberto</div>
+        <div class="flex items-center" style="gap: 6px">Valor presente<ValorPresenteInfo :size="12" /></div>
         <div>Status</div>
         <div>Taxa (%)</div>
         <div>Valor Presente</div>

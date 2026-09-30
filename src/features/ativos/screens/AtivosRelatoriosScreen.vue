@@ -17,6 +17,7 @@ import {
   type AtivosReportKey,
 } from '../data/relatoriosData';
 import Checkbox from '@/components/ui/Checkbox.vue';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
 import type { TituloSelecionado } from '@/components/titulos/types';
@@ -120,6 +121,13 @@ const selecionados = computed<TituloSelecionado[]>(() =>
       valor: r.valorNominal,
       valorAberto: r.valorAberto,
       vencimento: r.vencimento,
+      registro:
+        r.statusRegistro === 'REGISTRADO'
+          ? 'Registrado'
+          : r.statusRegistro === 'PENDENTE'
+            ? 'Pendente'
+            : 'Erro no processamento',
+      situacao: r.situacao === 'EM_CARTEIRA' ? 'Em carteira' : situacaoLabel(r.situacao),
     })),
 );
 
@@ -481,7 +489,7 @@ const inputStyle = {
           <div @click.stop>
             <Checkbox :checked="tituloPageAll" :indeterminate="tituloPageSome" @change="toggleTituloPage" />
           </div>
-          <div>Fundo</div><div>Sacado</div><div>Nº Título</div><div>Contrato</div><div>Vencimento</div><div>Valor aberto</div><div>Situação</div>
+          <div>Fundo</div><div>Sacado</div><div>Nº Título</div><div>Contrato</div><div>Vencimento</div><div class="flex items-center" style="gap: 6px">Valor presente<ValorPresenteInfo :size="12" /></div><div>Situação</div>
         </div>
         <div
           v-for="row in titulosPageItems"

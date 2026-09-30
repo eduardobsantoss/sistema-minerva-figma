@@ -136,7 +136,9 @@ const tone = computed(() => statusTone[props.title.status]);
       @update:model-value="tab = $event as Tab"
     />
 
+    <PagamentosTab v-if="tab === 'pagamentos'" :title="title" v-model:det="det" />
     <div
+      v-else
       style="
         background: var(--surface-card);
         border-width: 1px;
@@ -149,7 +151,6 @@ const tone = computed(() => statusTone[props.title.status]);
       <DetailsTab v-if="tab === 'detalhes'" :title="title" :klass="klass" />
       <AnexosTab v-else-if="tab === 'anexos'" :title="title" />
       <AccrualTab v-else-if="tab === 'accrual'" :title="title" />
-      <PagamentosTab v-else-if="tab === 'pagamentos'" :title="title" v-model:det="det" />
       <ConfirmacoesTab v-else-if="tab === 'confirmacoes'" :title="title" />
       <MovimentacoesTab v-else-if="tab === 'movimentacoes'" :title="title" />
       <MovimentoTab v-else-if="tab === 'historico'" :title="title" />

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Wallet, CalendarClock, ChevronDown, ChevronUp, Undo2, Calculator, Pencil } from 'lucide-vue-next';
+import { Wallet, Percent, History, CalendarClock, Settings2, ChevronDown, ChevronUp, Undo2, Calculator, Pencil } from 'lucide-vue-next';
 import {
   brl, TIPO_PAGAMENTO_OPTS,
   type Title, type PagamentoTitulo, type StatusParcela, type ParcelaCronograma, type DetalhePagamentos,
@@ -8,18 +8,17 @@ import {
 import SimularValorizacaoModal from '../../components/modals/SimularValorizacaoModal.vue';
 import EditarParcelasModal from '../../components/modals/EditarParcelasModal.vue';
 import EstornoPagamentoModal from '../../components/modals/EstornoPagamentoModal.vue';
-import HeaderStat from './pagamentos/HeaderStat.vue';
-import Section from './pagamentos/Section.vue';
+import { TabCard, ToggleRow, EmptyState } from '@/features/risco/screens/detail-tabs/shared';
 import Field from './pagamentos/Field.vue';
-import EmptyState from './pagamentos/EmptyState.vue';
+import FieldLabel from './pagamentos/FieldLabel.vue';
 import GhostButton from './pagamentos/GhostButton.vue';
 import FormField from './pagamentos/FormField.vue';
 import SelectField from './pagamentos/SelectField.vue';
-import ToggleRow from './pagamentos/ToggleRow.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 
-defineProps<{ title: Title }>();
+const props = defineProps<{ title: Title }>();
 const det = defineModel<DetalhePagamentos>('det', { required: true });
 
 const STATUS_TONE: Record<StatusParcela, { bg: string; fg: string; label: string }> = {
@@ -43,6 +42,11 @@ const configOpen = ref(false);
 const totalPago = computed(() =>
   det.value.pagamentos.filter((p) => !p.estornado).reduce((acc, p) => acc + p.valorAmortizacao, 0),
 );
+
+const kpis = computed(() => [
+  { icon: Wallet, label: 'Valor presente', hint: true, value: brl(Math.max(props.title.vrNominal - totalPago.value, 0)) },
+  { icon: Percent, label: 'Juros remuneratórios em aberto', hint: false, value: brl(det.value.jurosRemuneratorioAberto) },
+]);
 
 const {
   page: pagamentosPage,
@@ -101,49 +105,56 @@ function handleConfirmEstorno(justificativa: string) {
 </script>
 
 <template>
-  <div class="flex flex-col" style="gap: 28px">
-    <!-- Header context -->
-    <div class="flex items-center justify-end" style="gap: 32px; flex-wrap: wrap">
-      <HeaderStat label="Valor em aberto" :value="brl(Math.max(title.vrNominal - totalPago, 0))" />
-      <HeaderStat label="Juros remuneratórios em aberto" :value="brl(det.jurosRemuneratorioAberto)" />
-    </div>
-
-    <!-- Registrar Pagamento — sempre visível (mesmo padrão do compositor da Ata de Deliberação) -->
-    <Section title="Registrar Pagamento">
-      <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 14px">
-        <FormField label="Valor de amortização" placeholder="R$ 0,00" v-model="form.valorAmortizacao" />
-        <FormField label="Data de pagamento" placeholder="dd/mm/aaaa" v-model="form.dataPagamento" />
-        <SelectField label="Tipo de pagamento" :options="TIPO_PAGAMENTO_OPTS" placeholder="Selecione" v-model="form.tipoPagamento" />
-        <FormField label="Juros moratório" placeholder="R$ 0,00" v-model="form.jurosMoratorio" />
-        <FormField label="Multa" placeholder="R$ 0,00" v-model="form.multa" />
-        <FormField label="Juros remuneratório" placeholder="R$ 0,00" v-model="form.jurosRemuneratorio" />
-        <div style="grid-column: span 2; display: flex; align-items: flex-end">
-          <ToggleRow label="Transferência parcial" :on="form.transferenciaParcial" @toggle="form.transferenciaParcial = !form.transferenciaParcial" />
+  <div class="flex flex-col" style="gap: 20px">
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px">
+      <div
+        v-for="k in kpis"
+        :key="k.label"
+        class="flex items-center"
+        style="gap: 14px; padding: 16px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl)"
+      >
+        <div
+          class="flex items-center justify-center"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); color: var(--gci-base); flex-shrink: 0"
+        >
+          <component :is="k.icon" :size="18" :stroke-width="1.75" />
+        </div>
+        <div style="min-width: 0">
+          <div class="flex items-center" style="gap: 6px; font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px">
+            {{ k.label }}
+            <ValorPresenteInfo v-if="k.hint" :size="12" />
+          </div>
+          <div style="font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
+            {{ k.value }}
+          </div>
         </div>
       </div>
-      <div style="margin-top: 14px">
-        <FormField label="Observação" placeholder="—" v-model="form.observacao" />
-      </div>
-      <div class="flex items-center justify-end" style="margin-top: 16px">
-        <button
-          :disabled="!canSalvar"
-          :style="{
-            height: '42px', padding: '0 24px', border: 'none', borderRadius: 'var(--radius-lg)',
-            cursor: canSalvar ? 'pointer' : 'not-allowed',
-            fontWeight: 'var(--weight-bold)', fontSize: 'var(--text-xs)', letterSpacing: '0.08em',
-            background: canSalvar ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
-            color: canSalvar ? '#fff' : 'var(--text-disabled)',
-            transition: 'background var(--duration-base)',
-          }"
-          @click="handleSalvar"
-        >
-          SALVAR
-        </button>
-      </div>
-    </Section>
+    </div>
 
-    <!-- Histórico de Pagamentos -->
-    <Section title="Histórico de Pagamentos">
+    <TabCard title="Registrar pagamento" :icon="Wallet" has-save :save-disabled="!canSalvar" @save="handleSalvar">
+      <div class="flex flex-col" style="gap: 16px">
+        <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 16px">
+          <FormField label="Valor de amortização" placeholder="R$ 0,00" v-model="form.valorAmortizacao" />
+          <FormField label="Data de pagamento" placeholder="dd/mm/aaaa" v-model="form.dataPagamento" />
+          <SelectField label="Tipo de pagamento" :options="TIPO_PAGAMENTO_OPTS" placeholder="Selecione" v-model="form.tipoPagamento" />
+          <FormField label="Juros moratório" placeholder="R$ 0,00" v-model="form.jurosMoratorio" />
+          <FormField label="Multa" placeholder="R$ 0,00" v-model="form.multa" />
+          <FormField label="Juros remuneratório" placeholder="R$ 0,00" v-model="form.jurosRemuneratorio" />
+        </div>
+        <ToggleRow label="Transferência parcial" :on="form.transferenciaParcial" @toggle="form.transferenciaParcial = !form.transferenciaParcial" />
+        <div>
+          <FieldLabel>Observação</FieldLabel>
+          <textarea
+            v-model="form.observacao"
+            placeholder="—"
+            rows="3"
+            style="width: 100%; padding: 12px 14px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong); resize: vertical; font-family: inherit"
+          />
+        </div>
+      </div>
+    </TabCard>
+
+    <TabCard title="Histórico de pagamentos" :icon="History">
       <EmptyState v-if="det.pagamentos.length === 0" :icon="Wallet" title="Nenhum pagamento registrado" hint="Use o formulário acima para registrar baixas manuais deste título." />
       <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
         <div class="grid" style="grid-template-columns: 0.9fr 1fr 1.3fr 1.1fr 1fr 0.8fr 0.8fr 0.6fr; padding: 10px 16px; background: var(--surface-sunken); font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase">
@@ -189,20 +200,22 @@ function handleConfirmEstorno(justificativa: string) {
           @update:page-size="setPagamentosPageSize"
         />
       </div>
-    </Section>
+    </TabCard>
 
-    <!-- Configuração do Título — somente leitura -->
-    <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+    <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); overflow: hidden">
       <button
-        class="flex items-center justify-between"
-        style="width: 100%; padding: 14px 18px; background: var(--surface-sunken); border: none; cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)"
+        type="button"
+        class="flex items-center"
+        style="width: 100%; gap: 10px; padding: 16px 22px; background: none; border: none; cursor: pointer; text-align: left"
         @click="configOpen = !configOpen"
       >
-        Configuração do Título — {{ det.configuracao.tipoCalculo }}
-        <ChevronUp v-if="configOpen" :size="16" />
-        <ChevronDown v-else :size="16" />
+        <Settings2 :size="16" style="color: var(--text-muted); flex-shrink: 0" />
+        <span style="flex: 1; font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Configuração do título</span>
+        <span style="font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--text-muted)">{{ det.configuracao.tipoCalculo }}</span>
+        <ChevronUp v-if="configOpen" :size="16" style="color: var(--text-muted)" />
+        <ChevronDown v-else :size="16" style="color: var(--text-muted)" />
       </button>
-      <div v-if="configOpen" class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 20px">
+      <div v-if="configOpen" class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 22px; border-top: 1px solid var(--border-default)">
         <Field label="Emissão">{{ title.emissao }}</Field>
         <Field label="Valor Emissão">{{ brl(det.configuracao.valorEmissao) }}</Field>
         <Field label="Vencimento final">{{ det.configuracao.vencimentoFinal }}</Field>
@@ -215,8 +228,7 @@ function handleConfirmEstorno(justificativa: string) {
       </div>
     </div>
 
-    <!-- Cronograma de Pagamentos -->
-    <Section title="Cronograma de Pagamentos">
+    <TabCard title="Cronograma de pagamentos" :icon="CalendarClock">
       <template #action>
         <div class="flex items-center" style="gap: 10px">
           <GhostButton :icon="Calculator" @click="showSimular = true">Simular valorização</GhostButton>
@@ -251,7 +263,7 @@ function handleConfirmEstorno(justificativa: string) {
           @update:page-size="setCronogramaPageSize"
         />
       </div>
-    </Section>
+    </TabCard>
 
     <SimularValorizacaoModal v-if="showSimular" :title="title" :cronograma="det.cronograma" @close="showSimular = false" />
 

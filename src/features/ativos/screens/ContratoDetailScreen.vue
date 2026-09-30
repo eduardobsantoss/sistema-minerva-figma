@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, type Component } from 'vue';
 import { ArrowLeft, Info, FileText, History } from 'lucide-vue-next';
-import { brl, type ContratoAtivoGlobal, type TituloAtivoGlobal } from '../data/ativosData';
+import { brl, situacaoLabel, type ContratoAtivoGlobal, type TituloAtivoGlobal } from '../data/ativosData';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import DetalhesTab from './contrato-detail/DetalhesTab.vue';
 import TitulosTab from './contrato-detail/TitulosTab.vue';
@@ -37,6 +37,13 @@ const selecionados = computed<TituloSelecionado[]>(() =>
       valor: t.valorNominal,
       valorAberto: t.valorAberto,
       vencimento: t.vencimento,
+      registro:
+        t.statusRegistro === 'REGISTRADO'
+          ? 'Registrado'
+          : t.statusRegistro === 'PENDENTE'
+            ? 'Pendente'
+            : 'Erro no processamento',
+      situacao: t.situacao === 'EM_CARTEIRA' ? 'Em carteira' : situacaoLabel(t.situacao),
     })),
 );
 

@@ -2,6 +2,7 @@
 import type { Component } from 'vue';
 import { computed } from 'vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{
@@ -48,7 +49,10 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
             textTransform: 'uppercase',
           }"
         >
-          <div v-for="col in columns" :key="col">{{ col }}</div>
+          <div v-for="col in columns" :key="col" class="flex items-center" style="gap: 6px">
+            {{ col }}
+            <ValorPresenteInfo v-if="col === 'Valor presente'" :size="12" />
+          </div>
         </div>
         <div
           v-for="(row, i) in pageItems"

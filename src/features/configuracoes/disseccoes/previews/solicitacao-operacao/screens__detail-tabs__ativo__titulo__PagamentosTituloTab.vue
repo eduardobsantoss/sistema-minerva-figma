@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { brl } from '@/features/solicitacao-operacao/data/operacaoData';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import { Wallet, ChevronDown, ChevronUp } from 'lucide-vue-next';
 withDefaults(defineProps<{ ativo: ContratoAtivo }>(), {
   ativo: ''
@@ -10,7 +11,10 @@ withDefaults(defineProps<{ ativo: ContratoAtivo }>(), {
   <div class="flex flex-col" style="gap: 28px">
     <div class="flex items-center justify-end" style="gap: 32px; flex-wrap: wrap">
       <div style="text-align: right">
-        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase">Valor em aberto</div>
+        <div class="flex items-center justify-end" style="gap: 6px; font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase">
+          Valor presente
+          <ValorPresenteInfo :size="12" />
+        </div>
         <div style="font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
           {{ brl(Math.max(ativo.valorTotal - totalPago, 0)) }}
         </div>

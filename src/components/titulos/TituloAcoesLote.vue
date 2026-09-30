@@ -4,8 +4,6 @@ import {
   BadgeCheck,
   ChevronUp,
   Download,
-  FileDown,
-  FileX,
   Landmark,
   Receipt,
   RefreshCw,
@@ -13,7 +11,7 @@ import {
   Wallet,
 } from 'lucide-vue-next';
 import ConfirmTypedActionModal from '@/components/ui/ConfirmTypedActionModal.vue';
-import AcoesCercModal from './AcoesCercModal.vue';
+import AcoesCercModal, { type AcaoCerc } from './AcoesCercModal.vue';
 import AlterarSituacaoModal from './AlterarSituacaoModal.vue';
 import BaixarArquivosModal from './BaixarArquivosModal.vue';
 import PagamentoLoteModal from './PagamentoLoteModal.vue';
@@ -23,16 +21,16 @@ import type { TituloSelecionado } from './types';
 
 const props = defineProps<{ titulos: TituloSelecionado[] }>();
 
-type Acao = 'cerc' | 'baixa-registro' | 'desregistro' | 'situacao' | 'pagamento' | 'arquivos' | 'confirmacao' | 'boleto' | 'excluir';
+type Acao = AcaoCerc | 'cerc' | 'situacao' | 'pagamento' | 'arquivos' | 'confirmacao' | 'boleto' | 'excluir';
 
 const menuOpen = ref(false);
 const acao = ref<Acao | null>(null);
+const titulosAcao = ref<TituloSelecionado[]>([]);
+const avisoCerc = ref('');
 const rootRef = ref<HTMLElement | null>(null);
 
 const itens: { key: Acao; label: string; icon: Component; danger?: boolean }[] = [
   { key: 'cerc', label: 'Ações CERC', icon: Landmark },
-  { key: 'baixa-registro', label: 'Baixa de registro', icon: FileDown },
-  { key: 'desregistro', label: 'Desregistro na CERC', icon: FileX },
   { key: 'situacao', label: 'Alterar situação', icon: RefreshCw },
   { key: 'pagamento', label: 'Pagamento em lote', icon: Wallet },
   { key: 'arquivos', label: 'Baixar arquivos', icon: Download },
@@ -59,13 +57,42 @@ const instrucaoBoleto = computed(() => {
     : `Digite o código abaixo para confirmar a geração dos ${n} boletos`;
 });
 
+const confirmacaoCerc = computed(() => {
+  const n = titulosAcao.value.length;
+  if (acao.value === 'registrar') {
+    return n === 1
+      ? 'Digite o código abaixo para confirmar o registro do título'
+      : `Digite o código abaixo para confirmar o registro dos ${n} títulos elegíveis`;
+  }
+  return n === 1
+    ? 'Digite o código abaixo para confirmar a atualização do registro'
+    : `Digite o código abaixo para confirmar a atualização dos ${n} títulos elegíveis`;
+});
+
+const rotuloContinuar = computed(() => {
+  const n = titulosAcao.value.length;
+  return `Continuar com ${n} ${n === 1 ? 'título' : 'títulos'}`;
+});
+
 function abrir(key: Acao) {
   menuOpen.value = false;
+  titulosAcao.value = props.titulos;
+  avisoCerc.value = '';
   acao.value = key;
+}
+
+function abrirCerc(proxima: AcaoCerc, elegiveis: TituloSelecionado[], fora: TituloSelecionado[]) {
+  titulosAcao.value = elegiveis;
+  avisoCerc.value = fora.length
+    ? `${fora.length === 1 ? '1 título não entra' : `${fora.length} títulos não entram`} nesta ação. Lastros fora da regra: ${fora.map((titulo) => titulo.lastro || titulo.numero).join(', ')}.`
+    : '';
+  acao.value = proxima;
 }
 
 function fechar() {
   acao.value = null;
+  avisoCerc.value = '';
+  titulosAcao.value = [];
 }
 
 function onDocClick(event: MouseEvent) {
@@ -139,28 +166,42 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick));
 
   <AcoesCercModal
     v-if="acao === 'cerc'"
+    :titulos="titulos"
     @close="fechar"
-    @baixar="acao = 'baixa-registro'"
-    @desregistrar="acao = 'desregistro'"
+    @prosseguir="abrirCerc"
+  />
+  <ConfirmTypedActionModal
+    v-if="acao === 'registrar' || acao === 'atualizar'"
+    persistent
+    :title="acao === 'registrar' ? 'Registrar títulos' : 'Atualizar registros'"
+    :subtitle="acao === 'registrar' ? 'Confirmação do registro na CERC' : 'Confirmação da atualização na CERC'"
+    :aviso="avisoCerc"
+    :instruction="confirmacaoCerc"
+    :confirm-phrase="acao === 'registrar' ? 'REGISTRAR/TÍTULOS' : 'ATUALIZAR/REGISTROS'"
+    :confirm-label="avisoCerc ? rotuloContinuar : 'Confirmar'"
+    @close="fechar"
+    @confirm="fechar"
   />
   <TitulosMotivoModal
     v-if="acao === 'baixa-registro'"
     title="Baixar títulos"
     subtitle="Motivo da baixa e títulos selecionados"
+    :aviso="avisoCerc"
     motivo-label="Motivo da baixa"
     :motivos="['Pago', 'Recompra', 'Liberação de garantia']"
-    confirm-label="Baixar"
-    :titulos="titulos"
+    :confirm-label="avisoCerc ? rotuloContinuar : 'Baixar'"
+    :titulos="titulosAcao"
     @close="fechar"
   />
   <TitulosMotivoModal
     v-if="acao === 'desregistro'"
     title="Desregistrar títulos"
     subtitle="Motivo do desregistro e títulos selecionados"
+    :aviso="avisoCerc"
     motivo-label="Motivo do desregistro"
     :motivos="['Cancelamento', 'Operação não realizada']"
-    confirm-label="Desregistrar"
-    :titulos="titulos"
+    :confirm-label="avisoCerc ? rotuloContinuar : 'Desregistrar'"
+    :titulos="titulosAcao"
     @close="fechar"
   />
   <AlterarSituacaoModal v-if="acao === 'situacao'" @close="fechar" />
@@ -185,8 +226,9 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick));
     subtitle="Confirmação da exclusão dos títulos selecionados"
     :instruction="instrucaoExcluir"
     confirm-phrase="EXCLUIR/TÍTULOS"
-    confirm-label="Confirmar"
+    confirm-label="Excluir títulos"
     variant="danger"
+    spread-footer
     @close="fechar"
     @confirm="fechar"
   />

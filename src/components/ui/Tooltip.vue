@@ -9,6 +9,8 @@ const props = withDefaults(
     side?: 'top' | 'bottom' | 'left' | 'right';
     /** ocupa 100% da largura (ex.: botão do menu lateral) */
     block?: boolean;
+    /** quando definido, o texto quebra em vez de ficar numa linha só */
+    maxWidth?: number;
   }>(),
   { variant: 'dark', side: 'top', block: false },
 );
@@ -183,7 +185,10 @@ const arrowStyle = computed(() => {
           fontWeight: 'var(--weight-semibold)',
           padding: '7px 12px',
           borderRadius: 'var(--radius-md)',
-          whiteSpace: 'nowrap',
+          whiteSpace: maxWidth ? 'normal' : 'nowrap',
+          maxWidth: maxWidth ? `${maxWidth}px` : undefined,
+          lineHeight: maxWidth ? '1.45' : undefined,
+          textAlign: maxWidth ? 'left' : undefined,
           boxShadow: tone.shadow,
           border: tone.border,
           opacity: ready ? 1 : 0,

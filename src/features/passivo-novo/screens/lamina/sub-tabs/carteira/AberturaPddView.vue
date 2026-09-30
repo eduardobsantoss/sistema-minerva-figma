@@ -25,7 +25,7 @@ defineProps<{ carteira: CarteiraBundle }>();
       <CarteiraTableCard
         title="Abertura do PDD"
         :icon="FileSpreadsheet"
-        :columns="['Cedente', 'Valor aberto', 'PDD', 'Status']"
+        :columns="['Cedente', 'Valor presente', 'PDD', 'Status']"
         col-template="1.6fr 1fr 0.9fr 1.2fr"
         :rows="carteira.aberturaPdd.map((r) => [r.cedente, brl(r.valorAberto, true), brl(r.pdd, true), r.status])"
       />

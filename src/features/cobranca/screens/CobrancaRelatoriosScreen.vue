@@ -9,6 +9,7 @@ import {
   BellRing,
   Receipt,
 } from 'lucide-vue-next';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import {
   TITULOS_SEED,
   VEICULO_OPTS,
@@ -45,7 +46,7 @@ const REPORTS: ReportDef[] = [
   {
     key: 'inadimplencia',
     title: 'Relatório de Inadimplência',
-    description: 'Títulos vencidos e em atraso, com valor em aberto, dias de atraso e veículo.',
+    description: 'Títulos vencidos e em atraso, com valor presente, dias de atraso e veículo.',
     icon: AlertTriangle,
   },
   {
@@ -57,7 +58,7 @@ const REPORTS: ReportDef[] = [
   {
     key: 'boletagem',
     title: 'Relatório de Boletagem',
-    description: 'Situação de boletos gerados versus pendentes sobre títulos com valor em aberto.',
+    description: 'Situação de boletos gerados versus pendentes sobre títulos com valor presente.',
     icon: Receipt,
   },
 ];
@@ -200,7 +201,7 @@ function handleExportCsv() {
           filename: 'efetividade-notificacao.csv',
         };
       }
-      const header = ['Nº Título', 'Veículo', 'Sacado', 'VR. Aberto', 'Status', 'Dias atraso', 'Boleto'];
+      const header = ['Nº Título', 'Veículo', 'Sacado', 'VR. Presente', 'Status', 'Dias atraso', 'Boleto'];
       const lines = resultadosTitulos.value.map((t) =>
         [
           t.numero,
@@ -685,7 +686,7 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
             <div>Nº Título</div>
             <div>Veículo</div>
             <div>Sacado</div>
-            <div>VR. Aberto</div>
+            <div class="flex items-center" style="gap: 6px">VR. Presente<ValorPresenteInfo :size="12" /></div>
             <div>Status</div>
             <div>Dias</div>
             <div>Boleto</div>

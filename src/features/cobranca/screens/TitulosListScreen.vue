@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   XCircle,
 } from 'lucide-vue-next';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import {
   VEICULO_OPTS,
   VEICULO_TIPO_OPTS,
@@ -76,7 +77,7 @@ const ALL_COLS: { key: ColKey; label: string; align?: 'right' }[] = [
   { key: 'vrNominal', label: 'VR. Nominal', align: 'right' },
   { key: 'vrAquisicao', label: 'VR. Aquisição', align: 'right' },
   { key: 'vrPresente', label: 'VR. Presente', align: 'right' },
-  { key: 'vrAberto', label: 'VR. Aberto', align: 'right' },
+  { key: 'vrAberto', label: 'VR. Presente', align: 'right' },
   { key: 'vrJuros', label: 'VR. Juros', align: 'right' },
   { key: 'vrMulta', label: 'VR. Multa', align: 'right' },
   { key: 'statusNotificacao', label: 'Notificação' },
@@ -633,7 +634,15 @@ function menuActions(t: Titulo) {
               <Checkbox :checked="pageAllSelected" :indeterminate="pageSomeSelected" @change="togglePage" />
             </div>
             <div>Nº Título</div>
-            <div v-for="c in cols" :key="c.key" :style="{ textAlign: c.align }">{{ c.label }}</div>
+            <div v-for="c in cols" :key="c.key" :style="{ textAlign: c.align }">
+              <span
+                class="inline-flex items-center"
+                :style="{ gap: '6px', width: '100%', justifyContent: c.align === 'right' ? 'flex-end' : 'flex-start' }"
+              >
+                {{ c.label }}
+                <ValorPresenteInfo v-if="c.key === 'vrAberto'" :size="12" />
+              </span>
+            </div>
             <div style="text-align: right">Ações</div>
           </div>
 

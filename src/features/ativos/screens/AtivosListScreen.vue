@@ -13,6 +13,7 @@ import {
   ScrollText,
 } from 'lucide-vue-next';
 import Checkbox from '@/components/ui/Checkbox.vue';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import AtivosFiltersPanel from '../components/AtivosFiltersPanel.vue';
@@ -108,7 +109,7 @@ const CONTRATO_COLS: { key: ContratoColKey; label: string; align?: 'right' }[] =
   { key: 'valorEmissao', label: 'Valor Emissão', align: 'right' },
   { key: 'valorAquisicao', label: 'Valor Aquisição', align: 'right' },
   { key: 'valorPresente', label: 'Valor Presente', align: 'right' },
-  { key: 'valorAberto', label: 'Valor Aberto', align: 'right' },
+  { key: 'valorAberto', label: 'Valor Presente', align: 'right' },
   { key: 'cedente', label: 'Cedente' },
   { key: 'sacado', label: 'Sacado' },
   { key: 'dataPrimeiraEntrada', label: '1ª Entrada' },
@@ -143,7 +144,7 @@ const TITULO_COLS: { key: TituloColKey; label: string; align?: 'right' }[] = [
   { key: 'valorEmissao', label: 'Valor Emissão', align: 'right' },
   { key: 'valorAquisicao', label: 'Valor Aquisição', align: 'right' },
   { key: 'valorPresente', label: 'Valor Presente', align: 'right' },
-  { key: 'valorAberto', label: 'Valor Aberto', align: 'right' },
+  { key: 'valorAberto', label: 'Valor Presente', align: 'right' },
   { key: 'valorVencido', label: 'Valor Vencido', align: 'right' },
   { key: 'vencimento', label: 'Vencimento' },
   { key: 'ultimoPagamento', label: 'Último Pagamento' },
@@ -291,6 +292,13 @@ const titulosSelecionados = computed<TituloSelecionado[]>(() =>
       valor: t.valorNominal,
       valorAberto: t.valorAberto,
       vencimento: t.vencimento,
+      registro:
+        t.statusRegistro === 'REGISTRADO'
+          ? 'Registrado'
+          : t.statusRegistro === 'PENDENTE'
+            ? 'Pendente'
+            : 'Erro no processamento',
+      situacao: t.situacao === 'EM_CARTEIRA' ? 'Em carteira' : situacaoLabel(t.situacao),
     })),
 );
 
@@ -622,7 +630,13 @@ function tituloCell(t: TituloAtivoGlobal, key: TituloColKey): string {
                 :key="col.key"
                 :style="{ textAlign: col.align ?? 'left', paddingRight: col.key === 'valorAberto' ? '12px' : undefined, paddingLeft: col.key === 'cedente' ? '12px' : undefined }"
               >
-                {{ col.label }}
+                <span
+                  class="inline-flex items-center"
+                  :style="{ gap: '6px', width: '100%', justifyContent: col.align === 'right' ? 'flex-end' : 'flex-start' }"
+                >
+                  {{ col.label }}
+                  <ValorPresenteInfo v-if="col.key === 'valorAberto'" :size="12" />
+                </span>
               </div>
             </div>
             <div
@@ -684,7 +698,13 @@ function tituloCell(t: TituloAtivoGlobal, key: TituloColKey): string {
                 :key="col.key"
                 :style="{ textAlign: col.align ?? 'left' }"
               >
-                {{ col.label }}
+                <span
+                  class="inline-flex items-center"
+                  :style="{ gap: '6px', width: '100%', justifyContent: col.align === 'right' ? 'flex-end' : 'flex-start' }"
+                >
+                  {{ col.label }}
+                  <ValorPresenteInfo v-if="col.key === 'valorAberto'" :size="12" />
+                </span>
               </div>
             </div>
             <div

@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { Plus, MoreVertical, Pencil, Trash2 } from 'lucide-vue-next';
 import TablePagination from '@/components/ui/TablePagination.vue';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import {
   brl,
@@ -163,7 +164,7 @@ function onLinkBlur(c: Cessao) {
           <div>Nome</div>
           <div>Data de Cessão</div>
           <div>Tipo</div>
-          <div>Valor Aberto</div>
+          <div class="flex items-center" style="gap: 6px">Valor presente<ValorPresenteInfo :size="12" /></div>
           <div>Status</div>
           <div>Grupo Empresarial</div>
           <div>Aprovação da taxa</div>

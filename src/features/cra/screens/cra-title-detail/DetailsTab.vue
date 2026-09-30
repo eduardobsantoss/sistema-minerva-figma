@@ -5,6 +5,7 @@ import Section from './Section.vue';
 import Field from './Field.vue';
 import Participant from './Participant.vue';
 import CopyButton from './CopyButton.vue';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 
 defineProps<{ titulo: CraTitulo; operacao: CraOperacao }>();
 
@@ -35,7 +36,10 @@ const cessaoTone: Record<CessaoStatus, { bg: string; fg: string }> = {
         <Field label="Valor Nominal">{{ brl(titulo.vrNominal) }}</Field>
         <Field label="Valor de Aquisição">{{ titulo.vrAquisicao != null ? brl(titulo.vrAquisicao) : '—' }}</Field>
         <Field label="Valor Presente">{{ titulo.vrPresente != null ? brl(titulo.vrPresente) : '—' }}</Field>
-        <Field label="Valor em Aberto">{{ titulo.vrAberto != null ? brl(titulo.vrAberto) : '—' }}</Field>
+        <Field label="Valor Presente">
+          <template #hint><ValorPresenteInfo :size="12" /></template>
+          {{ titulo.vrAberto != null ? brl(titulo.vrAberto) : '—' }}
+        </Field>
       </div>
     </Section>
 

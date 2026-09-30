@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { X } from 'lucide-vue-next';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import type { TituloSelecionado } from './types';
 
 const props = defineProps<{ titulos: TituloSelecionado[] }>();
@@ -132,7 +133,7 @@ function brl(n: number) {
             <div class="lote-table-row lote-table-head" style="grid-template-columns: 1.2fr 1fr 1fr 1fr">
               <div>Número</div>
               <div style="text-align: right">Valor</div>
-              <div style="text-align: right">Valor aberto</div>
+              <div class="flex items-center justify-end" style="gap: 6px">Valor presente<ValorPresenteInfo :size="12" /></div>
               <div>Vencimento</div>
             </div>
             <div
@@ -155,7 +156,7 @@ function brl(n: number) {
               <div class="lote-readonly lote-readonly-strong">{{ brl(totalValor) }}</div>
             </div>
             <div class="span-6">
-              <div class="lote-label">Valor total aberto dos títulos</div>
+              <div class="lote-label flex items-center" style="gap: 6px">Valor total presente dos títulos<ValorPresenteInfo :size="12" /></div>
               <div class="lote-readonly lote-readonly-strong">{{ totalAberto == null ? '—' : brl(totalAberto) }}</div>
             </div>
           </div>
@@ -167,7 +168,7 @@ function brl(n: number) {
             <div class="lote-table-row lote-table-head" style="grid-template-columns: repeat(9, minmax(88px, 1fr))">
               <div>Número</div>
               <div>Valor pago</div>
-              <div>Valor aberto</div>
+              <div class="flex items-center" style="gap: 6px">Valor presente<ValorPresenteInfo :size="12" /></div>
               <div>Vencimento</div>
               <div>Dias de atraso</div>
               <div>Juros pago</div>

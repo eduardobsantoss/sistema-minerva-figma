@@ -99,7 +99,7 @@ export function filterContratosPreview(
 }
 
 export function toTitulosCsv(rows: TituloAtivoGlobal[]): string {
-  const header = ['Fundo', 'Sacado', 'Nº Título', 'Contrato', 'Vencimento', 'Valor aberto', 'Situação'];
+  const header = ['Fundo', 'Sacado', 'Nº Título', 'Contrato', 'Vencimento', 'Valor presente', 'Situação'];
   const lines = rows.map((t) =>
     [t.veiculoNome, t.sacadoNome, t.numero, t.contratoNumero, t.vencimento, brl(t.valorAberto), situacaoLabel(t.situacao)]
       .map(csvCell)

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, type Component } from 'vue';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import {
   ArrowLeft,
   MoreVertical,
@@ -311,8 +312,9 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
           min-width: 160px;
         "
       >
-        <div style="font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255, 255, 255, 0.55)">
-          Valor em Aberto
+        <div class="flex items-center" style="gap: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255, 255, 255, 0.55)">
+          Valor presente
+          <ValorPresenteInfo tone="onDark" :size="13" />
         </div>
         <div style="font-size: var(--text-xl); font-weight: 700; font-variant-numeric: tabular-nums">
           {{ brl(titulo.vrAberto) }}

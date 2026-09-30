@@ -9,6 +9,7 @@ import {
   type TituloAtivoGlobal,
 } from '../../data/ativosData';
 import Checkbox from '@/components/ui/Checkbox.vue';
+import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import Section from './Section.vue';
 
 const props = defineProps<{ titulos: TituloAtivoGlobal[] }>();
@@ -51,7 +52,7 @@ function toggleRow(id: string) {
           <div>Situação</div>
           <div>Status</div>
           <div style="text-align: right">Nominal</div>
-          <div style="text-align: right">Aberto</div>
+          <div class="flex items-center justify-end" style="gap: 6px">Presente<ValorPresenteInfo :size="12" /></div>
           <div>Vencimento</div>
         </div>
         <div
