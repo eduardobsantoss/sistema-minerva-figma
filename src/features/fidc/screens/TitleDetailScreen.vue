@@ -12,7 +12,16 @@ import {
   BadgeCheck,
   ArrowLeftRight,
 } from 'lucide-vue-next';
-import { brl, detalhePagamentos, type Fidc, type FidcClass, type Title, type TitleStatus } from '../data/fidcsData';
+import {
+  brl,
+  detalhePagamentos,
+  type Cessao,
+  type Fidc,
+  type FidcClass,
+  type Title,
+  type TitleStatus,
+} from '../data/fidcsData';
+import CessaoFormModal from '../components/modals/CessaoFormModal.vue';
 import PagamentosTab from './detail-tabs/PagamentosTab.vue';
 import CopyButton from './title-detail/CopyButton.vue';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
@@ -24,7 +33,36 @@ import MovimentacoesTab from './title-detail/MovimentacoesTab.vue';
 import MovimentoTab from './title-detail/MovimentoTab.vue';
 
 const props = defineProps<{ fidc: Fidc; klass: FidcClass; title: Title }>();
-const emit = defineEmits<{ back: [] }>();
+const emit = defineEmits<{ back: []; updateCessoes: [cessoes: Cessao[]] }>();
+
+const cessaoModalOpen = ref(false);
+const editingCessao = ref<Cessao | null>(null);
+
+const cessaoVeiculo = computed(() => {
+  const id = props.title.cessaoId;
+  if (!id) return null;
+  return props.fidc.cessoes.find((c) => c.id === id) ?? null;
+});
+
+function openEditCessao() {
+  if (!cessaoVeiculo.value) return;
+  editingCessao.value = cessaoVeiculo.value;
+  cessaoModalOpen.value = true;
+}
+
+function closeCessaoModal() {
+  cessaoModalOpen.value = false;
+  editingCessao.value = null;
+}
+
+function saveCessao(c: Cessao) {
+  const list = [...props.fidc.cessoes];
+  const idx = list.findIndex((x) => x.id === c.id);
+  if (idx >= 0) list[idx] = c;
+  else list.push(c);
+  emit('updateCessoes', list);
+  closeCessaoModal();
+}
 
 type Tab = 'detalhes' | 'anexos' | 'accrual' | 'pagamentos' | 'confirmacoes' | 'movimentacoes' | 'historico';
 
@@ -148,12 +186,25 @@ const tone = computed(() => statusTone[props.title.status]);
         padding: 24px;
       "
     >
-      <DetailsTab v-if="tab === 'detalhes'" :title="title" :klass="klass" />
+      <DetailsTab
+        v-if="tab === 'detalhes'"
+        :title="title"
+        :klass="klass"
+        :cessao-veiculo="cessaoVeiculo"
+        @edit-cessao="openEditCessao"
+      />
       <AnexosTab v-else-if="tab === 'anexos'" :title="title" />
       <AccrualTab v-else-if="tab === 'accrual'" :title="title" />
       <ConfirmacoesTab v-else-if="tab === 'confirmacoes'" :title="title" />
       <MovimentacoesTab v-else-if="tab === 'movimentacoes'" :title="title" />
       <MovimentoTab v-else-if="tab === 'historico'" :title="title" />
     </div>
+
+    <CessaoFormModal
+      v-if="cessaoModalOpen"
+      :cessao="editingCessao"
+      @close="closeCessaoModal"
+      @save="saveCessao"
+    />
   </div>
 </template>

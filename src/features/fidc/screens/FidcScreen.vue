@@ -202,6 +202,7 @@ const currentGrupo = computed(() => {
       :klass="currentClass"
       :title="currentTitle"
       @back="route = { level: 'class', fidcId: currentFidc.id, classId: currentClass.id }"
+      @update-cessoes="(cessoes) => updateCessoes(currentFidc!.id, cessoes)"
     />
   </template>
 </template>

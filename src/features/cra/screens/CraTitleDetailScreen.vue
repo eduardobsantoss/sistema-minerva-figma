@@ -4,7 +4,8 @@ import {
   ArrowLeft, FileText, Paperclip, CreditCard, Activity,
   CheckCircle2, Clock, BadgeCheck, ArrowLeftRight, TrendingUp,
 } from 'lucide-vue-next';
-import { brl, type Cra, type CraOperacao, type CraTitulo, type TituloStatus } from '../data/craData';
+import { brl, type Cra, type Cessao, type CraOperacao, type CraTitulo, type TituloStatus } from '../data/craData';
+import CessaoFormModal from '../components/modals/CessaoFormModal.vue';
 import CopyButton from './cra-title-detail/CopyButton.vue';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import DetailsTab from './cra-title-detail/DetailsTab.vue';
@@ -16,7 +17,36 @@ import MovimentacoesTab from './cra-title-detail/MovimentacoesTab.vue';
 import MovimentoTab from './cra-title-detail/MovimentoTab.vue';
 
 const props = defineProps<{ cra: Cra; operacao: CraOperacao; titulo: CraTitulo }>();
-const emit = defineEmits<{ back: [] }>();
+const emit = defineEmits<{ back: []; updateCessoes: [cessoes: Cessao[]] }>();
+
+const cessaoModalOpen = ref(false);
+const editingCessao = ref<Cessao | null>(null);
+
+const cessaoVeiculo = computed(() => {
+  const id = props.titulo.cessaoId;
+  if (!id) return null;
+  return props.cra.cessoes.find((c) => c.id === id) ?? null;
+});
+
+function openEditCessao() {
+  if (!cessaoVeiculo.value) return;
+  editingCessao.value = cessaoVeiculo.value;
+  cessaoModalOpen.value = true;
+}
+
+function closeCessaoModal() {
+  cessaoModalOpen.value = false;
+  editingCessao.value = null;
+}
+
+function saveCessao(c: Cessao) {
+  const list = [...props.cra.cessoes];
+  const idx = list.findIndex((x) => x.id === c.id);
+  if (idx >= 0) list[idx] = c;
+  else list.push(c);
+  emit('updateCessoes', list);
+  closeCessaoModal();
+}
 
 type Tab = 'detalhes' | 'anexos' | 'accrual' | 'pagamentos' | 'confirmacoes' | 'movimentacoes' | 'historico';
 
@@ -99,7 +129,13 @@ const tone = computed(() => statusTone[props.titulo.status]);
     />
 
     <div style="background: var(--surface-card); border-width: 1px; border-style: solid; border-color: var(--border-default); border-radius: var(--radius-xl); padding: 24px">
-      <DetailsTab v-if="tab === 'detalhes'" :titulo="titulo" :operacao="operacao" />
+      <DetailsTab
+        v-if="tab === 'detalhes'"
+        :titulo="titulo"
+        :operacao="operacao"
+        :cessao-veiculo="cessaoVeiculo"
+        @edit-cessao="openEditCessao"
+      />
       <AnexosTab v-else-if="tab === 'anexos'" :titulo="titulo" />
       <AccrualTab v-else-if="tab === 'accrual'" :titulo="titulo" />
       <PagamentosTab v-else-if="tab === 'pagamentos'" />
@@ -107,5 +143,12 @@ const tone = computed(() => statusTone[props.titulo.status]);
       <MovimentacoesTab v-else-if="tab === 'movimentacoes'" :titulo="titulo" />
       <MovimentoTab v-else-if="tab === 'historico'" :titulo="titulo" />
     </div>
+
+    <CessaoFormModal
+      v-if="cessaoModalOpen"
+      :cessao="editingCessao"
+      @close="closeCessaoModal"
+      @save="saveCessao"
+    />
   </div>
 </template>

@@ -127,6 +127,8 @@ export interface CraTitulo {
   vrAquisicao?: number;
   vrPresente?: number;
   vrAberto?: number;
+  /** Cessão do veículo (aba Cessões) vinculada a este título */
+  cessaoId?: string;
   // Cessão
   cessao?: {
     cessionario: string;
@@ -318,8 +320,8 @@ export function num(n: number): string {
   return new Intl.NumberFormat('pt-BR').format(n);
 }
 
-function makeTitulos(prefix: string, operacaoId: string): CraTitulo[] {
-  return [
+function makeTitulos(prefix: string, operacaoId: string, cessaoVehiclePrefix?: string): CraTitulo[] {
+  const titulos: CraTitulo[] = [
     {
       id: `${prefix}-t1`, numero: `${prefix}-001`, tipo: 'CPR-F',
       cedente: 'Fazenda São João', cedenteCnpj: '12.345.678/0001-99',
@@ -376,6 +378,11 @@ function makeTitulos(prefix: string, operacaoId: string): CraTitulo[] {
       cessao: { cessionario: 'CERES SECURIZADORA S/A', data: '2024-05-21', valor: 382_200, status: 'LIQUIDADO' },
     },
   ];
+  if (!cessaoVehiclePrefix) return titulos;
+  return titulos.map((t, i) => ({
+    ...t,
+    cessaoId: `${cessaoVehiclePrefix}-ces-${(i % 3) + 1}`,
+  }));
 }
 
 function makeCessoes(prefix: string): Cessao[] {
@@ -698,7 +705,7 @@ export const cras: Cra[] = [
         dataEmissao: '2023-06-01',
         dataInicio: '2023-06-15',
         dataVencimento: '2026-06-15',
-        titulos: makeTitulos('SEA4', 'sea-op-4'),
+        titulos: makeTitulos('SEA4', 'sea-op-4', 'SEA'),
       },
       {
         id: 'sea-op-5',
@@ -717,7 +724,7 @@ export const cras: Cra[] = [
         dataEmissao: '2024-03-01',
         dataInicio: '2024-03-15',
         dataVencimento: '2027-03-15',
-        titulos: makeTitulos('SEA5', 'sea-op-5'),
+        titulos: makeTitulos('SEA5', 'sea-op-5', 'SEA'),
       },
     ],
     cessoes: makeCessoes('SEA'),
@@ -749,7 +756,7 @@ export const cras: Cra[] = [
         dataEmissao: '2023-09-01',
         dataInicio: '2023-09-20',
         dataVencimento: '2027-09-20',
-        titulos: makeTitulos('CA7', 'ca-op-7'),
+        titulos: makeTitulos('CA7', 'ca-op-7', 'CA'),
       },
     ],
     cessoes: makeCessoes('CA'),
@@ -781,7 +788,7 @@ export const cras: Cra[] = [
         dataEmissao: '2024-01-10',
         dataInicio: '2024-01-25',
         dataVencimento: '2027-01-25',
-        titulos: makeTitulos('BTG2', 'btg-op-2'),
+        titulos: makeTitulos('BTG2', 'btg-op-2', 'BTG'),
       },
     ],
     cessoes: makeCessoes('BTG'),

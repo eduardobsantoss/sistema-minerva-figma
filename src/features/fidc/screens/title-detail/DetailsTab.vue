@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { Mail, Phone, Building2, User } from 'lucide-vue-next';
-import type { Title, FidcClass } from '../../data/fidcsData';
+import { Mail, Phone, Building2, User, Pencil } from 'lucide-vue-next';
+import type { Cessao, Title, FidcClass } from '../../data/fidcsData';
 import Section from './Section.vue';
 import Field from './Field.vue';
 import Participant from './Participant.vue';
 import CopyButton from './CopyButton.vue';
 
-defineProps<{ title: Title; klass: FidcClass }>();
+defineProps<{
+  title: Title;
+  klass: FidcClass;
+  cessaoVeiculo?: Cessao | null;
+}>();
+
+const emit = defineEmits<{ editCessao: [] }>();
 </script>
 
 <template>
@@ -19,6 +25,32 @@ defineProps<{ title: Title; klass: FidcClass }>();
           <span class="flex items-center" style="gap: 6px">#{{ title.numero }}<CopyButton :value="title.numero" /></span>
         </Field>
         <Field label="Tipo de Ativo">{{ title.lastro.replace('_', '-') }}</Field>
+        <Field label="Nome da Cessão">
+          <span class="flex items-center" style="gap: 6px; min-width: 0">
+            <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+              {{ cessaoVeiculo?.nome ?? '—' }}
+            </span>
+            <button
+              v-if="cessaoVeiculo"
+              type="button"
+              aria-label="Editar cessão"
+              class="flex items-center justify-center"
+              style="
+                width: 28px;
+                height: 28px;
+                flex-shrink: 0;
+                border-radius: var(--radius-md);
+                border: 1px solid var(--border-default);
+                background: var(--surface-card);
+                cursor: pointer;
+                color: var(--text-muted);
+              "
+              @click="emit('editCessao')"
+            >
+              <Pencil :size="13" />
+            </button>
+          </span>
+        </Field>
       </div>
     </Section>
 

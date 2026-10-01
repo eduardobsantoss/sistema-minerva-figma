@@ -246,5 +246,6 @@ const grupo = computed(() => {
     :operacao="operacao"
     :titulo="titulo"
     @back="route = { level: 'operacao', craId: cra!.id, operacaoId: operacao!.id }"
+    @update-cessoes="(cessoes) => updateCessoes(cra!.id, cessoes)"
   />
 </template>

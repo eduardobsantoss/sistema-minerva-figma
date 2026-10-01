@@ -119,6 +119,8 @@ export interface Title {
   vrNominal: number;
   status: TitleStatus;
   classId: string;
+  /** Cessão do veículo (aba Cessões) vinculada a este título */
+  cessaoId?: string;
 }
 
 export interface FidcClass {
@@ -588,6 +590,7 @@ export const fidcs: Fidc[] = [
             vrNominal: 154280.5,
             status: 'CONFIRMADO',
             classId: 'leite',
+            cessaoId: 'TI-ces-1',
           },
           {
             id: 't2',
@@ -602,6 +605,7 @@ export const fidcs: Fidc[] = [
             vrNominal: 87900.0,
             status: 'VENCIDO',
             classId: 'leite',
+            cessaoId: 'TI-ces-2',
           },
           {
             id: 't3',
@@ -616,6 +620,7 @@ export const fidcs: Fidc[] = [
             vrNominal: 312450.75,
             status: 'PENDENTE',
             classId: 'leite',
+            cessaoId: 'TI-ces-3',
           },
         ],
       },
@@ -642,6 +647,7 @@ export const fidcs: Fidc[] = [
             vrNominal: 980000.0,
             status: 'CONFIRMADO',
             classId: 'animais',
+            cessaoId: 'TI-ces-1',
           },
           {
             id: 't5',
@@ -656,6 +662,7 @@ export const fidcs: Fidc[] = [
             vrNominal: 1270359.43,
             status: 'CONFIRMADO',
             classId: 'animais',
+            cessaoId: 'TI-ces-2',
           },
         ],
       },

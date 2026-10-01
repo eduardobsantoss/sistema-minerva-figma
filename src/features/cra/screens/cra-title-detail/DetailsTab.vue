@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import { Mail, Phone, Building2, User } from 'lucide-vue-next';
-import { brl, type CraOperacao, type CraTitulo, type CessaoStatus } from '../../data/craData';
+import { Mail, Phone, Building2, User, Pencil } from 'lucide-vue-next';
+import { brl, type Cessao, type CraOperacao, type CraTitulo, type CessaoStatus } from '../../data/craData';
 import Section from './Section.vue';
 import Field from './Field.vue';
 import Participant from './Participant.vue';
 import CopyButton from './CopyButton.vue';
 import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 
-defineProps<{ titulo: CraTitulo; operacao: CraOperacao }>();
+defineProps<{
+  titulo: CraTitulo;
+  operacao: CraOperacao;
+  cessaoVeiculo?: Cessao | null;
+}>();
+
+const emit = defineEmits<{ editCessao: [] }>();
 
 const cessaoTone: Record<CessaoStatus, { bg: string; fg: string }> = {
   LIQUIDADO: { bg: 'var(--success-light)', fg: 'var(--success-dark)' },
@@ -27,6 +33,32 @@ const cessaoTone: Record<CessaoStatus, { bg: string; fg: string }> = {
         </Field>
         <Field label="Tipo de Ativo">{{ titulo.tipo }}</Field>
         <Field label="Status">{{ titulo.status }}</Field>
+        <Field label="Nome da Cessão">
+          <span class="flex items-center" style="gap: 6px; min-width: 0">
+            <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+              {{ cessaoVeiculo?.nome ?? '—' }}
+            </span>
+            <button
+              v-if="cessaoVeiculo"
+              type="button"
+              aria-label="Editar cessão"
+              class="flex items-center justify-center"
+              style="
+                width: 28px;
+                height: 28px;
+                flex-shrink: 0;
+                border-radius: var(--radius-md);
+                border: 1px solid var(--border-default);
+                background: var(--surface-card);
+                cursor: pointer;
+                color: var(--text-muted);
+              "
+              @click="emit('editCessao')"
+            >
+              <Pencil :size="13" />
+            </button>
+          </span>
+        </Field>
       </div>
     </Section>
 
