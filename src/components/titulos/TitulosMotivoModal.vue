@@ -79,7 +79,7 @@ function brl(n: number) {
         </div>
       </div>
 
-      <div class="flex items-center justify-end" style="gap: 10px; padding: 16px 22px; border-top: 1px solid var(--border-default); flex-shrink: 0">
+      <div class="lote-footer">
         <button type="button" class="lote-secondary" @click="emit('close')">Cancelar</button>
         <button type="button" class="lote-primary" :disabled="!motivo" @click="motivo && emit('close')">
           {{ confirmLabel }}
@@ -142,6 +142,16 @@ function brl(n: number) {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
+}
+.lote-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 22px;
+  border-top: 1px solid var(--border-default);
+  flex-shrink: 0;
 }
 .lote-secondary,
 .lote-primary {

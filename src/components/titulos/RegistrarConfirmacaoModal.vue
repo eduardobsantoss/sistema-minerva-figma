@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Upload, X } from 'lucide-vue-next';
 
+const props = withDefaults(defineProps<{ quantidade?: number }>(), { quantidade: 1 });
 const emit = defineEmits<{ close: [] }>();
+
+const rotuloConfirmar = computed(() =>
+  props.quantidade === 1 ? 'Registrar confirmação do título' : 'Registrar confirmações dos títulos',
+);
 
 const statusConfirmacao = [
   'PENDENTE',
@@ -94,9 +99,9 @@ function onFile(event: Event) {
         </label>
       </div>
 
-      <div class="flex items-center justify-end" style="gap: 10px; padding: 0 22px 20px">
-        <button type="button" class="lote-secondary" @click="emit('close')">Fechar</button>
-        <button type="button" class="lote-primary" @click="emit('close')">Registrar confirmação</button>
+      <div class="lote-footer">
+        <button type="button" class="lote-secondary" @click="emit('close')">Cancelar</button>
+        <button type="button" class="lote-primary" @click="emit('close')">{{ rotuloConfirmar }}</button>
       </div>
     </div>
   </div>
@@ -140,6 +145,14 @@ function onFile(event: Event) {
   cursor: pointer;
   text-align: left;
   overflow: hidden;
+}
+.lote-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 0 22px 20px;
 }
 .lote-secondary,
 .lote-primary {

@@ -137,14 +137,25 @@ function escolher(acao: AcaoCerc) {
         </div>
       </div>
 
-      <div class="flex items-center justify-end" style="padding: 0 28px 24px">
-        <button type="button" class="lote-secondary" @click="emit('close')">Fechar</button>
+      <div class="lote-footer lote-footer--single">
+        <button type="button" class="lote-secondary" @click="emit('close')">Cancelar</button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.lote-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 0 28px 24px;
+}
+.lote-footer--single {
+  justify-content: flex-start;
+}
 .lote-choice,
 .lote-secondary {
   height: 40px;

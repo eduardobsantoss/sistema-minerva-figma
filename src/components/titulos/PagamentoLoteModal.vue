@@ -25,6 +25,10 @@ const taxaJuros = ref('');
 const taxaMulta = ref('');
 const dataPagamento = ref('');
 
+const rotuloConfirmar = computed(() =>
+  props.titulos.length === 1 ? 'Realizar pagamento em lote' : 'Realizar pagamentos em lote',
+);
+
 const totalValor = computed(() => props.titulos.reduce((acc, t) => acc + t.valor, 0));
 const totalAberto = computed(() => {
   if (props.titulos.some((t) => t.valorAberto == null)) return null;
@@ -205,9 +209,9 @@ function brl(n: number) {
         </section>
       </div>
 
-      <div class="flex items-center justify-end" style="gap: 10px; padding: 16px 22px; border-top: 1px solid var(--border-default); flex-shrink: 0">
+      <div class="lote-footer">
         <button type="button" class="lote-secondary" @click="emit('close')">Cancelar</button>
-        <button type="button" class="lote-primary" disabled>Realizar pagamentos</button>
+        <button type="button" class="lote-primary" disabled>{{ rotuloConfirmar }}</button>
       </div>
     </div>
   </div>
@@ -331,6 +335,16 @@ function brl(n: number) {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
+}
+.lote-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 22px;
+  border-top: 1px solid var(--border-default);
+  flex-shrink: 0;
 }
 .lote-secondary,
 .lote-primary {

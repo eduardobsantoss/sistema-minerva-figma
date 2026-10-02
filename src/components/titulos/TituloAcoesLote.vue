@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, type Component } from 'vue';
 import {
   BadgeCheck,
+  CalendarClock,
   ChevronUp,
   Download,
   Landmark,
@@ -15,13 +16,14 @@ import AcoesCercModal, { type AcaoCerc } from './AcoesCercModal.vue';
 import AlterarSituacaoModal from './AlterarSituacaoModal.vue';
 import BaixarArquivosModal from './BaixarArquivosModal.vue';
 import PagamentoLoteModal from './PagamentoLoteModal.vue';
+import ProrrogarTitulosModal from './ProrrogarTitulosModal.vue';
 import RegistrarConfirmacaoModal from './RegistrarConfirmacaoModal.vue';
 import TitulosMotivoModal from './TitulosMotivoModal.vue';
 import type { TituloSelecionado } from './types';
 
 const props = defineProps<{ titulos: TituloSelecionado[] }>();
 
-type Acao = AcaoCerc | 'cerc' | 'situacao' | 'pagamento' | 'arquivos' | 'confirmacao' | 'boleto' | 'excluir';
+type Acao = AcaoCerc | 'cerc' | 'situacao' | 'pagamento' | 'prorrogar' | 'arquivos' | 'confirmacao' | 'boleto' | 'excluir';
 
 const menuOpen = ref(false);
 const acao = ref<Acao | null>(null);
@@ -33,6 +35,7 @@ const itens: { key: Acao; label: string; icon: Component; danger?: boolean }[] =
   { key: 'cerc', label: 'Ações CERC', icon: Landmark },
   { key: 'situacao', label: 'Alterar situação', icon: RefreshCw },
   { key: 'pagamento', label: 'Pagamento em lote', icon: Wallet },
+  { key: 'prorrogar', label: 'Prorrogar títulos', icon: CalendarClock },
   { key: 'arquivos', label: 'Baixar arquivos', icon: Download },
   { key: 'confirmacao', label: 'Registrar confirmação', icon: BadgeCheck },
   { key: 'boleto', label: 'Gerar boleto', icon: Receipt },
@@ -73,6 +76,25 @@ const rotuloContinuar = computed(() => {
   const n = titulosAcao.value.length;
   return `Continuar com ${n} ${n === 1 ? 'título' : 'títulos'}`;
 });
+
+function rotuloPorQuantidade(singular: string, plural: string, lista = props.titulos) {
+  return lista.length === 1 ? singular : plural;
+}
+
+const rotuloRegistrarCerc = computed(() =>
+  rotuloPorQuantidade('Registrar título', 'Registrar títulos', titulosAcao.value),
+);
+const rotuloAtualizarCerc = computed(() =>
+  rotuloPorQuantidade('Atualizar registro', 'Atualizar registros', titulosAcao.value),
+);
+const rotuloBaixarRegistro = computed(() =>
+  rotuloPorQuantidade('Baixar título', 'Baixar títulos', titulosAcao.value),
+);
+const rotuloDesregistrar = computed(() =>
+  rotuloPorQuantidade('Desregistrar título', 'Desregistrar títulos', titulosAcao.value),
+);
+const rotuloBoleto = computed(() => rotuloPorQuantidade('Gerar boleto', 'Gerar boletos'));
+const rotuloExcluir = computed(() => rotuloPorQuantidade('Excluir título', 'Excluir títulos'));
 
 function abrir(key: Acao) {
   menuOpen.value = false;
@@ -173,12 +195,13 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick));
   <ConfirmTypedActionModal
     v-if="acao === 'registrar' || acao === 'atualizar'"
     persistent
+    spread-footer
     :title="acao === 'registrar' ? 'Registrar títulos' : 'Atualizar registros'"
     :subtitle="acao === 'registrar' ? 'Confirmação do registro na CERC' : 'Confirmação da atualização na CERC'"
     :aviso="avisoCerc"
     :instruction="confirmacaoCerc"
     :confirm-phrase="acao === 'registrar' ? 'REGISTRAR/TÍTULOS' : 'ATUALIZAR/REGISTROS'"
-    :confirm-label="avisoCerc ? rotuloContinuar : 'Confirmar'"
+    :confirm-label="avisoCerc ? rotuloContinuar : acao === 'registrar' ? rotuloRegistrarCerc : rotuloAtualizarCerc"
     @close="fechar"
     @confirm="fechar"
   />
@@ -189,7 +212,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick));
     :aviso="avisoCerc"
     motivo-label="Motivo da baixa"
     :motivos="['Pago', 'Recompra', 'Liberação de garantia']"
-    :confirm-label="avisoCerc ? rotuloContinuar : 'Baixar'"
+    :confirm-label="avisoCerc ? rotuloContinuar : rotuloBaixarRegistro"
     :titulos="titulosAcao"
     @close="fechar"
   />
@@ -200,22 +223,24 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick));
     :aviso="avisoCerc"
     motivo-label="Motivo do desregistro"
     :motivos="['Cancelamento', 'Operação não realizada']"
-    :confirm-label="avisoCerc ? rotuloContinuar : 'Desregistrar'"
+    :confirm-label="avisoCerc ? rotuloContinuar : rotuloDesregistrar"
     :titulos="titulosAcao"
     @close="fechar"
   />
-  <AlterarSituacaoModal v-if="acao === 'situacao'" @close="fechar" />
+  <AlterarSituacaoModal v-if="acao === 'situacao'" :quantidade="titulos.length" @close="fechar" />
   <PagamentoLoteModal v-if="acao === 'pagamento'" :titulos="titulos" @close="fechar" />
+  <ProrrogarTitulosModal v-if="acao === 'prorrogar'" :titulos="titulos" @close="fechar" />
   <BaixarArquivosModal v-if="acao === 'arquivos'" @close="fechar" />
-  <RegistrarConfirmacaoModal v-if="acao === 'confirmacao'" @close="fechar" />
+  <RegistrarConfirmacaoModal v-if="acao === 'confirmacao'" :quantidade="titulos.length" @close="fechar" />
   <ConfirmTypedActionModal
     v-if="acao === 'boleto'"
     persistent
+    spread-footer
     title="Gerar boleto"
     subtitle="Confirmação da geração de boleto"
     :instruction="instrucaoBoleto"
     confirm-phrase="GERAR/BOLETO"
-    confirm-label="Confirmar"
+    :confirm-label="rotuloBoleto"
     @close="fechar"
     @confirm="fechar"
   />
@@ -226,7 +251,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick));
     subtitle="Confirmação da exclusão dos títulos selecionados"
     :instruction="instrucaoExcluir"
     confirm-phrase="EXCLUIR/TÍTULOS"
-    confirm-label="Excluir títulos"
+    :confirm-label="rotuloExcluir"
     variant="danger"
     spread-footer
     @close="fechar"

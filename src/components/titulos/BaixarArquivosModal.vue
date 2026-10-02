@@ -68,9 +68,9 @@ const mensagem = ref('');
         </label>
       </div>
 
-      <div class="flex items-center justify-end" style="gap: 10px; padding: 0 22px 20px">
+      <div class="lote-footer">
         <button type="button" class="lote-secondary" @click="emit('close')">Cancelar</button>
-        <button type="button" class="lote-primary" @click="emit('close')">Salvar</button>
+        <button type="button" class="lote-primary" @click="emit('close')">Baixar arquivos</button>
       </div>
     </div>
   </div>
@@ -140,6 +140,14 @@ const mensagem = ref('');
 }
 .lote-switch-track[data-on='true'] .lote-switch-knob {
   left: 23px;
+}
+.lote-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 0 22px 20px;
 }
 .lote-secondary,
 .lote-primary {

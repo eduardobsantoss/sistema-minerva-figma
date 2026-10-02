@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { X } from 'lucide-vue-next';
 
+const props = withDefaults(defineProps<{ quantidade?: number }>(), { quantidade: 1 });
 const emit = defineEmits<{ close: [] }>();
 
 type Alvo = 'titulo' | 'notificacao';
@@ -48,6 +49,15 @@ const subtitulo = computed(() => {
   if (alvo.value === 'notificacao') return 'Selecione a nova situação de notificação';
   if (alvo.value === 'titulo') return 'Selecione a nova situação do título';
   return 'Escolha a situação que deseja alterar';
+});
+
+const rotuloConfirmar = computed(() => {
+  if (alvo.value === 'notificacao') {
+    return props.quantidade === 1
+      ? 'Alterar situação de notificação'
+      : 'Alterar situações de notificação';
+  }
+  return props.quantidade === 1 ? 'Alterar situação do título' : 'Alterar situação dos títulos';
 });
 
 function escolher(key: Alvo) {
@@ -103,7 +113,7 @@ function voltar() {
           </button>
         </div>
 
-        <div class="flex items-center justify-end" style="padding: 0 22px 20px">
+        <div class="lote-footer lote-footer--single">
           <button type="button" class="lote-secondary" @click="emit('close')">Cancelar</button>
         </div>
       </template>
@@ -119,10 +129,10 @@ function voltar() {
           </label>
         </div>
 
-        <div class="flex items-center justify-end" style="gap: 10px; padding: 0 22px 20px">
+        <div class="lote-footer">
           <button type="button" class="lote-secondary" @click="voltar">Cancelar</button>
           <button type="button" class="lote-primary" :disabled="!situacao" @click="situacao && emit('close')">
-            Salvar
+            {{ rotuloConfirmar }}
           </button>
         </div>
       </template>
@@ -131,6 +141,17 @@ function voltar() {
 </template>
 
 <style scoped>
+.lote-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 0 22px 20px;
+}
+.lote-footer--single {
+  justify-content: flex-start;
+}
 .lote-choice,
 .lote-secondary {
   height: 40px;
