@@ -7,12 +7,10 @@ const props = defineProps<{ titulos: TituloSelecionado[] }>();
 const emit = defineEmits<{ close: [] }>();
 
 const motivoProrrogacao = ref('');
-const descricao = ref('');
 const taxaJuros = ref('0.00');
 const novaDataVencimento = ref('');
-const dataPagamento = ref('');
-
-const descricaoMax = 500;
+const removerMultaMoratoria = ref(false);
+const removerJurosMoratorios = ref(false);
 
 const totalValor = computed(() => props.titulos.reduce((acc, t) => acc + t.valor, 0));
 const totalJurosPago = computed(() => 0);
@@ -91,35 +89,52 @@ function diasAtrasoLabel(vencimento: string): string {
               </select>
             </label>
 
-            <label class="lote-field span-12">
-              <span class="lote-label">Descrição</span>
-              <div class="lote-textarea-wrap">
-                <textarea
-                  v-model="descricao"
-                  class="lote-textarea"
-                  rows="4"
-                  :maxlength="descricaoMax"
-                  placeholder="Descreva a prorrogação, se necessário"
-                />
-                <span class="lote-char-count">{{ descricao.length }}/{{ descricaoMax }}</span>
-              </div>
-            </label>
-
-            <label class="lote-field span-4">
+            <label class="lote-field span-6">
               <span class="lote-label">Taxa de juros</span>
               <div class="lote-input-affix">
                 <input v-model="taxaJuros" type="text" inputmode="decimal" class="lote-input lote-input-affixed" />
                 <span class="lote-affix">%</span>
               </div>
             </label>
-            <label class="lote-field span-4">
+            <label class="lote-field span-6">
               <span class="lote-label">Nova data de vencimento</span>
               <input v-model="novaDataVencimento" type="date" class="lote-input" />
             </label>
-            <label class="lote-field span-4">
-              <span class="lote-label">Data de pagamento</span>
-              <input v-model="dataPagamento" type="date" class="lote-input" />
-            </label>
+          </div>
+
+          <div class="flex flex-col" style="gap: 12px">
+            <button
+              type="button"
+              class="lote-toggle-row"
+              :data-on="removerMultaMoratoria"
+              @click="removerMultaMoratoria = !removerMultaMoratoria"
+            >
+              <div style="min-width: 0; text-align: left">
+                <div class="lote-toggle-label">Remover multa moratória</div>
+                <div class="lote-toggle-hint">
+                  Se marcado, zera a multa moratória no vínculo ativo antes de recalcular a prorrogação.
+                </div>
+              </div>
+              <span class="lote-switch-track" :data-on="removerMultaMoratoria">
+                <span class="lote-switch-knob" />
+              </span>
+            </button>
+            <button
+              type="button"
+              class="lote-toggle-row"
+              :data-on="removerJurosMoratorios"
+              @click="removerJurosMoratorios = !removerJurosMoratorios"
+            >
+              <div style="min-width: 0; text-align: left">
+                <div class="lote-toggle-label">Remover juros moratórios</div>
+                <div class="lote-toggle-hint">
+                  Se marcado, zera os juros moratórios no vínculo ativo antes de recalcular a prorrogação.
+                </div>
+              </div>
+              <span class="lote-switch-track" :data-on="removerJurosMoratorios">
+                <span class="lote-switch-knob" />
+              </span>
+            </button>
           </div>
 
           <p style="font-size: var(--text-sm); color: var(--text-muted)">
@@ -183,9 +198,6 @@ function diasAtrasoLabel(vencimento: string): string {
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 16px;
 }
-.span-4 {
-  grid-column: span 4;
-}
 .span-6 {
   grid-column: span 6;
 }
@@ -230,28 +242,65 @@ function diasAtrasoLabel(vencimento: string): string {
 .lote-input[data-empty='true'] {
   color: var(--text-muted);
 }
-.lote-textarea-wrap {
-  position: relative;
-}
-.lote-textarea {
+.lote-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   width: 100%;
-  min-height: 96px;
-  padding: 12px 14px 28px;
-  background: var(--surface-card);
+  padding: 14px 16px;
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  color: var(--text-strong);
-  font-family: inherit;
-  resize: vertical;
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background var(--duration-fast),
+    border-color var(--duration-fast);
 }
-.lote-char-count {
-  position: absolute;
-  right: 12px;
-  bottom: 10px;
-  font-size: 11px;
+.lote-toggle-row[data-on='true'] {
+  border-color: var(--success-base);
+  background: var(--success-light);
+}
+.lote-toggle-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-strong);
+  line-height: 1.4;
+}
+.lote-toggle-row[data-on='true'] .lote-toggle-label {
+  color: var(--success-dark);
+}
+.lote-toggle-hint {
+  margin-top: 4px;
+  font-size: var(--text-xs);
   color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
+  line-height: 1.45;
+}
+.lote-switch-track {
+  width: 44px;
+  height: 24px;
+  border-radius: 9999px;
+  background: var(--border-strong);
+  position: relative;
+  flex-shrink: 0;
+}
+.lote-switch-track[data-on='true'] {
+  background: var(--success-base);
+}
+.lote-switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  transition: left var(--duration-base);
+}
+.lote-switch-track[data-on='true'] .lote-switch-knob {
+  left: 23px;
 }
 .lote-input-affix {
   position: relative;
@@ -337,8 +386,7 @@ function diasAtrasoLabel(vencimento: string): string {
 }
 button:focus-visible,
 input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
+select:focus-visible {
   box-shadow: var(--focus-ring);
   outline: none;
 }
