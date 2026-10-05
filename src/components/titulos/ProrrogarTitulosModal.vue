@@ -6,19 +6,32 @@ import type { TituloSelecionado } from './types';
 const props = defineProps<{ titulos: TituloSelecionado[] }>();
 const emit = defineEmits<{ close: [] }>();
 
+const comFinanceiro = ref(false);
 const motivoProrrogacao = ref('');
-const taxaJuros = ref('0.00');
+const observacao = ref('');
+const taxaMulta = ref('0.00');
 const novaDataVencimento = ref('');
+const dataPagamento = ref('');
 const removerMultaMoratoria = ref(false);
 const removerJurosMoratorios = ref(false);
 
+const observacaoMax = 500;
+
 const totalValor = computed(() => props.titulos.reduce((acc, t) => acc + t.valor, 0));
-const totalJurosPago = computed(() => 0);
+const totalMultaPaga = computed(() => 0);
 
 const podeProrrogar = computed(() => novaDataVencimento.value.trim() !== '');
 
 const rotuloConfirmar = computed(() =>
   props.titulos.length === 1 ? 'Prorrogar título' : 'Prorrogar títulos',
+);
+
+const rotuloFinanceiro = computed(() => (comFinanceiro.value ? 'Com financeiro' : 'Sem financeiro'));
+
+const hintFinanceiro = computed(() =>
+  comFinanceiro.value
+    ? 'Inclui taxa de multa, data de pagamento e recálculo dos encargos moratórios na prorrogação.'
+    : 'Prorrogação administrativa: registra motivo, observação e nova data de vencimento, sem recálculo financeiro.',
 );
 
 function brl(n: number) {
@@ -81,6 +94,22 @@ function diasAtrasoLabel(vencimento: string): string {
       <div style="flex: 1; overflow: auto; padding: 24px 28px; display: flex; flex-direction: column; gap: 20px">
         <section class="flex flex-col" style="gap: 16px">
           <div class="lote-section" style="margin-bottom: 0">Dados da prorrogação</div>
+
+          <button
+            type="button"
+            class="lote-toggle-row"
+            :data-on="comFinanceiro"
+            @click="comFinanceiro = !comFinanceiro"
+          >
+            <div style="min-width: 0; text-align: left">
+              <div class="lote-toggle-label">{{ rotuloFinanceiro }}</div>
+              <div class="lote-toggle-hint">{{ hintFinanceiro }}</div>
+            </div>
+            <span class="lote-switch-track" :data-on="comFinanceiro">
+              <span class="lote-switch-knob" />
+            </span>
+          </button>
+
           <div class="lote-grid">
             <label class="lote-field span-12">
               <span class="lote-label">Motivo da prorrogação</span>
@@ -89,14 +118,39 @@ function diasAtrasoLabel(vencimento: string): string {
               </select>
             </label>
 
-            <label class="lote-field span-6">
-              <span class="lote-label">Taxa de juros</span>
-              <div class="lote-input-affix">
-                <input v-model="taxaJuros" type="text" inputmode="decimal" class="lote-input lote-input-affixed" />
-                <span class="lote-affix">%</span>
+            <label class="lote-field span-12">
+              <span class="lote-label">Descrição (observação)</span>
+              <div class="lote-textarea-wrap">
+                <textarea
+                  v-model="observacao"
+                  class="lote-textarea"
+                  rows="4"
+                  :maxlength="observacaoMax"
+                  placeholder="Descreva a prorrogação, se necessário"
+                />
+                <span class="lote-char-count">{{ observacao.length }}/{{ observacaoMax }}</span>
               </div>
             </label>
-            <label class="lote-field span-6">
+
+            <template v-if="comFinanceiro">
+              <label class="lote-field span-4">
+                <span class="lote-label">Taxa de multa</span>
+                <div class="lote-input-affix">
+                  <input v-model="taxaMulta" type="text" inputmode="decimal" class="lote-input lote-input-affixed" />
+                  <span class="lote-affix">%</span>
+                </div>
+              </label>
+              <label class="lote-field span-4">
+                <span class="lote-label">Nova data de vencimento</span>
+                <input v-model="novaDataVencimento" type="date" class="lote-input" />
+              </label>
+              <label class="lote-field span-4">
+                <span class="lote-label">Data de pagamento</span>
+                <input v-model="dataPagamento" type="date" class="lote-input" />
+              </label>
+            </template>
+
+            <label v-else class="lote-field span-6">
               <span class="lote-label">Nova data de vencimento</span>
               <input v-model="novaDataVencimento" type="date" class="lote-input" />
             </label>
@@ -137,7 +191,7 @@ function diasAtrasoLabel(vencimento: string): string {
             </button>
           </div>
 
-          <p style="font-size: var(--text-sm); color: var(--text-muted)">
+          <p v-if="comFinanceiro" style="font-size: var(--text-sm); color: var(--text-muted)">
             Taxa de juros do CRA: <span style="font-variant-numeric: tabular-nums">1,000000%</span>
           </p>
         </section>
@@ -153,7 +207,7 @@ function diasAtrasoLabel(vencimento: string): string {
               <div style="text-align: right">Valor</div>
               <div>Vencimento</div>
               <div>Dias de atraso</div>
-              <div style="text-align: right">Juros pago</div>
+              <div style="text-align: right">Multa paga</div>
             </div>
             <div
               v-for="t in titulos"
@@ -175,8 +229,8 @@ function diasAtrasoLabel(vencimento: string): string {
               <div class="lote-readonly lote-readonly-strong">{{ brl(totalValor) }}</div>
             </div>
             <div class="span-6">
-              <div class="lote-label">Total de juros pago</div>
-              <div class="lote-readonly lote-readonly-strong">{{ brl(totalJurosPago) }}</div>
+              <div class="lote-label">Total de multa paga</div>
+              <div class="lote-readonly lote-readonly-strong">{{ brl(totalMultaPaga) }}</div>
             </div>
           </div>
         </section>
@@ -197,6 +251,9 @@ function diasAtrasoLabel(vencimento: string): string {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 16px;
+}
+.span-4 {
+  grid-column: span 4;
 }
 .span-6 {
   grid-column: span 6;
@@ -241,6 +298,29 @@ function diasAtrasoLabel(vencimento: string): string {
 }
 .lote-input[data-empty='true'] {
   color: var(--text-muted);
+}
+.lote-textarea-wrap {
+  position: relative;
+}
+.lote-textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 12px 14px 28px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--text-strong);
+  font-family: inherit;
+  resize: vertical;
+}
+.lote-char-count {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 .lote-toggle-row {
   display: flex;
@@ -386,7 +466,8 @@ function diasAtrasoLabel(vencimento: string): string {
 }
 button:focus-visible,
 input:focus-visible,
-select:focus-visible {
+select:focus-visible,
+textarea:focus-visible {
   box-shadow: var(--focus-ring);
   outline: none;
 }
