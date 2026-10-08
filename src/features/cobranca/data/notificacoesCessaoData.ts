@@ -3,7 +3,24 @@ export type StatusNotificacaoCessao = 'PENDENTE' | 'ENVIADA' | 'FALHOU' | 'CANCE
 export type VeiculoTipoCessao = 'CRA' | 'FIDC';
 export type TipoNotificacao = 'Regua' | 'Cessao';
 
-export interface NotificacaoCessao {
+export type SituacaoGrupo = 'ATIVO' | 'EM_ANALISE' | 'BLOQUEADO';
+
+/** Dados do grupo empresarial e condições que a cessão precisa cumprir. */
+export interface CessaoExtra {
+  grupoEmpresarial: string;
+  situacaoGrupo: SituacaoGrupo;
+  dataCessao: string;
+  boleto: boolean;
+  cartaGerada: boolean;
+  titulosAVencerOuVencidos: boolean;
+  emailSacado: boolean;
+  cedentePermiteNotificacao: boolean;
+  sacadoPermiteNotificacao: boolean;
+  contaBancariaVeiculo: boolean;
+  titulosGrupoIds: string[];
+}
+
+export interface NotificacaoCessao extends CessaoExtra {
   id: string;
   protocolo: string;
   tipo: TipoNotificacao;
@@ -78,7 +95,7 @@ export function brl(n: number, opts?: { compact?: boolean }) {
   });
 }
 
-export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = [
+const NOTIFICACOES_BASE: Omit<NotificacaoCessao, keyof CessaoExtra>[] = [
   {
     id: 'nc-1',
     protocolo: 'NC-2026-1001',
@@ -310,6 +327,103 @@ export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = [
     valorCessao: 128500,
   },
 ];
+
+const x = (
+  grupoEmpresarial: string,
+  situacaoGrupo: SituacaoGrupo,
+  dataCessao: string,
+  flags: [boolean, boolean, boolean, boolean, boolean, boolean, boolean],
+  titulosGrupoIds: string[],
+): CessaoExtra => ({
+  grupoEmpresarial,
+  situacaoGrupo,
+  dataCessao,
+  boleto: flags[0],
+  cartaGerada: flags[1],
+  titulosAVencerOuVencidos: flags[2],
+  emailSacado: flags[3],
+  cedentePermiteNotificacao: flags[4],
+  sacadoPermiteNotificacao: flags[5],
+  contaBancariaVeiculo: flags[6],
+  titulosGrupoIds,
+});
+
+const EXTRAS: Record<string, CessaoExtra> = {
+  'nc-1': x('Grupo Santa Clara', 'ATIVO', '05/07/2026', [false, false, true, true, true, true, true], ['tit-2', 'tit-1', 'tit-3']),
+  'nc-2': x('Grupo Tech Rural', 'EM_ANALISE', '10/07/2026', [true, false, true, false, true, false, true], ['tit-5', 'tit-4']),
+  'nc-3': x('Grupo Futura', 'ATIVO', '09/07/2026', [false, true, true, true, true, true, false], ['tit-9']),
+  'nc-4': x('Grupo Vale do Sol', 'ATIVO', '04/07/2026', [true, true, false, false, true, true, true], ['tit-6', 'tit-10']),
+  'nc-5': x('Grupo Horizonte', 'BLOQUEADO', '11/07/2026', [true, true, true, true, false, true, true], ['tit-10', 'tit-8']),
+  'nc-6': x('Grupo Campo Verde', 'ATIVO', '12/07/2026', [false, false, false, true, true, true, true], ['tit-3', 'tit-7', 'tit-9']),
+  'nc-7': x('Grupo Nativa', 'EM_ANALISE', '07/07/2026', [false, false, false, false, true, false, false], ['tit-7']),
+  'nc-8': x('Grupo Valoriza', 'ATIVO', '30/06/2026', [true, true, false, true, true, true, true], ['tit-8']),
+  'nc-9': x('Grupo Boa Safra', 'ATIVO', '08/07/2026', [true, false, true, true, true, true, true], ['tit-1', 'tit-2']),
+  'nc-10': x('Grupo SoftAgro', 'ATIVO', '12/07/2026', [false, false, true, true, true, false, true], ['tit-4', 'tit-5']),
+};
+
+export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = NOTIFICACOES_BASE.map((n) => ({
+  ...n,
+  ...EXTRAS[n.id],
+}));
+
+export const GRUPO_CESSAO_OPTS = Array.from(new Set(NOTIFICACOES_CESSAO_SEED.map((n) => n.grupoEmpresarial))).sort();
+
+export const SITUACAO_GRUPO_OPTS: SituacaoGrupo[] = ['ATIVO', 'EM_ANALISE', 'BLOQUEADO'];
+
+export function situacaoGrupoLabel(s: SituacaoGrupo): string {
+  return ({ ATIVO: 'Ativo', EM_ANALISE: 'Em análise', BLOQUEADO: 'Bloqueado' } as const)[s];
+}
+
+export function situacaoGrupoColor(s: SituacaoGrupo): string {
+  return (
+    { ATIVO: 'var(--success-base)', EM_ANALISE: 'var(--warning-base)', BLOQUEADO: 'var(--danger-base)' } as const
+  )[s];
+}
+
+export type TomTag = 'ok' | 'alerta' | 'falta' | 'neutro';
+
+export interface TagCessao {
+  key: string;
+  label: string;
+  tom: TomTag;
+}
+
+/** Tags em texto: cada uma diz a condição e o estado, sem depender de ícone ou cor. */
+export function tagsCessao(n: NotificacaoCessao): TagCessao[] {
+  return [
+    { key: 'boleto', label: n.boleto ? 'Boleto gerado' : 'Boleto pendente', tom: n.boleto ? 'ok' : 'falta' },
+    {
+      key: 'carta',
+      label: n.cartaGerada ? 'Carta gerada' : 'Carta não gerada',
+      tom: n.cartaGerada ? 'ok' : 'neutro',
+    },
+    {
+      key: 'titulos',
+      label: n.titulosAVencerOuVencidos ? 'Títulos a vencer ou vencidos' : 'Sem títulos a vencer ou vencidos',
+      tom: n.titulosAVencerOuVencidos ? 'alerta' : 'neutro',
+    },
+    {
+      key: 'email',
+      label: n.emailSacado ? 'E-mail do sacado informado' : 'Sem e-mail do sacado',
+      tom: n.emailSacado ? 'ok' : 'falta',
+    },
+    {
+      key: 'cedente',
+      label: n.cedentePermiteNotificacao ? 'Cedente permite notificação' : 'Cedente não permite notificação',
+      tom: n.cedentePermiteNotificacao ? 'ok' : 'falta',
+    },
+    {
+      key: 'sacado',
+      label: n.sacadoPermiteNotificacao ? 'Sacado permite notificação' : 'Sacado não permite notificação',
+      tom: n.sacadoPermiteNotificacao ? 'ok' : 'falta',
+    },
+    {
+      key: 'conta',
+      label: n.contaBancariaVeiculo ? 'Conta bancária do veículo' : 'Sem conta bancária do veículo',
+      tom: n.contaBancariaVeiculo ? 'ok' : 'falta',
+    },
+  ];
+}
 
 export const VEICULO_CESSAO_OPTS = Array.from(
   new Map(NOTIFICACOES_CESSAO_SEED.map((n) => [n.veiculoId, n.veiculoNome])).entries(),

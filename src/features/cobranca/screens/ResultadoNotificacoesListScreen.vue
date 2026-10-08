@@ -225,9 +225,9 @@ function menuActions(d: DisparoNotificacao) {
               border: 1px solid var(--border-default);
               border-radius: var(--radius-lg);
               cursor: pointer;
-              color: var(--text-strong);
+              color: var(--text-muted);
               font-size: var(--text-sm);
-              font-weight: var(--weight-bold);
+              font-weight: var(--weight-semibold);
             "
             @click="filterOpen = !filterOpen"
           >
@@ -486,7 +486,7 @@ function menuActions(d: DisparoNotificacao) {
 
 <style scoped>
 .disp-table-row {
-  column-gap: 14px;
+  column-gap: 16px;
   padding: 14px 20px;
   white-space: nowrap;
 }

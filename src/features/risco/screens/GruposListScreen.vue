@@ -253,7 +253,7 @@ function menuActions(g: GrupoEmpresarial) {
           <button
             ref="filterBtnRef"
             class="flex items-center"
-            style="gap: 8px; height: 38px; padding: 0 16px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-strong); font-size: var(--text-sm); font-weight: var(--weight-bold)"
+            style="gap: 8px; height: 38px; padding: 0 16px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--weight-semibold)"
             @click="openFilters"
           >
             <Filter :size="15" style="color: var(--text-muted)" />

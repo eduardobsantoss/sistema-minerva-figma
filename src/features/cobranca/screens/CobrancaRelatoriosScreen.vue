@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   BellRing,
   Receipt,
+  ScrollText,
 } from 'lucide-vue-next';
 import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import {
@@ -26,6 +27,14 @@ import {
   taxaEntrega,
   fmtPct,
 } from '../data/resultadoNotificacoesData';
+import {
+  NOTIFICACOES_CESSAO_SEED,
+  STATUS_CESSAO_OPTS,
+  VEICULO_CESSAO_OPTS,
+  statusCessaoColor,
+  statusCessaoLabel,
+  brl as brlCessao,
+} from '../data/notificacoesCessaoData';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
@@ -33,7 +42,7 @@ import type { TituloSelecionado } from '@/components/titulos/types';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { useBackgroundReport } from '@/composables/useBackgroundReport';
 
-type ReportKey = 'inadimplencia' | 'efetividade' | 'boletagem';
+type ReportKey = 'inadimplencia' | 'efetividade' | 'boletagem' | 'cessao';
 
 interface ReportDef {
   key: ReportKey;
@@ -60,6 +69,12 @@ const REPORTS: ReportDef[] = [
     title: 'Relatório de Boletagem',
     description: 'Situação de boletos gerados versus pendentes sobre títulos com valor presente.',
     icon: Receipt,
+  },
+  {
+    key: 'cessao',
+    title: 'Relatório de Notificações de Cessão',
+    description: 'Notificações de cessão por veículo e status, com sacado, canal, data de envio e valor da cessão.',
+    icon: ScrollText,
   },
 ];
 
@@ -98,6 +113,14 @@ function filterDisparos(f: Filters) {
   });
 }
 
+function filterCessoes(f: Filters) {
+  return NOTIFICACOES_CESSAO_SEED.filter((n) => {
+    if (f.veiculoId && n.veiculoId !== f.veiculoId) return false;
+    if (f.status && n.status !== f.status) return false;
+    return true;
+  });
+}
+
 function csvBlob(csv: string) {
   return new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
 }
@@ -111,6 +134,28 @@ const resultadosDisparos = computed(() => {
   if (!applied.value || selected.value !== 'efetividade') return [];
   return filterDisparos(applied.value);
 });
+
+const resultadosCessao = computed(() => {
+  if (!applied.value || selected.value !== 'cessao') return [];
+  return filterCessoes(applied.value);
+});
+
+const totalResultados = computed(() =>
+  selected.value === 'efetividade'
+    ? resultadosDisparos.value.length
+    : selected.value === 'cessao'
+      ? resultadosCessao.value.length
+      : resultadosTitulos.value.length,
+);
+
+const {
+  page: cessaoPage,
+  pageSize: cessaoPageSize,
+  total: cessaoTotal,
+  pageItems: cessaoPageItems,
+  setPage: setCessaoPage,
+  setPageSize: setCessaoPageSize,
+} = useTablePagination(() => resultadosCessao.value, { defaultPageSize: 10 });
 
 const {
   page: disparosPage,
@@ -180,7 +225,9 @@ function selectReport(key: ReportKey) {
   applied.value = null;
 }
 
-const verLabel = computed(() => (selected.value === 'efetividade' ? 'VER DISPAROS' : 'VER TÍTULOS'));
+const verLabel = computed(() =>
+  selected.value === 'efetividade' ? 'VER DISPAROS' : selected.value === 'cessao' ? 'VER NOTIFICAÇÕES' : 'VER TÍTULOS',
+);
 
 function handleExportCsv() {
   if (!report.value || !selected.value) return;
@@ -199,6 +246,28 @@ function handleExportCsv() {
         return {
           blob: csvBlob([header.join(';'), ...lines].join('\n')),
           filename: 'efetividade-notificacao.csv',
+        };
+      }
+      if (key === 'cessao') {
+        const header = ['Cessão', 'Lastro', 'Nº Título', 'Veículo', 'Sacado', 'Canal', 'Data envio', 'VR. Cessão', 'Status'];
+        const lines = resultadosCessao.value.map((n) =>
+          [
+            n.protocolo,
+            n.lastro,
+            n.tituloNumero,
+            n.veiculoNome,
+            n.sacado,
+            n.canal,
+            n.dataEnvio ?? '',
+            brlCessao(n.valorCessao),
+            statusCessaoLabel(n.status),
+          ]
+            .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+            .join(';'),
+        );
+        return {
+          blob: csvBlob([header.join(';'), ...lines].join('\n')),
+          filename: 'relatorio-notificacoes-cessao.csv',
         };
       }
       const header = ['Nº Título', 'Veículo', 'Sacado', 'VR. Presente', 'Status', 'Dias atraso', 'Boleto'];
@@ -228,6 +297,7 @@ function handleGerar() {
   applied.value = { ...draft };
   setDisparosPage(1);
   setTitulosPage(1);
+  setCessaoPage(1);
 }
 
 const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
@@ -393,7 +463,69 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
           gap: '14px',
         }"
       >
-        <div v-if="selected !== 'efetividade'">
+        <div v-if="selected === 'cessao'">
+          <div
+            style="
+              font-size: 10px;
+              font-weight: var(--weight-bold);
+              letter-spacing: 0.1em;
+              color: var(--text-muted);
+              text-transform: uppercase;
+              margin-bottom: 6px;
+            "
+          >
+            Veículo
+          </div>
+          <select
+            v-model="draft.veiculoId"
+            style="
+              width: 100%;
+              height: 38px;
+              padding: 0 12px;
+              background: var(--surface-card);
+              border: 1px solid var(--border-default);
+              border-radius: var(--radius-lg);
+              outline: none;
+              font-size: var(--text-sm);
+              color: var(--text-strong);
+            "
+          >
+            <option value="">Todos</option>
+            <option v-for="v in VEICULO_CESSAO_OPTS" :key="v.id" :value="v.id">{{ v.nome }}</option>
+          </select>
+        </div>
+        <div v-if="selected === 'cessao'">
+          <div
+            style="
+              font-size: 10px;
+              font-weight: var(--weight-bold);
+              letter-spacing: 0.1em;
+              color: var(--text-muted);
+              text-transform: uppercase;
+              margin-bottom: 6px;
+            "
+          >
+            Status da notificação
+          </div>
+          <select
+            v-model="draft.status"
+            style="
+              width: 100%;
+              height: 38px;
+              padding: 0 12px;
+              background: var(--surface-card);
+              border: 1px solid var(--border-default);
+              border-radius: var(--radius-lg);
+              outline: none;
+              font-size: var(--text-sm);
+              color: var(--text-strong);
+            "
+          >
+            <option value="">Todos</option>
+            <option v-for="s in STATUS_CESSAO_OPTS" :key="s" :value="s">{{ statusCessaoLabel(s) }}</option>
+          </select>
+        </div>
+        <div v-if="selected !== 'efetividade' && selected !== 'cessao'">
           <div
             style="
               font-size: 10px;
@@ -424,7 +556,7 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
             <option v-for="v in VEICULO_OPTS" :key="v.id" :value="v.id">{{ v.nome }}</option>
           </select>
         </div>
-        <div v-if="selected !== 'efetividade'">
+        <div v-if="selected !== 'efetividade' && selected !== 'cessao'">
           <div
             style="
               font-size: 10px;
@@ -559,20 +691,12 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
         style="padding: 14px 20px; border-bottom: 1px solid var(--border-default)"
       >
         <span style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-          <template v-if="selected === 'efetividade'">
-            {{ resultadosDisparos.length }}
-            {{ resultadosDisparos.length === 1 ? 'resultado' : 'resultados' }}
-          </template>
-          <template v-else>
-            {{ resultadosTitulos.length }}
-            {{ resultadosTitulos.length === 1 ? 'resultado' : 'resultados' }}
-          </template>
+          {{ totalResultados }}
+          {{ totalResultados === 1 ? 'resultado' : 'resultados' }}
         </span>
         <button
           class="flex items-center"
-          :disabled="
-            selected === 'efetividade' ? resultadosDisparos.length === 0 : resultadosTitulos.length === 0
-          "
+:disabled="totalResultados === 0"
           :style="{
             gap: '6px',
             height: '34px',
@@ -580,14 +704,8 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
             background: 'none',
             border: '1px solid var(--border-default)',
             borderRadius: 'var(--radius-lg)',
-            cursor:
-              (selected === 'efetividade' ? resultadosDisparos.length : resultadosTitulos.length) === 0
-                ? 'not-allowed'
-                : 'pointer',
-            color:
-              (selected === 'efetividade' ? resultadosDisparos.length : resultadosTitulos.length) === 0
-                ? 'var(--text-disabled)'
-                : 'var(--text-default)',
+            cursor: totalResultados === 0 ? 'not-allowed' : 'pointer',
+            color: totalResultados === 0 ? 'var(--text-disabled)' : 'var(--text-default)',
             fontSize: 'var(--text-xs)',
             fontWeight: 'var(--weight-bold)',
           }"
@@ -655,6 +773,76 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
             :page-size="disparosPageSize"
             @update:page="setDisparosPage"
             @update:page-size="setDisparosPageSize"
+          />
+        </template>
+      </template>
+
+      <template v-else-if="selected === 'cessao'">
+        <div
+          v-if="resultadosCessao.length === 0"
+          style="padding: 40px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+        >
+          Nenhuma notificação encontrada para os filtros selecionados.
+        </div>
+        <template v-else>
+          <div
+            class="grid"
+            style="
+              grid-template-columns: 1.2fr 0.8fr 1.2fr 1.4fr 1.4fr 0.8fr 1fr 1fr 0.9fr;
+              padding: 10px 20px;
+              background: var(--surface-sunken);
+              font-size: 10px;
+              font-weight: var(--weight-bold);
+              letter-spacing: 0.1em;
+              color: var(--text-muted);
+              text-transform: uppercase;
+            "
+          >
+            <div>Cessão</div>
+            <div>Lastro</div>
+            <div>Nº Título</div>
+            <div>Veículo</div>
+            <div>Sacado</div>
+            <div>Canal</div>
+            <div>Data envio</div>
+            <div style="text-align: right">VR. Cessão</div>
+            <div>Status</div>
+          </div>
+          <div
+            v-for="n in cessaoPageItems"
+            :key="n.id"
+            class="grid items-center"
+            style="
+              grid-template-columns: 1.2fr 0.8fr 1.2fr 1.4fr 1.4fr 0.8fr 1fr 1fr 0.9fr;
+              padding: 12px 20px;
+              border-top: 1px solid var(--border-default);
+              font-size: var(--text-sm);
+            "
+          >
+            <div style="font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">
+              {{ n.protocolo }}
+            </div>
+            <div style="color: var(--text-default)">{{ n.lastro }}</div>
+            <div style="font-variant-numeric: tabular-nums; color: var(--text-default)">#{{ n.tituloNumero }}</div>
+            <div style="color: var(--text-default)">{{ n.veiculoNome }}</div>
+            <div style="color: var(--text-default)">{{ n.sacado }}</div>
+            <div style="color: var(--text-muted)">{{ n.canal }}</div>
+            <div style="color: var(--text-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums">
+              {{ n.dataEnvio ?? '—' }}
+            </div>
+            <div style="text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--weight-bold)">
+              {{ brlCessao(n.valorCessao) }}
+            </div>
+            <div :style="{ color: statusCessaoColor(n.status), fontWeight: 'var(--weight-semibold)' }">
+              {{ statusCessaoLabel(n.status) }}
+            </div>
+          </div>
+          <TablePagination
+            :total="cessaoTotal"
+            :page="cessaoPage"
+            :page-size="cessaoPageSize"
+            @update:page="setCessaoPage"
+            @update:page-size="setCessaoPageSize"
           />
         </template>
       </template>

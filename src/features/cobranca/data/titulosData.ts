@@ -35,6 +35,8 @@ export interface Titulo {
   ultimaNotificacaoEm?: string | null;
   boletoGeradoEm?: string | null;
   classeOuOperacao?: string;
+  dataUltimoPagamento?: string | null;
+  observacoesCobranca?: { texto: string; data: string }[];
 }
 
 export const SITUACAO_TITULO_OPTS: SituacaoTitulo[] = [
@@ -189,6 +191,19 @@ export function isVencido(t: Titulo): boolean {
 
 export function isVincendoHoje(t: Titulo): boolean {
   return t.vencimento === hojeBR() && t.vrAberto > 0;
+}
+
+/** Título performado: em dia, sem atraso. */
+export function isPerformado(t: Titulo): boolean {
+  return t.diasAtraso === 0 && t.statusPagamento !== 'VENCIDO';
+}
+
+/** Dias entre hoje e o vencimento (negativo quando já venceu). */
+export function diasParaVencer(t: Titulo, hoje: Date = new Date()): number {
+  const v = parseBRDate(t.vencimento);
+  if (!v) return 0;
+  const base = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  return Math.round((v.getTime() - base.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 export function isNaoBoletado(t: Titulo): boolean {
@@ -456,6 +471,7 @@ export const TITULOS_SEED: Titulo[] = [
     diasAtraso: 0,
     ultimaNotificacaoEm: '10/07/2026',
     boletoGeradoEm: '05/07/2026',
+    dataUltimoPagamento: '10/07/2026',
     classeOuOperacao: 'Sênior',
   },
   {
@@ -604,6 +620,7 @@ export const TITULOS_SEED: Titulo[] = [
     diasAtraso: 9,
     ultimaNotificacaoEm: '07/07/2026',
     boletoGeradoEm: '28/06/2026',
+    dataUltimoPagamento: '02/07/2026',
     classeOuOperacao: 'Única',
   },
   {
@@ -663,6 +680,7 @@ export const TITULOS_SEED: Titulo[] = [
     diasAtraso: 0,
     ultimaNotificacaoEm: '02/07/2026',
     boletoGeradoEm: '02/07/2026',
+    dataUltimoPagamento: '03/07/2026',
     classeOuOperacao: 'Classe Sênior',
   },
   {
@@ -722,6 +740,7 @@ export const TITULOS_SEED: Titulo[] = [
     diasAtraso: 22,
     ultimaNotificacaoEm: '13/07/2026',
     boletoGeradoEm: '15/06/2026',
+    dataUltimoPagamento: '01/07/2026',
     classeOuOperacao: 'Única',
   },
 ];

@@ -9,11 +9,12 @@ import { CraScreen, CraSimuladorScreen, CraRelatoriosScreen } from '@/features/c
 import { SemiestruturadasScreen } from '@/features/semiestruturadas';
 import {
   CobrancaScreen,
-  TitulosScreen,
-  NotificacoesCessaoScreen,
+  TitulosHubScreen,
   CobrancaDashboardScreen,
   ResultadoNotificacoesScreen,
   CobrancaRelatoriosScreen,
+  HistoricoNotificacoesScreen,
+  CobrancaPreventivaScreen,
 } from '@/features/cobranca';
 import {
   SolicitacaoScreen,
@@ -58,8 +59,9 @@ type View =
   | 'cobranca-titulos'
   | 'cobranca-dashboard'
   | 'cobranca-notif'
-  | 'cobranca-notif-cessao'
   | 'cobranca-resultado-notif'
+  | 'cobranca-historico-notif'
+  | 'cobranca-preventiva'
   | 'cobranca-rel'
   | 'risco-dashboard'
   | 'risco-grupos'
@@ -95,8 +97,9 @@ const titleMap: Record<View, string> = {
   'cobranca-titulos': 'Títulos',
   'cobranca-dashboard': 'Dashboard de Cobrança',
   'cobranca-notif': 'Notificação de Régua de Cobrança',
-  'cobranca-notif-cessao': 'Notificações de Cessão',
   'cobranca-resultado-notif': 'Resultado de Notificações',
+  'cobranca-historico-notif': 'Histórico de Notificações',
+  'cobranca-preventiva': 'Cobrança Preventiva',
   'cobranca-rel': 'Relatórios de Cobrança',
   'risco-dashboard': 'Risco',
   'risco-grupos': 'Grupos Empresariais',
@@ -119,7 +122,7 @@ const VALID_VIEWS = new Set<View>([
   'fidcs', 'fidcs-simulador', 'fidcs-relatorios',
   'cras', 'cras-simulador', 'cras-relatorios',
   'semiestruturadas',
-  'cobranca', 'cobranca-titulos', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-notif-cessao', 'cobranca-resultado-notif', 'cobranca-rel',
+  'cobranca', 'cobranca-titulos', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-resultado-notif', 'cobranca-historico-notif', 'cobranca-preventiva', 'cobranca-rel',
   'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-agrupamentos', 'risco-serasa', 'risco-rel',
   'grupos-cadastro',
   'monitoramento',
@@ -128,6 +131,7 @@ const VALID_VIEWS = new Set<View>([
 
 function normalizeView(key: string | null): View {
   if (key === 'passivo-novo') return 'passivo';
+  if (key === 'cobranca-notif-cessao') return 'cobranca-titulos';
   return VALID_VIEWS.has(key as View) ? (key as View) : 'dashboard';
 }
 
@@ -138,6 +142,10 @@ function getViewFromUrl(): View {
 const LAPTOP_BREAKPOINT = 1366;
 
 const view = ref<View>(getViewFromUrl());
+const titulosTab = ref<'titulos' | 'cessao' | 'aptos'>(
+  new URLSearchParams(window.location.search).get('view') === 'cobranca-notif-cessao' ? 'cessao' : 'titulos',
+);
+const titulosHubKey = ref(0);
 const collapsed = ref(window.innerWidth <= LAPTOP_BREAKPOINT);
 const openMenu = ref<string | null>((() => {
   const v = new URLSearchParams(window.location.search).get('view') ?? '';
@@ -172,6 +180,13 @@ onUnmounted(() => {
 });
 
 function handleNavigate(key: string) {
+  if (key === 'cobranca-notif-cessao') {
+    titulosTab.value = 'cessao';
+    titulosHubKey.value += 1;
+  } else if (key === 'cobranca-titulos' && view.value !== 'cobranca-titulos') {
+    titulosTab.value = 'titulos';
+    titulosHubKey.value += 1;
+  }
   view.value = normalizeView(key);
 }
 
@@ -248,14 +263,19 @@ function handleModuleClick(title: string) {
           <CraSimuladorScreen v-else-if="view === 'cras-simulador'" />
           <CraRelatoriosScreen v-else-if="view === 'cras-relatorios'" />
           <SemiestruturadasScreen v-else-if="view === 'semiestruturadas'" />
-          <TitulosScreen v-else-if="view === 'cobranca-titulos'" />
+          <TitulosHubScreen
+            v-else-if="view === 'cobranca-titulos'"
+            :key="titulosHubKey"
+            :initial-tab="titulosTab"
+          />
           <CobrancaDashboardScreen
             v-else-if="view === 'cobranca-dashboard'"
             @navigate="handleNavigate"
           />
           <CobrancaScreen v-else-if="view === 'cobranca-notif'" />
-          <NotificacoesCessaoScreen v-else-if="view === 'cobranca-notif-cessao'" />
           <ResultadoNotificacoesScreen v-else-if="view === 'cobranca-resultado-notif'" />
+          <HistoricoNotificacoesScreen v-else-if="view === 'cobranca-historico-notif'" />
+          <CobrancaPreventivaScreen v-else-if="view === 'cobranca-preventiva'" />
           <CobrancaRelatoriosScreen v-else-if="view === 'cobranca-rel'" />
           <RatingsScreen v-else-if="view === 'risco-ratings'" />
           <AgrupamentosScreen v-else-if="view === 'risco-agrupamentos'" />

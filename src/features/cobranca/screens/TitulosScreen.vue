@@ -1,92 +1,53 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { TITULOS_SEED, type Titulo } from '../data/titulosData';
-import { useToast } from '@/composables/useToast';
+import type { Titulo } from '../data/titulosData';
+import { useTitulosActions } from '../composables/useTitulosActions';
 import TitulosListScreen from './TitulosListScreen.vue';
 import TituloDetailScreen from './TituloDetailScreen.vue';
 
 type Route = { level: 'list' } | { level: 'detail'; tituloId: string };
 
-const list = ref<Titulo[]>(TITULOS_SEED.map((t) => ({ ...t })));
+const props = defineProps<{ titulos: Titulo[] }>();
+const emit = defineEmits<{ 'update:titulos': [value: Titulo[]] }>();
+
+const list = computed<Titulo[]>({
+  get: () => props.titulos,
+  set: (value) => emit('update:titulos', value),
+});
 const route = ref<Route>({ level: 'list' });
-const { success } = useToast();
+const { gerarBoleto, notificar, notificarLote, confirmar, negociar, inserirObservacao } = useTitulosActions(list);
 
 const tituloAtual = computed(() => {
   const r = route.value;
   return r.level === 'detail' ? list.value.find((t) => t.id === r.tituloId) : undefined;
 });
 
-function showToast(msg: string) {
-  success(msg);
-}
-
-function todayBR() {
-  return new Date().toLocaleDateString('pt-BR');
-}
-
 function openDetail(tituloId: string) {
   route.value = { level: 'detail', tituloId };
-}
-
-function handleGerarBoleto(id: string) {
-  list.value = list.value.map((t) =>
-    t.id === id ? { ...t, boletoGeradoEm: todayBR() } : t,
-  );
-  showToast('Boleto gerado (mock)');
-}
-
-function handleNotificar(id: string) {
-  list.value = list.value.map((t) =>
-    t.id === id
-      ? { ...t, ultimaNotificacaoEm: todayBR(), statusNotificacao: 'NOTIFICADO' }
-      : t,
-  );
-  showToast('Notificação enviada (mock)');
-}
-
-function handleConfirmar(id: string) {
-  list.value = list.value.map((t) =>
-    t.id === id ? { ...t, statusConfirmacao: 'CONFIRMADO' } : t,
-  );
-  showToast('Ativo confirmado (mock)');
-}
-
-function handleNegociar(id: string) {
-  list.value = list.value.map((t) =>
-    t.id === id ? { ...t, emNegociacao: true } : t,
-  );
-  showToast('Negociação sinalizada');
 }
 </script>
 
 <template>
+  <TituloDetailScreen
+    v-if="route.level === 'detail' && tituloAtual"
+    :titulo="tituloAtual"
+    @back="route = { level: 'list' }"
+    @gerar-boleto="gerarBoleto"
+    @notificar="notificar"
+    @confirmar="confirmar"
+    @negociar="negociar"
+  />
   <TitulosListScreen
-    v-if="route.level === 'list'"
+    v-else
     :titulos="list"
     @open="openDetail"
-    @gerar-boleto="handleGerarBoleto"
-    @notificar="handleNotificar"
-    @confirmar="handleConfirmar"
-    @negociar="handleNegociar"
-  />
-  <template v-else>
-    <TituloDetailScreen
-      v-if="tituloAtual"
-      :titulo="tituloAtual"
-      @back="route = { level: 'list' }"
-      @gerar-boleto="handleGerarBoleto"
-      @notificar="handleNotificar"
-      @confirmar="handleConfirmar"
-      @negociar="handleNegociar"
-    />
-    <TitulosListScreen
-      v-else
-      :titulos="list"
-      @open="openDetail"
-      @gerar-boleto="handleGerarBoleto"
-      @notificar="handleNotificar"
-      @confirmar="handleConfirmar"
-      @negociar="handleNegociar"
-    />
-  </template>
+    @gerar-boleto="gerarBoleto"
+    @notificar="notificar"
+    @confirmar="confirmar"
+    @negociar="negociar"
+    @notificar-lote="notificarLote"
+    @observacao="inserirObservacao"
+  >
+    <template #tabs><slot name="tabs" /></template>
+  </TitulosListScreen>
 </template>

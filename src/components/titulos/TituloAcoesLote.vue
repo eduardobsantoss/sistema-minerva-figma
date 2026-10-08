@@ -2,16 +2,22 @@
 import { computed, onMounted, onUnmounted, ref, type Component } from 'vue';
 import {
   BadgeCheck,
+  BellRing,
   CalendarClock,
   ChevronUp,
   Download,
+  FileSpreadsheet,
+  FileText,
   Landmark,
+  MessageSquarePlus,
   Receipt,
   RefreshCw,
   Trash2,
   Wallet,
 } from 'lucide-vue-next';
 import ConfirmTypedActionModal from '@/components/ui/ConfirmTypedActionModal.vue';
+import ObservacaoCobrancaModal from './ObservacaoCobrancaModal.vue';
+import { useBackgroundReport } from '@/composables/useBackgroundReport';
 import AcoesCercModal, { type AcaoCerc } from './AcoesCercModal.vue';
 import AlterarSituacaoModal from './AlterarSituacaoModal.vue';
 import BaixarArquivosModal from './BaixarArquivosModal.vue';
@@ -21,17 +27,52 @@ import RegistrarConfirmacaoModal from './RegistrarConfirmacaoModal.vue';
 import TitulosMotivoModal from './TitulosMotivoModal.vue';
 import type { TituloSelecionado } from './types';
 
-const props = defineProps<{ titulos: TituloSelecionado[] }>();
+const props = withDefaults(
+  defineProps<{
+    titulos: TituloSelecionado[];
+    /** padrao: menu completo · cobranca: aba Títulos da Cobrança · boleto: fila de títulos aptos para boletar. */
+    modo?: 'padrao' | 'cobranca' | 'boleto';
+  }>(),
+  { modo: 'padrao' },
+);
 
-type Acao = AcaoCerc | 'cerc' | 'situacao' | 'pagamento' | 'prorrogar' | 'arquivos' | 'confirmacao' | 'boleto' | 'excluir';
+const emit = defineEmits<{
+  boletoGerado: [ids: string[]];
+  notificacoesDisparadas: [ids: string[]];
+  observacaoInserida: [ids: string[], texto: string];
+}>();
+
+type Acao =
+  | AcaoCerc
+  | 'cerc'
+  | 'situacao'
+  | 'pagamento'
+  | 'prorrogar'
+  | 'arquivos'
+  | 'confirmacao'
+  | 'boleto'
+  | 'excluir'
+  | 'relatorio-selecionados'
+  | 'relatorios-especificos'
+  | 'disparar-notificacoes'
+  | 'observacao-cobranca';
 
 const menuOpen = ref(false);
 const acao = ref<Acao | null>(null);
 const titulosAcao = ref<TituloSelecionado[]>([]);
 const avisoCerc = ref('');
 const rootRef = ref<HTMLElement | null>(null);
+const { enqueueReport } = useBackgroundReport();
 
-const itens: { key: Acao; label: string; icon: Component; danger?: boolean }[] = [
+interface ItemMenu {
+  key: Acao;
+  label: string;
+  icon: Component;
+  disabled?: boolean;
+  hint?: string;
+}
+
+const ITENS_PADRAO: ItemMenu[] = [
   { key: 'cerc', label: 'Ações CERC', icon: Landmark },
   { key: 'situacao', label: 'Alterar situação', icon: RefreshCw },
   { key: 'pagamento', label: 'Pagamento em lote', icon: Wallet },
@@ -40,6 +81,63 @@ const itens: { key: Acao; label: string; icon: Component; danger?: boolean }[] =
   { key: 'confirmacao', label: 'Registrar confirmação', icon: BadgeCheck },
   { key: 'boleto', label: 'Gerar boleto', icon: Receipt },
 ];
+
+const ITENS_COBRANCA: ItemMenu[] = [
+  { key: 'relatorio-selecionados', label: 'Relatório / selecionados', icon: FileSpreadsheet },
+  {
+    key: 'relatorios-especificos',
+    label: 'Gerar relatórios específicos',
+    icon: FileText,
+    disabled: true,
+    hint: 'Indisponível',
+  },
+  { key: 'disparar-notificacoes', label: 'Disparar notificações', icon: BellRing },
+  { key: 'observacao-cobranca', label: 'Inserir observação de cobrança', icon: MessageSquarePlus },
+];
+
+const ITENS_BOLETO: ItemMenu[] = [{ key: 'boleto', label: 'Gerar boleto', icon: Receipt }];
+
+const itens = computed<ItemMenu[]>(() =>
+  props.modo === 'cobranca' ? ITENS_COBRANCA : props.modo === 'boleto' ? ITENS_BOLETO : ITENS_PADRAO,
+);
+
+const mostraExcluir = computed(() => props.modo === 'padrao');
+
+const valorTotalSelecionado = computed(() =>
+  props.titulos.reduce((soma, t) => soma + (t.valorAberto ?? t.valor), 0),
+);
+
+const instrucaoNotificacoes = computed(() => {
+  const n = props.titulos.length;
+  return `Deseja disparar notificações para ${n} ${n === 1 ? 'título' : 'títulos'}? Digite o código abaixo para confirmar.`;
+});
+
+function brl(valor: number) {
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function csvCampo(valor: string | number) {
+  return `"${String(valor).replace(/"/g, '""')}"`;
+}
+
+function gerarRelatorioSelecionados() {
+  const lista = props.titulos;
+  enqueueReport({
+    reportName: 'Relatório de títulos selecionados',
+    buildFile: () => {
+      const cabecalho = ['Lastro', 'Número', 'Valor', 'Valor em aberto', 'Vencimento'];
+      const linhas = lista.map((t) =>
+        [t.lastro, t.numero, brl(t.valor), t.valorAberto == null ? '' : brl(t.valorAberto), t.vencimento]
+          .map(csvCampo)
+          .join(';'),
+      );
+      return {
+        blob: new Blob(['\uFEFF' + [cabecalho.join(';'), ...linhas].join('\n')], { type: 'text/csv;charset=utf-8;' }),
+        filename: 'titulos-selecionados.csv',
+      };
+    },
+  });
+}
 
 const contagem = computed(() => {
   const n = props.titulos.length;
@@ -55,9 +153,7 @@ const instrucaoExcluir = computed(() => {
 
 const instrucaoBoleto = computed(() => {
   const n = props.titulos.length;
-  return n === 1
-    ? 'Digite o código abaixo para confirmar a geração do boleto'
-    : `Digite o código abaixo para confirmar a geração dos ${n} boletos`;
+  return `Deseja gerar boletos para ${n} título(s), totalizando ${brl(valorTotalSelecionado.value)}? Digite o código abaixo para confirmar.`;
 });
 
 const confirmacaoCerc = computed(() => {
@@ -93,11 +189,15 @@ const rotuloBaixarRegistro = computed(() =>
 const rotuloDesregistrar = computed(() =>
   rotuloPorQuantidade('Desregistrar título', 'Desregistrar títulos', titulosAcao.value),
 );
-const rotuloBoleto = computed(() => rotuloPorQuantidade('Gerar boleto', 'Gerar boletos'));
+const rotuloBoleto = 'Gerar boleto';
 const rotuloExcluir = computed(() => rotuloPorQuantidade('Excluir título', 'Excluir títulos'));
 
 function abrir(key: Acao) {
   menuOpen.value = false;
+  if (key === 'relatorio-selecionados') {
+    gerarRelatorioSelecionados();
+    return;
+  }
   titulosAcao.value = props.titulos;
   avisoCerc.value = '';
   acao.value = key;
@@ -109,6 +209,24 @@ function abrirCerc(proxima: AcaoCerc, elegiveis: TituloSelecionado[], fora: Titu
     ? `${fora.length === 1 ? '1 título não entra' : `${fora.length} títulos não entram`} nesta ação. Lastros fora da regra: ${fora.map((titulo) => titulo.lastro || titulo.numero).join(', ')}.`
     : '';
   acao.value = proxima;
+}
+
+function confirmarBoleto() {
+  const ids = props.titulos.map((t) => t.id);
+  fechar();
+  emit('boletoGerado', ids);
+}
+
+function confirmarNotificacoes() {
+  const ids = props.titulos.map((t) => t.id);
+  fechar();
+  emit('notificacoesDisparadas', ids);
+}
+
+function confirmarObservacao(texto: string) {
+  const ids = props.titulos.map((t) => t.id);
+  fechar();
+  emit('observacaoInserida', ids, texto);
 }
 
 function fechar() {
@@ -167,16 +285,20 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick));
           :key="item.key"
           type="button"
           class="lote-menu-item"
-          @click="abrir(item.key)"
+          :disabled="item.disabled"
+          @click="!item.disabled && abrir(item.key)"
         >
           <component :is="item.icon" :size="16" class="lote-menu-icon" />
-          {{ item.label }}
+          <span style="flex: 1; white-space: nowrap">{{ item.label }}</span>
+          <span v-if="item.hint" class="lote-menu-hint">{{ item.hint }}</span>
         </button>
-        <div style="height: 1px; background: var(--border-default); margin: 6px 8px" />
-        <button type="button" class="lote-menu-item lote-menu-danger" @click="abrir('excluir')">
-          <Trash2 :size="16" />
-          Excluir títulos
-        </button>
+        <template v-if="mostraExcluir">
+          <div style="height: 1px; background: var(--border-default); margin: 6px 8px" />
+          <button type="button" class="lote-menu-item lote-menu-danger" @click="abrir('excluir')">
+            <Trash2 :size="16" />
+            Excluir títulos
+          </button>
+        </template>
       </div>
 
       <button type="button" class="lote-acoes" @click="menuOpen = !menuOpen">
@@ -239,10 +361,28 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick));
     title="Gerar boleto"
     subtitle="Confirmação da geração de boleto"
     :instruction="instrucaoBoleto"
-    confirm-phrase="GERAR/BOLETO"
+    confirm-phrase="GERAR-BOLETO"
     :confirm-label="rotuloBoleto"
     @close="fechar"
-    @confirm="fechar"
+    @confirm="confirmarBoleto"
+  />
+  <ConfirmTypedActionModal
+    v-if="acao === 'disparar-notificacoes'"
+    persistent
+    spread-footer
+    title="Disparar notificações"
+    subtitle="Confirmação do disparo para os títulos selecionados"
+    :instruction="instrucaoNotificacoes"
+    confirm-phrase="DISPARAR-NOTIFICACOES"
+    confirm-label="Disparar notificações"
+    @close="fechar"
+    @confirm="confirmarNotificacoes"
+  />
+  <ObservacaoCobrancaModal
+    v-if="acao === 'observacao-cobranca'"
+    :quantidade="titulos.length"
+    @close="fechar"
+    @confirm="confirmarObservacao"
   />
   <ConfirmTypedActionModal
     v-if="acao === 'excluir'"
@@ -296,8 +436,22 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick));
   color: var(--text-muted);
   flex-shrink: 0;
 }
-.lote-menu-item:hover {
+.lote-menu-item:hover:not(:disabled) {
   background: var(--surface-sunken);
+}
+.lote-menu-item:disabled {
+  cursor: not-allowed;
+  color: var(--text-disabled);
+}
+.lote-menu-item:disabled .lote-menu-icon {
+  color: var(--text-disabled);
+}
+.lote-menu-hint {
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 .lote-menu-danger {
   color: var(--action-danger-text-only);

@@ -28,6 +28,8 @@ import {
   Search,
   Radar,
   Banknote,
+  History,
+  Phone,
 } from "lucide-vue-next";
 import gciLogoMark from "@/assets/gci-logo-mark.png";
 import gciLogoFull from "@/assets/gci-logo-full.png";
@@ -117,14 +119,19 @@ const items: NavItem[] = [
         icon: BellRing,
       },
       {
-        key: "cobranca-notif-cessao",
-        label: "Notificações de Cessão",
-        icon: ScrollText,
-      },
-      {
         key: "cobranca-resultado-notif",
         label: "Resultado de Notificações",
         icon: Layers,
+      },
+      {
+        key: "cobranca-historico-notif",
+        label: "Histórico de Notificações",
+        icon: History,
+      },
+      {
+        key: "cobranca-preventiva",
+        label: "Cobrança Preventiva",
+        icon: Phone,
       },
       { key: "cobranca-rel", label: "Relatórios", icon: BarChart3 },
     ],

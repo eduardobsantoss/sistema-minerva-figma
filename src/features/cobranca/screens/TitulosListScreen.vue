@@ -11,29 +11,22 @@ import {
   BellRing,
   Handshake,
   BadgeCheck,
-  CheckCircle2,
-  XCircle,
 } from 'lucide-vue-next';
-import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import {
   VEICULO_OPTS,
   VEICULO_TIPO_OPTS,
+  isPerformado,
   STATUS_PAGAMENTO_OPTS,
   brl,
   statusPagamentoColor,
   statusPagamentoLabel,
   situacaoTituloColor,
   situacaoTituloLabel,
-  statusNotificacaoColor,
-  statusNotificacaoLabel,
-  statusConfirmacaoColor,
-  statusConfirmacaoLabel,
   type Titulo,
   type StatusPagamento,
 } from '../data/titulosData';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
-import Tooltip from '@/components/ui/Tooltip.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
 import type { TituloSelecionado } from '@/components/titulos/types';
@@ -45,47 +38,41 @@ const emit = defineEmits<{
   notificar: [id: string];
   confirmar: [id: string];
   negociar: [id: string];
+  notificarLote: [ids: string[]];
+  observacao: [ids: string[], texto: string];
 }>();
 
 type ColKey =
-  | 'veiculo'
-  | 'tipo'
+  | 'boletado'
+  | 'performado'
+  | 'lastro'
+  | 'numero'
+  | 'situacao'
+  | 'statusPagamento'
+  | 'valor'
+  | 'operacao'
+  | 'gerente'
   | 'cedente'
   | 'sacado'
-  | 'gerente'
+  | 'dataCriacao'
   | 'vencimento'
-  | 'vrNominal'
-  | 'vrAquisicao'
-  | 'vrPresente'
-  | 'vrAberto'
-  | 'vrJuros'
-  | 'vrMulta'
-  | 'statusNotificacao'
-  | 'statusConfirmacao'
-  | 'situacaoTitulo'
-  | 'statusPagamento'
-  | 'diasAtraso'
-  | 'boleto';
+  | 'ultimoPagamento';
 
 const ALL_COLS: { key: ColKey; label: string; align?: 'right' }[] = [
-  { key: 'veiculo', label: 'Veículo' },
-  { key: 'tipo', label: 'Tipo do Ativo' },
+  { key: 'boletado', label: 'Boletado' },
+  { key: 'performado', label: 'Performado' },
+  { key: 'lastro', label: 'Lastro' },
+  { key: 'numero', label: 'Número' },
+  { key: 'situacao', label: 'Situação' },
+  { key: 'statusPagamento', label: 'Status de pagamento' },
+  { key: 'valor', label: 'Valor', align: 'right' },
+  { key: 'operacao', label: 'Operação' },
+  { key: 'gerente', label: 'Gerente comercial' },
   { key: 'cedente', label: 'Cedente' },
   { key: 'sacado', label: 'Sacado' },
-  { key: 'gerente', label: 'Gerente' },
-  { key: 'vencimento', label: 'Vencimento' },
-  { key: 'vrNominal', label: 'VR. Nominal', align: 'right' },
-  { key: 'vrAquisicao', label: 'VR. Aquisição', align: 'right' },
-  { key: 'vrPresente', label: 'VR. Presente', align: 'right' },
-  { key: 'vrAberto', label: 'VR. Presente', align: 'right' },
-  { key: 'vrJuros', label: 'VR. Juros', align: 'right' },
-  { key: 'vrMulta', label: 'VR. Multa', align: 'right' },
-  { key: 'statusNotificacao', label: 'Notificação' },
-  { key: 'statusConfirmacao', label: 'Confirmação' },
-  { key: 'situacaoTitulo', label: 'Situação' },
-  { key: 'statusPagamento', label: 'Pagamento' },
-  { key: 'diasAtraso', label: 'Dias atraso', align: 'right' },
-  { key: 'boleto', label: 'Boleto' },
+  { key: 'dataCriacao', label: 'Data de criação' },
+  { key: 'vencimento', label: 'Data de vencimento' },
+  { key: 'ultimoPagamento', label: 'Data do último pagamento' },
 ];
 
 type QuickFilter = StatusPagamento | 'EM_NEGOCIACAO' | null;
@@ -113,24 +100,7 @@ const filterPlacement = ref<'below' | 'above'>('below');
 const filterBtnRef = ref<HTMLButtonElement | null>(null);
 const draft = ref<Filters>({ ...EMPTY_FILTERS });
 const applied = ref<Filters>({ ...EMPTY_FILTERS });
-const visibleCols = ref<Set<ColKey>>(
-  new Set([
-    'veiculo',
-    'tipo',
-    'cedente',
-    'sacado',
-    'gerente',
-    'vencimento',
-    'vrNominal',
-    'vrAberto',
-    'statusNotificacao',
-    'statusConfirmacao',
-    'situacaoTitulo',
-    'statusPagamento',
-    'diasAtraso',
-    'boleto',
-  ]),
-);
+const visibleCols = ref<Set<ColKey>>(new Set(ALL_COLS.map((c) => c.key)));
 const colsMenuOpen = ref(false);
 const selectedIds = ref<string[]>([]);
 const menuOpenId = ref<string | null>(null);
@@ -184,30 +154,24 @@ const {
 const activeFilterCount = computed(() => Object.values(applied.value).filter((v) => v !== '').length);
 
 const COL_WIDTHS: Record<ColKey, string> = {
-  veiculo: 'minmax(140px, 1.4fr)',
-  tipo: 'minmax(80px, 0.7fr)',
-  cedente: 'minmax(150px, 1.5fr)',
-  sacado: 'minmax(150px, 1.5fr)',
-  gerente: 'minmax(120px, 1fr)',
-  vencimento: 'minmax(100px, 0.9fr)',
-  vrNominal: 'minmax(110px, 1fr)',
-  vrAquisicao: 'minmax(110px, 1fr)',
-  vrPresente: 'minmax(110px, 1fr)',
-  vrAberto: 'minmax(110px, 1fr)',
-  vrJuros: 'minmax(90px, 0.9fr)',
-  vrMulta: 'minmax(90px, 0.9fr)',
-  statusNotificacao: 'minmax(110px, 1fr)',
-  statusConfirmacao: 'minmax(110px, 1fr)',
-  situacaoTitulo: 'minmax(110px, 1fr)',
-  statusPagamento: 'minmax(110px, 1fr)',
-  diasAtraso: 'minmax(90px, 0.8fr)',
-  boleto: 'minmax(80px, 0.7fr)',
+  boletado: 'minmax(100px, 0.8fr)',
+  performado: 'minmax(110px, 0.8fr)',
+  lastro: 'minmax(100px, 0.8fr)',
+  numero: 'minmax(150px, 1.2fr)',
+  situacao: 'minmax(120px, 1fr)',
+  statusPagamento: 'minmax(150px, 1.1fr)',
+  valor: 'minmax(120px, 1fr)',
+  operacao: 'minmax(110px, 0.9fr)',
+  gerente: 'minmax(140px, 1fr)',
+  cedente: 'minmax(170px, 1.5fr)',
+  sacado: 'minmax(170px, 1.5fr)',
+  dataCriacao: 'minmax(120px, 0.9fr)',
+  vencimento: 'minmax(130px, 1fr)',
+  ultimoPagamento: 'minmax(170px, 1.2fr)',
 };
 
 const cols = computed(() => ALL_COLS.filter((c) => visibleCols.value.has(c.key)));
-const gridTemplate = computed(
-  () => `36px minmax(160px, 1.4fr) ${cols.value.map((c) => COL_WIDTHS[c.key]).join(' ')} 56px`,
-);
+const gridTemplate = computed(() => `36px ${cols.value.map((c) => COL_WIDTHS[c.key]).join(' ')} 56px`);
 
 const pageIds = computed(() => pageItems.value.map((t) => t.id));
 const pageAllSelected = computed(
@@ -371,6 +335,8 @@ function menuActions(t: Titulo) {
       </p>
     </div>
 
+    <slot name="tabs" />
+
     <div class="flex items-center justify-between" style="gap: 10px; flex-wrap: wrap">
       <div style="position: relative; flex: 1 1 50%; min-width: 240px; max-width: 50%">
         <Search
@@ -435,9 +401,9 @@ function menuActions(t: Titulo) {
               border: 1px solid var(--border-default);
               border-radius: var(--radius-lg);
               cursor: pointer;
-              color: var(--text-strong);
+              color: var(--text-muted);
               font-size: var(--text-sm);
-              font-weight: var(--weight-bold);
+              font-weight: var(--weight-semibold);
             "
             @click="openFilters"
           >
@@ -633,14 +599,12 @@ function menuActions(t: Titulo) {
             <div @click.stop>
               <Checkbox :checked="pageAllSelected" :indeterminate="pageSomeSelected" @change="togglePage" />
             </div>
-            <div>Nº Título</div>
             <div v-for="c in cols" :key="c.key" :style="{ textAlign: c.align }">
               <span
                 class="inline-flex items-center"
                 :style="{ gap: '6px', width: '100%', justifyContent: c.align === 'right' ? 'flex-end' : 'flex-start' }"
               >
                 {{ c.label }}
-                <ValorPresenteInfo v-if="c.key === 'vrAberto'" :size="12" />
               </span>
             </div>
             <div style="text-align: right">Ações</div>
@@ -673,20 +637,22 @@ function menuActions(t: Titulo) {
             <div @click.stop>
               <Checkbox :checked="selectedIds.includes(t.id)" @change="toggleRow(t.id)" />
             </div>
-            <div>
-              <div
-                style="
-                  font-weight: var(--weight-bold);
-                  color: var(--text-strong);
-                  font-variant-numeric: tabular-nums;
-                "
-              >
-                #{{ t.numero }}
-              </div>
+            <div v-if="visibleCols.has('boletado')">
+              <span class="flex items-center" :style="pillStyle(t.boletoGeradoEm ? 'var(--success-base)' : 'var(--text-muted)')">
+                <span :style="{ width: '6px', height: '6px', borderRadius: '9999px', background: t.boletoGeradoEm ? 'var(--success-base)' : 'var(--text-muted)' }" />
+                {{ t.boletoGeradoEm ? 'Sim' : 'Não' }}
+              </span>
+            </div>
+            <div v-if="visibleCols.has('performado')">
+              <span class="flex items-center" :style="pillStyle(isPerformado(t) ? 'var(--success-base)' : 'var(--danger-base)')">
+                <span :style="{ width: '6px', height: '6px', borderRadius: '9999px', background: isPerformado(t) ? 'var(--success-base)' : 'var(--danger-base)' }" />
+                {{ isPerformado(t) ? 'Sim' : 'Não' }}
+              </span>
+            </div>
+            <div v-if="visibleCols.has('lastro')">
               <span
                 style="
                   display: inline-block;
-                  margin-top: 4px;
                   font-size: 10px;
                   font-weight: var(--weight-bold);
                   letter-spacing: 0.06em;
@@ -697,27 +663,38 @@ function menuActions(t: Titulo) {
                   border: 1px solid color-mix(in srgb, var(--gci-base) 20%, transparent);
                 "
               >
-                Lastro {{ t.lastro }}
+                {{ t.lastro }}
               </span>
             </div>
-
-            <div v-if="visibleCols.has('veiculo')" style="color: var(--text-default)">
-              {{ t.veiculoNome }}
+            <div
+              v-if="visibleCols.has('numero')"
+              style="font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums"
+            >
+              #{{ t.numero }}
             </div>
-            <div v-if="visibleCols.has('tipo')">
-              <span
-                style="
-                  font-size: 10px;
-                  font-weight: var(--weight-bold);
-                  letter-spacing: 0.1em;
-                  padding: 4px 7px;
-                  border-radius: var(--radius-sm);
-                  background: var(--surface-sunken);
-                  color: var(--text-muted);
-                "
-              >
-                {{ t.tipo }}
+            <div v-if="visibleCols.has('situacao')">
+              <span class="flex items-center" :style="pillStyle(situacaoTituloColor(t.situacaoTitulo))">
+                <span :style="{ width: '6px', height: '6px', borderRadius: '9999px', background: situacaoTituloColor(t.situacaoTitulo) }" />
+                {{ situacaoTituloLabel(t.situacaoTitulo) }}
               </span>
+            </div>
+            <div v-if="visibleCols.has('statusPagamento')">
+              <span class="flex items-center" :style="pillStyle(statusPagamentoColor(t.statusPagamento))">
+                <span :style="{ width: '6px', height: '6px', borderRadius: '9999px', background: statusPagamentoColor(t.statusPagamento) }" />
+                {{ statusPagamentoLabel(t.statusPagamento) }}
+              </span>
+            </div>
+            <div
+              v-if="visibleCols.has('valor')"
+              style="text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--weight-bold); color: var(--text-strong)"
+            >
+              {{ brl(t.vrNominal) }}
+            </div>
+            <div v-if="visibleCols.has('operacao')" style="color: var(--text-default)">
+              {{ t.classeOuOperacao ?? '—' }}
+            </div>
+            <div v-if="visibleCols.has('gerente')" style="color: var(--text-default)">
+              {{ t.gerente }}
             </div>
             <div v-if="visibleCols.has('cedente')">
               <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ t.cedente }}</div>
@@ -731,8 +708,11 @@ function menuActions(t: Titulo) {
                 {{ t.sacadoCnpj }}
               </div>
             </div>
-            <div v-if="visibleCols.has('gerente')" style="color: var(--text-default)">
-              {{ t.gerente }}
+            <div
+              v-if="visibleCols.has('dataCriacao')"
+              style="color: var(--text-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums"
+            >
+              {{ t.emissao }}
             </div>
             <div
               v-if="visibleCols.has('vencimento')"
@@ -741,104 +721,10 @@ function menuActions(t: Titulo) {
               {{ t.vencimento }}
             </div>
             <div
-              v-if="visibleCols.has('vrNominal')"
-              style="text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--weight-bold); color: var(--text-strong)"
+              v-if="visibleCols.has('ultimoPagamento')"
+              style="color: var(--text-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums"
             >
-              {{ brl(t.vrNominal) }}
-            </div>
-            <div
-              v-if="visibleCols.has('vrAquisicao')"
-              style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-default)"
-            >
-              {{ t.vrAquisicao != null ? brl(t.vrAquisicao) : '—' }}
-            </div>
-            <div
-              v-if="visibleCols.has('vrPresente')"
-              style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-default)"
-            >
-              {{ t.vrPresente != null ? brl(t.vrPresente) : '—' }}
-            </div>
-            <div
-              v-if="visibleCols.has('vrAberto')"
-              :style="{
-                textAlign: 'right',
-                fontVariantNumeric: 'tabular-nums',
-                fontWeight: 'var(--weight-bold)',
-                color: t.diasAtraso > 0 ? 'var(--danger-base)' : 'var(--text-strong)',
-              }"
-            >
-              {{ brl(t.vrAberto) }}
-            </div>
-            <div
-              v-if="visibleCols.has('vrJuros')"
-              style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-default)"
-            >
-              {{ brl(t.vrJuros) }}
-            </div>
-            <div
-              v-if="visibleCols.has('vrMulta')"
-              style="text-align: right; font-variant-numeric: tabular-nums; color: var(--text-default)"
-            >
-              {{ brl(t.vrMulta) }}
-            </div>
-            <div v-if="visibleCols.has('statusNotificacao')">
-              <span class="flex items-center" :style="pillStyle(statusNotificacaoColor(t.statusNotificacao))">
-                <span :style="{ width: '6px', height: '6px', borderRadius: '9999px', background: statusNotificacaoColor(t.statusNotificacao) }" />
-                {{ statusNotificacaoLabel(t.statusNotificacao) }}
-              </span>
-            </div>
-            <div v-if="visibleCols.has('statusConfirmacao')">
-              <span class="flex items-center" :style="pillStyle(statusConfirmacaoColor(t.statusConfirmacao))">
-                <span :style="{ width: '6px', height: '6px', borderRadius: '9999px', background: statusConfirmacaoColor(t.statusConfirmacao) }" />
-                {{ statusConfirmacaoLabel(t.statusConfirmacao) }}
-              </span>
-            </div>
-            <div v-if="visibleCols.has('situacaoTitulo')">
-              <span class="flex items-center" :style="pillStyle(situacaoTituloColor(t.situacaoTitulo))">
-                <span :style="{ width: '6px', height: '6px', borderRadius: '9999px', background: situacaoTituloColor(t.situacaoTitulo) }" />
-                {{ situacaoTituloLabel(t.situacaoTitulo) }}
-              </span>
-            </div>
-            <div v-if="visibleCols.has('statusPagamento')">
-              <span class="flex items-center" :style="pillStyle(statusPagamentoColor(t.statusPagamento))">
-                <span :style="{ width: '6px', height: '6px', borderRadius: '9999px', background: statusPagamentoColor(t.statusPagamento) }" />
-                {{ statusPagamentoLabel(t.statusPagamento) }}
-              </span>
-            </div>
-            <div
-              v-if="visibleCols.has('diasAtraso')"
-              :style="{
-                textAlign: 'right',
-                fontVariantNumeric: 'tabular-nums',
-                fontWeight: 'var(--weight-bold)',
-                color: t.diasAtraso > 0 ? 'var(--danger-base)' : 'var(--text-muted)',
-              }"
-            >
-              {{ t.diasAtraso }}
-            </div>
-            <div v-if="visibleCols.has('boleto')" class="flex items-center" style="gap: 8px">
-              <span
-                :style="{
-                  fontVariantNumeric: 'tabular-nums',
-                  color: t.boletoGeradoEm ? 'var(--text-default)' : 'var(--text-muted)',
-                }"
-              >
-                {{ t.boletoGeradoEm ?? 'Não Informado' }}
-              </span>
-              <Tooltip :content="t.boletoGeradoEm ? 'Boleto gerado' : 'Sem boleto'">
-                <CheckCircle2
-                  v-if="t.boletoGeradoEm"
-                  :size="15"
-                  :stroke-width="2.25"
-                  style="color: var(--success-base); flex-shrink: 0"
-                />
-                <XCircle
-                  v-else
-                  :size="15"
-                  :stroke-width="2.25"
-                  style="color: var(--danger-base); flex-shrink: 0"
-                />
-              </Tooltip>
+              {{ t.dataUltimoPagamento ?? '—' }}
             </div>
 
             <div class="flex justify-end" style="position: relative">
@@ -913,7 +799,13 @@ function menuActions(t: Titulo) {
       />
     </div>
 
-    <TituloAcoesLote v-if="selecionados.length" :titulos="selecionados" />
+    <TituloAcoesLote
+      v-if="selecionados.length"
+      modo="cobranca"
+      :titulos="selecionados"
+      @notificacoes-disparadas="(ids) => { emit('notificarLote', ids); selectedIds = []; }"
+      @observacao-inserida="(ids, texto) => { emit('observacao', ids, texto); selectedIds = []; }"
+    />
   </div>
 </template>
 

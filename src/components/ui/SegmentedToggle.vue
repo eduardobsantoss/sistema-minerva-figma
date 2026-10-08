@@ -14,8 +14,10 @@ const props = withDefaults(
     variant?: 'surface' | 'brand';
     /** Square icon-only buttons (e.g. cards/list toggle). */
     iconOnly?: boolean;
+    /** sm: versão compacta do toggle de ícones (38px), alinhada aos botões da barra de ferramentas. */
+    size?: 'md' | 'sm';
   }>(),
-  { variant: 'surface', iconOnly: false },
+  { variant: 'surface', iconOnly: false, size: 'md' },
 );
 
 const emit = defineEmits<{ 'update:modelValue': [key: string] }>();
@@ -69,14 +71,15 @@ watch(
 
 const shellStyle = computed(() => {
   if (props.iconOnly) {
+    const compact = props.size === 'sm';
     return {
       gap: '2px',
-      padding: '4px',
+      padding: compact ? '3px' : '4px',
       background: 'var(--surface-card)',
       border: '1px solid var(--border-default)',
-      borderRadius: 'var(--radius-xl)',
+      borderRadius: compact ? 'var(--radius-lg)' : 'var(--radius-xl)',
       flexWrap: 'nowrap' as const,
-      height: '56px',
+      height: compact ? '38px' : '56px',
       alignItems: 'center' as const,
     };
   }
@@ -108,7 +111,7 @@ const pillStyle = computed(() => {
     width: `${pill.value.w}px`,
     height: `${pill.value.h}px`,
     transform: `translate(${pill.value.x}px, ${pill.value.y}px)`,
-    borderRadius: useBrandPill ? 'var(--radius-lg)' : 'var(--radius-md)',
+    borderRadius: useBrandPill && !(props.iconOnly && props.size === 'sm') ? 'var(--radius-lg)' : 'var(--radius-md)',
     pointerEvents: 'none' as const,
     zIndex: 0,
     opacity: pill.value.ready ? 1 : 0,
@@ -131,13 +134,14 @@ function optionStyle(key: string) {
   const active = props.modelValue === key;
 
   if (props.iconOnly) {
+    const compact = props.size === 'sm';
     return {
-      width: '40px',
-      height: '40px',
+      width: compact ? '30px' : '40px',
+      height: compact ? '30px' : '40px',
       padding: '0',
       border: 'none',
       cursor: 'pointer',
-      borderRadius: 'var(--radius-lg)',
+      borderRadius: compact ? 'var(--radius-md)' : 'var(--radius-lg)',
       background: 'transparent',
       color: active ? '#fff' : 'var(--text-muted)',
       display: 'flex',
