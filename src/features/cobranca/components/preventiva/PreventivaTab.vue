@@ -341,11 +341,11 @@ function toggleStatus(status: StatusPreventivo) {
 }
 .filter-input {
   width: 100%;
-  height: 56px;
-  padding: 0 16px;
+  height: 38px;
+  padding: 0 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   outline: none;
   font-size: var(--text-sm);
   color: var(--text-strong);
