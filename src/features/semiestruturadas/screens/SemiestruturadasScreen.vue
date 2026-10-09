@@ -8,6 +8,7 @@ import { GRUPOS_SEED } from '@/features/risco/data/riscoData';
 import {
   operacoes as initialOperacoes,
   warrantyTypeName,
+  type SemiCota,
   type SemiGarantia,
   type SemiOperacao,
   type TipoOperacaoSemi,
@@ -74,6 +75,10 @@ function handleCreate(data: NewSemiData) {
   creating.value = false;
 }
 
+function handleUpdateCotas(operacaoId: string, cotas: SemiCota[]) {
+  operacaoList.value = operacaoList.value.map((o) => (o.id === operacaoId ? { ...o, cotas } : o));
+}
+
 const operacao = computed(() => {
   const r = route.value;
   if (r.level === 'list') return undefined;
@@ -102,6 +107,7 @@ const cota = computed(() => {
     :operacao="operacao"
     @back="route = { level: 'list' }"
     @open-cota="(cotaId) => (route = { level: 'cota', operacaoId: operacao!.id, cotaId })"
+    @update-cotas="(cotas) => handleUpdateCotas(operacao!.id, cotas)"
   />
 
   <SemiCotaDetailScreen

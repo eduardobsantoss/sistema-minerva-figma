@@ -11,8 +11,12 @@ import {
   Search,
   Settings2,
   Filter,
+  Split,
 } from 'lucide-vue-next';
-import { brl, pct, type SemiOperacao } from '../data/semiestruturadasData';
+import { brl, pct, type SemiCota, type SemiOperacao } from '../data/semiestruturadasData';
+import { useToast } from '@/composables/useToast';
+import DistribuirCotaModal from '../components/DistribuirCotaModal.vue';
+import DistribuirCotasModal from '../components/DistribuirCotasModal.vue';
 import CotasTab from './operacao-tabs/CotasTab.vue';
 import LastrosTab from './operacao-tabs/LastrosTab.vue';
 import GarantiasTab from './operacao-tabs/GarantiasTab.vue';
@@ -21,12 +25,27 @@ import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
 import type { TituloSelecionado } from '@/components/titulos/types';
 
 const props = defineProps<{ operacao: SemiOperacao }>();
-const emit = defineEmits<{ back: []; openCota: [cotaId: string] }>();
+const emit = defineEmits<{
+  back: [];
+  openCota: [cotaId: string];
+  updateCotas: [cotas: SemiCota[]];
+}>();
+
+const { success } = useToast();
 
 type ViewTab = 'cotas' | 'lastros' | 'garantias';
 const tab = ref<ViewTab>('cotas');
 const q = ref('');
 const selectedIds = ref<string[]>([]);
+const cotaParaDistribuir = ref<string | null>(null);
+const distribuindoTodas = ref(false);
+
+function salvarDistribuicao(cotas: SemiCota[]) {
+  emit('updateCotas', cotas);
+  cotaParaDistribuir.value = null;
+  distribuindoTodas.value = false;
+  success('Distribuição de cotas salva.');
+}
 
 interface Kpi {
   icon: Component;
@@ -259,17 +278,34 @@ const filteredGarantias = computed(() => {
       </div>
 
       <div style="padding: 20px; border-bottom: 1px solid var(--border-default)">
-        <div class="relative" style="background: var(--surface-sunken); border-radius: var(--radius-lg)">
-          <Search :size="16" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--neutral-400)" />
-          <input
-            v-model="q"
-            :placeholder="tabMeta.searchPlaceholder"
-            style="width: 100%; height: 44px; padding-left: 44px; padding-right: 16px; background: transparent; border: none; outline: none; font-size: var(--text-sm); color: var(--text-strong)"
-          />
+        <div class="flex items-center" style="gap: 12px">
+          <div class="relative" style="flex: 1; min-width: 0; background: var(--surface-sunken); border-radius: var(--radius-lg)">
+            <Search :size="16" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--neutral-400)" />
+            <input
+              v-model="q"
+              :placeholder="tabMeta.searchPlaceholder"
+              style="width: 100%; height: 44px; padding-left: 44px; padding-right: 16px; background: transparent; border: none; outline: none; font-size: var(--text-sm); color: var(--text-strong)"
+            />
+          </div>
+          <button
+            v-if="tab === 'cotas'"
+            type="button"
+            class="flex items-center btn-animated btn-agro"
+            style="gap: 8px; height: 44px; padding: 0 22px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
+            @click="distribuindoTodas = true"
+          >
+            <Split :size="14" />
+            Distribuir cotas
+          </button>
         </div>
       </div>
 
-      <CotasTab v-if="tab === 'cotas'" :rows="filteredCotas" @open="emit('openCota', $event)" />
+      <CotasTab
+        v-if="tab === 'cotas'"
+        :rows="filteredCotas"
+        @open="emit('openCota', $event)"
+        @distribuir="cotaParaDistribuir = $event"
+      />
       <LastrosTab v-else-if="tab === 'lastros'" v-model:selected-ids="selectedIds" :rows="filteredLastros" />
       <GarantiasTab v-else :rows="filteredGarantias" />
 
@@ -286,5 +322,19 @@ const filteredGarantias = computed(() => {
     </div>
 
     <TituloAcoesLote v-if="tab === 'lastros' && selecionados.length" :titulos="selecionados" />
+
+    <DistribuirCotaModal
+      v-if="cotaParaDistribuir"
+      :operacao="operacao"
+      :cota-id="cotaParaDistribuir"
+      @close="cotaParaDistribuir = null"
+      @save="salvarDistribuicao"
+    />
+    <DistribuirCotasModal
+      v-if="distribuindoTodas"
+      :operacao="operacao"
+      @close="distribuindoTodas = false"
+      @save="salvarDistribuicao"
+    />
   </div>
 </template>
