@@ -87,6 +87,11 @@ export interface TituloAtivoGlobal {
 export interface AtivosFilters {
   lastro: string;
   numeroContrato: string;
+  numeroTitulo: string;
+  veiculoBusca: string;
+  cedente: string;
+  sacado: string;
+  tipoAtivo: string;
   veiculoIds: string[];
   grupoIds: string[];
   situacao: string;
@@ -102,6 +107,11 @@ export interface AtivosFilters {
 export const EMPTY_FILTERS: AtivosFilters = {
   lastro: '',
   numeroContrato: '',
+  numeroTitulo: '',
+  veiculoBusca: '',
+  cedente: '',
+  sacado: '',
+  tipoAtivo: '',
   veiculoIds: [],
   grupoIds: [],
   situacao: '',
@@ -208,77 +218,61 @@ function parseDateBR(d: string): number {
   return new Date(yyyy, mm - 1, dd).getTime();
 }
 
-export function countActiveFilters(f: AtivosFilters): number {
-  let n = 0;
-  if (f.lastro) n++;
-  if (f.numeroContrato) n++;
-  if (f.veiculoIds.length) n++;
-  if (f.grupoIds.length) n++;
-  if (f.situacao) n++;
-  if (f.statusTitulo) n++;
-  if (f.gerente) n++;
-  if (f.cessao) n++;
-  if (f.dataEntradaIni) n++;
-  if (f.dataEntradaFim) n++;
-  if (f.dataVencimentoIni) n++;
-  if (f.dataVencimentoFim) n++;
-  return n;
+/** Contagem só dos filtros do popover — a busca da barra não entra no badge. */
+export function countActiveFilters(f: AtivosFilters, view: 'contratos' | 'titulos' = 'titulos'): number {
+  const dates = [f.dataEntradaIni, f.dataEntradaFim, f.dataVencimentoIni, f.dataVencimentoFim].filter(Boolean).length;
+  const lists = (f.veiculoIds.length ? 1 : 0) + (f.grupoIds.length ? 1 : 0);
+  if (view === 'contratos') {
+    return dates + lists + (f.tipoAtivo ? 1 : 0);
+  }
+  return dates + lists + [f.numeroContrato, f.situacao, f.statusTitulo, f.gerente, f.cessao].filter(Boolean).length;
+}
+
+function includesFold(value: string, needle: string): boolean {
+  return value.toLowerCase().includes(needle.trim().toLowerCase());
+}
+
+function inDateRange(valueBR: string, ini: string, fim: string): boolean {
+  const t0 = parseDateBR(valueBR);
+  if (ini && (Number.isNaN(t0) || t0 < new Date(ini).getTime())) return false;
+  if (fim && (Number.isNaN(t0) || t0 > new Date(fim).getTime())) return false;
+  return true;
 }
 
 export function filterTitulos(titulos: TituloAtivoGlobal[], f: AtivosFilters): TituloAtivoGlobal[] {
   return titulos.filter((t) => {
-    if (f.lastro && !t.lastro.toLowerCase().includes(f.lastro.toLowerCase())) return false;
-    if (f.numeroContrato && !t.contratoNumero.toLowerCase().includes(f.numeroContrato.toLowerCase())) return false;
+    if (f.lastro && !includesFold(t.lastro, f.lastro)) return false;
+    if (f.numeroTitulo && !includesFold(t.numero, f.numeroTitulo)) return false;
+    if (f.numeroContrato && !includesFold(t.contratoNumero, f.numeroContrato)) return false;
+    if (f.cedente && !includesFold(`${t.cedenteNome} ${t.cedenteDocumento}`, f.cedente)) return false;
+    if (f.sacado && !includesFold(`${t.sacadoNome} ${t.sacadoDocumento}`, f.sacado)) return false;
     if (f.veiculoIds.length && !f.veiculoIds.includes(t.veiculoId)) return false;
     if (f.grupoIds.length && !f.grupoIds.includes(t.grupoEmpresarialId)) return false;
     if (f.situacao && t.situacao !== f.situacao) return false;
     if (f.statusTitulo && t.statusTitulo !== f.statusTitulo) return false;
-    if (f.gerente && !t.gerente.toLowerCase().includes(f.gerente.toLowerCase())) return false;
-    if (f.cessao && !t.cessao.toLowerCase().includes(f.cessao.toLowerCase())) return false;
-    if (f.dataEntradaIni) {
-      const t0 = parseDateBR(t.dataEntrada);
-      if (Number.isNaN(t0) || t0 < new Date(f.dataEntradaIni).getTime()) return false;
-    }
-    if (f.dataEntradaFim) {
-      const t0 = parseDateBR(t.dataEntrada);
-      if (Number.isNaN(t0) || t0 > new Date(f.dataEntradaFim).getTime()) return false;
-    }
-    if (f.dataVencimentoIni) {
-      const t0 = parseDateBR(t.vencimento);
-      if (Number.isNaN(t0) || t0 < new Date(f.dataVencimentoIni).getTime()) return false;
-    }
-    if (f.dataVencimentoFim) {
-      const t0 = parseDateBR(t.vencimento);
-      if (Number.isNaN(t0) || t0 > new Date(f.dataVencimentoFim).getTime()) return false;
-    }
+    if (f.gerente && !includesFold(t.gerente, f.gerente)) return false;
+    if (f.cessao && !includesFold(t.cessao, f.cessao)) return false;
+    if (!inDateRange(t.dataEntrada, f.dataEntradaIni, f.dataEntradaFim)) return false;
+    if (!inDateRange(t.vencimento, f.dataVencimentoIni, f.dataVencimentoFim)) return false;
     return true;
   });
 }
 
 export function filterContratos(
   contratos: ContratoAtivoGlobal[],
-  titulos: TituloAtivoGlobal[],
+  _titulos: TituloAtivoGlobal[],
   f: AtivosFilters,
 ): ContratoAtivoGlobal[] {
-  const matchingTituloIds = new Set(filterTitulos(titulos, f).map((t) => t.id));
-  const hasTituloFilters =
-    !!f.lastro ||
-    !!f.situacao ||
-    !!f.statusTitulo ||
-    !!f.gerente ||
-    !!f.cessao ||
-    !!f.dataEntradaIni ||
-    !!f.dataEntradaFim ||
-    !!f.dataVencimentoIni ||
-    !!f.dataVencimentoFim;
-
   return contratos.filter((c) => {
-    if (f.numeroContrato && !c.numero.toLowerCase().includes(f.numeroContrato.toLowerCase())) return false;
+    if (f.numeroContrato && !includesFold(c.numero, f.numeroContrato)) return false;
+    if (f.veiculoBusca && !includesFold(c.veiculoNome, f.veiculoBusca)) return false;
+    if (f.cedente && !includesFold(`${c.cedenteNome} ${c.cedenteDocumento}`, f.cedente)) return false;
+    if (f.sacado && !includesFold(`${c.sacadoNome} ${c.sacadoDocumento}`, f.sacado)) return false;
+    if (f.tipoAtivo && c.tipoAtivo !== f.tipoAtivo) return false;
     if (f.veiculoIds.length && !f.veiculoIds.includes(c.veiculoId)) return false;
     if (f.grupoIds.length && !f.grupoIds.includes(c.grupoEmpresarialId)) return false;
-    if (hasTituloFilters || f.lastro) {
-      if (!c.tituloIds.some((id) => matchingTituloIds.has(id))) return false;
-    }
+    if (!inDateRange(c.dataPrimeiraEntrada, f.dataEntradaIni, f.dataEntradaFim)) return false;
+    if (!inDateRange(c.ultimoVencimento, f.dataVencimentoIni, f.dataVencimentoFim)) return false;
     return true;
   });
 }

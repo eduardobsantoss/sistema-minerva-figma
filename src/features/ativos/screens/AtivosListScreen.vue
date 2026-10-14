@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, type Component } from 'vue';
 import {
-  Search,
   ChevronDown,
   SlidersHorizontal,
   Settings2,
@@ -202,12 +201,11 @@ const TITULO_COL_WIDTHS: Record<TituloColKey, string> = {
 
 const KPI_ICONS: Component[] = [Clock, CheckCircle2, XCircle, Wallet];
 
-const q = ref('');
 const viewMode = ref<ViewMode>('contratos');
 const filters = ref<AtivosFilters>({ ...EMPTY_FILTERS, veiculoIds: [], grupoIds: [] });
 const showFilters = ref(false);
-const filterPlacement = ref<'below' | 'above'>('below');
 const filterBtnRef = ref<HTMLButtonElement | null>(null);
+const panelBox = ref({ top: 0, left: 0, width: 440, maxHeight: 480 });
 const colsMenuOpen = ref(false);
 const selectedIds = ref<string[]>([]);
 
@@ -236,31 +234,10 @@ const visibleColsTitulo = ref<Set<TituloColKey>>(
 );
 
 const kpis = computed(() => computeKpis(props.titulos));
-const activeFilterCount = computed(() => countActiveFilters(filters.value));
+const activeFilterCount = computed(() => countActiveFilters(filters.value, viewMode.value));
 
-const filteredContratos = computed(() => {
-  let list = filterContratos(props.contratos, props.titulos, filters.value);
-  const needle = q.value.trim().toLowerCase();
-  if (needle) {
-    list = list.filter((c) => {
-      const hay = `${c.numero} ${c.veiculoNome} ${c.cedenteNome} ${c.sacadoNome} ${c.grupoEmpresarial} ${c.tipoAtivo}`.toLowerCase();
-      return hay.includes(needle);
-    });
-  }
-  return list;
-});
-
-const filteredTitulos = computed(() => {
-  let list = filterTitulos(props.titulos, filters.value);
-  const needle = q.value.trim().toLowerCase();
-  if (needle) {
-    list = list.filter((t) => {
-      const hay = `${t.numero} ${t.lastro} ${t.contratoNumero} ${t.veiculoNome} ${t.cedenteNome} ${t.sacadoNome} ${t.gerente} ${t.cessao}`.toLowerCase();
-      return hay.includes(needle);
-    });
-  }
-  return list;
-});
+const filteredContratos = computed(() => filterContratos(props.contratos, props.titulos, filters.value));
+const filteredTitulos = computed(() => filterTitulos(props.titulos, filters.value));
 
 const contratosPage = useTablePagination(() => filteredContratos.value, { defaultPageSize: 10 });
 const titulosPage = useTablePagination(() => filteredTitulos.value, { defaultPageSize: 10 });
@@ -354,14 +331,13 @@ const tituloGrid = computed(() =>
 );
 
 const filterPanelStyle = computed(() => ({
-  position: 'absolute' as const,
-  [filterPlacement.value === 'below' ? 'top' : 'bottom']: 'calc(100% + 8px)',
-  left: '0px',
-  zIndex: 31,
-  width: '480px',
-  maxWidth: 'calc(100vw - 48px)',
-  maxHeight: 'min(70vh, 640px)',
+  position: 'fixed' as const,
+  top: `${panelBox.value.top}px`,
+  left: `${panelBox.value.left}px`,
+  width: `${panelBox.value.width}px`,
+  maxHeight: `${panelBox.value.maxHeight}px`,
   overflowY: 'auto' as const,
+  zIndex: 40,
   background: 'var(--surface-card)',
   border: '1px solid var(--border-default)',
   borderRadius: 'var(--radius-xl)',
@@ -372,25 +348,59 @@ const filterPanelStyle = computed(() => ({
 function openFilters() {
   if (!showFilters.value && filterBtnRef.value) {
     const rect = filterBtnRef.value.getBoundingClientRect();
-    const estimatedPanelHeight = 560;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    filterPlacement.value = spaceBelow < estimatedPanelHeight && rect.top > spaceBelow ? 'above' : 'below';
+    const width = Math.min(440, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12));
+    const spaceBelow = window.innerHeight - rect.bottom - 16;
+    const spaceAbove = rect.top - 16;
+    const openBelow = spaceBelow >= 280 || spaceBelow >= spaceAbove;
+    const maxHeight = Math.max(220, Math.min(520, (openBelow ? spaceBelow : spaceAbove) - 8));
+    const top = openBelow ? rect.bottom + 8 : Math.max(12, rect.top - 8 - maxHeight);
+    panelBox.value = { top, left, width, maxHeight };
   }
   showFilters.value = !showFilters.value;
 }
 
+function patchSearch(partial: Partial<AtivosFilters>) {
+  filters.value = { ...filters.value, ...partial };
+  setPage(1);
+}
+
 function applyFilters(next: AtivosFilters) {
-  filters.value = next;
+  const current = filters.value;
+  filters.value = {
+    ...next,
+    numeroContrato: viewMode.value === 'contratos' ? current.numeroContrato : next.numeroContrato,
+    numeroTitulo: current.numeroTitulo,
+    lastro: current.lastro,
+    veiculoBusca: current.veiculoBusca,
+    cedente: current.cedente,
+    sacado: current.sacado,
+    veiculoIds: [...next.veiculoIds],
+    grupoIds: [...next.grupoIds],
+  };
   showFilters.value = false;
   setPage(1);
 }
 
 function clearFilters() {
-  filters.value = { ...EMPTY_FILTERS, veiculoIds: [], grupoIds: [] };
+  const current = filters.value;
+  filters.value = {
+    ...EMPTY_FILTERS,
+    veiculoIds: [],
+    grupoIds: [],
+    numeroContrato: viewMode.value === 'contratos' ? current.numeroContrato : '',
+    numeroTitulo: current.numeroTitulo,
+    lastro: current.lastro,
+    veiculoBusca: current.veiculoBusca,
+    cedente: current.cedente,
+    sacado: current.sacado,
+  };
+  setPage(1);
 }
 
 function setViewMode(mode: ViewMode) {
   viewMode.value = mode;
+  showFilters.value = false;
   setPage(1);
 }
 
@@ -497,19 +507,62 @@ function tituloCell(t: TituloAtivoGlobal, key: TituloColKey): string {
       </div>
     </div>
 
-    <!-- Search + Filtros (padrão Solicitação) -->
-    <div class="flex items-center" style="gap: 12px; flex-wrap: wrap">
-      <div class="relative" style="flex: 1; min-width: 240px; background: var(--surface-card); border-radius: var(--radius-lg); border: 1px solid var(--border-default)">
-        <Search :size="16" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--neutral-400)" />
+    <!-- Buscas separadas + popover de filtros -->
+    <div class="flex items-end" style="gap: 12px; flex-wrap: wrap">
+      <template v-if="viewMode === 'contratos'">
+        <label class="search-field">
+          <span>Número do contrato</span>
+          <input
+            :value="filters.numeroContrato"
+            placeholder="Ex: CT-50342"
+            @input="patchSearch({ numeroContrato: ($event.target as HTMLInputElement).value })"
+          />
+        </label>
+        <label class="search-field">
+          <span>Veículo</span>
+          <input
+            :value="filters.veiculoBusca"
+            placeholder="Nome do veículo"
+            @input="patchSearch({ veiculoBusca: ($event.target as HTMLInputElement).value })"
+          />
+        </label>
+      </template>
+      <template v-else>
+        <label class="search-field">
+          <span>Número do título</span>
+          <input
+            :value="filters.numeroTitulo"
+            placeholder="Ex: 50342-1"
+            @input="patchSearch({ numeroTitulo: ($event.target as HTMLInputElement).value })"
+          />
+        </label>
+        <label class="search-field">
+          <span>Lastro</span>
+          <input
+            :value="filters.lastro"
+            placeholder="Ex: NF-8821"
+            @input="patchSearch({ lastro: ($event.target as HTMLInputElement).value })"
+          />
+        </label>
+      </template>
+      <label class="search-field">
+        <span>Cedente</span>
         <input
-          v-model="q"
-          :placeholder="viewMode === 'contratos' ? 'Buscar por contrato, veículo, cedente ou sacado...' : 'Buscar por número, lastro, cedente ou sacado...'"
-          style="width: 100%; height: 42px; padding-left: 40px; padding-right: 14px; background: transparent; border: none; outline: none; font-size: var(--text-sm); color: var(--text-strong); border-radius: var(--radius-lg)"
-          @input="setPage(1)"
+          :value="filters.cedente"
+          placeholder="Nome ou documento"
+          @input="patchSearch({ cedente: ($event.target as HTMLInputElement).value })"
         />
-      </div>
+      </label>
+      <label class="search-field">
+        <span>Sacado</span>
+        <input
+          :value="filters.sacado"
+          placeholder="Nome ou documento"
+          @input="patchSearch({ sacado: ($event.target as HTMLInputElement).value })"
+        />
+      </label>
 
-      <div style="position: relative">
+      <div style="position: relative; flex-shrink: 0">
         <button
           ref="filterBtnRef"
           class="flex items-center"
@@ -541,10 +594,11 @@ function tituloCell(t: TituloAtivoGlobal, key: TituloColKey): string {
         </button>
 
         <template v-if="showFilters">
-          <div style="position: fixed; inset: 0; z-index: 30" @click="showFilters = false" />
+          <div style="position: fixed; inset: 0; z-index: 35" @click="showFilters = false" />
           <div :style="filterPanelStyle">
             <AtivosFiltersPanel
               :model-value="filters"
+              :view="viewMode"
               @apply="applyFilters"
               @clear="clearFilters"
             />
@@ -805,6 +859,31 @@ function tituloCell(t: TituloAtivoGlobal, key: TituloColKey): string {
 </template>
 
 <style scoped>
+.search-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 160px;
+}
+.search-field span {
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.search-field input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  outline: none;
+  font-size: var(--text-sm);
+  color: var(--text-strong);
+}
 .ativos-table-row {
   display: grid;
   align-items: center;
