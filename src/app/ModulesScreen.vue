@@ -38,6 +38,12 @@ import {
 import { SerasaScreen } from '@/features/serasa';
 import { MonitoramentoScreen } from '@/features/monitoramento';
 import { GruposCadastroScreen } from '@/features/grupos-empresariais';
+import {
+  SentinelaVisaoGeralScreen,
+  SentinelaCreditoScreen,
+  SentinelaContraparteScreen,
+  SentinelaLoteScreen,
+} from '@/features/sentinela';
 
 type View =
   | 'dashboard'
@@ -71,6 +77,10 @@ type View =
   | 'risco-serasa'
   | 'grupos-cadastro'
   | 'monitoramento'
+  | 'sentinela'
+  | 'sentinela-credito'
+  | 'sentinela-contraparte'
+  | 'sentinela-lote'
   | 'passivo'
   | 'passivo-novo'
   | 'colab'
@@ -109,6 +119,10 @@ const titleMap: Record<View, string> = {
   'risco-serasa': 'Consultas',
   'grupos-cadastro': 'Grupos Empresariais',
   monitoramento: 'Monitoramento Pós Desembolso',
+  sentinela: 'Sentinela',
+  'sentinela-credito': 'Monitoramento de Crédito',
+  'sentinela-contraparte': 'Cedente/Sacado',
+  'sentinela-lote': 'Consulta em lote',
   passivo: 'Passivo',
   'passivo-novo': 'Passivo',
   colab: 'Colaboradores',
@@ -126,6 +140,7 @@ const VALID_VIEWS = new Set<View>([
   'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-agrupamentos', 'risco-serasa', 'risco-rel',
   'grupos-cadastro',
   'monitoramento',
+  'sentinela', 'sentinela-credito', 'sentinela-contraparte', 'sentinela-lote',
   'passivo', 'passivo-novo', 'colab', 'rel', 'conf',
 ]);
 
@@ -156,6 +171,7 @@ const openMenu = ref<string | null>((() => {
   if (v.startsWith('fidcs')) return 'fidcs';
   if (v.startsWith('semiestruturadas')) return 'semiestruturadas';
   if (v.startsWith('ativos')) return 'ativos';
+  if (v.startsWith('sentinela')) return 'sentinela';
   return null;
 })());
 const userToggledSidebar = ref(false);
@@ -225,6 +241,9 @@ function handleModuleClick(title: string) {
     view.value = 'grupos-cadastro';
   } else if (title === 'Passivo') {
     view.value = 'passivo';
+  } else if (title === 'Sentinela') {
+    view.value = 'sentinela';
+    openMenu.value = 'sentinela';
   }
 }
 </script>
@@ -285,6 +304,10 @@ function handleModuleClick(title: string) {
           <RiscoDashboardScreen v-else-if="view === 'risco-dashboard'" />
           <SerasaScreen v-else-if="view === 'risco-serasa'" />
           <MonitoramentoScreen v-else-if="view === 'monitoramento'" />
+          <SentinelaVisaoGeralScreen v-else-if="view === 'sentinela'" @navigate="handleNavigate" />
+          <SentinelaCreditoScreen v-else-if="view === 'sentinela-credito'" @navigate="handleNavigate" />
+          <SentinelaContraparteScreen v-else-if="view === 'sentinela-contraparte'" @navigate="handleNavigate" />
+          <SentinelaLoteScreen v-else-if="view === 'sentinela-lote'" @navigate="handleNavigate" />
           <PassivoNovoScreen v-else-if="view === 'passivo'" />
           <!-- Passivo (antigo) — mantido para reaproveitar componentes
           <PassivoScreen v-else-if="view === 'passivo-antigo'" />

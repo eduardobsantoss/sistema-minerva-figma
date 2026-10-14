@@ -13,6 +13,7 @@ import {
   ClipboardList,
   Layers,
   Building2,
+  ShieldAlert,
 } from 'lucide-vue-next';
 
 export type Tone = 'info' | 'success' | 'warning' | 'danger' | 'accent';
@@ -96,6 +97,12 @@ export const modules: ModuleItem[] = [
     description: 'Monitoramento de exposição, alertas e métricas de risco operacional.',
     icon: AlertCircle,
     tone: 'accent',
+  },
+  {
+    title: 'Sentinela',
+    description: 'Visão macro dos monitoramentos de risco de crédito: alertas, severidade e consulta em lote.',
+    icon: ShieldAlert,
+    tone: 'danger',
   },
   {
     title: 'Grupos Empresariais',
