@@ -11,10 +11,10 @@ import {
 const props = withDefaults(
   defineProps<{
     titulos: TituloPreventivo[];
-    active?: StatusPreventivo | null;
+    active?: StatusPreventivo[];
     selectable?: boolean;
   }>(),
-  { active: null, selectable: false },
+  { active: () => [], selectable: false },
 );
 
 const emit = defineEmits<{ select: [status: StatusPreventivo] }>();
@@ -99,7 +99,7 @@ function onSelect(status: StatusPreventivo) {
     </div>
 
     <footer class="chart-footer">
-      <p v-if="selectable" class="hint">Clique em um status para filtrar os sacados.</p>
+      <p v-if="selectable" class="hint">Clique nos status para filtrar os sacados.</p>
       <div class="legend">
         <button
           v-for="slice in slices"
@@ -108,8 +108,8 @@ function onSelect(status: StatusPreventivo) {
           class="chip"
           :disabled="!selectable"
           :style="{
-            borderColor: active === slice.key ? slice.color : 'var(--border-default)',
-            background: active === slice.key ? `color-mix(in srgb, ${slice.color} 12%, transparent)` : 'var(--surface-card)',
+            borderColor: active.includes(slice.key) ? slice.color : 'var(--border-default)',
+            background: active.includes(slice.key) ? `color-mix(in srgb, ${slice.color} 12%, transparent)` : 'var(--surface-card)',
           }"
           @click="onSelect(slice.key)"
         >

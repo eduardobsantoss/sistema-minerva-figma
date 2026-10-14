@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { FileText, LayoutGrid, List, Phone, Users, Wallet } from 'lucide-vue-next';
+import { ClipboardList, FileText, LayoutGrid, List, Phone, Users, Wallet } from 'lucide-vue-next';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import {
+  CRA_OPTS,
+  FIDC_OPTS,
+  GERENTES_OPTS,
+  GRUPOS_EMPRESARIAIS_OPTS,
+  SITUACOES_OPTS,
+  STATUS_PREVENTIVO,
+  SUPERINTENDENTES_OPTS,
+  TIPOS_TITULO_OPTS,
   brl,
   situacaoColor,
   type SacadoPreventivo,
@@ -12,13 +20,49 @@ import {
   type TituloPreventivo,
 } from '../../data/cobrancaPreventivaData';
 import StatusTitulosChart from './StatusTitulosChart.vue';
+import MultiCheckDropdown from './MultiCheckDropdown.vue';
+import FiltrosPopover from './FiltrosPopover.vue';
+import {
+  contarFiltros,
+  filtrosVazios,
+  passaFiltros,
+  type FiltrosTitulo,
+} from '../../data/preventivaFiltros';
 
 const props = defineProps<{ sacados: SacadoPreventivo[]; titulos: TituloPreventivo[] }>();
-const emit = defineEmits<{ open: [sacadoId: string] }>();
+const emit = defineEmits<{ open: [sacadoId: string, tab?: 'titulos' | 'registros'] }>();
 
 const nomeQuery = ref('');
 const documentoQuery = ref('');
-const statusFiltro = ref<StatusPreventivo | null>(null);
+const statusFiltro = ref<StatusPreventivo[]>([]);
+const draft = ref<FiltrosTitulo>(filtrosVazios());
+const applied = ref<FiltrosTitulo>(filtrosVazios());
+
+function clonar(f: FiltrosTitulo): FiltrosTitulo {
+  return { ...f, status: [...f.status], tipos: [...f.tipos], excluirGrupos: [...f.excluirGrupos] };
+}
+
+const statusOptions = STATUS_PREVENTIVO.map((s) => ({ key: s.key, label: s.label }));
+const tipoOptions = TIPOS_TITULO_OPTS.map((t) => ({ key: t, label: t }));
+const grupoOptions = GRUPOS_EMPRESARIAIS_OPTS.map((g) => ({ key: g, label: g }));
+const activeFilterCount = computed(() => contarFiltros(applied.value));
+
+function aplicarFiltros() {
+  applied.value = clonar(draft.value);
+  setPage(1);
+}
+
+function limparFiltros() {
+  draft.value = filtrosVazios();
+  applied.value = filtrosVazios();
+  setPage(1);
+}
+
+function onStatusChange(value: string[]) {
+  statusFiltro.value = value as StatusPreventivo[];
+  setPage(1);
+}
+
 const viewMode = ref<'cards' | 'table'>('cards');
 const viewOptions = [
   { key: 'cards', label: 'Visualização em cards', icon: LayoutGrid },
@@ -28,9 +72,11 @@ const viewOptions = [
 const cards = computed(() => {
   const nome = nomeQuery.value.trim().toLowerCase();
   const documento = documentoQuery.value.trim().toLowerCase();
+  const filtros: FiltrosTitulo = { ...applied.value, status: statusFiltro.value };
+  const temFiltroTitulo = statusFiltro.value.length > 0 || contarFiltros(applied.value) > 0;
   return props.sacados
     .map((sacado) => {
-      const titulos = props.titulos.filter((t) => t.sacadoId === sacado.id);
+      const titulos = props.titulos.filter((t) => t.sacadoId === sacado.id && passaFiltros(t, filtros));
       const confirmados = titulos.filter((t) => t.status === 'CONFIRMADO').length;
       return {
         sacado,
@@ -40,7 +86,7 @@ const cards = computed(() => {
         pendentes: titulos.length - confirmados,
         cedentes: new Set(titulos.map((t) => t.cedente)).size,
         veiculos: new Set(titulos.map((t) => t.veiculo)).size,
-        temStatus: statusFiltro.value ? titulos.some((t) => t.status === statusFiltro.value) : true,
+        temStatus: temFiltroTitulo ? titulos.length > 0 : true,
       };
     })
     .filter((card) => {
@@ -95,7 +141,9 @@ const kpis = computed(() => [
 ]);
 
 function toggleStatus(status: StatusPreventivo) {
-  statusFiltro.value = statusFiltro.value === status ? null : status;
+  statusFiltro.value = statusFiltro.value.includes(status)
+    ? statusFiltro.value.filter((s) => s !== status)
+    : [...statusFiltro.value, status];
   setPage(1);
 }
 </script>
@@ -138,14 +186,94 @@ function toggleStatus(status: StatusPreventivo) {
     <div class="flex items-end" style="gap: 12px; flex-wrap: wrap">
       <div class="grid search-grid" style="flex: 1; min-width: 280px">
         <label class="search-field">
-          <span class="filter-label">Nome</span>
-          <input v-model="nomeQuery" class="filter-input" placeholder="Nome do sacado" @input="setPage(1)" />
-        </label>
-        <label class="search-field">
           <span class="filter-label">Documento</span>
           <input v-model="documentoQuery" class="filter-input" placeholder="CPF ou CNPJ" @input="setPage(1)" />
         </label>
+        <label class="search-field">
+          <span class="filter-label">Nome</span>
+          <input v-model="nomeQuery" class="filter-input" placeholder="Nome do sacado" @input="setPage(1)" />
+        </label>
+        <MultiCheckDropdown
+          label="Status de confirmação"
+          :options="statusOptions"
+          :model-value="statusFiltro"
+          @update:model-value="onStatusChange"
+        />
       </div>
+
+      <FiltrosPopover :active-count="activeFilterCount" @apply="aplicarFiltros" @clear="limparFiltros">
+        <MultiCheckDropdown v-model="draft.tipos" label="Tipo de título" :options="tipoOptions" :panel-width="240" />
+        <div>
+          <div class="filter-label">Situação</div>
+          <select v-model="draft.situacao" class="filter-input">
+            <option value="">Todas</option>
+            <option v-for="s in SITUACOES_OPTS" :key="s" :value="s">{{ s }}</option>
+          </select>
+        </div>
+        <div>
+          <div class="filter-label">Valor em aberto de</div>
+          <input v-model="draft.valorDe" inputmode="decimal" placeholder="0,00" class="filter-input" />
+        </div>
+        <div>
+          <div class="filter-label">Valor em aberto até</div>
+          <input v-model="draft.valorAte" inputmode="decimal" placeholder="0,00" class="filter-input" />
+        </div>
+        <div>
+          <div class="filter-label">Vencimento de</div>
+          <input v-model="draft.vencDe" type="date" class="filter-input" />
+        </div>
+        <div>
+          <div class="filter-label">Vencimento até</div>
+          <input v-model="draft.vencAte" type="date" class="filter-input" />
+        </div>
+        <div>
+          <div class="filter-label">Dias para vencimento</div>
+          <input v-model="draft.dias" type="number" min="0" placeholder="Vence em até N dias" class="filter-input" />
+        </div>
+        <div>
+          <div class="filter-label">Grupo empresarial</div>
+          <select v-model="draft.grupo" class="filter-input">
+            <option value="">Todos</option>
+            <option v-for="g in GRUPOS_EMPRESARIAIS_OPTS" :key="g" :value="g">{{ g }}</option>
+          </select>
+        </div>
+        <MultiCheckDropdown
+          v-model="draft.excluirGrupos"
+          label="Excluir grupos empresariais"
+          placeholder="Nenhum"
+          :options="grupoOptions"
+          :panel-width="260"
+        />
+        <div>
+          <div class="filter-label">CRA</div>
+          <select v-model="draft.cra" class="filter-input">
+            <option value="">Todos</option>
+            <option v-for="c in CRA_OPTS" :key="c" :value="c">{{ c }}</option>
+          </select>
+        </div>
+        <div>
+          <div class="filter-label">FIDC</div>
+          <select v-model="draft.fidc" class="filter-input">
+            <option value="">Todos</option>
+            <option v-for="f in FIDC_OPTS" :key="f" :value="f">{{ f }}</option>
+          </select>
+        </div>
+        <div>
+          <div class="filter-label">Gerente comercial</div>
+          <select v-model="draft.gerente" class="filter-input">
+            <option value="">Todos</option>
+            <option v-for="g in GERENTES_OPTS" :key="g" :value="g">{{ g }}</option>
+          </select>
+        </div>
+        <div>
+          <div class="filter-label">Superintendente</div>
+          <select v-model="draft.superintendente" class="filter-input">
+            <option value="">Todos</option>
+            <option v-for="s in SUPERINTENDENTES_OPTS" :key="s" :value="s">{{ s }}</option>
+          </select>
+        </div>
+      </FiltrosPopover>
+
       <SegmentedToggle
         :model-value="viewMode"
         :options="viewOptions"
@@ -168,12 +296,14 @@ function toggleStatus(status: StatusPreventivo) {
       class="grid"
       style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px"
     >
-      <button
+      <div
         v-for="card in pageItems"
         :key="card.sacado.id"
-        type="button"
+        role="button"
+        tabindex="0"
         class="sacado-card"
         @click="emit('open', card.sacado.id)"
+        @keydown.enter.self="emit('open', card.sacado.id)"
       >
         <div class="flex items-start justify-between" style="gap: 10px">
           <div style="min-width: 0">
@@ -233,7 +363,16 @@ function toggleStatus(status: StatusPreventivo) {
           {{ card.cedentes }} {{ card.cedentes === 1 ? 'cedente' : 'cedentes' }}
           · {{ card.veiculos }} {{ card.veiculos === 1 ? 'veículo' : 'veículos' }}
         </div>
-      </button>
+
+        <button
+          type="button"
+          class="card-action"
+          @click.stop="emit('open', card.sacado.id, 'registros')"
+        >
+          <ClipboardList :size="14" />
+          Registro de tentativas
+        </button>
+      </div>
       <div class="pager">
         <TablePagination :total="total" :page="page" :page-size="pageSize" @update:page="setPage" @update:page-size="setPageSize" />
       </div>
@@ -322,9 +461,9 @@ function toggleStatus(status: StatusPreventivo) {
   border-top: 1px solid var(--border-default);
 }
 .search-grid {
-  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
   gap: 10px;
-  max-width: 640px;
+  max-width: 820px;
 }
 .search-field {
   display: flex;
@@ -364,6 +503,24 @@ function toggleStatus(status: StatusPreventivo) {
   border: 1px solid var(--border-default);
   border-radius: var(--radius-xl);
   cursor: pointer;
+}
+.card-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  height: 34px;
+  padding: 0 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  color: var(--text-default);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+.card-action:hover {
+  background: var(--surface-sunken);
 }
 .sacado-card:hover {
   background: var(--surface-sunken);

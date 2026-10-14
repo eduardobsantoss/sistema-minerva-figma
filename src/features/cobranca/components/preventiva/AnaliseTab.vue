@@ -9,6 +9,7 @@ import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import {
   CANAL_CONTATO_OPTS,
+  STATUS_PREVENTIVO,
   CONTATOS_OPERADOR_SEED,
   EVOLUCAO_SEED,
   brl,
@@ -19,6 +20,7 @@ import {
   labelAgrupamento,
   type AgrupamentoContato,
   type CanalContato,
+  type StatusPreventivo,
   type TituloPreventivo,
 } from '../../data/cobrancaPreventivaData';
 import StatusTitulosChart from './StatusTitulosChart.vue';
@@ -33,6 +35,14 @@ const fim = ref('2026-10-08');
 const taxaOrdem = ref<'desc' | 'asc'>('desc');
 const agrupamento = ref<AgrupamentoContato>('dia');
 const canais = ref<CanalContato[]>([...CANAL_CONTATO_OPTS]);
+const statusOcultos = ref<StatusPreventivo[]>([]);
+
+const canalCores: Record<CanalContato, string> = {
+  Email: '#083C4A',
+  Telefone: '#059669',
+  SMS: '#D97706',
+  WhatsApp: '#7C3AED',
+};
 
 const contatosPeriodo = computed(() =>
   CONTATOS_OPERADOR_SEED.filter((c) => inPeriodo(c.ultimoContato, inicio.value, fim.value)),
@@ -172,47 +182,78 @@ const lineOptions: ChartOptions<'line'> = {
   },
 };
 
-const canalCores: Record<CanalContato, string> = {
-  Email: '#083C4A',
-  Telefone: '#059669',
-  SMS: '#D97706',
-  WhatsApp: '#7C3AED',
-};
+interface CanalRow {
+  canal: CanalContato;
+  tentativas: number;
+  confirmados: number;
+  taxa: number;
+  semSucesso: number;
+  naoConfirmado: number;
+}
+
+const canaisAtivos = computed(() => CANAL_CONTATO_OPTS.filter((c) => canais.value.includes(c)));
+const statusVisiveis = computed(() => STATUS_PREVENTIVO.filter((s) => !statusOcultos.value.includes(s.key)));
+
+const canalRows = computed<CanalRow[]>(() =>
+  canaisAtivos.value
+    .map((canal) => {
+      const eventos = eventosPeriodo.value.filter((e) => e.canal === canal);
+      const soma = (status?: StatusPreventivo) =>
+        eventos.filter((e) => !status || e.status === status).reduce((acc, e) => acc + e.quantidade, 0);
+      const tentativas = soma();
+      const confirmados = soma('CONFIRMADO');
+      return {
+        canal,
+        tentativas,
+        confirmados,
+        taxa: tentativas === 0 ? 0 : (confirmados / tentativas) * 100,
+        semSucesso: soma('TENTATIVA_SEM_SUCESSO'),
+        naoConfirmado: soma('NAO_CONFIRMADO'),
+      };
+    })
+    .filter((row) => row.tentativas > 0),
+);
 
 const meiosData = computed(() => {
-  const ativos = CANAL_CONTATO_OPTS.filter((c) => canais.value.includes(c));
-  const grupos = new Map<string, Record<CanalContato, number>>();
+  const ativos = canaisAtivos.value;
+  const grupos = new Map<string, number>();
+  const valor = (key: string, canal: CanalContato, status: StatusPreventivo) => `${key}|${canal}|${status}`;
   for (const evento of eventosPeriodo.value) {
-    if (!ativos.includes(evento.canal)) continue;
+    if (!ativos.includes(evento.canal) || statusOcultos.value.includes(evento.status)) continue;
     const key = chaveAgrupamento(evento.data, agrupamento.value);
-    const row = grupos.get(key) ?? { Email: 0, Telefone: 0, SMS: 0, WhatsApp: 0 };
-    row[evento.canal] += evento.quantidade;
-    grupos.set(key, row);
+    const id = valor(key, evento.canal, evento.status);
+    grupos.set(id, (grupos.get(id) ?? 0) + evento.quantidade);
   }
-  const keys = [...grupos.keys()].sort();
+  const keys = [...new Set(eventosPeriodo.value.map((e) => chaveAgrupamento(e.data, agrupamento.value)))].sort();
   return {
     labels: keys.map((key) => labelAgrupamento(key, agrupamento.value)),
-    datasets: ativos.map((canal) => ({
-      label: canalLabel(canal),
-      data: keys.map((key) => grupos.get(key)?.[canal] ?? 0),
-      backgroundColor: canalCores[canal],
-      borderRadius: 4,
-    })),
+    datasets: ativos.flatMap((canal) =>
+      statusVisiveis.value.map((status) => ({
+        label: `${canalLabel(canal)} · ${status.label}`,
+        stack: canal,
+        data: keys.map((key) => grupos.get(valor(key, canal, status.key)) ?? 0),
+        backgroundColor: status.color,
+        borderWidth: 0,
+        maxBarThickness: 22,
+      })),
+    ),
   };
 });
+
+const meiosVazio = computed(() => meiosData.value.labels.length === 0 || meiosData.value.datasets.length === 0);
 
 const barOptions: ChartOptions<'bar'> = {
   responsive: true,
   maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: 'bottom',
-      labels: { color: '#64748B', usePointStyle: true, pointStyle: 'circle', boxHeight: 6, font: { size: 11 } },
-    },
-  },
+  interaction: { mode: 'nearest', intersect: true },
+  plugins: { legend: { display: false } },
   scales: {
-    x: { grid: { display: false }, ticks: { color: '#64748B', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } },
-    y: { beginAtZero: true, ticks: { color: '#64748B', precision: 0 }, grid: { color: 'rgba(15, 23, 42, 0.06)' } },
+    x: {
+      stacked: true,
+      grid: { display: false },
+      ticks: { color: '#64748B', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 },
+    },
+    y: { stacked: true, beginAtZero: true, ticks: { color: '#64748B', precision: 0 }, grid: { color: 'rgba(15, 23, 42, 0.06)' } },
   },
 };
 
@@ -223,6 +264,12 @@ function toggleCanal(canal: CanalContato) {
   } else {
     canais.value = [...canais.value, canal];
   }
+}
+
+function toggleStatusSerie(key: StatusPreventivo) {
+  statusOcultos.value = statusOcultos.value.includes(key)
+    ? statusOcultos.value.filter((s) => s !== key)
+    : [...statusOcultos.value, key];
 }
 
 function toggleTaxa() {
@@ -355,7 +402,7 @@ function abrirOperador(row: RankingRow) {
           @update:model-value="agrupamento = $event as AgrupamentoContato"
         />
       </div>
-      <div class="flex items-center" style="gap: 8px; flex-wrap: wrap; margin-bottom: 16px">
+      <div class="flex items-center" style="gap: 8px; flex-wrap: wrap; margin-bottom: 12px">
         <button
           v-for="canal in CANAL_CONTATO_OPTS"
           :key="canal"
@@ -371,10 +418,51 @@ function abrirOperador(row: RankingRow) {
           {{ canalLabel(canal) }}
         </button>
       </div>
-      <div v-if="meiosData.labels.length === 0" class="empty">Nenhum contato neste recorte.</div>
-      <div v-else style="height: 260px">
-        <Bar :data="meiosData" :options="barOptions" />
+      <div class="legend">
+        <button
+          v-for="status in STATUS_PREVENTIVO"
+          :key="status.key"
+          type="button"
+          class="legend-chip"
+          :class="{ off: statusOcultos.includes(status.key) }"
+          :aria-pressed="!statusOcultos.includes(status.key)"
+          @click="toggleStatusSerie(status.key)"
+        >
+          <span class="dot" :style="{ background: status.color }" />
+          {{ status.label }}
+        </button>
       </div>
+      <div v-if="meiosVazio" class="empty">Nenhum contato neste recorte.</div>
+      <template v-else>
+        <div style="height: 280px">
+          <Bar :data="meiosData" :options="barOptions" />
+        </div>
+        <div class="canal-table">
+          <div class="grid rank-row rank-header" style="margin-top: 0">
+            <div>Canal</div>
+            <div style="text-align: right">Tentativas</div>
+            <div style="text-align: right">Confirmados</div>
+            <div style="text-align: right">Taxa (%)</div>
+            <div style="text-align: right">Tentativa sem sucesso</div>
+            <div style="text-align: right">Não confirmado</div>
+          </div>
+          <div
+            v-for="row in canalRows"
+            :key="row.canal"
+            class="grid rank-row"
+            style="border-top: 1px solid var(--border-default)"
+          >
+            <div style="font-weight: var(--weight-semibold); color: var(--text-strong); text-transform: uppercase">
+              {{ canalLabel(row.canal) }}
+            </div>
+            <div style="text-align: right">{{ row.tentativas }}</div>
+            <div style="text-align: right">{{ row.confirmados }}</div>
+            <div style="text-align: right">{{ fmtPct(row.taxa) }}</div>
+            <div style="text-align: right">{{ row.semSucesso }}</div>
+            <div style="text-align: right">{{ row.naoConfirmado }}</div>
+          </div>
+        </div>
+      </template>
     </div>
 
   </div>
@@ -446,6 +534,7 @@ function abrirOperador(row: RankingRow) {
   letter-spacing: 0.1em;
   color: var(--text-muted);
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .rank-line {
   width: 100%;
@@ -477,6 +566,40 @@ function abrirOperador(row: RankingRow) {
   font-size: var(--text-sm);
   color: var(--text-muted);
 }
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-default);
+  background: var(--surface-card);
+  color: var(--text-default);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.legend-chip.off {
+  color: var(--text-muted);
+  opacity: 0.55;
+}
+.legend-chip.off .dot {
+  filter: grayscale(1);
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
 .canal {
   height: 32px;
   padding: 0 12px;
@@ -485,6 +608,17 @@ function abrirOperador(row: RankingRow) {
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
   cursor: pointer;
+  white-space: nowrap;
+}
+.canal-table {
+  margin-top: 18px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+}
+.canal-table .rank-row {
+  grid-template-columns: minmax(max-content, 1.4fr) repeat(5, minmax(max-content, 1fr));
+  min-width: 100%;
 }
 button:focus-visible,
 input:focus-visible {

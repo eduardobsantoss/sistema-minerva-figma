@@ -5,26 +5,34 @@ import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import { useToast } from '@/composables/useToast';
 import {
   CONTATOS_OPERADOR_SEED,
+  CONTATOS_SACADO_SEED,
+  REGISTROS_TENTATIVA_SEED,
   SACADOS_PREVENTIVA_SEED,
+  canalLabel,
+  hojeIso,
   TITULOS_PREVENTIVA_SEED,
   inPeriodo,
+  type RegistroTentativa,
   type StatusPreventivo,
   type TentativaRegistro,
   type TituloPreventivo,
 } from '../data/cobrancaPreventivaData';
 import PreventivaTab from '../components/preventiva/PreventivaTab.vue';
 import AnaliseTab from '../components/preventiva/AnaliseTab.vue';
-import SacadoDetailScreen from '../components/preventiva/SacadoDetailScreen.vue';
+import SacadoDetailScreen, { type SacadoTab } from '../components/preventiva/SacadoDetailScreen.vue';
+import EvidenciaScreen from '../components/preventiva/EvidenciaScreen.vue';
 import OperadorDetailScreen from '../components/preventiva/OperadorDetailScreen.vue';
 
 type Route =
   | { level: 'hub' }
-  | { level: 'sacado'; sacadoId: string }
+  | { level: 'sacado'; sacadoId: string; tab: SacadoTab }
+  | { level: 'evidencia'; sacadoId: string; registroId: string }
   | { level: 'operador'; operadorId: string; operador: string; inicio: string; fim: string };
 
 const tab = ref<'preventiva' | 'analise'>('preventiva');
 const route = ref<Route>({ level: 'hub' });
 const titulos = ref<TituloPreventivo[]>(TITULOS_PREVENTIVA_SEED.map((t) => ({ ...t })));
+const registros = ref<RegistroTentativa[]>(REGISTROS_TENTATIVA_SEED.map((r) => ({ ...r })));
 const { success } = useToast();
 
 const tabs = [
@@ -34,8 +42,26 @@ const tabs = [
 
 const sacadoAberto = computed(() => {
   const current = route.value;
-  if (current.level !== 'sacado') return undefined;
+  if (current.level !== 'sacado' && current.level !== 'evidencia') return undefined;
   return SACADOS_PREVENTIVA_SEED.find((s) => s.id === current.sacadoId);
+});
+
+const registroAberto = computed(() => {
+  const current = route.value;
+  if (current.level !== 'evidencia') return undefined;
+  return registros.value.find((r) => r.id === current.registroId);
+});
+
+const contatosSacado = computed(() => {
+  const current = route.value;
+  if (current.level !== 'sacado') return [];
+  return CONTATOS_SACADO_SEED.filter((c) => c.sacadoId === current.sacadoId);
+});
+
+const registrosSacado = computed(() => {
+  const current = route.value;
+  if (current.level !== 'sacado') return [];
+  return registros.value.filter((r) => r.sacadoId === current.sacadoId);
 });
 
 const titulosSacado = computed(() => {
@@ -60,11 +86,31 @@ function registrar(payload: { ids: string[]; tentativas: TentativaRegistro[]; ob
   const ids = new Set(payload.ids);
   titulos.value = titulos.value.map((t) => (ids.has(t.id) ? { ...t, status } : t));
   const n = payload.ids.length;
+  const primeiro = titulos.value.find((t) => t.id === payload.ids[0]);
+  if (primeiro) {
+    const ultima = payload.tentativas.at(-1)!;
+    registros.value = [
+      {
+        id: `rt-${Date.now()}`,
+        sacadoId: primeiro.sacadoId,
+        status,
+        geral: payload.tentativas
+          .map((t) => `${canalLabel(t.canal)} · ${t.quantidade} ${t.quantidade === 1 ? 'tentativa' : 'tentativas'}`)
+          .join(' + '),
+        observacoes: payload.observacoes,
+        dataContato: ultima.dataContato || hojeIso(),
+        registradoPor: 'Você',
+        tituloIds: [...payload.ids],
+        evidencia: payload.tentativas.find((t) => t.anexoNome)?.anexoNome ?? '',
+      },
+      ...registros.value,
+    ];
+  }
   success(n === 1 ? 'Tentativa registrada' : `Tentativa registrada em ${n} títulos`);
 }
 
-function abrirSacado(sacadoId: string) {
-  route.value = { level: 'sacado', sacadoId };
+function abrirSacado(sacadoId: string, tab: SacadoTab = 'titulos') {
+  route.value = { level: 'sacado', sacadoId, tab };
 }
 
 function abrirOperador(payload: { operadorId: string; operador: string; inicio: string; fim: string }) {
@@ -73,12 +119,23 @@ function abrirOperador(payload: { operadorId: string; operador: string; inicio: 
 </script>
 
 <template>
+  <EvidenciaScreen
+    v-if="route.level === 'evidencia' && sacadoAberto && registroAberto"
+    :registro="registroAberto"
+    :sacado="sacadoAberto"
+    @back="abrirSacado(sacadoAberto.id, 'registros')"
+  />
   <SacadoDetailScreen
-    v-if="route.level === 'sacado' && sacadoAberto"
+    v-else-if="route.level === 'sacado' && sacadoAberto"
+    :key="`${sacadoAberto.id}-${route.tab}`"
     :sacado="sacadoAberto"
     :titulos="titulosSacado"
+    :contatos="contatosSacado"
+    :registros="registrosSacado"
+    :initial-tab="route.tab"
     @back="route = { level: 'hub' }"
     @registrar="registrar"
+    @evidencia="route = { level: 'evidencia', sacadoId: sacadoAberto.id, registroId: $event }"
   />
   <OperadorDetailScreen
     v-else-if="route.level === 'operador'"

@@ -1,37 +1,168 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { ArrowLeft, BadgeCheck, Clock, FileText, Wallet } from 'lucide-vue-next';
+import { ArrowLeft, BadgeCheck, Clock, ExternalLink, FileText, Phone, Users, Wallet, ClipboardList } from 'lucide-vue-next';
 import Checkbox from '@/components/ui/Checkbox.vue';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import { useToast } from '@/composables/useToast';
+import CopyButton from '../../screens/titulo-detail/CopyButton.vue';
 import {
+  CRA_OPTS,
+  FIDC_OPTS,
+  SITUACOES_OPTS,
+  STATUS_PREVENTIVO,
+  TIPOS_TITULO_OPTS,
   brl,
+  fmtData,
   situacaoColor,
+  statusPreventivoColor,
+  statusPreventivoLabel,
+  type ContatoSacado,
+  type RegistroTentativa,
   type SacadoPreventivo,
+  type StatusPreventivo,
+  type StatusVencimento,
   type TentativaRegistro,
   type TituloPreventivo,
 } from '../../data/cobrancaPreventivaData';
+import { contarFiltros, filtrosVazios, passaFiltros, type FiltrosTitulo } from '../../data/preventivaFiltros';
 import RegistrarTentativaModal from './RegistrarTentativaModal.vue';
+import MultiCheckDropdown from './MultiCheckDropdown.vue';
+import FiltrosPopover from './FiltrosPopover.vue';
+import ColunasMenu from './ColunasMenu.vue';
+import BoletoMenu from './BoletoMenu.vue';
 
-const props = defineProps<{ sacado: SacadoPreventivo; titulos: TituloPreventivo[] }>();
+export type SacadoTab = 'titulos' | 'contatos' | 'registros';
+
+const props = withDefaults(
+  defineProps<{
+    sacado: SacadoPreventivo;
+    titulos: TituloPreventivo[];
+    contatos?: ContatoSacado[];
+    registros?: RegistroTentativa[];
+    initialTab?: SacadoTab;
+  }>(),
+  { contatos: () => [], registros: () => [], initialTab: 'titulos' },
+);
 const emit = defineEmits<{
   back: [];
   registrar: [payload: { ids: string[]; tentativas: TentativaRegistro[]; observacoes: string }];
+  evidencia: [registroId: string];
 }>();
+
+const { success } = useToast();
+
+const tab = ref<SacadoTab>(props.initialTab);
+const tabs = [
+  { key: 'titulos', label: 'Títulos', icon: FileText },
+  { key: 'contatos', label: 'Contatos', icon: Users },
+  { key: 'registros', label: 'Registro de tentativas', icon: ClipboardList },
+];
 
 const selected = ref<string[]>([]);
 const tentativaAberta = ref(false);
 
+// ---------- Filtros ----------
+const draft = ref<FiltrosTitulo>(filtrosVazios());
+const applied = ref<FiltrosTitulo>(filtrosVazios());
+const activeFilterCount = computed(() => contarFiltros(applied.value, true));
+
+const statusOptions = STATUS_PREVENTIVO.map((s) => ({ key: s.key, label: s.label }));
+const tipoOptions = TIPOS_TITULO_OPTS.map((t) => ({ key: t, label: t }));
+
+function clonar(f: FiltrosTitulo): FiltrosTitulo {
+  return { ...f, status: [...f.status], tipos: [...f.tipos], excluirGrupos: [...f.excluirGrupos] };
+}
+function aplicarFiltros() {
+  applied.value = clonar(draft.value);
+  setPage(1);
+}
+function limparFiltros() {
+  draft.value = filtrosVazios();
+  applied.value = filtrosVazios();
+  setPage(1);
+}
+function onDraftStatus(value: string[]) {
+  draft.value.status = value as StatusPreventivo[];
+}
+
+const titulosFiltrados = computed(() => props.titulos.filter((t) => passaFiltros(t, applied.value)));
+
+// ---------- Colunas ----------
+type ColKey =
+  | 'lastro'
+  | 'numero'
+  | 'cedente'
+  | 'tipo'
+  | 'situacao'
+  | 'veiculo'
+  | 'cessao'
+  | 'valor'
+  | 'valorAPagar'
+  | 'vencimento'
+  | 'status'
+  | 'statusVenc'
+  | 'notificado'
+  | 'confirmado'
+  | 'responsavel';
+
+interface Col {
+  key: ColKey;
+  label: string;
+  width: string;
+  right?: boolean;
+}
+
+const ALL_COLS: Col[] = [
+  { key: 'lastro', label: 'Lastro', width: '90px' },
+  { key: 'numero', label: 'Número', width: 'minmax(160px, 1.1fr)' },
+  { key: 'cedente', label: 'Cedente', width: 'minmax(180px, 1.3fr)' },
+  { key: 'tipo', label: 'Tipo', width: '72px' },
+  { key: 'situacao', label: 'Situação', width: '130px' },
+  { key: 'veiculo', label: 'Veículo', width: 'minmax(170px, 1.2fr)' },
+  { key: 'cessao', label: 'Cessão', width: 'minmax(210px, 1.3fr)' },
+  { key: 'valor', label: 'Valor', width: '120px', right: true },
+  { key: 'valorAPagar', label: 'Valor a pagar', width: '140px', right: true },
+  { key: 'vencimento', label: 'Vencimento', width: '120px' },
+  { key: 'status', label: 'Status', width: '260px' },
+  { key: 'statusVenc', label: 'Status de vencimento', width: '200px' },
+  { key: 'notificado', label: 'Notificado', width: '120px' },
+  { key: 'confirmado', label: 'Confirmado', width: '130px' },
+  { key: 'responsavel', label: 'Responsável pela atuação', width: '240px' },
+];
+
+const visibleCols = ref<Set<string>>(new Set(ALL_COLS.map((c) => c.key)));
+const cols = computed(() => ALL_COLS.filter((c) => visibleCols.value.has(c.key)));
+const gridTemplate = computed(() => `36px ${cols.value.map((c) => c.width).join(' ')} 64px`);
+const tableMinWidth = computed(() => {
+  const tracks = [36, ...cols.value.map((c) => Number(c.width.match(/(\d+)px/)?.[1] ?? 160)), 64];
+  const gaps = Math.max(0, tracks.length - 1) * 16;
+  return `${tracks.reduce((acc, n) => acc + n, 0) + gaps + 40}px`;
+});
+
+function toggleCol(key: string) {
+  const next = new Set(visibleCols.value);
+  if (next.has(key)) {
+    if (next.size === 1) return;
+    next.delete(key);
+  } else {
+    next.add(key);
+  }
+  visibleCols.value = next;
+}
+
+// ---------- Seleção e paginação ----------
 const allSelected = computed(
-  () => props.titulos.length > 0 && props.titulos.every((t) => selected.value.includes(t.id)),
+  () => titulosFiltrados.value.length > 0 && titulosFiltrados.value.every((t) => selected.value.includes(t.id)),
 );
 const someSelected = computed(
-  () => props.titulos.some((t) => selected.value.includes(t.id)) && !allSelected.value,
+  () => titulosFiltrados.value.some((t) => selected.value.includes(t.id)) && !allSelected.value,
 );
 
 const valor = computed(() => props.titulos.reduce((acc, t) => acc + t.valor, 0));
 const confirmados = computed(() => props.titulos.filter((t) => t.status === 'CONFIRMADO').length);
-const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(() => props.titulos, {
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(() => titulosFiltrados.value, {
   defaultPageSize: 10,
 });
 
@@ -63,7 +194,9 @@ const kpis = computed(() => [
 ]);
 
 function toggleAll() {
-  selected.value = allSelected.value ? [] : props.titulos.map((t) => t.id);
+  const ids = titulosFiltrados.value.map((t) => t.id);
+  if (allSelected.value) selected.value = selected.value.filter((id) => !ids.includes(id));
+  else selected.value = [...new Set([...selected.value, ...ids])];
 }
 
 function toggle(id: string) {
@@ -78,6 +211,62 @@ function salvar(payload: { observacoes: string; tentativas: TentativaRegistro[] 
   selected.value = [];
   tentativaAberta.value = false;
 }
+
+function baixarBoleto(t: TituloPreventivo) {
+  success(`Download do boleto iniciado: ${t.boleto}`);
+}
+
+// ---------- Estilos de chip ----------
+function chipStyle(color: string) {
+  return {
+    fontSize: '10px',
+    fontWeight: 'var(--weight-bold)',
+    letterSpacing: '0.04em',
+    padding: '4px 9px',
+    borderRadius: '9999px',
+    background: `color-mix(in srgb, ${color} 14%, transparent)`,
+    color,
+    whiteSpace: 'nowrap' as const,
+  };
+}
+
+const VENC_COLOR: Record<StatusVencimento, string> = {
+  'A vencer': 'var(--text-muted)',
+  'Vence hoje': 'var(--warning-base)',
+  Vencido: 'var(--danger-base)',
+};
+
+function textoCelula(t: TituloPreventivo, key: ColKey): string {
+  switch (key) {
+    case 'lastro':
+      return t.lastro;
+    case 'cedente':
+      return t.cedente;
+    case 'tipo':
+      return t.tipoTitulo;
+    case 'veiculo':
+      return t.veiculo;
+    case 'cessao':
+      return t.cessao;
+    case 'vencimento':
+      return fmtData(t.vencimento);
+    case 'responsavel':
+      return t.responsavel || '—';
+    default:
+      return '';
+  }
+}
+
+// ---------- Registros ----------
+const registrosOrdenados = computed(() =>
+  [...props.registros].sort((a, b) => b.dataContato.localeCompare(a.dataContato)),
+);
+
+function numerosDos(r: RegistroTentativa): string[] {
+  return r.tituloIds
+    .map((id) => props.titulos.find((t) => t.id === id)?.numero)
+    .filter((n): n is string => Boolean(n));
+}
 </script>
 
 <template>
@@ -90,17 +279,7 @@ function salvar(payload: { observacoes: string; tentativas: TentativaRegistro[] 
         <div class="eyebrow">Cobrança · Sacado</div>
         <h2 class="flex items-center" style="gap: 10px; flex-wrap: wrap; margin-top: 4px">
           {{ sacado.nome }}
-          <span
-            :style="{
-              fontSize: '10px',
-              fontWeight: 'var(--weight-bold)',
-              letterSpacing: '0.04em',
-              padding: '4px 9px',
-              borderRadius: '9999px',
-              background: `color-mix(in srgb, ${situacaoColor(sacado.situacao)} 14%, transparent)`,
-              color: situacaoColor(sacado.situacao),
-            }"
-          >
+          <span :style="chipStyle(situacaoColor(sacado.situacao))">
             {{ sacado.situacao }}
           </span>
         </h2>
@@ -125,72 +304,230 @@ function salvar(payload: { observacoes: string; tentativas: TentativaRegistro[] 
       </div>
     </div>
 
-    <div style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); overflow: hidden">
-      <div class="flex items-center justify-between" style="padding: 16px 20px">
-        <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Títulos a vencer</h3>
-        <span style="font-size: var(--text-sm); color: var(--text-muted)">
-          {{ selected.length === 0 ? 'Nenhum título selecionado' : selected.length === 1 ? '1 título selecionado' : `${selected.length} títulos selecionados` }}
-        </span>
-      </div>
-      <div style="overflow-x: auto">
-        <div class="grid items-center sacado-row sacado-header" style="grid-template-columns: 36px 90px minmax(140px, 1.1fr) minmax(140px, 1.2fr) 70px 120px minmax(140px, 1.2fr) minmax(140px, 1.3fr) 110px">
-          <Checkbox :checked="allSelected" :indeterminate="someSelected" @change="toggleAll" />
-          <div>Lastro</div>
-          <div>Número</div>
-          <div>Cedente</div>
-          <div>Tipo</div>
-          <div>Situação</div>
-          <div>Veículo</div>
-          <div>Cessão</div>
-          <div style="text-align: right">Valor</div>
-        </div>
-        <div
-          v-for="t in pageItems"
-          :key="t.id"
-          class="grid items-center sacado-row"
-          style="grid-template-columns: 36px 90px minmax(140px, 1.1fr) minmax(140px, 1.2fr) 70px 120px minmax(140px, 1.2fr) minmax(140px, 1.3fr) 110px"
-        >
-          <Checkbox :checked="selected.includes(t.id)" @change="toggle(t.id)" />
-          <div style="font-variant-numeric: tabular-nums">{{ t.lastro }}</div>
-          <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ t.numero }}</div>
-          <div>{{ t.cedente }}</div>
-          <div>{{ t.tipoTitulo }}</div>
+    <SegmentedToggle
+      :model-value="tab"
+      :options="tabs"
+      variant="brand"
+      style="align-self: flex-start"
+      @update:model-value="tab = $event as SacadoTab"
+    />
+
+    <!-- Títulos -->
+    <template v-if="tab === 'titulos'">
+      <div style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl)">
+        <div class="flex items-center justify-between" style="padding: 16px 20px; gap: 12px; flex-wrap: wrap">
           <div>
-            <span
-              class="inline-flex items-center"
-              :style="{
-                fontSize: '10px',
-                fontWeight: 'var(--weight-bold)',
-                letterSpacing: '0.04em',
-                padding: '4px 9px',
-                borderRadius: '9999px',
-                background: `color-mix(in srgb, ${situacaoColor(t.situacaoCedente)} 14%, transparent)`,
-                color: situacaoColor(t.situacaoCedente),
-              }"
-            >
-              {{ t.situacaoCedente }}
+            <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); white-space: nowrap">Títulos a vencer</h3>
+            <span style="font-size: var(--text-sm); color: var(--text-muted)">
+              {{ selected.length === 0 ? 'Nenhum título selecionado' : selected.length === 1 ? '1 título selecionado' : `${selected.length} títulos selecionados` }}
             </span>
           </div>
-          <div>{{ t.veiculo }}</div>
-          <div>{{ t.cessao }}</div>
-          <div style="text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--weight-semibold); color: var(--text-strong)">
-            {{ brl(t.valor) }}
+          <div class="flex items-center" style="gap: 10px">
+            <FiltrosPopover :active-count="activeFilterCount" @apply="aplicarFiltros" @clear="limparFiltros">
+              <MultiCheckDropdown
+                :model-value="draft.status"
+                label="Status de confirmação"
+                :options="statusOptions"
+                @update:model-value="onDraftStatus"
+              />
+              <MultiCheckDropdown v-model="draft.tipos" label="Tipo de título" :options="tipoOptions" :panel-width="240" />
+              <div>
+                <div class="filter-label">Situação</div>
+                <select v-model="draft.situacao" class="filter-input">
+                  <option value="">Todas</option>
+                  <option v-for="s in SITUACOES_OPTS" :key="s" :value="s">{{ s }}</option>
+                </select>
+              </div>
+              <div>
+                <div class="filter-label">Valor até</div>
+                <input v-model="draft.valorAte" inputmode="decimal" placeholder="0,00" class="filter-input" />
+              </div>
+              <div>
+                <div class="filter-label">Vencimento de</div>
+                <input v-model="draft.vencDe" type="date" class="filter-input" />
+              </div>
+              <div>
+                <div class="filter-label">Vencimento até</div>
+                <input v-model="draft.vencAte" type="date" class="filter-input" />
+              </div>
+              <div>
+                <div class="filter-label">Dias para vencimento</div>
+                <input v-model="draft.dias" type="number" min="0" placeholder="Vence em até N dias" class="filter-input" />
+              </div>
+              <div>
+                <div class="filter-label">CRA</div>
+                <select v-model="draft.cra" class="filter-input">
+                  <option value="">Todos</option>
+                  <option v-for="c in CRA_OPTS" :key="c" :value="c">{{ c }}</option>
+                </select>
+              </div>
+              <div>
+                <div class="filter-label">FIDC</div>
+                <select v-model="draft.fidc" class="filter-input">
+                  <option value="">Todos</option>
+                  <option v-for="f in FIDC_OPTS" :key="f" :value="f">{{ f }}</option>
+                </select>
+              </div>
+            </FiltrosPopover>
+            <ColunasMenu :cols="ALL_COLS" :visible="visibleCols" @toggle="toggleCol" />
           </div>
         </div>
+
+        <div style="overflow-x: auto; border-top: 1px solid var(--border-default)">
+          <div
+            class="grid items-center sacado-row sacado-header"
+            :style="{ gridTemplateColumns: gridTemplate, width: '100%', minWidth: tableMinWidth }"
+          >
+            <Checkbox :checked="allSelected" :indeterminate="someSelected" @change="toggleAll" />
+            <div v-for="c in cols" :key="c.key" :style="{ textAlign: c.right ? 'right' : 'left' }">{{ c.label }}</div>
+            <div style="text-align: right">Ações</div>
+          </div>
+
+          <div
+            v-for="t in pageItems"
+            :key="t.id"
+            class="grid items-center sacado-row"
+            :style="{ gridTemplateColumns: gridTemplate, width: '100%', minWidth: tableMinWidth }"
+          >
+            <Checkbox :checked="selected.includes(t.id)" @change="toggle(t.id)" />
+            <template v-for="c in cols" :key="c.key">
+              <div v-if="c.key === 'numero'" style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ t.numero }}</div>
+              <div v-else-if="c.key === 'situacao'">
+                <span :style="chipStyle(situacaoColor(t.situacaoCedente))">{{ t.situacaoCedente }}</span>
+              </div>
+              <div
+                v-else-if="c.key === 'valor' || c.key === 'valorAPagar'"
+                style="text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--weight-semibold); color: var(--text-strong)"
+              >
+                {{ brl(c.key === 'valor' ? t.valor : t.valorAPagar) }}
+              </div>
+              <div v-else-if="c.key === 'status'">
+                <span :style="chipStyle(statusPreventivoColor(t.status))">{{ statusPreventivoLabel(t.status) }}</span>
+              </div>
+              <div v-else-if="c.key === 'statusVenc'">
+                <span :style="chipStyle(VENC_COLOR[t.statusVencimento])">{{ t.statusVencimento }}</span>
+              </div>
+              <div v-else-if="c.key === 'notificado'">
+                <span :style="chipStyle(t.notificado ? 'var(--status-success-text)' : 'var(--text-muted)')">
+                  {{ t.notificado ? 'Sim' : 'Não' }}
+                </span>
+              </div>
+              <div v-else-if="c.key === 'confirmado'">
+                <span :style="chipStyle(t.confirmado ? 'var(--status-success-text)' : 'var(--text-muted)')">
+                  {{ t.confirmado ? 'Sim' : 'Não' }}
+                </span>
+              </div>
+              <div v-else-if="c.key === 'vencimento'" style="font-variant-numeric: tabular-nums">{{ textoCelula(t, c.key) }}</div>
+              <div v-else-if="c.key === 'lastro'" style="font-variant-numeric: tabular-nums">{{ textoCelula(t, c.key) }}</div>
+              <div v-else>{{ textoCelula(t, c.key) }}</div>
+            </template>
+            <BoletoMenu :boleto="t.boleto" @baixar="baixarBoleto(t)" />
+          </div>
+
+          <div
+            v-if="titulosFiltrados.length === 0"
+            style="padding: 36px 20px; text-align: center; font-size: var(--text-sm); color: var(--text-muted); border-top: 1px solid var(--border-default)"
+          >
+            Nenhum título encontrado com os filtros aplicados.
+          </div>
+        </div>
+        <TablePagination :total="total" :page="page" :page-size="pageSize" @update:page="setPage" @update:page-size="setPageSize" />
       </div>
-      <TablePagination :total="total" :page="page" :page-size="pageSize" @update:page="setPage" @update:page-size="setPageSize" />
+
+      <div class="flex justify-end">
+        <button
+          type="button"
+          class="primary"
+          :disabled="selected.length === 0"
+          :title="selected.length === 0 ? 'Selecione ao menos um título' : undefined"
+          @click="tentativaAberta = true"
+        >
+          Registrar tentativa
+        </button>
+      </div>
+    </template>
+
+    <!-- Contatos -->
+    <div
+      v-else-if="tab === 'contatos'"
+      style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); overflow: hidden"
+    >
+      <div class="flex items-center" style="padding: 16px 20px; gap: 8px">
+        <Phone :size="16" style="color: var(--text-muted)" />
+        <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Contatos do sacado</h3>
+      </div>
+      <div style="overflow-x: auto">
+        <div class="grid items-center sacado-row sacado-header" style="grid-template-columns: 48px 1.2fr 1.4fr 1fr; min-width: 640px">
+          <div>#</div>
+          <div>Nome</div>
+          <div>E-mail</div>
+          <div>Telefone</div>
+        </div>
+        <div
+          v-for="(c, i) in contatos"
+          :key="c.id"
+          class="grid items-center sacado-row"
+          style="grid-template-columns: 48px 1.2fr 1.4fr 1fr; min-width: 640px"
+        >
+          <div style="color: var(--text-muted); font-variant-numeric: tabular-nums">{{ i + 1 }}</div>
+          <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ c.nome }}</div>
+          <div>{{ c.email }}</div>
+          <div style="font-variant-numeric: tabular-nums">{{ c.telefone }}</div>
+        </div>
+        <div
+          v-if="contatos.length === 0"
+          style="padding: 36px 20px; text-align: center; font-size: var(--text-sm); color: var(--text-muted); border-top: 1px solid var(--border-default)"
+        >
+          Nenhum contato cadastrado para este sacado.
+        </div>
+      </div>
     </div>
 
-    <div class="flex justify-end">
-      <button
-        type="button"
-        class="primary"
-        :disabled="selected.length === 0"
-        :title="selected.length === 0 ? 'Selecione ao menos um título' : undefined"
-        @click="tentativaAberta = true"
-      >
-        Registrar tentativa
-      </button>
+    <!-- Registro de tentativas -->
+    <div
+      v-else
+      style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); overflow: hidden"
+    >
+      <div class="flex items-center" style="padding: 16px 20px; gap: 8px">
+        <ClipboardList :size="16" style="color: var(--text-muted)" />
+        <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Registro de tentativas</h3>
+      </div>
+      <div style="overflow-x: auto">
+        <div class="grid items-start sacado-row sacado-header reg-grid">
+          <div>Status</div>
+          <div>Geral</div>
+          <div>Observações</div>
+          <div>Data do contato</div>
+          <div>Registrado por</div>
+          <div>Títulos</div>
+          <div>Evidência</div>
+        </div>
+        <div v-for="r in registrosOrdenados" :key="r.id" class="grid items-start sacado-row reg-grid">
+          <div><span :style="chipStyle(statusPreventivoColor(r.status))">{{ statusPreventivoLabel(r.status) }}</span></div>
+          <div>{{ r.geral }}</div>
+          <div style="color: var(--text-default)">{{ r.observacoes || '—' }}</div>
+          <div style="font-variant-numeric: tabular-nums">{{ fmtData(r.dataContato) }}</div>
+          <div>{{ r.registradoPor }}</div>
+          <div class="flex items-center" style="gap: 6px">
+            <span :title="numerosDos(r).join(', ')">
+              {{ r.tituloIds.length }} {{ r.tituloIds.length === 1 ? 'título' : 'títulos' }}
+            </span>
+            <CopyButton :value="numerosDos(r).join(', ')" />
+          </div>
+          <div>
+            <button v-if="r.evidencia" type="button" class="link-btn" @click="emit('evidencia', r.id)">
+              <ExternalLink :size="13" /> Abrir PDF
+            </button>
+            <span v-else style="color: var(--text-muted)">Não tem</span>
+          </div>
+        </div>
+        <div
+          v-if="registros.length === 0"
+          style="padding: 36px 20px; text-align: center; font-size: var(--text-sm); color: var(--text-muted); border-top: 1px solid var(--border-default)"
+        >
+          Nenhuma tentativa registrada para este sacado.
+        </div>
+      </div>
     </div>
 
     <RegistrarTentativaModal
@@ -262,7 +599,10 @@ h2 {
   padding: 14px 20px;
   font-size: var(--text-sm);
   color: var(--text-default);
-  min-width: 980px;
+}
+.reg-grid {
+  grid-template-columns: 180px 150px minmax(160px, 1.4fr) 100px 130px 130px 100px;
+  min-width: 1076px;
 }
 .sacado-header {
   padding: 12px 20px;
@@ -273,8 +613,47 @@ h2 {
   color: var(--text-muted);
   text-transform: uppercase;
 }
+.sacado-header > * {
+  white-space: nowrap;
+}
 .sacado-row:not(.sacado-header) {
   border-top: 1px solid var(--border-default);
+}
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-strong);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+.link-btn:hover {
+  background: var(--surface-sunken);
+}
+.filter-label {
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.filter-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  outline: none;
+  font-size: var(--text-sm);
+  color: var(--text-strong);
 }
 .primary {
   height: 48px;

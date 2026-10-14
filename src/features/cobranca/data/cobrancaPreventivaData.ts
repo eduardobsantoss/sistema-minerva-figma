@@ -16,6 +16,7 @@ export type StatusPreventivo =
 
 export type SituacaoCarteira = 'Especial' | 'Normal' | 'Recovery' | 'Pre-recovery';
 export type CanalContato = 'Email' | 'Telefone' | 'SMS' | 'WhatsApp';
+export type StatusVencimento = 'A vencer' | 'Vence hoje' | 'Vencido';
 export type AgrupamentoContato = 'dia' | 'semana' | 'mes' | 'ano';
 
 export interface SacadoPreventivo {
@@ -26,7 +27,7 @@ export interface SacadoPreventivo {
   situacao: SituacaoCarteira;
 }
 
-export interface TituloPreventivo {
+interface TituloPreventivoBase {
   id: string;
   sacadoId: string;
   lastro: string;
@@ -38,6 +39,46 @@ export interface TituloPreventivo {
   cessao: string;
   valor: number;
   status: StatusPreventivo;
+}
+
+export interface TituloPreventivo extends TituloPreventivoBase {
+  /** Data ISO (aaaa-mm-dd). */
+  vencimento: string;
+  valorAPagar: number;
+  statusVencimento: StatusVencimento;
+  notificado: boolean;
+  confirmado: boolean;
+  responsavel: string;
+  /** Nome do arquivo do boleto; vazio quando não há boleto. */
+  boleto: string;
+  grupoEmpresarial: string;
+  cra: string;
+  fidc: string;
+  gerenteComercial: string;
+  superintendente: string;
+}
+
+export interface ContatoSacado {
+  id: string;
+  sacadoId: string;
+  nome: string;
+  email: string;
+  telefone: string;
+}
+
+export interface RegistroTentativa {
+  id: string;
+  sacadoId: string;
+  status: StatusPreventivo;
+  /** Resumo curto: canal e quantidade de tentativas. */
+  geral: string;
+  observacoes: string;
+  /** Data ISO (aaaa-mm-dd). */
+  dataContato: string;
+  registradoPor: string;
+  tituloIds: string[];
+  /** Nome do PDF de evidência; vazio quando não há. */
+  evidencia: string;
 }
 
 export interface ContatoOperador {
@@ -57,6 +98,8 @@ export interface ContatoOperador {
 export interface EvolucaoEvento {
   data: string;
   canal: CanalContato;
+  /** Retorno obtido na tentativa de contato. */
+  status: StatusPreventivo;
   quantidade: number;
 }
 
@@ -72,7 +115,7 @@ export const CANAL_CONTATO_OPTS: CanalContato[] = ['Email', 'Telefone', 'SMS', '
 
 export const STATUS_PREVENTIVO: { key: StatusPreventivo; label: string; color: string }[] = [
   { key: 'PENDENTE', label: 'Pendente', color: '#F27D26' },
-  { key: 'NAO_CONFIRMADO', label: 'Não confirmado', color: '#DC2626' },
+  { key: 'NAO_CONFIRMADO', label: 'Não confirmou', color: '#DC2626' },
   { key: 'TENTATIVA_SEM_SUCESSO', label: 'Tentativa sem sucesso', color: '#BE185D' },
   { key: 'AGUARDANDO_RETORNO', label: 'Aguardando retorno', color: '#D97706' },
   { key: 'AGUARDANDO_RETORNO_SACADO', label: 'Aguardando retorno do sacado', color: '#B45309' },
@@ -122,7 +165,48 @@ export function fmtPct(n: number): string {
 }
 
 export function canalLabel(c: CanalContato): string {
-  return { Email: 'E-mail', Telefone: 'Telefone', SMS: 'SMS', WhatsApp: 'WhatsApp' }[c];
+  return {
+    Email: 'E-mail',
+    Telefone: 'Telefone',
+    SMS: 'SMS',
+    WhatsApp: 'WhatsApp',
+  }[c];
+}
+
+export function fmtData(iso: string): string {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+export function hojeIso(): string {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${dia}`;
+}
+
+function addDiasIso(dias: number): string {
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() + dias);
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${dia}`;
+}
+
+/** Dias entre hoje e a data ISO (negativo quando já venceu). */
+export function diasParaVencer(iso: string): number {
+  const alvo = new Date(`${iso}T12:00:00`).getTime();
+  const hoje = new Date(`${hojeIso()}T12:00:00`).getTime();
+  return Math.round((alvo - hoje) / 86_400_000);
+}
+
+export function statusVencimentoDe(iso: string): StatusVencimento {
+  const dias = diasParaVencer(iso);
+  if (dias < 0) return 'Vencido';
+  if (dias === 0) return 'Vence hoje';
+  return 'A vencer';
 }
 
 export function inPeriodo(iso: string, inicio: string, fim: string): boolean {
@@ -200,7 +284,7 @@ export const SACADOS_PREVENTIVA_SEED: SacadoPreventivo[] = [
   },
 ];
 
-export const TITULOS_PREVENTIVA_SEED: TituloPreventivo[] = [
+const TITULOS_BASE: TituloPreventivoBase[] = [
   { id: 'tp-1', sacadoId: 'sac-pedro', lastro: '465942', numero: 'PM1392026-1-1', cedente: 'Pedro Ribeiro Merola', tipoTitulo: 'NP', situacaoCedente: 'Especial', veiculo: '42ª - CRA Ceres', cessao: 'PEDRO_OP.1398_20052026', valor: 2791.2, status: 'PENDENTE' },
   { id: 'tp-2', sacadoId: 'sac-pedro', lastro: '465928', numero: 'PM1432026-1-1', cedente: 'Pedro Ribeiro Merola', tipoTitulo: 'NP', situacaoCedente: 'Especial', veiculo: '42ª - CRA Ceres', cessao: 'PEDRO_OP.1395_20052026', valor: 1981.34, status: 'PENDENTE' },
   { id: 'tp-3', sacadoId: 'sac-pedro', lastro: '465927', numero: 'PM1442026-1-1', cedente: 'Pedro Ribeiro Merola', tipoTitulo: 'NP', situacaoCedente: 'Especial', veiculo: '42ª - CRA Ceres', cessao: 'PEDRO_OP.1394_20052026', valor: 1023.8, status: 'PENDENTE' },
@@ -222,6 +306,74 @@ export const TITULOS_PREVENTIVA_SEED: TituloPreventivo[] = [
   { id: 'tp-19', sacadoId: 'sac-claudio', lastro: '910002', numero: 'CN-02', cedente: 'Claudio Nasser', tipoTitulo: 'NP', situacaoCedente: 'Pre-recovery', veiculo: '48ª - CRA Carteira', cessao: 'NASSER_OP_12', valor: 2400, status: 'AGUARDANDO_RETORNO_SACADO' },
 ];
 
+const GRUPO_POR_SACADO: Record<string, string> = {
+  'sac-pedro': 'Grupo Merola',
+  'sac-herdade': 'Grupo Herdade',
+  'sac-ceres': 'Grupo Ceres',
+  'sac-green': 'Grupo Green',
+  'sac-allas': 'Grupo Allas',
+  'sac-claudio': 'Grupo Nasser',
+};
+const GERENTES = ['Rafael Moura', 'Camila Duarte', 'Bruno Tavares'];
+const SUPERINTENDENTES = ['Helena Prado', 'Otávio Lima'];
+const RESPONSAVEIS = ['Marcos Damasceno', 'João Beneli', 'Gabriel Ribeiro', 'Silvio Sousa', 'Luiza Costa', 'Mariana Costa'];
+// Dias a partir de hoje (negativo = vencido).
+const OFFSETS_VENCIMENTO = [-3, 0, 2, 5, 9, 14, 20, 27, 35, 6, 1, 12, -1, 8, 18, 3, 24, 7, 30];
+
+export const TITULOS_PREVENTIVA_SEED: TituloPreventivo[] = TITULOS_BASE.map((t, i) => {
+  const vencimento = addDiasIso(OFFSETS_VENCIMENTO[i % OFFSETS_VENCIMENTO.length]);
+  return {
+    ...t,
+    vencimento,
+    valorAPagar: Math.round(t.valor * (1 + (i % 4) * 0.012) * 100) / 100,
+    statusVencimento: statusVencimentoDe(vencimento),
+    notificado: i % 3 !== 0,
+    confirmado: t.status === 'CONFIRMADO',
+    responsavel: RESPONSAVEIS[i % RESPONSAVEIS.length],
+    boleto: i % 2 === 0 ? `boleto-${t.numero}.pdf` : '',
+    grupoEmpresarial: GRUPO_POR_SACADO[t.sacadoId] ?? '',
+    cra: t.veiculo.includes('CRA') ? t.veiculo : '',
+    fidc: t.veiculo.includes('FIDC') ? t.veiculo : '',
+    gerenteComercial: GERENTES[i % GERENTES.length],
+    superintendente: SUPERINTENDENTES[i % SUPERINTENDENTES.length],
+  };
+});
+
+function unicos(values: string[]): string[] {
+  return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
+export const TIPOS_TITULO_OPTS = unicos(TITULOS_PREVENTIVA_SEED.map((t) => t.tipoTitulo));
+export const SITUACOES_OPTS: SituacaoCarteira[] = ['Especial', 'Normal', 'Recovery', 'Pre-recovery'];
+export const GRUPOS_EMPRESARIAIS_OPTS = unicos(TITULOS_PREVENTIVA_SEED.map((t) => t.grupoEmpresarial));
+export const CRA_OPTS = unicos(TITULOS_PREVENTIVA_SEED.map((t) => t.cra));
+export const FIDC_OPTS = unicos(TITULOS_PREVENTIVA_SEED.map((t) => t.fidc));
+export const GERENTES_OPTS = unicos(TITULOS_PREVENTIVA_SEED.map((t) => t.gerenteComercial));
+export const SUPERINTENDENTES_OPTS = unicos(TITULOS_PREVENTIVA_SEED.map((t) => t.superintendente));
+
+export const CONTATOS_SACADO_SEED: ContatoSacado[] = [
+  { id: 'cs-1', sacadoId: 'sac-pedro', nome: 'Pedro Ribeiro Merola', email: 'pedro@merola.com.br', telefone: '+55 11 98821 4400' },
+  { id: 'cs-2', sacadoId: 'sac-pedro', nome: 'Fernanda Merola', email: 'fernanda@merola.com.br', telefone: '+55 11 97711 2030' },
+  { id: 'cs-3', sacadoId: 'sac-herdade', nome: 'Financeiro Herdade', email: 'financeiro@herdade.com.br', telefone: '+55 11 4002 8922' },
+  { id: 'cs-4', sacadoId: 'sac-herdade', nome: 'Rodrigo Alves', email: 'rodrigo.alves@herdade.com.br', telefone: '+55 11 98100 7766' },
+  { id: 'cs-5', sacadoId: 'sac-herdade', nome: 'Patrícia Gomes', email: 'patricia@herdade.com.br', telefone: '+55 11 98230 1144' },
+  { id: 'cs-6', sacadoId: 'sac-ceres', nome: 'Tesouraria Ceres', email: 'tesouraria@ceres.com.br', telefone: '+55 11 3040 2200' },
+  { id: 'cs-7', sacadoId: 'sac-ceres', nome: 'André Pacheco', email: 'andre.pacheco@ceres.com.br', telefone: '+55 11 99155 3030' },
+  { id: 'cs-8', sacadoId: 'sac-green', nome: 'Contas a pagar Green', email: 'cp@greenfarming.com.br', telefone: '+55 62 3333 1010' },
+  { id: 'cs-9', sacadoId: 'sac-green', nome: 'Larissa Prado', email: 'larissa@greenfarming.com.br', telefone: '+55 62 99811 4455' },
+  { id: 'cs-10', sacadoId: 'sac-allas', nome: 'Financeiro Allas', email: 'financeiro@allas.com.br', telefone: '+55 11 2222 9090' },
+  { id: 'cs-11', sacadoId: 'sac-allas', nome: 'Diego Ferraz', email: 'diego@allas.com.br', telefone: '+55 11 97700 9988' },
+  { id: 'cs-12', sacadoId: 'sac-claudio', nome: 'Claudio Nasser de Carvalho', email: 'claudio@nasser.com.br', telefone: '+55 11 97700 1188' },
+];
+
+export const REGISTROS_TENTATIVA_SEED: RegistroTentativa[] = [
+  { id: 'rt-1', sacadoId: 'sac-pedro', status: 'AGUARDANDO_RETORNO_SACADO', geral: 'WhatsApp · 2 tentativas', observacoes: 'Sacado pediu o boleto atualizado e prometeu retorno até sexta.', dataContato: '2026-10-06', registradoPor: 'Marcos Damasceno', tituloIds: ['tp-1', 'tp-2'], evidencia: 'print-whatsapp-pedro.pdf' },
+  { id: 'rt-2', sacadoId: 'sac-pedro', status: 'CONFIRMADO', geral: 'Telefone · 1 tentativa', observacoes: 'Confirmou o pagamento na data do vencimento.', dataContato: '2026-10-02', registradoPor: 'João Beneli', tituloIds: ['tp-4'], evidencia: '' },
+  { id: 'rt-3', sacadoId: 'sac-herdade', status: 'NAO_CONFIRMADO', geral: 'E-mail · 3 tentativas', observacoes: 'Sem resposta aos e-mails enviados ao financeiro.', dataContato: '2026-10-05', registradoPor: 'Gabriel Ribeiro', tituloIds: ['tp-8'], evidencia: 'email-herdade.pdf' },
+  { id: 'rt-4', sacadoId: 'sac-ceres', status: 'PRORROGADO', geral: 'Telefone · 1 tentativa', observacoes: 'Prorrogação acordada com a tesouraria.', dataContato: '2026-10-01', registradoPor: 'Silvio Sousa', tituloIds: ['tp-11'], evidencia: '' },
+  { id: 'rt-5', sacadoId: 'sac-green', status: 'TENTATIVA_SEM_SUCESSO', geral: 'Telefone · 1 tentativa', observacoes: 'Ligação não completada, número não atende.', dataContato: '2026-09-29', registradoPor: 'Luiza Costa', tituloIds: ['tp-13'], evidencia: 'ar-green.pdf' },
+];
+
 export const CONTATOS_OPERADOR_SEED: ContatoOperador[] = [
   { id: 'co-1', operadorId: 'op-marcos', operador: 'Marcos Damasceno', sacado: 'Glaucia Nasser de Carvalho', documento: '522.980.006-20', titulos: 1, valorAPagar: 21052.33, valorConfirmado: 21052.33, ultimoContato: '2026-10-06', tentativas: 1, confirmado: true },
   { id: 'co-2', operadorId: 'op-marcos', operador: 'Marcos Damasceno', sacado: 'Herdade Empreendimentos Imobiliarios SPE', documento: '18.621.277/0001-05', titulos: 1, valorAPagar: 130.156, valorConfirmado: 130.156, ultimoContato: '2026-10-06', tentativas: 1, confirmado: true },
@@ -240,18 +392,37 @@ export const CONTATOS_OPERADOR_SEED: ContatoOperador[] = [
 function buildEvolucao(): EvolucaoEvento[] {
   const eventos: EvolucaoEvento[] = [];
   const canais = CANAL_CONTATO_OPTS;
-  for (let day = 1; day <= 30; day += 1) {
-    const iso = `2026-09-${String(day).padStart(2, '0')}`;
+  const fixos: StatusPreventivo[] = ['CONFIRMADO', 'NAO_CONFIRMADO', 'TENTATIVA_SEM_SUCESSO'];
+  const rotativos: StatusPreventivo[] = [
+    'AGUARDANDO_RETORNO',
+    'PRORROGADO',
+    'PAGO_A_CEDENTE',
+    'AGUARDANDO_RETORNO_CEDENTE',
+    'AGUARDANDO_RETORNO_SACADO',
+    'NAO_PRIORITARIO',
+    'ISENTO_AGROBANK',
+    'ISENTO_TRADING',
+    'AGUARDANDO_RETORNO_COMERCIAL',
+    'AGUARDANDO_RETORNO_TELEGRAMA',
+  ];
+  // Volume de uso de cada canal e a efetividade de cada um na confirmação.
+  const peso: Record<CanalContato, number> = { Email: 1, Telefone: 0.8, SMS: 0.35, WhatsApp: 0.9 };
+  const efetividade: Record<CanalContato, number> = { Email: 0.7, Telefone: 1.5, SMS: 0.5, WhatsApp: 1.2 };
+  function dia(iso: string, day: number, maxBase: number) {
     canais.forEach((canal, index) => {
-      eventos.push({ data: iso, canal, quantidade: ((day + index * 3) % 12) + 2 });
+      fixos.forEach((status, s) => {
+        const base = ((day + index * 3 + s * 2) % maxBase) + (s === 0 ? 1 : 0);
+        const fator = peso[canal] * (s === 0 ? efetividade[canal] : 1);
+        const quantidade = Math.round(base * fator);
+        if (quantidade > 0) eventos.push({ data: iso, canal, status, quantidade });
+      });
+      const extra = rotativos[(day + index) % rotativos.length];
+      const quantidadeExtra = Math.round((((day + index) % 3) + 1) * peso[canal]);
+      if (quantidadeExtra > 0) eventos.push({ data: iso, canal, status: extra, quantidade: quantidadeExtra });
     });
   }
-  for (let day = 1; day <= 8; day += 1) {
-    const iso = `2026-10-${String(day).padStart(2, '0')}`;
-    canais.forEach((canal, index) => {
-      eventos.push({ data: iso, canal, quantidade: ((day + index) % 8) + 1 });
-    });
-  }
+  for (let day = 1; day <= 30; day += 1) dia(`2026-09-${String(day).padStart(2, '0')}`, day, 5);
+  for (let day = 1; day <= 8; day += 1) dia(`2026-10-${String(day).padStart(2, '0')}`, day, 3);
   return eventos;
 }
 
