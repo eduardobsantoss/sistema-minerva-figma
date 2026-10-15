@@ -111,22 +111,11 @@ function handleDelete() {
       <!-- Three-dot menu -->
       <div style="position: relative; flex-shrink: 0">
         <button
-          :style="{
-            width: '32px',
-            height: '32px',
-            borderRadius: 'var(--radius-md)',
-            border: 'none',
-            background: menuOpen ? 'var(--surface-sunken)' : 'transparent',
-            color: 'var(--text-muted)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'background var(--duration-fast)',
-          }"
+          class="flex items-center justify-center"
+          style="width: 32px; height: 32px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-card); cursor: pointer; color: var(--text-muted)"
           @click.stop="menuOpen = !menuOpen"
         >
-          <MoreVertical :size="16" />
+          <MoreVertical :size="15" />
         </button>
         <div
           v-if="menuOpen"

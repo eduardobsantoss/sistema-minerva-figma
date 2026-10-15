@@ -1,8 +1,10 @@
 import {
   GERENTES_SEED,
+  STATUS_OPERACAO_OPTS,
   TIPO_CLIENTE_OPTS,
   type Cedente,
   type HistoricoEvento,
+  type StatusOperacao,
   type TipoCliente,
 } from '@/features/risco/data/riscoData';
 import {
@@ -16,8 +18,8 @@ import {
   type ParteRelacionada,
 } from '@/features/solicitacao-operacao/data/operacaoData';
 
-export { GERENTES_SEED, TIPO_CLIENTE_OPTS };
-export type { TipoCliente };
+export { GERENTES_SEED, STATUS_OPERACAO_OPTS, TIPO_CLIENTE_OPTS };
+export type { StatusOperacao, TipoCliente };
 
 export type StatusCadastroGrupo = 'Apto' | 'Inapto';
 
@@ -107,6 +109,7 @@ export interface GrupoCadastro {
   validadeCadastro: string;
   criadoEm: string;
   statusCadastro: StatusCadastroGrupo;
+  statusOperacao: StatusOperacao;
   partes: ParteRelacionada[];
   cedentes: Cedente[];
   documentos: DocumentoGrupo[];
@@ -350,6 +353,7 @@ export function emptyGrupo(): GrupoCadastro {
     validadeCadastro: '',
     criadoEm: new Date().toLocaleDateString('pt-BR'),
     statusCadastro: 'Apto',
+    statusOperacao: 'Normal',
     partes: [],
     cedentes: [],
     documentos: [],
@@ -572,6 +576,7 @@ export const GRUPOS_CADASTRO_SEED: GrupoCadastro[] = [
     validadeCadastro: '2026-11-30',
     criadoEm: '10/01/2026',
     statusCadastro: 'Apto',
+    statusOperacao: 'Normal',
     partes: [cloneParte(PARTE_ANTONIO), cloneParte(PARTE_EDUARDO)],
     ...detalhePadrao('grp-3a', '3A MAQUINAS E TRANSPORTES LTDA', 'Carlos Mendes'),
   },
@@ -587,6 +592,7 @@ export const GRUPOS_CADASTRO_SEED: GrupoCadastro[] = [
     validadeCadastro: '2026-09-15',
     criadoEm: '22/03/2025',
     statusCadastro: 'Apto',
+    statusOperacao: 'Terceiro',
     partes: [cloneParte(PARTE_ANTONIO)],
     ...detalhePadrao('grp-fazenda-sn', 'FAZENDA SANTA NIVA AGROPECUARIA LTDA', 'Fernanda Rocha'),
   },
@@ -602,6 +608,7 @@ export const GRUPOS_CADASTRO_SEED: GrupoCadastro[] = [
     validadeCadastro: '2026-07-02',
     criadoEm: '08/08/2024',
     statusCadastro: 'Inapto',
+    statusOperacao: 'Pré-Recovery',
     partes: [cloneParte(PARTE_BB), cloneParte(PARTE_EDUARDO)],
     ...detalhePadrao('grp-agropec-vale', 'AGROPECUARIA VALE VERDE S/A', 'Rodrigo Alves', {
       fundosNotificacao: [
@@ -622,6 +629,7 @@ export const GRUPOS_CADASTRO_SEED: GrupoCadastro[] = [
     validadeCadastro: '2026-06-01',
     criadoEm: '15/11/2024',
     statusCadastro: 'Apto',
+    statusOperacao: 'Recovery',
     partes: [],
     ...detalhePadrao('grp-cerrado-graos', 'CERRADO GRÃOS COMERCIO E EXPORTACAO LTDA', 'Juliana Prado', {
       garantias: [],
@@ -629,3 +637,148 @@ export const GRUPOS_CADASTRO_SEED: GrupoCadastro[] = [
     }),
   },
 ];
+
+export interface GrupoCsvLinha {
+  documento: string;
+  nome: string;
+  tipoCliente: TipoCliente;
+  gerente: string;
+  statusOperacao: StatusOperacao;
+}
+
+export interface GrupoCsvResultado {
+  linhas: GrupoCsvLinha[];
+  erros: string[];
+}
+
+const CSV_MODELO = [
+  'documento;nome;tipo;gerente;status',
+  '12.345.678/0001-99;GRUPO EXEMPLO LTDA;Multicedente;Carlos Mendes;Normal',
+].join('\n');
+
+export function modeloGruposCsv(): string {
+  return CSV_MODELO;
+}
+
+function semAcento(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function splitCsvLine(line: string, sep: string): string[] {
+  const cells: string[] = [];
+  let current = '';
+  let quoted = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (quoted && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (ch === sep && !quoted) {
+      cells.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  cells.push(current.trim());
+  return cells;
+}
+
+function colunaDe(header: string): 'documento' | 'nome' | 'tipo' | 'gerente' | 'status' | null {
+  const key = semAcento(header);
+  if (['documento', 'cnpj', 'cpf', 'cnpj/cpf', 'cnpj cpf'].includes(key)) return 'documento';
+  if (['nome', 'grupo', 'razao social', 'grupo empresarial'].includes(key)) return 'nome';
+  if (['tipo', 'tipo de cliente', 'tipocliente', 'tipo cliente'].includes(key)) return 'tipo';
+  if (key === 'gerente') return 'gerente';
+  if (['status', 'status de operacao', 'statusoperacao'].includes(key)) return 'status';
+  return null;
+}
+
+function matchOpt<T extends string>(value: string, options: readonly T[]): T | null {
+  const needle = semAcento(value);
+  return options.find((opt) => semAcento(opt) === needle) ?? null;
+}
+
+export function parseGruposCsv(text: string, documentosExistentes: string[] = []): GrupoCsvResultado {
+  const raw = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = raw.split('\n').map((line) => line.trim()).filter(Boolean);
+  if (!lines.length) return { linhas: [], erros: ['O arquivo está vazio.'] };
+
+  const sep = (lines[0].match(/;/g)?.length ?? 0) >= (lines[0].match(/,/g)?.length ?? 0) ? ';' : ',';
+  const rows = lines.map((line) => splitCsvLine(line, sep));
+  const mapped = rows[0].map(colunaDe);
+  const hasHeader = mapped.some((col) => col != null);
+  const index: Partial<Record<'documento' | 'nome' | 'tipo' | 'gerente' | 'status', number>> = {};
+
+  if (hasHeader) {
+    mapped.forEach((col, i) => {
+      if (col) index[col] = i;
+    });
+  } else {
+    index.documento = 0;
+    index.nome = 1;
+    index.tipo = 2;
+    index.gerente = 3;
+    if (rows[0].length > 4) index.status = 4;
+  }
+
+  if (index.documento == null || index.nome == null || index.tipo == null || index.gerente == null) {
+    return {
+      linhas: [],
+      erros: ['O CSV precisa das colunas documento, nome, tipo e gerente.'],
+    };
+  }
+
+  const dataRows = hasHeader ? rows.slice(1) : rows;
+  const linhas: GrupoCsvLinha[] = [];
+  const erros: string[] = [];
+  const vistos = new Set(documentosExistentes.map((doc) => doc.replace(/\D/g, '')));
+
+  dataRows.forEach((row, offset) => {
+    const linha = hasHeader ? offset + 2 : offset + 1;
+    const documento = row[index.documento!] ?? '';
+    const nome = row[index.nome!] ?? '';
+    const tipoRaw = row[index.tipo!] ?? '';
+    const gerente = row[index.gerente!] ?? '';
+    const statusRaw = index.status == null ? '' : (row[index.status] ?? '');
+
+    if (!documento || !nome || !tipoRaw || !gerente) {
+      erros.push(`Linha ${linha}: documento, nome, tipo e gerente são obrigatórios.`);
+      return;
+    }
+
+    const tipoCliente = matchOpt(tipoRaw, TIPO_CLIENTE_OPTS);
+    if (!tipoCliente) {
+      erros.push(`Linha ${linha}: tipo de cliente "${tipoRaw}" não é válido.`);
+      return;
+    }
+
+    const statusOperacao = statusRaw ? matchOpt(statusRaw, STATUS_OPERACAO_OPTS) : 'Normal';
+    if (!statusOperacao) {
+      erros.push(`Linha ${linha}: status de operação "${statusRaw}" não é válido.`);
+      return;
+    }
+
+    const docKey = documento.replace(/\D/g, '');
+    if (docKey && vistos.has(docKey)) {
+      erros.push(`Linha ${linha}: documento ${documento} já está na lista.`);
+      return;
+    }
+    if (docKey) vistos.add(docKey);
+
+    linhas.push({
+      documento,
+      nome: nome.toUpperCase(),
+      tipoCliente,
+      gerente,
+      statusOperacao,
+    });
+  });
+
+  if (!linhas.length && !erros.length) erros.push('Nenhuma linha de grupo encontrada.');
+  return { linhas, erros };
+}

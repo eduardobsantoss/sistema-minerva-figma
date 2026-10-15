@@ -730,18 +730,10 @@ function menuActions(t: Titulo) {
             <div class="flex justify-end" style="position: relative">
               <button
                 class="flex items-center justify-center"
-                :style="{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: 'var(--radius-md)',
-                  border: 'none',
-                  background: menuOpenId === t.id ? 'var(--surface-sunken)' : 'transparent',
-                  cursor: 'pointer',
-                  color: 'var(--text-muted)',
-                }"
+                style="width: 32px; height: 32px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-card); cursor: pointer; color: var(--text-muted)"
                 @click.stop="menuOpenId = menuOpenId === t.id ? null : t.id"
               >
-                <MoreVertical :size="16" />
+                <MoreVertical :size="15" />
               </button>
               <template v-if="menuOpenId === t.id">
                 <div style="position: fixed; inset: 0; z-index: 30" @click.stop="menuOpenId = null" />

@@ -360,18 +360,8 @@ function handleDelete(id: string) {
         <!-- Actions -->
         <div style="position: relative">
           <button
-            :style="{
-              width: '32px',
-              height: '32px',
-              borderRadius: 'var(--radius-md)',
-              border: 'none',
-              background: openRowMenu === n.id ? 'var(--surface-sunken)' : 'transparent',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }"
+            class="flex items-center justify-center"
+            style="width: 32px; height: 32px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-card); cursor: pointer; color: var(--text-muted)"
             @click.stop="toggleRowMenu(n.id)"
           >
             <MoreVertical :size="15" />

@@ -10,7 +10,9 @@ import {
   cloneParte,
   emptyGrupo,
   type GrupoCadastro,
+  type GrupoCsvLinha,
   type GarantiaGrupo,
+  type StatusOperacao,
 } from '../data/gruposCadastroData';
 import GruposCadastroListScreen from './GruposCadastroListScreen.vue';
 import GrupoCadastroView from './GrupoCadastroView.vue';
@@ -147,6 +149,57 @@ function handleUpdateGarantia(garantia: GarantiaGrupo) {
   if (garantiaAtual.value?.id === garantia.id) garantiaAtual.value = garantia;
 }
 
+function nowLabel() {
+  return new Date()
+    .toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+    .replace(',', '');
+}
+
+function handleUpdateStatus(id: string, status: StatusOperacao) {
+  items.value = items.value.map((g) => {
+    if (g.id !== id || g.statusOperacao === status) return g;
+    const next = cloneGrupo(g);
+    next.statusOperacao = status;
+    next.historico = [
+      {
+        id: `hist-${Date.now()}`,
+        datetime: nowLabel(),
+        descricao: `Status de operação alterado de "${g.statusOperacao}" para "${status}".`,
+      },
+      ...next.historico,
+    ];
+    return next;
+  });
+}
+
+function handleImportGrupos(linhas: GrupoCsvLinha[]) {
+  const datetime = nowLabel();
+  const stamp = Date.now();
+  const created = linhas.map((linha, index) => ({
+    ...emptyGrupo(),
+    id: `grp-${stamp}-${index}`,
+    documento: linha.documento,
+    nome: linha.nome,
+    tipoCliente: linha.tipoCliente,
+    gerente: linha.gerente,
+    statusOperacao: linha.statusOperacao,
+    historico: [
+      {
+        id: `hist-${stamp}-${index}`,
+        datetime,
+        descricao: 'Grupo empresarial importado via CSV.',
+      },
+    ],
+  }));
+  items.value = [...created, ...items.value];
+}
+
 function handleDeleteGarantia(garantia: GarantiaGrupo) {
   const grupo = grupoAtual.value;
   if (!grupo) return;
@@ -181,6 +234,8 @@ function handleDeleteGarantia(garantia: GarantiaGrupo) {
     :grupos="items"
     @open="openDetail"
     @create="openCreate"
+    @update-status="handleUpdateStatus"
+    @import-grupos="handleImportGrupos"
   />
 
   <GrupoCadastroView

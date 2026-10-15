@@ -59,10 +59,10 @@ onUnmounted(() => {
       aria-label="Ações"
       data-boleto-menu
       class="flex items-center justify-center"
-      style="width: 36px; height: 36px; margin-left: auto; border-radius: var(--radius-md); background: var(--surface-card); border: 1px solid var(--border-default); cursor: pointer; color: var(--text-muted)"
+      style="width: 32px; height: 32px; margin-left: auto; border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-card); cursor: pointer; color: var(--text-muted)"
       @click.stop="toggle"
     >
-      <MoreVertical :size="16" />
+      <MoreVertical :size="15" />
     </button>
 
     <Teleport to="body">

@@ -188,7 +188,7 @@ const emptyHint = computed(() =>
               <button
                 aria-label="Ações do veículo"
                 class="flex items-center justify-center"
-                style="width: 28px; height: 28px; border: none; background: none; border-radius: var(--radius-md); cursor: pointer; color: var(--text-muted)"
+                style="width: 32px; height: 32px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-card); cursor: pointer; color: var(--text-muted)"
                 @click.stop="menuOpenId = menuOpenId === v.id ? null : v.id"
               >
                 <MoreVertical :size="15" />

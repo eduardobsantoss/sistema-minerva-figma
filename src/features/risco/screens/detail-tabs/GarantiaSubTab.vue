@@ -167,10 +167,10 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
               <button
                 aria-label="Ações"
                 class="flex items-center justify-center"
-                style="width: 26px; height: 26px; border: none; background: none; border-radius: var(--radius-md); cursor: pointer; color: var(--text-muted)"
+                style="width: 32px; height: 32px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-card); cursor: pointer; color: var(--text-muted)"
                 @click="toggleMenu(g.id)"
               >
-                <MoreVertical :size="14" />
+                <MoreVertical :size="15" />
               </button>
               <div
                 v-if="openMenuId === g.id"
