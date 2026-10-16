@@ -7,6 +7,7 @@ const emit = defineEmits<{ click: [] }>();
 
 <template>
   <button
+    type="button"
     :aria-label="label"
     :title="label"
     class="flex items-center justify-center"

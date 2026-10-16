@@ -145,6 +145,7 @@ const items: NavItem[] = [
       { key: "risco-dashboard", label: "Dashboard", icon: Gauge },
       { key: "risco-grupos", label: "Grupos Empresariais", icon: Building2 },
       { key: "risco-ratings", label: "Ratings", icon: Layers },
+      { key: "risco-taxa-operacao", label: "Taxa de Operação", icon: Percent },
       {
         key: "risco-agrupamentos",
         label: "Agrupamentos de Limite",
@@ -152,6 +153,17 @@ const items: NavItem[] = [
       },
       { key: "risco-serasa", label: "Consultas", icon: Search },
       { key: "risco-rel", label: "Relatórios", icon: BarChart3 },
+    ],
+  },
+  {
+    key: "gerencial",
+    label: "Gerencial",
+    icon: BarChart3,
+    children: [
+      { key: "gerencial", label: "Gerencial", icon: BarChart3 },
+      { key: "gerencial-pos", label: "Monitoramento pós desembolso", icon: Radar },
+      { key: "gerencial-veiculos", label: "Parametrização de veículos", icon: Settings },
+      { key: "gerencial-relatorios", label: "Relatórios", icon: BarChart3 },
     ],
   },
   {

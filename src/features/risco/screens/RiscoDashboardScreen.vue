@@ -2,7 +2,7 @@
 import { computed, ref, type Component } from 'vue';
 import {
   Search, AlertTriangle, TrendingDown, Users, Wallet, ChevronRight,
-  Clock, XCircle, Building2, BarChart3,
+  Clock, XCircle, Building2, BarChart3, Layers, Percent,
 } from 'lucide-vue-next';
 import { Bar, Pie } from 'vue-chartjs';
 import '@/lib/chart';
@@ -14,6 +14,8 @@ import {
 import GrupoDetailScreen from './GrupoDetailScreen.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+
+const emit = defineEmits<{ navigate: [view: string] }>();
 
 type Route = { level: 'dashboard' } | { level: 'detail'; grupoId: string };
 
@@ -315,6 +317,45 @@ function handleSearchSelect(id: string) {
       </div>
     </div>
 
+    <div class="grid risco-shortcuts" style="grid-template-columns: repeat(3, 1fr); gap: 12px">
+      <button
+        class="flex items-center risco-shortcut"
+        style="gap: 12px; padding: 16px 18px; border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); cursor: pointer; text-align: left"
+        @click="emit('navigate', 'risco-grupos')"
+      >
+        <Building2 :size="18" style="color: var(--gci-base); flex-shrink: 0" />
+        <div style="flex: 1">
+          <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Grupos Empresariais</div>
+          <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">Consultar e gerenciar grupos</div>
+        </div>
+        <ChevronRight :size="16" style="color: var(--text-muted)" />
+      </button>
+      <button
+        class="flex items-center risco-shortcut"
+        style="gap: 12px; padding: 16px 18px; border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); cursor: pointer; text-align: left"
+        @click="emit('navigate', 'risco-ratings')"
+      >
+        <Layers :size="18" style="color: var(--agro-base); flex-shrink: 0" />
+        <div style="flex: 1">
+          <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Rating</div>
+          <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">Cadastro de ratings e taxas</div>
+        </div>
+        <ChevronRight :size="16" style="color: var(--text-muted)" />
+      </button>
+      <button
+        class="flex items-center risco-shortcut"
+        style="gap: 12px; padding: 16px 18px; border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); cursor: pointer; text-align: left"
+        @click="emit('navigate', 'risco-taxa-operacao')"
+      >
+        <Percent :size="18" style="color: var(--warning-base); flex-shrink: 0" />
+        <div style="flex: 1">
+          <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Taxa de Operação</div>
+          <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">Parametrizar a taxa da operação</div>
+        </div>
+        <ChevronRight :size="16" style="color: var(--text-muted)" />
+      </button>
+    </div>
+
     <!-- KPI Cards (mesmo visual do Dashboard de Cobrança) -->
     <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px">
       <div
@@ -366,6 +407,39 @@ function handleSearchSelect(id: string) {
           <span style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
             {{ kpi.secondaryValue }}
           </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: start">
+      <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); padding: 20px">
+        <div class="flex items-center" style="gap: 10px; margin-bottom: 16px">
+          <BarChart3 :size="16" style="color: var(--text-muted)" />
+          <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Limite por Rating</h3>
+        </div>
+        <div style="height: 220px">
+          <Bar :data="limitePorRating" :options="barOptions" />
+        </div>
+      </div>
+
+      <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); padding: 20px">
+        <div class="flex items-center" style="gap: 10px; margin-bottom: 16px">
+          <BarChart3 :size="16" style="color: var(--text-muted)" />
+          <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Risco por Rating</h3>
+        </div>
+        <div style="height: 220px">
+          <Bar :data="riscoPorRating" :options="barOptions" />
+        </div>
+      </div>
+
+      <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); padding: 20px">
+        <div class="flex items-center" style="gap: 10px; margin-bottom: 16px">
+          <Wallet :size="16" style="color: var(--text-muted)" />
+          <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Risco por Status de Grupo</h3>
+        </div>
+        <div style="height: 220px">
+          <Pie :data="riscoPorStatus" :options="pieOptions" />
         </div>
       </div>
     </div>
@@ -443,45 +517,20 @@ function handleSearchSelect(id: string) {
       </div>
     </div>
 
-    <!-- Gráficos -->
-    <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: start">
-      <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); padding: 20px">
-        <div class="flex items-center" style="gap: 10px; margin-bottom: 16px">
-          <BarChart3 :size="16" style="color: var(--text-muted)" />
-          <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Limite por Rating</h3>
-        </div>
-        <div style="height: 220px">
-          <Bar :data="limitePorRating" :options="barOptions" />
-        </div>
-      </div>
-
-      <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); padding: 20px">
-        <div class="flex items-center" style="gap: 10px; margin-bottom: 16px">
-          <BarChart3 :size="16" style="color: var(--text-muted)" />
-          <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Risco por Rating</h3>
-        </div>
-        <div style="height: 220px">
-          <Bar :data="riscoPorRating" :options="barOptions" />
-        </div>
-      </div>
-
-      <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); padding: 20px">
-        <div class="flex items-center" style="gap: 10px; margin-bottom: 16px">
-          <Wallet :size="16" style="color: var(--text-muted)" />
-          <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Risco por Status de Grupo</h3>
-        </div>
-        <div style="height: 220px">
-          <Pie :data="riscoPorStatus" :options="pieOptions" />
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <style scoped>
 .risco-search-item:hover,
-.risco-queue-row:hover {
+.risco-queue-row:hover,
+.risco-shortcut:hover {
   background: var(--surface-sunken);
+}
+
+@media (max-width: 900px) {
+  .risco-shortcuts {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 .risco-data-table {

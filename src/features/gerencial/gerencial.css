@@ -1,0 +1,321 @@
+.ger-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ger-kicker {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  font-weight: var(--weight-bold);
+  margin-bottom: 6px;
+}
+
+.ger-title {
+  font-size: 26px;
+  font-weight: var(--weight-bold);
+  color: var(--text-strong);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.ger-sub {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.ger-card {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  background: var(--surface-card);
+  overflow: hidden;
+}
+
+.ger-scroll {
+  overflow-x: auto;
+}
+
+.ger-table-head,
+.ger-row {
+  column-gap: 16px;
+  padding: 14px 20px;
+}
+
+.ger-table-head {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  background: var(--surface-sunken);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ger-row {
+  border-top: 1px solid var(--border-default);
+  font-size: var(--text-sm);
+  align-items: center;
+}
+
+.ger-row--click {
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.ger-row--click:hover {
+  background: var(--surface-sunken);
+}
+
+.ger-label {
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.ger-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  outline: none;
+  font-size: var(--text-sm);
+  color: var(--text-strong);
+}
+
+.ger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  color: var(--text-strong);
+}
+
+.ger-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ger-btn--on {
+  background: var(--gci-light);
+  border-color: var(--gci-base);
+  color: var(--gci-base);
+}
+
+.ger-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  background: var(--action-primary-bg);
+  color: var(--action-primary-text);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+}
+
+.ger-btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ger-btn-ghost {
+  height: 38px;
+  padding: 0 16px;
+  background: none;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  color: var(--text-muted);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-sm);
+}
+
+.ger-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.ger-strong {
+  font-weight: var(--weight-bold);
+  color: var(--text-strong);
+}
+
+.ger-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.ger-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.02em;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.ger-kpi {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  background: var(--surface-card);
+  padding: 16px 18px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ger-kpi--on {
+  border-color: var(--gci-base);
+  box-shadow: inset 0 0 0 1px var(--gci-base);
+}
+
+.ger-back {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  cursor: pointer;
+  color: var(--text-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ger-stat {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+}
+
+.ger-stat dt {
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.ger-stat dd {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.ger-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: var(--weight-semibold);
+  padding: 4px 8px 4px 10px;
+  border-radius: 9999px;
+  background: var(--gci-light);
+  color: var(--gci-base);
+}
+
+.ger-chip button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  padding: 0;
+}
+
+.ger-switch {
+  width: 36px;
+  height: 22px;
+  border-radius: 9999px;
+  border: none;
+  background: var(--border-strong);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ger-switch--on {
+  background: var(--gci-base);
+}
+
+.ger-switch span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: white;
+  transition: transform var(--duration-fast);
+}
+
+.ger-switch--on span {
+  transform: translateX(14px);
+}
+
+/* Tabelas dos cards (mesmo visual da tabela de Ativos) */
+.ger-tbl-head,
+.ger-tbl-row {
+  display: grid;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  column-gap: 16px;
+  padding: 14px 20px;
+}
+.ger-tbl-head {
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--border-default);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.ger-tbl-row {
+  border-bottom: 1px solid var(--border-default);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+.ger-tbl-row:hover {
+  background: var(--surface-sunken);
+}
+.ger-tbl-stack {
+  text-align: right;
+}
+.ger-tbl-sub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}

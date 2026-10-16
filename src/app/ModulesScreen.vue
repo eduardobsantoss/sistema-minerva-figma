@@ -44,6 +44,7 @@ import {
   SentinelaContraparteScreen,
   SentinelaLoteScreen,
 } from '@/features/sentinela';
+import { GerencialScreen, PosDesembolsoScreen, ParametrizacaoScreen, GerencialRelatoriosScreen } from '@/features/gerencial';
 
 type View =
   | 'dashboard'
@@ -72,6 +73,7 @@ type View =
   | 'risco-dashboard'
   | 'risco-grupos'
   | 'risco-ratings'
+  | 'risco-taxa-operacao'
   | 'risco-agrupamentos'
   | 'risco-rel'
   | 'risco-serasa'
@@ -81,6 +83,10 @@ type View =
   | 'sentinela-credito'
   | 'sentinela-contraparte'
   | 'sentinela-lote'
+  | 'gerencial'
+  | 'gerencial-pos'
+  | 'gerencial-veiculos'
+  | 'gerencial-relatorios'
   | 'passivo'
   | 'passivo-novo'
   | 'colab'
@@ -114,6 +120,7 @@ const titleMap: Record<View, string> = {
   'risco-dashboard': 'Risco',
   'risco-grupos': 'Grupos Empresariais',
   'risco-ratings': 'Cadastro de Rating',
+  'risco-taxa-operacao': 'Taxa de Operação',
   'risco-agrupamentos': 'Agrupamentos de Limite',
   'risco-rel': 'Relatórios de Risco',
   'risco-serasa': 'Consultas',
@@ -123,6 +130,10 @@ const titleMap: Record<View, string> = {
   'sentinela-credito': 'Monitoramento de Crédito',
   'sentinela-contraparte': 'Cedente/Sacado',
   'sentinela-lote': 'Consulta em lote',
+  gerencial: 'Gerencial',
+  'gerencial-pos': 'Monitoramento pós desembolso',
+  'gerencial-veiculos': 'Parametrização de veículos',
+  'gerencial-relatorios': 'Relatórios',
   passivo: 'Passivo',
   'passivo-novo': 'Passivo',
   colab: 'Colaboradores',
@@ -137,10 +148,11 @@ const VALID_VIEWS = new Set<View>([
   'cras', 'cras-simulador', 'cras-relatorios',
   'semiestruturadas',
   'cobranca', 'cobranca-titulos', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-resultado-notif', 'cobranca-historico-notif', 'cobranca-preventiva', 'cobranca-rel',
-  'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-agrupamentos', 'risco-serasa', 'risco-rel',
+  'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-taxa-operacao', 'risco-agrupamentos', 'risco-serasa', 'risco-rel',
   'grupos-cadastro',
   'monitoramento',
   'sentinela', 'sentinela-credito', 'sentinela-contraparte', 'sentinela-lote',
+  'gerencial', 'gerencial-pos', 'gerencial-veiculos', 'gerencial-relatorios',
   'passivo', 'passivo-novo', 'colab', 'rel', 'conf',
 ]);
 
@@ -172,6 +184,7 @@ const openMenu = ref<string | null>((() => {
   if (v.startsWith('semiestruturadas')) return 'semiestruturadas';
   if (v.startsWith('ativos')) return 'ativos';
   if (v.startsWith('sentinela')) return 'sentinela';
+  if (v.startsWith('gerencial')) return 'gerencial';
   return null;
 })());
 const userToggledSidebar = ref(false);
@@ -244,6 +257,9 @@ function handleModuleClick(title: string) {
   } else if (title === 'Sentinela') {
     view.value = 'sentinela';
     openMenu.value = 'sentinela';
+  } else if (title === 'Gerencial') {
+    view.value = 'gerencial';
+    openMenu.value = 'gerencial';
   }
 }
 </script>
@@ -301,13 +317,17 @@ function handleModuleClick(title: string) {
           <GruposScreen v-else-if="view === 'risco-grupos'" @navigate="handleNavigate" />
           <GruposCadastroScreen v-else-if="view === 'grupos-cadastro'" />
           <RelatoriosScreen v-else-if="view === 'risco-rel'" />
-          <RiscoDashboardScreen v-else-if="view === 'risco-dashboard'" />
+          <RiscoDashboardScreen v-else-if="view === 'risco-dashboard'" @navigate="handleNavigate" />
           <SerasaScreen v-else-if="view === 'risco-serasa'" />
           <MonitoramentoScreen v-else-if="view === 'monitoramento'" />
           <SentinelaVisaoGeralScreen v-else-if="view === 'sentinela'" @navigate="handleNavigate" />
           <SentinelaCreditoScreen v-else-if="view === 'sentinela-credito'" @navigate="handleNavigate" />
           <SentinelaContraparteScreen v-else-if="view === 'sentinela-contraparte'" @navigate="handleNavigate" />
           <SentinelaLoteScreen v-else-if="view === 'sentinela-lote'" @navigate="handleNavigate" />
+          <GerencialScreen v-else-if="view === 'gerencial'" />
+          <PosDesembolsoScreen v-else-if="view === 'gerencial-pos'" />
+          <ParametrizacaoScreen v-else-if="view === 'gerencial-veiculos'" />
+          <GerencialRelatoriosScreen v-else-if="view === 'gerencial-relatorios'" />
           <PassivoNovoScreen v-else-if="view === 'passivo'" />
           <!-- Passivo (antigo) — mantido para reaproveitar componentes
           <PassivoScreen v-else-if="view === 'passivo-antigo'" />
