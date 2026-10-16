@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { Bar, Line } from 'vue-chartjs';
 import type { ChartOptions } from 'chart.js';
 import { ArrowDown, ArrowUp, BadgeCheck, Banknote, Percent, Users, Wallet } from 'lucide-vue-next';
@@ -7,6 +7,7 @@ import '@/lib/chart';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import { useToast } from '@/composables/useToast';
 import {
   CANAL_CONTATO_OPTS,
   STATUS_PREVENTIVO,
@@ -26,6 +27,7 @@ import {
 import StatusTitulosChart from './StatusTitulosChart.vue';
 
 const props = defineProps<{ titulos: TituloPreventivo[] }>();
+const { success, error: toastError } = useToast();
 const emit = defineEmits<{
   open: [payload: { operadorId: string; operador: string; inicio: string; fim: string }];
 }>();
@@ -150,37 +152,215 @@ const eventosPeriodo = computed(() =>
   EVOLUCAO_SEED.filter((e) => inPeriodo(e.data, inicio.value, fim.value)),
 );
 
-const evolucaoData = computed(() => {
-  const map = new Map<string, number>();
-  for (const evento of eventosPeriodo.value) {
-    map.set(evento.data, (map.get(evento.data) ?? 0) + evento.quantidade);
-  }
-  const labels = [...map.keys()].sort();
+interface PontoEvolucao {
+  tentativas: number;
+  porStatus: Record<StatusPreventivo, number>;
+}
+
+function pontoVazio(): PontoEvolucao {
   return {
-    labels: labels.map((iso) => labelAgrupamento(iso, 'dia')),
-    datasets: [
-      {
-        label: 'Contatos',
-        data: labels.map((iso) => map.get(iso) ?? 0),
-        borderColor: '#083C4A',
-        backgroundColor: 'rgba(8, 60, 74, 0.12)',
-        fill: true,
-        tension: 0.3,
-        pointRadius: 2,
-      },
-    ],
+    tentativas: 0,
+    porStatus: Object.fromEntries(STATUS_PREVENTIVO.map((s) => [s.key, 0])) as Record<StatusPreventivo, number>,
+  };
+}
+
+const LINHAS_EVOLUCAO: { key: 'tentativas' | StatusPreventivo; label: string; color: string }[] = [
+  { key: 'tentativas', label: 'Tentativas', color: '#083C4A' },
+  { key: 'CONFIRMADO', label: 'Confirmado', color: '#0F766E' },
+  { key: 'NAO_CONFIRMADO', label: 'Não confirmou', color: '#C2410C' },
+];
+
+const ORDEM_RETORNO: StatusPreventivo[] = [
+  'PENDENTE',
+  'CONFIRMADO',
+  'NAO_CONFIRMADO',
+  'PRORROGADO',
+  'TENTATIVA_SEM_SUCESSO',
+  'PAGO_A_CEDENTE',
+  'AGUARDANDO_RETORNO',
+  'AGUARDANDO_RETORNO_CEDENTE',
+  'AGUARDANDO_RETORNO_SACADO',
+  'NAO_PRIORITARIO',
+  'ISENTO_AGROBANK',
+  'ISENTO_TRADING',
+  'AGUARDANDO_RETORNO_COMERCIAL',
+  'AGUARDANDO_RETORNO_TELEGRAMA',
+];
+
+const STATUS_POR_CHAVE = Object.fromEntries(STATUS_PREVENTIVO.map((s) => [s.key, s.label])) as Record<StatusPreventivo, string>;
+
+const tip = ref({
+  visible: false,
+  title: '',
+  left: '0px',
+  top: '0px',
+  above: true,
+  rows: [] as { label: string; value: number }[],
+});
+const tipEl = ref<HTMLElement | null>(null);
+
+function detalheDoPonto(title: string, ponto: PontoEvolucao) {
+  const rows = [
+    { label: 'Tentativas', value: ponto.tentativas },
+    ...ORDEM_RETORNO.map((key) => ({ label: STATUS_POR_CHAVE[key], value: ponto.porStatus[key] })),
+  ];
+  const text = [title, ...rows.map((row) => `${row.label}: ${row.value}`)].join('\n');
+  return { rows, text };
+}
+
+async function copiarTexto(text: string) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    /* fallback */
+  }
+  try {
+    const field = document.createElement('textarea');
+    field.value = text;
+    field.setAttribute('readonly', '');
+    field.style.position = 'fixed';
+    field.style.left = '-9999px';
+    document.body.appendChild(field);
+    field.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(field);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+function posicaoDoTip(rect: DOMRect) {
+  const gap = 8;
+  const height = tipEl.value?.offsetHeight || 176;
+  const width = tipEl.value?.offsetWidth || 420;
+  const above = rect.top >= height + gap + 8;
+  const half = width / 2;
+  const left = Math.max(half + 8, Math.min(rect.left + rect.width / 2, window.innerWidth - half - 8));
+  return {
+    above,
+    left: `${left}px`,
+    top: `${above ? rect.top - gap : rect.bottom + gap}px`,
+  };
+}
+
+const evolucaoPontos = computed(() => {
+  const map = new Map<string, PontoEvolucao>();
+  for (const evento of eventosPeriodo.value) {
+    const row = map.get(evento.data) ?? pontoVazio();
+    row.tentativas += evento.quantidade;
+    row.porStatus[evento.status] += evento.quantidade;
+    map.set(evento.data, row);
+  }
+  const dates = [...map.keys()].sort();
+  return { dates, map };
+});
+
+const evolucaoData = computed(() => {
+  const { dates, map } = evolucaoPontos.value;
+  return {
+    labels: dates.map((iso) => labelAgrupamento(iso, 'dia')),
+    datasets: LINHAS_EVOLUCAO.map((linha) => ({
+      label: linha.label,
+      data: dates.map((iso) => {
+        const row = map.get(iso);
+        if (!row) return 0;
+        return linha.key === 'tentativas' ? row.tentativas : row.porStatus[linha.key];
+      }),
+      borderColor: linha.color,
+      backgroundColor: linha.color,
+      borderWidth: 2.5,
+      tension: 0.35,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+      pointHoverBorderWidth: 2,
+      pointHoverBackgroundColor: '#ffffff',
+      pointHoverBorderColor: linha.color,
+      fill: false,
+    })),
   };
 });
 
-const lineOptions: ChartOptions<'line'> = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
-  scales: {
-    x: { grid: { display: false }, ticks: { color: '#64748B', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } },
-    y: { beginAtZero: true, ticks: { color: '#64748B', precision: 0 }, grid: { color: 'rgba(15, 23, 42, 0.06)' } },
-  },
-};
+const lineOptions = computed<ChartOptions<'line'>>(() => {
+  const { dates, map } = evolucaoPontos.value;
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    onHover(event, elements, chart) {
+      const target = event.native?.target;
+      if (!(target instanceof HTMLCanvasElement)) return;
+      const y = event.native && 'offsetY' in event.native ? Number(event.native.offsetY) : 0;
+      const noGrafico = y >= chart.chartArea.top && y <= chart.chartArea.bottom && elements.length > 0;
+      target.style.cursor = noGrafico ? 'pointer' : 'default';
+    },
+    onClick(event, elements, chart) {
+      if (!elements.length) return;
+      const y = event.native && 'offsetY' in event.native ? Number(event.native.offsetY) : -1;
+      if (y < chart.chartArea.top || y > chart.chartArea.bottom) return;
+      const index = elements[0].index;
+      const ponto = map.get(dates[index] ?? '');
+      if (!ponto) return;
+      const title = String(chart.data.labels?.[index] ?? '');
+      const { text } = detalheDoPonto(title, ponto);
+      void copiarTexto(text).then((ok) => {
+        if (ok) success(`Detalhe de ${title} copiado.`);
+        else toastError('Não foi possível copiar o detalhe.');
+      });
+    },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+        labels: {
+          usePointStyle: true,
+          pointStyle: 'line',
+          boxWidth: 28,
+          boxHeight: 4,
+          color: '#334155',
+          font: { size: 11, weight: 600 },
+          padding: 16,
+        },
+      },
+      tooltip: {
+        enabled: false,
+        external(context) {
+          const { chart, tooltip } = context;
+          if (tooltip.opacity === 0 || !tooltip.dataPoints?.length) {
+            tip.value = { ...tip.value, visible: false };
+            return;
+          }
+          const ponto = map.get(dates[tooltip.dataPoints[0].dataIndex] ?? '');
+          if (!ponto) {
+            tip.value = { ...tip.value, visible: false };
+            return;
+          }
+          const rect = chart.canvas.getBoundingClientRect();
+          const { rows } = detalheDoPonto(tooltip.title?.[0] ?? '', ponto);
+          tip.value = {
+            visible: true,
+            title: tooltip.title?.[0] ?? '',
+            ...posicaoDoTip(rect),
+            rows,
+          };
+          if (!tipEl.value?.offsetHeight) {
+            nextTick(() => {
+              if (!tip.value.visible) return;
+              tip.value = { ...tip.value, ...posicaoDoTip(rect) };
+            });
+          }
+        },
+      },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#64748B', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } },
+      y: { beginAtZero: true, ticks: { color: '#64748B', precision: 0 }, grid: { color: 'rgba(15, 23, 42, 0.06)' } },
+    },
+  };
+});
 
 interface CanalRow {
   canal: CanalContato;
@@ -381,9 +561,25 @@ function abrirOperador(row: RankingRow) {
         Evolução no período
       </h2>
       <div v-if="eventosPeriodo.length === 0" class="empty">Nenhum dado de evolução no período.</div>
-      <div v-else style="height: 240px">
+      <div v-else class="evo-chart">
         <Line :data="evolucaoData" :options="lineOptions" />
+        <div
+          v-show="tip.visible"
+          ref="tipEl"
+          class="evo-tip"
+          :class="{ above: tip.above }"
+          :style="{ left: tip.left, top: tip.top }"
+        >
+          <div class="evo-tip-title">{{ tip.title }}</div>
+          <div class="evo-tip-grid">
+            <div v-for="row in tip.rows" :key="row.label" class="evo-tip-row">
+              <span>{{ row.label }}</span>
+              <strong>{{ row.value }}</strong>
+            </div>
+          </div>
+        </div>
       </div>
+      <p v-if="eventosPeriodo.length > 0" class="evo-hint">Clique em um ponto para copiar as quantidades daquele dia.</p>
     </div>
 
     <div class="panel">
@@ -511,6 +707,57 @@ function abrirOperador(row: RankingRow) {
 .kpi-foot {
   padding-top: 12px;
   border-top: 1px solid var(--border-default);
+}
+.evo-chart {
+  position: relative;
+  height: 300px;
+}
+.evo-hint {
+  margin: 2px 0 0;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+.evo-tip {
+  position: fixed;
+  z-index: 40;
+  width: max-content;
+  max-width: min(440px, calc(100vw - 24px));
+  transform: translate(-50%, 0);
+  pointer-events: none;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.28);
+}
+.evo-tip.above {
+  transform: translate(-50%, -100%);
+}
+.evo-tip-title {
+  font-size: 12px;
+  font-weight: var(--weight-bold);
+  color: #f8fafb;
+  margin-bottom: 8px;
+}
+.evo-tip-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(8, auto);
+  gap: 3px 18px;
+}
+.evo-tip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.evo-tip-row strong {
+  font-variant-numeric: tabular-nums;
+  color: #f8fafb;
 }
 .panel {
   background: var(--surface-card);
