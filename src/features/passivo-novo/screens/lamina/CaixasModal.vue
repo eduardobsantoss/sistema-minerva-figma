@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { X } from 'lucide-vue-next';
 import { type BankBalanceInput, type CaixaAccount } from '../../data/passivoNovoData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
 
 const props = defineProps<{
   defaultDateIso: string;
@@ -71,7 +72,7 @@ const fieldStyle =
       <div class="flex flex-col" style="padding: 24px; gap: 16px">
         <label class="flex flex-col" style="gap: 6px">
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Data</span>
-          <input v-model="dateIso" type="date" :style="fieldStyle" />
+          <AdminDateField v-model="dateIso" />
         </label>
         <label class="flex flex-col" style="gap: 6px">
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Conta corrente</span>

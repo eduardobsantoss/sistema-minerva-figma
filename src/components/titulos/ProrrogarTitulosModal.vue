@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue';
 import { X } from 'lucide-vue-next';
 import type { TituloSelecionado } from './types';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ titulos: TituloSelecionado[] }>();
 const emit = defineEmits<{ close: [] }>();
@@ -113,9 +115,7 @@ function diasAtrasoLabel(vencimento: string): string {
           <div class="lote-grid">
             <label class="lote-field span-12">
               <span class="lote-label">Motivo da prorrogação</span>
-              <select v-model="motivoProrrogacao" class="lote-input" :data-empty="motivoProrrogacao === ''">
-                <option value="" disabled>Selecione</option>
-              </select>
+              <AdminSelect v-model="motivoProrrogacao" placeholder="Selecione" :options="[]" />
             </label>
 
             <label class="lote-field span-12">
@@ -142,17 +142,17 @@ function diasAtrasoLabel(vencimento: string): string {
               </label>
               <label class="lote-field span-4">
                 <span class="lote-label">Nova data de vencimento</span>
-                <input v-model="novaDataVencimento" type="date" class="lote-input" />
+                <AdminDateField v-model="novaDataVencimento" />
               </label>
               <label class="lote-field span-4">
                 <span class="lote-label">Data de pagamento</span>
-                <input v-model="dataPagamento" type="date" class="lote-input" />
+                <AdminDateField v-model="dataPagamento" />
               </label>
             </template>
 
             <label v-else class="lote-field span-6">
               <span class="lote-label">Nova data de vencimento</span>
-              <input v-model="novaDataVencimento" type="date" class="lote-input" />
+              <AdminDateField v-model="novaDataVencimento" />
             </label>
           </div>
 

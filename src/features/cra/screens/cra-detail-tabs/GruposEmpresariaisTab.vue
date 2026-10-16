@@ -8,6 +8,7 @@ import {
   type GrupoEmpresarialVinculo,
   type GrupoStatusOperacao,
 } from '../../data/craData';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ grupos: GrupoEmpresarialVinculo[] }>();
 const emit = defineEmits<{
@@ -109,10 +110,7 @@ function onVisualizar(g: GrupoEmpresarialVinculo) {
       </div>
       <div>
         <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Status de Operação</div>
-        <select v-model="filterStatus" :style="{ ...filterInputStyle, appearance: 'none' }" @change="setPage(1)">
-          <option value="">Todos</option>
-          <option v-for="s in GRUPO_STATUS_OPERACAO" :key="s" :value="s">{{ s }}</option>
-        </select>
+        <AdminSelect v-model="filterStatus" :options="[{ value: '', label: 'Todos' }, ...GRUPO_STATUS_OPERACAO.map((s) => ({ value: s, label: s }))]" @update:model-value="setPage(1)" />
       </div>
     </div>
 

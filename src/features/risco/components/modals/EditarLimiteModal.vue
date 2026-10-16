@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { X } from 'lucide-vue-next';
 import { brl, type AgrupamentoLimite, type ProdutoLimite } from '../../data/riscoData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
 
 interface Props {
   agrupamento: AgrupamentoLimite;
@@ -72,7 +73,7 @@ function handleConfirm() {
           </div>
           <div>
             <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Vencimento</div>
-            <input v-model="vencimentoInput" type="date" style="width: 100%; height: 40px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)" />
+            <AdminDateField v-model="vencimentoInput" />
           </div>
         </div>
       </div>

@@ -5,6 +5,8 @@ import {
   AGRUPAMENTO_LIMITE_OPTS, PRODUTO_LIMITE_OPTS,
   type LimiteProdutoRow, type AgrupamentoLimite, type ProdutoLimite,
 } from '../../data/riscoData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const emit = defineEmits<{ close: []; confirm: [rows: LimiteProdutoRow[]] }>();
 
@@ -69,13 +71,7 @@ function handleConfirm() {
       <div style="padding: 28px; overflow-y: auto; flex: 1">
         <div style="margin-bottom: 20px">
           <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Agrupamento de operações</div>
-          <select
-            v-model="agrupamento"
-            style="width: 100%; height: 40px; padding: 0 14px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
-          >
-            <option value="">Selecione</option>
-            <option v-for="a in AGRUPAMENTO_LIMITE_OPTS" :key="a" :value="a">{{ a }}</option>
-          </select>
+          <AdminSelect v-model="agrupamento" :options="[{ value: '', label: 'Selecione' }, ...AGRUPAMENTO_LIMITE_OPTS.map((a) => ({ value: a, label: a }))]" />
         </div>
 
         <template v-if="agrupamento">
@@ -97,10 +93,7 @@ function handleConfirm() {
                 <Trash2 :size="12" />
               </button>
             </div>
-            <select v-model="row.produto" style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)">
-              <option value="">Selecione o produto</option>
-              <option v-for="p in PRODUTO_LIMITE_OPTS" :key="p" :value="p">{{ p }}</option>
-            </select>
+            <AdminSelect v-model="row.produto" :options="[{ value: '', label: 'Selecione o produto' }, ...PRODUTO_LIMITE_OPTS.map((p) => ({ value: p, label: p }))]" />
             <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 10px">
               <div>
                 <div style="font-size: 10px; font-weight: var(--weight-bold); color: var(--text-muted); margin-bottom: 4px">Valor do limite</div>
@@ -108,7 +101,7 @@ function handleConfirm() {
               </div>
               <div>
                 <div style="font-size: 10px; font-weight: var(--weight-bold); color: var(--text-muted); margin-bottom: 4px">Vencimento</div>
-                <input v-model="row.vencimento" type="date" style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)" />
+                <AdminDateField v-model="row.vencimento" />
               </div>
             </div>
           </div>

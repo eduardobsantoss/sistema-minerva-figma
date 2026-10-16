@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { X, UserCog } from 'lucide-vue-next';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 import { GERENTES_SEED } from '../../data/riscoData';
 
 const props = defineProps<{ grupoNome: string; gerenteAtual: string }>();
@@ -8,6 +9,10 @@ const emit = defineEmits<{ close: []; confirm: [novoGerente: string] }>();
 
 const gerente = ref('');
 const canConfirm = computed(() => gerente.value !== '' && gerente.value !== props.gerenteAtual);
+const gerenteOptions = computed(() => [
+  { value: '', label: 'Selecione' },
+  ...GERENTES_SEED.filter((item) => item.nome !== props.gerenteAtual).map((item) => ({ value: item.nome, label: item.nome })),
+]);
 </script>
 
 <template>
@@ -37,13 +42,7 @@ const canConfirm = computed(() => gerente.value !== '' && gerente.value !== prop
         <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
           Novo gerente
         </div>
-        <select
-          v-model="gerente"
-          style="width: 100%; height: 40px; padding: 0 14px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
-        >
-          <option value="">Selecione</option>
-          <option v-for="g in GERENTES_SEED.filter((x) => x.nome !== gerenteAtual)" :key="g.id" :value="g.nome">{{ g.nome }}</option>
-        </select>
+        <AdminSelect v-model="gerente" :options="gerenteOptions" />
       </div>
 
       <div class="flex items-center justify-end" style="gap: 12px; padding: 16px 28px; border-top: 1px solid var(--border-default)">

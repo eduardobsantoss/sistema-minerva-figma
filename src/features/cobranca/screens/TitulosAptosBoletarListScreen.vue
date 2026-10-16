@@ -19,6 +19,8 @@ import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
 import type { TituloSelecionado } from '@/components/titulos/types';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ titulos: Titulo[] }>();
 const emit = defineEmits<{
@@ -327,17 +329,11 @@ function finalizarBoletos(ids: string[]) {
             <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px">
               <div>
                 <div class="filter-label">Tipo de veículo</div>
-                <select v-model="draft.veiculoTipo" class="filter-input">
-                  <option value="">Todos</option>
-                  <option v-for="t in VEICULO_TIPO_OPTS" :key="t" :value="t">{{ t }}</option>
-                </select>
+                <AdminSelect v-model="draft.veiculoTipo" :options="[{ value: '', label: 'Todos' }, ...VEICULO_TIPO_OPTS.map((t) => ({ value: t, label: t }))]" />
               </div>
               <div>
                 <div class="filter-label">Veículo</div>
-                <select v-model="draft.veiculoId" class="filter-input">
-                  <option value="">Todos</option>
-                  <option v-for="v in VEICULO_OPTS" :key="v.id" :value="v.id">{{ v.nome }}</option>
-                </select>
+                <AdminSelect v-model="draft.veiculoId" :options="[{ value: '', label: 'Todos' }, ...VEICULO_OPTS.map((v) => ({ value: v.id, label: v.nome }))]" />
               </div>
               <div>
                 <div class="filter-label">Dias para vencer (até)</div>
@@ -366,11 +362,11 @@ function finalizarBoletos(ids: string[]) {
               <div />
               <div>
                 <div class="filter-label">Vencimento de</div>
-                <input v-model="draft.vencimentoDe" type="date" class="filter-input" />
+                <AdminDateField v-model="draft.vencimentoDe" />
               </div>
               <div>
                 <div class="filter-label">Vencimento até</div>
-                <input v-model="draft.vencimentoAte" type="date" class="filter-input" />
+                <AdminDateField v-model="draft.vencimentoAte" />
               </div>
             </div>
             <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">

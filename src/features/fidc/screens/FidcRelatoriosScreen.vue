@@ -33,6 +33,8 @@ import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
 import type { TituloSelecionado } from '@/components/titulos/types';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { useBackgroundReport } from '@/composables/useBackgroundReport';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const REPORT_ICONS: Record<PortfolioReportKey, Component> = {
   ger001: Wallet,
@@ -352,10 +354,7 @@ const inputStyle = {
     <div v-if="!applied" style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); padding: 22px">
       <div style="margin-bottom: 18px; max-width: 320px">
         <div :style="labelStyle">Situação do fundo</div>
-        <select v-model="draft.situacao" :style="inputStyle">
-          <option value="">Todos</option>
-          <option v-for="o in SITUACAO_FUNDO_OPTS" :key="o" :value="o">{{ o }}</option>
-        </select>
+        <AdminSelect v-model="draft.situacao" :options="[{ value: '', label: 'Todos' }, ...SITUACAO_FUNDO_OPTS.map((o) => ({ value: o, label: o }))]" />
       </div>
 
       <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px">
@@ -455,25 +454,19 @@ const inputStyle = {
         <template v-if="!sacadosMode">
           <div>
             <div :style="labelStyle">Status pagamento</div>
-            <select v-model="previewFilters.statusPagamento" :style="inputStyle">
-              <option value="">Todos</option>
-              <option v-for="o in STATUS_PAGAMENTO_PREVIEW" :key="o" :value="o">{{ o }}</option>
-            </select>
+            <AdminSelect v-model="previewFilters.statusPagamento" :options="[{ value: '', label: 'Todos' }, ...STATUS_PAGAMENTO_PREVIEW.map((o) => ({ value: o, label: o }))]" />
           </div>
           <div>
             <div :style="labelStyle">Vencimento de</div>
-            <input v-model="previewFilters.vencimentoDe" type="date" :style="inputStyle" />
+            <AdminDateField v-model="previewFilters.vencimentoDe" />
           </div>
           <div>
             <div :style="labelStyle">Vencimento até</div>
-            <input v-model="previewFilters.vencimentoAte" type="date" :style="inputStyle" />
+            <AdminDateField v-model="previewFilters.vencimentoAte" />
           </div>
           <div v-if="notificacoesMode">
             <div :style="labelStyle">Status notificação</div>
-            <select v-model="previewFilters.statusNotificacao" :style="inputStyle">
-              <option value="">Todos</option>
-              <option v-for="o in STATUS_NOTIFICACAO_PREVIEW" :key="o" :value="o">{{ o }}</option>
-            </select>
+            <AdminSelect v-model="previewFilters.statusNotificacao" :options="[{ value: '', label: 'Todos' }, ...STATUS_NOTIFICACAO_PREVIEW.map((o) => ({ value: o, label: o }))]" />
           </div>
         </template>
       </div>

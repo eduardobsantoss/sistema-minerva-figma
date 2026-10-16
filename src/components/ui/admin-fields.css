@@ -1,0 +1,228 @@
+.admin-field {
+  position: relative;
+  width: 100%;
+}
+
+.admin-field__input {
+  width: 100%;
+  height: 40px;
+  padding: 0 40px 0 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  outline: none;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  color: var(--text-strong);
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-field__input--text {
+  cursor: text;
+}
+
+.admin-field__input[data-empty='true'] {
+  color: var(--text-muted);
+}
+
+.admin-field__input:focus {
+  box-shadow: var(--focus-ring);
+}
+
+.admin-field__input:disabled {
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.admin-field__icon {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+}
+
+.admin-field__icon:hover {
+  background: var(--surface-sunken);
+  color: var(--text-strong);
+}
+
+.admin-menu {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  background: var(--surface-card);
+  padding: 4px;
+}
+
+.admin-menu__item {
+  min-height: 36px;
+  border-radius: var(--radius-md);
+  margin: 1px 0;
+  padding: 0 12px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-strong);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-menu__item:hover,
+.admin-menu__item--active {
+  background: var(--surface-sunken);
+  color: var(--text-strong);
+}
+
+.admin-menu__item--active {
+  font-weight: var(--weight-semibold);
+}
+
+.admin-date-menu {
+  padding: 0;
+  width: 300px;
+}
+
+.admin-date-menu__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 8px 8px 4px;
+}
+
+.admin-date-menu__title {
+  border: none;
+  background: transparent;
+  color: var(--text-strong);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: default;
+}
+
+.admin-date-menu__nav {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-strong);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-date-menu__nav:hover {
+  background: var(--surface-sunken);
+}
+
+.admin-date-menu__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0 8px 8px;
+  gap: 0;
+}
+
+.admin-date-menu__weekday {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: var(--text-micro);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-date-menu__day {
+  height: 36px;
+  width: 36px;
+  margin: 0 auto;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-strong);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.admin-date-menu__day:hover {
+  background: var(--surface-sunken);
+  color: var(--text-strong);
+}
+
+.admin-date-menu__day--outside {
+  color: var(--text-muted);
+  opacity: 0.55;
+}
+
+.admin-date-menu__day:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.admin-date-menu__day--selected,
+.admin-date-menu__day--selected:hover {
+  background: var(--gci-base);
+  color: #fff;
+  font-weight: var(--weight-semibold);
+  opacity: 1;
+}
+
+.admin-time-menu {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  max-height: 280px;
+}
+
+.admin-time-menu__head {
+  position: sticky;
+  top: 0;
+  background: var(--surface-card);
+  padding: 6px 12px 4px;
+  font-size: var(--text-micro);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.admin-time-menu__col {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 272px;
+}
+
+.admin-time-menu__col::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-time-menu__item--selected,
+.admin-time-menu__item--selected:hover {
+  background: var(--gci-base);
+  color: #fff;
+  font-weight: var(--weight-semibold);
+}

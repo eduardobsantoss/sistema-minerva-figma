@@ -12,6 +12,7 @@ import {
   round2,
   valorPorPct,
 } from '../data/distribuicaoCotas';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ operacao: SemiOperacao }>();
 const emit = defineEmits<{ close: []; save: [cotas: SemiCota[]] }>();
@@ -299,10 +300,7 @@ function salvar() {
                   <Plus :size="16" />
                 </div>
                 <div style="min-width: 0; flex: 1">
-                  <select v-model="n.veiculo" class="dist-input" :data-empty="n.veiculo === ''" aria-label="Veículo que adquire">
-                    <option value="" disabled>Veículo que adquire</option>
-                    <option v-for="v in veiculosParaLinha(n.veiculo)" :key="v" :value="v">{{ v }}</option>
-                  </select>
+                  <AdminSelect v-model="n.veiculo" placeholder="Veículo que adquire" :options="[...veiculosParaLinha(n.veiculo).map((v) => ({ value: v, label: v }))]" aria-label="Veículo que adquire" />
                 </div>
               </div>
 

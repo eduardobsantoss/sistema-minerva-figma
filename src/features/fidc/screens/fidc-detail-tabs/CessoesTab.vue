@@ -11,6 +11,7 @@ import {
   type Cessao,
   type RoundStatus,
 } from '../../data/fidcsData';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ cessoes: Cessao[] }>();
 const emit = defineEmits<{
@@ -125,17 +126,11 @@ function onLinkBlur(c: Cessao) {
       </div>
       <div>
         <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Status</div>
-        <select v-model="filterStatus" :style="{ ...filterInputStyle, appearance: 'none' }" @change="setPage(1)">
-          <option value="">Todos</option>
-          <option v-for="s in ROUND_STATUSES" :key="s" :value="s">{{ s }}</option>
-        </select>
+        <AdminSelect v-model="filterStatus" :options="[{ value: '', label: 'Todos' }, ...ROUND_STATUSES.map((s) => ({ value: s, label: s }))]" @update:model-value="setPage(1)" />
       </div>
       <div>
         <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Tipo de desembolso</div>
-        <select v-model="filterTipo" :style="{ ...filterInputStyle, appearance: 'none' }" @change="setPage(1)">
-          <option value="">Todos</option>
-          <option v-for="t in CESSAO_TIPOS" :key="t" :value="t">{{ t }}</option>
-        </select>
+        <AdminSelect v-model="filterTipo" :options="[{ value: '', label: 'Todos' }, ...CESSAO_TIPOS.map((t) => ({ value: t, label: t }))]" @update:model-value="setPage(1)" />
       </div>
       <div>
         <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Cedente</div>

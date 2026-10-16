@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FieldLabel from './FieldLabel.vue';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
 
 defineProps<{
   label: string;
@@ -15,7 +16,9 @@ const model = defineModel<string>({ default: '' });
 <template>
   <div :style="{ gridColumn: span ? `span ${span}` : undefined }">
     <FieldLabel>{{ label }}</FieldLabel>
+    <AdminDateField v-if="type === 'date'" v-model="model" :disabled="disabled" />
     <input
+      v-else
       v-model="model"
       :placeholder="placeholder"
       :type="type"

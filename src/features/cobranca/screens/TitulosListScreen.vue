@@ -30,6 +30,7 @@ import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
 import type { TituloSelecionado } from '@/components/titulos/types';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ titulos: Titulo[] }>();
 const emit = defineEmits<{
@@ -452,26 +453,15 @@ function menuActions(t: Titulo) {
               <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 14px">
                 <div>
                   <div class="filter-label">Veículo</div>
-                  <select v-model="draft.veiculoId" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="v in VEICULO_OPTS" :key="v.id" :value="v.id">{{ v.nome }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.veiculoId" :options="[{ value: '', label: 'Todos' }, ...VEICULO_OPTS.map((v) => ({ value: v.id, label: v.nome }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Tipo de veículo</div>
-                  <select v-model="draft.veiculoTipo" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="t in VEICULO_TIPO_OPTS" :key="t" :value="t">{{ t }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.veiculoTipo" :options="[{ value: '', label: 'Todos' }, ...VEICULO_TIPO_OPTS.map((t) => ({ value: t, label: t }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Status de pagamento</div>
-                  <select v-model="draft.statusPagamento" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="s in STATUS_PAGAMENTO_OPTS" :key="s" :value="s">
-                      {{ statusPagamentoLabel(s) }}
-                    </option>
-                  </select>
+                  <AdminSelect v-model="draft.statusPagamento" :options="[{ value: '', label: 'Todos' }, ...STATUS_PAGAMENTO_OPTS.map((s) => ({ value: s, label: statusPagamentoLabel(s) }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Cedente</div>

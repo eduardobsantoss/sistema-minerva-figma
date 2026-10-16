@@ -11,6 +11,7 @@ import {
   type ContatoSacado,
   type ParteNotificacao,
 } from '../composables/usePartesNotificacao';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -252,9 +253,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
               </label>
               <label class="pn-field">
                 <span class="pn-label">País (DDI)</span>
-                <select v-model="form.ddi" class="pn-input">
-                  <option v-for="d in DDI_OPTS" :key="d.value" :value="d.value">{{ d.label }}</option>
-                </select>
+                <AdminSelect v-model="form.ddi" :options="[...DDI_OPTS.map((d) => ({ value: d.value, label: d.label }))]" />
               </label>
               <label class="pn-field">
                 <span class="pn-label">Telefone</span>

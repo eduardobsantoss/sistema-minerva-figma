@@ -9,6 +9,7 @@ import {
   type PuEventType,
   type Serie,
 } from '../../data/passivoNovoData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
 
 const props = defineProps<{
   type: PuEventType;
@@ -103,7 +104,7 @@ const fieldStyle =
         </label>
         <label class="flex flex-col" style="gap: 6px">
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Data</span>
-          <input v-model="dateIso" type="date" :style="fieldStyle" />
+          <AdminDateField v-model="dateIso" />
         </label>
         <label v-if="showQuantity" class="flex flex-col" style="gap: 6px">
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Quantidade de cotas</span>

@@ -13,6 +13,8 @@ import {
   type Severidade,
   type TipoAlerta,
 } from '../data/sentinelaData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{
   filtro: FiltroSentinela;
@@ -191,19 +193,11 @@ function filterBtnStyle(on: boolean) {
               </div>
               <div>
                 <div class="filter-label">Severidade</div>
-                <select v-model="draft.severidade" class="filter-input sn-focus">
-                  <option value="">Todas</option>
-                  <option value="critico">Crítico</option>
-                  <option value="atencao">Atenção</option>
-                  <option value="ok">Ok</option>
-                </select>
+                <AdminSelect v-model="draft.severidade" :options="[{ value: '', label: 'Todas' }, { value: 'critico', label: 'Crítico' }, { value: 'atencao', label: 'Atenção' }, { value: 'ok', label: 'Ok' }]" />
               </div>
               <div>
                 <div class="filter-label">Fundo ou CRA</div>
-                <select v-model="draft.veiculoId" class="filter-input sn-focus">
-                  <option value="">Todos</option>
-                  <option v-for="veiculo in veiculos" :key="veiculo.id" :value="veiculo.id">{{ veiculo.nome }}</option>
-                </select>
+                <AdminSelect v-model="draft.veiculoId" :options="[{ value: '', label: 'Todos' }, ...veiculos.map((veiculo) => ({ value: veiculo.id, label: veiculo.nome }))]" />
               </div>
               <div>
                 <div class="filter-label">Exposição mín.</div>
@@ -215,11 +209,11 @@ function filterBtnStyle(on: boolean) {
               </div>
               <div>
                 <div class="filter-label">Período (de)</div>
-                <input v-model="draft.periodoInicio" type="date" class="filter-input sn-focus" />
+                <AdminDateField v-model="draft.periodoInicio" />
               </div>
               <div>
                 <div class="filter-label">Período (até)</div>
-                <input v-model="draft.periodoFim" type="date" class="filter-input sn-focus" />
+                <AdminDateField v-model="draft.periodoFim" />
               </div>
             </div>
             <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">

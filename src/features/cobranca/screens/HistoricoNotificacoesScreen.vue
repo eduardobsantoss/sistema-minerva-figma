@@ -25,6 +25,8 @@ import {
   type TipoInformacaoHist,
   type TipoNotificacaoHist,
 } from '../data/historicoNotificacoesData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 type ColKey =
   | 'lastro'
@@ -398,10 +400,7 @@ function cellText(n: HistoricoNotificacao, key: ColKey): string {
               <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 14px">
                 <div>
                   <div class="filter-label">Tipo de operação</div>
-                  <select v-model="draft.tipoOperacao" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="t in TIPO_OPERACAO_OPTS" :key="t" :value="t">{{ t }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.tipoOperacao" :options="[{ value: '', label: 'Todos' }, ...TIPO_OPERACAO_OPTS.map((t) => ({ value: t, label: t }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Operação</div>
@@ -409,35 +408,19 @@ function cellText(n: HistoricoNotificacao, key: ColKey): string {
                 </div>
                 <div>
                   <div class="filter-label">Método de notificação</div>
-                  <select v-model="draft.metodo" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="m in METODO_OPTS" :key="m" :value="m">{{ m }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.metodo" :options="[{ value: '', label: 'Todos' }, ...METODO_OPTS.map((m) => ({ value: m, label: m }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Status da notificação</div>
-                  <select v-model="draft.statusNotificacao" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="s in STATUS_ENVIO_OPTS" :key="s" :value="s">{{ statusEnvioLabel(s as StatusEnvioHist) }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.statusNotificacao" :options="[{ value: '', label: 'Todos' }, ...STATUS_ENVIO_OPTS.map((s) => ({ value: s, label: statusEnvioLabel(s as StatusEnvioHist) }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Status de pagamento</div>
-                  <select v-model="draft.statusPagamento" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="s in STATUS_PAGAMENTO_HIST_OPTS" :key="s" :value="s">
-                      {{ statusPagamentoHistLabel(s as StatusPagamentoHist) }}
-                    </option>
-                  </select>
+                  <AdminSelect v-model="draft.statusPagamento" :options="[{ value: '', label: 'Todos' }, ...STATUS_PAGAMENTO_HIST_OPTS.map((s) => ({ value: s, label: statusPagamentoHistLabel(s as StatusPagamentoHist) }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Tipo de notificação</div>
-                  <select v-model="draft.tipoNotificacao" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="t in TIPO_NOTIFICACAO_HIST_OPTS" :key="t" :value="t">
-                      {{ tipoNotificacaoHistLabel(t as TipoNotificacaoHist) }}
-                    </option>
-                  </select>
+                  <AdminSelect v-model="draft.tipoNotificacao" :options="[{ value: '', label: 'Todos' }, ...TIPO_NOTIFICACAO_HIST_OPTS.map((t) => ({ value: t, label: tipoNotificacaoHistLabel(t as TipoNotificacaoHist) }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Lastro</div>
@@ -449,11 +432,11 @@ function cellText(n: HistoricoNotificacao, key: ColKey): string {
                 </div>
                 <div>
                   <div class="filter-label">Data inicial</div>
-                  <input v-model="draft.dataInicial" type="date" class="filter-input" />
+                  <AdminDateField v-model="draft.dataInicial" />
                 </div>
                 <div>
                   <div class="filter-label">Data final</div>
-                  <input v-model="draft.dataFinal" type="date" class="filter-input" />
+                  <AdminDateField v-model="draft.dataFinal" />
                 </div>
                 <div>
                   <div class="filter-label">Documento cedente</div>

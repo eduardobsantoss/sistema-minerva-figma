@@ -14,6 +14,7 @@ import {
   type ValidationItem,
 } from '../data/validacoesConfigData';
 import ValidationDetailView from '../components/validacoes-config/ValidationDetailView.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const COLS = '0.55fr 1.1fr 2fr 1fr 1.15fr auto';
 
@@ -315,12 +316,7 @@ function closeDetails() {
               </div>
               <div>
                 <div :style="labelStyle">Setor Responsável</div>
-                <select v-model="draft.setor" :style="inputStyle">
-                  <option value="">Todos</option>
-                  <option v-for="s in SETOR_RESPONSAVEL_OPTS" :key="s.value" :value="s.value">
-                    {{ s.text }}
-                  </option>
-                </select>
+                <AdminSelect v-model="draft.setor" :options="[{ value: '', label: 'Todos' }, ...SETOR_RESPONSAVEL_OPTS.map((s) => ({ value: s.value, label: s.text }))]" />
               </div>
             </div>
 

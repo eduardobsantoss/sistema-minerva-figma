@@ -3,6 +3,8 @@ import { ref } from 'vue';
 import ShowcaseSection from './ShowcaseSection.vue';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const textValue = ref('');
 const selectValue = ref('');
@@ -47,15 +49,11 @@ const inputStyle = {
         </div>
         <div>
           <div :style="labelStyle">Status</div>
-          <select v-model="selectValue" :style="inputStyle">
-            <option value="">Selecione</option>
-            <option value="ativo">Ativo</option>
-            <option value="inativo">Inativo</option>
-          </select>
+          <AdminSelect v-model="selectValue" :options="[{ value: '', label: 'Selecione' }, { value: 'ativo', label: 'Ativo' }, { value: 'inativo', label: 'Inativo' }]" />
         </div>
         <div>
           <div :style="labelStyle">Data</div>
-          <input v-model="dateValue" type="date" :style="inputStyle" />
+          <AdminDateField v-model="dateValue" />
         </div>
       </div>
     </ShowcaseSection>

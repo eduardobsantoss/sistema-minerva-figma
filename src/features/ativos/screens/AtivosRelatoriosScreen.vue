@@ -23,6 +23,8 @@ import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
 import type { TituloSelecionado } from '@/components/titulos/types';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { useBackgroundReport } from '@/composables/useBackgroundReport';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const REPORT_ICONS: Record<AtivosReportKey, Component> = {
   wallet: Wallet,
@@ -327,17 +329,11 @@ const inputStyle = {
       <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 18px">
         <div>
           <div :style="labelStyle">Veículo</div>
-          <select v-model="draft.tipo" :style="inputStyle">
-            <option value="">Todos</option>
-            <option v-for="o in TIPO_VEICULO_OPTS" :key="o" :value="o">{{ o }}</option>
-          </select>
+          <AdminSelect v-model="draft.tipo" :options="[{ value: '', label: 'Todos' }, ...TIPO_VEICULO_OPTS.map((o) => ({ value: o, label: o }))]" />
         </div>
         <div>
           <div :style="labelStyle">Situação do fundo</div>
-          <select v-model="draft.situacao" :style="inputStyle">
-            <option value="">Todas</option>
-            <option v-for="o in SITUACAO_FUNDO_OPTS" :key="o" :value="o">{{ o }}</option>
-          </select>
+          <AdminSelect v-model="draft.situacao" :options="[{ value: '', label: 'Todas' }, ...SITUACAO_FUNDO_OPTS.map((o) => ({ value: o, label: o }))]" />
         </div>
       </div>
 
@@ -438,18 +434,15 @@ const inputStyle = {
         <template v-if="!contratosMode">
           <div>
             <div :style="labelStyle">Situação</div>
-            <select v-model="previewFilters.situacao" :style="inputStyle">
-              <option value="">Todas</option>
-              <option v-for="o in SITUACAO_OPTS" :key="o" :value="o">{{ situacaoLabel(o) }}</option>
-            </select>
+            <AdminSelect v-model="previewFilters.situacao" :options="[{ value: '', label: 'Todas' }, ...SITUACAO_OPTS.map((o) => ({ value: o, label: situacaoLabel(o) }))]" />
           </div>
           <div>
             <div :style="labelStyle">Vencimento de</div>
-            <input v-model="previewFilters.vencimentoDe" type="date" :style="inputStyle" />
+            <AdminDateField v-model="previewFilters.vencimentoDe" />
           </div>
           <div>
             <div :style="labelStyle">Vencimento até</div>
-            <input v-model="previewFilters.vencimentoAte" type="date" :style="inputStyle" />
+            <AdminDateField v-model="previewFilters.vencimentoAte" />
           </div>
         </template>
       </div>

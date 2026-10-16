@@ -32,6 +32,8 @@ import MultiCheckDropdown from './MultiCheckDropdown.vue';
 import FiltrosPopover from './FiltrosPopover.vue';
 import ColunasMenu from './ColunasMenu.vue';
 import BoletoMenu from './BoletoMenu.vue';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 export type SacadoTab = 'titulos' | 'contatos' | 'registros';
 
@@ -333,10 +335,7 @@ function numerosDos(r: RegistroTentativa): string[] {
               <MultiCheckDropdown v-model="draft.tipos" label="Tipo de título" :options="tipoOptions" :panel-width="240" />
               <div>
                 <div class="filter-label">Situação</div>
-                <select v-model="draft.situacao" class="filter-input">
-                  <option value="">Todas</option>
-                  <option v-for="s in SITUACOES_OPTS" :key="s" :value="s">{{ s }}</option>
-                </select>
+                <AdminSelect v-model="draft.situacao" :options="[{ value: '', label: 'Todas' }, ...SITUACOES_OPTS.map((s) => ({ value: s, label: s }))]" />
               </div>
               <div>
                 <div class="filter-label">Valor até</div>
@@ -344,11 +343,11 @@ function numerosDos(r: RegistroTentativa): string[] {
               </div>
               <div>
                 <div class="filter-label">Vencimento de</div>
-                <input v-model="draft.vencDe" type="date" class="filter-input" />
+                <AdminDateField v-model="draft.vencDe" />
               </div>
               <div>
                 <div class="filter-label">Vencimento até</div>
-                <input v-model="draft.vencAte" type="date" class="filter-input" />
+                <AdminDateField v-model="draft.vencAte" />
               </div>
               <div>
                 <div class="filter-label">Dias para vencimento</div>
@@ -356,17 +355,11 @@ function numerosDos(r: RegistroTentativa): string[] {
               </div>
               <div>
                 <div class="filter-label">CRA</div>
-                <select v-model="draft.cra" class="filter-input">
-                  <option value="">Todos</option>
-                  <option v-for="c in CRA_OPTS" :key="c" :value="c">{{ c }}</option>
-                </select>
+                <AdminSelect v-model="draft.cra" :options="[{ value: '', label: 'Todos' }, ...CRA_OPTS.map((c) => ({ value: c, label: c }))]" />
               </div>
               <div>
                 <div class="filter-label">FIDC</div>
-                <select v-model="draft.fidc" class="filter-input">
-                  <option value="">Todos</option>
-                  <option v-for="f in FIDC_OPTS" :key="f" :value="f">{{ f }}</option>
-                </select>
+                <AdminSelect v-model="draft.fidc" :options="[{ value: '', label: 'Todos' }, ...FIDC_OPTS.map((f) => ({ value: f, label: f }))]" />
               </div>
             </FiltrosPopover>
             <ColunasMenu :cols="ALL_COLS" :visible="visibleCols" @toggle="toggleCol" />

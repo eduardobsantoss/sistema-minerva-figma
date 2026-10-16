@@ -32,6 +32,8 @@ import {
   type RequestReportValue,
 } from '../data/relatoriosPedidosData';
 import { TIPO_PEDIDO_OPTS } from '../data/tipoPedidoOptions';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const REPORT_ICONS: Record<RequestReportValue, Component> = {
   20: ClipboardList,
@@ -504,26 +506,15 @@ function escapeCsvCell(value: string): string {
         </div>
         <div>
           <div :style="labelStyle">Gerente comercial</div>
-          <select v-model="draft.gerenteComercial" :style="inputStyle">
-            <option value="">Todos</option>
-            <option v-for="g in GERENTES_COMERCIAIS" :key="g" :value="g">{{ g }}</option>
-          </select>
+          <AdminSelect v-model="draft.gerenteComercial" :options="[{ value: '', label: 'Todos' }, ...GERENTES_COMERCIAIS.map((g) => ({ value: g, label: g }))]" />
         </div>
         <div>
           <div :style="labelStyle">Grupo empresarial</div>
-          <select v-model="draft.grupoEmpresarial" :style="inputStyle">
-            <option value="">Todos</option>
-            <option v-for="gr in GRUPOS_EMPRESARIAIS" :key="gr" :value="gr">{{ gr }}</option>
-          </select>
+          <AdminSelect v-model="draft.grupoEmpresarial" :options="[{ value: '', label: 'Todos' }, ...GRUPOS_EMPRESARIAIS.map((gr) => ({ value: gr, label: gr }))]" />
         </div>
         <div>
           <div :style="labelStyle">Tipo da solicitação</div>
-          <select v-model="draft.tipoSolicitacao" :style="inputStyle">
-            <option value="">Todos</option>
-            <option v-for="tp in TIPO_PEDIDO_OPTS" :key="tp.value" :value="tp.text">
-              {{ tp.text }}
-            </option>
-          </select>
+          <AdminSelect v-model="draft.tipoSolicitacao" :options="[{ value: '', label: 'Todos' }, ...TIPO_PEDIDO_OPTS.map((tp) => ({ value: tp.text, label: tp.text }))]" />
         </div>
         <div v-if="showQuitacao" style="grid-column: 1 / -1">
           <ToggleRow
@@ -539,51 +530,27 @@ function escapeCsvCell(value: string): string {
       <div v-else class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 14px">
         <div>
           <div :style="labelStyle">Aprovação de</div>
-          <input
-            v-model="draft.aprovacaoDe"
-            type="date"
-            :style="inputStyle"
-            @input="errors.aprovacaoDatas = ''"
-          />
+          <AdminDateField v-model="draft.aprovacaoDe" @update:model-value="errors.aprovacaoDatas = ''" />
         </div>
         <div>
           <div :style="labelStyle">Aprovação até</div>
-          <input
-            v-model="draft.aprovacaoAte"
-            type="date"
-            :style="inputStyle"
-            @input="errors.aprovacaoDatas = ''"
-          />
+          <AdminDateField v-model="draft.aprovacaoAte" @update:model-value="errors.aprovacaoDatas = ''" />
         </div>
         <div>
           <div :style="labelStyle">Grupo empresarial</div>
-          <select v-model="draft.grupoEmpresarial" :style="inputStyle">
-            <option value="">Todos</option>
-            <option v-for="gr in GRUPOS_EMPRESARIAIS" :key="gr" :value="gr">{{ gr }}</option>
-          </select>
+          <AdminSelect v-model="draft.grupoEmpresarial" :options="[{ value: '', label: 'Todos' }, ...GRUPOS_EMPRESARIAIS.map((gr) => ({ value: gr, label: gr }))]" />
         </div>
         <div>
           <div :style="labelStyle">Tipo do pedido</div>
-          <select v-model="draft.tipoPedido" :style="inputStyle">
-            <option value="">Todos</option>
-            <option v-for="tp in TIPO_PEDIDO_OPTS" :key="tp.value" :value="tp.text">
-              {{ tp.text }}
-            </option>
-          </select>
+          <AdminSelect v-model="draft.tipoPedido" :options="[{ value: '', label: 'Todos' }, ...TIPO_PEDIDO_OPTS.map((tp) => ({ value: tp.text, label: tp.text }))]" />
         </div>
         <div>
           <div :style="labelStyle">Superintendente</div>
-          <select v-model="draft.superintendente" :style="inputStyle">
-            <option value="">Todos</option>
-            <option v-for="s in SUPERINTENDENTES" :key="s" :value="s">{{ s }}</option>
-          </select>
+          <AdminSelect v-model="draft.superintendente" :options="[{ value: '', label: 'Todos' }, ...SUPERINTENDENTES.map((s) => ({ value: s, label: s }))]" />
         </div>
         <div>
           <div :style="labelStyle">Gerente comercial</div>
-          <select v-model="draft.gerenteComercial" :style="inputStyle">
-            <option value="">Todos</option>
-            <option v-for="g in GERENTES_COMERCIAIS" :key="g" :value="g">{{ g }}</option>
-          </select>
+          <AdminSelect v-model="draft.gerenteComercial" :options="[{ value: '', label: 'Todos' }, ...GERENTES_COMERCIAIS.map((g) => ({ value: g, label: g }))]" />
         </div>
         <div v-if="errors.aprovacaoDatas" style="grid-column: 1 / -1">
           <div :style="errorTextStyle">{{ errors.aprovacaoDatas }}</div>

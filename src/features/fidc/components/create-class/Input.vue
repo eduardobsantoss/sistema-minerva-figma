@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+
 const props = defineProps<{
   placeholder?: string;
   type?: string;
@@ -13,7 +15,9 @@ if (model.value === undefined) {
 </script>
 
 <template>
+  <AdminDateField v-if="type === 'date'" :model-value="model ?? ''" :disabled="disabled" @update:model-value="model = $event" />
   <input
+    v-else
     v-model="model"
     :placeholder="placeholder"
     :type="type"

@@ -3,6 +3,8 @@ import { computed, ref } from 'vue';
 import { X } from 'lucide-vue-next';
 import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import type { TituloSelecionado } from './types';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ titulos: TituloSelecionado[] }>();
 const emit = defineEmits<{ close: [] }>();
@@ -76,14 +78,11 @@ function brl(n: number) {
           <div class="lote-grid">
             <label class="lote-field span-8">
               <span class="lote-label">Motivo da baixa</span>
-              <select v-model="motivoBaixa" class="lote-input" :data-empty="motivoBaixa === ''">
-                <option value="" disabled>Selecione</option>
-                <option v-for="motivo in motivosBaixa" :key="motivo" :value="motivo">{{ motivo }}</option>
-              </select>
+              <AdminSelect v-model="motivoBaixa" placeholder="Selecione" :options="[...motivosBaixa.map((motivo) => ({ value: motivo, label: motivo }))]" />
             </label>
             <label class="lote-field span-4">
               <span class="lote-label">Data de pagamento</span>
-              <input v-model="dataPagamento" type="date" class="lote-input" />
+              <AdminDateField v-model="dataPagamento" />
             </label>
             <label class="lote-field span-3">
               <span class="lote-label">Valor do pagamento</span>

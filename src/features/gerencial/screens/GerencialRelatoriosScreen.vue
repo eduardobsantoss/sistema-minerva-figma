@@ -34,6 +34,8 @@ import {
   type RecorteGerencial,
   type RecortePos,
 } from '../data/gerencialData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 type ReportKey = 'gerencial' | 'pos';
 
@@ -230,80 +232,47 @@ const gridPos = 'minmax(180px, 1.5fr) 120px 140px 120px 130px 130px minmax(180px
         </label>
         <label>
           <div class="ger-label">Gerente comercial</div>
-          <select v-model="draftGerencial.gerente" class="ger-input">
-            <option value="">Todos</option>
-            <option v-for="g in gerentes()" :key="g" :value="g">{{ g }}</option>
-          </select>
+          <AdminSelect v-model="draftGerencial.gerente" :options="[{ value: '', label: 'Todos' }, ...gerentes().map((g) => ({ value: g, label: g }))]" />
         </label>
         <label>
           <div class="ger-label">Veículo de operação</div>
-          <select v-model="draftGerencial.veiculoId" class="ger-input">
-            <option value="">Todos</option>
-            <option v-for="v in ativos" :key="v.id" :value="v.id">{{ v.nome }}</option>
-          </select>
+          <AdminSelect v-model="draftGerencial.veiculoId" :options="[{ value: '', label: 'Todos' }, ...ativos.map((v) => ({ value: v.id, label: v.nome }))]" />
         </label>
         <label>
           <div class="ger-label">Tipo de operação</div>
-          <select v-model="draftGerencial.tipoOperacao" class="ger-input">
-            <option value="">Todos</option>
-            <option value="CRA">CRA</option>
-            <option value="FIDC">FIDC</option>
-            <option value="GARANTIA">GARANTIA</option>
-          </select>
+          <AdminSelect v-model="draftGerencial.tipoOperacao" :options="[{ value: '', label: 'Todos' }, { value: 'CRA', label: 'CRA' }, { value: 'FIDC', label: 'FIDC' }, { value: 'GARANTIA', label: 'GARANTIA' }]" />
         </label>
         <label>
           <div class="ger-label">Data do termo inicial</div>
-          <input v-model="draftGerencial.dataInicial" type="date" class="ger-input" />
+          <AdminDateField v-model="draftGerencial.dataInicial" />
         </label>
         <label>
           <div class="ger-label">Data do termo final</div>
-          <input v-model="draftGerencial.dataFinal" type="date" class="ger-input" />
+          <AdminDateField v-model="draftGerencial.dataFinal" />
         </label>
         <label>
           <div class="ger-label">Buscar cessões</div>
-          <select v-model="draftGerencial.busca" class="ger-input">
-            <option value="abertas">Abertas</option>
-            <option value="liquidadas">Liquidadas</option>
-          </select>
+          <AdminSelect v-model="draftGerencial.busca" :options="[{ value: 'abertas', label: 'Abertas' }, { value: 'liquidadas', label: 'Liquidadas' }]" />
         </label>
         <label>
           <div class="ger-label">Nível de risco</div>
-          <select v-model="draftGerencial.nivelRisco" class="ger-input">
-            <option value="">Todos</option>
-            <option v-for="(label, key) in NIVEL_RISCO_LABEL" :key="key" :value="key">{{ label }}</option>
-          </select>
+          <AdminSelect v-model="draftGerencial.nivelRisco" :options="[{ value: '', label: 'Todos' }, ...Object.entries(NIVEL_RISCO_LABEL).map(([key, label]) => ({ value: key, label: label }))]" />
         </label>
         <label>
           <div class="ger-label">Nível de confirmação</div>
-          <select v-model="draftGerencial.nivelConfirmacao" class="ger-input">
-            <option value="">Todos</option>
-            <option value="nao-exige">Não exige confirmação</option>
-            <option value="sem">Sem confirmação</option>
-            <option value="parcial">Parcialmente confirmados</option>
-            <option value="confirmado">Confirmados</option>
-          </select>
+          <AdminSelect v-model="draftGerencial.nivelConfirmacao" :options="[{ value: '', label: 'Todos' }, { value: 'nao-exige', label: 'Não exige confirmação' }, { value: 'sem', label: 'Sem confirmação' }, { value: 'parcial', label: 'Parcialmente confirmados' }, { value: 'confirmado', label: 'Confirmados' }]" />
         </label>
         <label>
           <div class="ger-label">Nível de notificação</div>
-          <select v-model="draftGerencial.nivelNotificacao" class="ger-input">
-            <option value="">Todos</option>
-            <option v-for="(label, key) in NIVEL_NOTIFICACAO_LABEL" :key="key" :value="key">{{ label }}</option>
-          </select>
+          <AdminSelect v-model="draftGerencial.nivelNotificacao" :options="[{ value: '', label: 'Todos' }, ...Object.entries(NIVEL_NOTIFICACAO_LABEL).map(([key, label]) => ({ value: key, label: label }))]" />
         </label>
         <label>
           <div class="ger-label">Dispensa de confirmação</div>
-          <select v-model="draftGerencial.nivelDispensa" class="ger-input">
-            <option value="">Todos</option>
-            <option v-for="(label, key) in NIVEL_DISPENSA_LABEL" :key="key" :value="key">{{ label }}</option>
-          </select>
+          <AdminSelect v-model="draftGerencial.nivelDispensa" :options="[{ value: '', label: 'Todos' }, ...Object.entries(NIVEL_DISPENSA_LABEL).map(([key, label]) => ({ value: key, label: label }))]" />
         </label>
         <label>
           <div class="ger-label">Situação da cessão</div>
-          <select v-model="draftGerencial.situacao" class="ger-input">
-            <option value="todas">Todas</option>
-            <option value="aprovada">Cessões aprovadas</option>
-            <option value="nao-aprovada">Cessões não aprovadas</option>
-          </select>
+          <AdminSelect v-model="draftGerencial.situacao" :options="[{ value: 'todas', label: 'Todas' }, { value: 'aprovada', label: 'Cessões aprovadas' }, { value: 'nao-aprovada', label: 'Cessões não aprovadas' }]" />
         </label>
       </div>
 
@@ -314,39 +283,27 @@ const gridPos = 'minmax(180px, 1.5fr) 120px 140px 120px 130px 130px minmax(180px
         </label>
         <label>
           <div class="ger-label">Tipo de cliente</div>
-          <select v-model="draftPos.tipoCliente" class="ger-input">
-            <option value="">Todos</option>
-            <option v-for="t in TIPO_CLIENTE_OPCOES" :key="t" :value="t">{{ t }}</option>
-          </select>
+          <AdminSelect v-model="draftPos.tipoCliente" :options="[{ value: '', label: 'Todos' }, ...TIPO_CLIENTE_OPCOES.map((t) => ({ value: t, label: t }))]" />
         </label>
         <label>
           <div class="ger-label">Nível de risco</div>
-          <select v-model="draftPos.nivelRisco" class="ger-input">
-            <option value="">Todos</option>
-            <option v-for="(label, key) in NIVEL_RISCO_LABEL" :key="key" :value="key">{{ label }}</option>
-          </select>
+          <AdminSelect v-model="draftPos.nivelRisco" :options="[{ value: '', label: 'Todos' }, ...Object.entries(NIVEL_RISCO_LABEL).map(([key, label]) => ({ value: key, label: label }))]" />
         </label>
         <label>
           <div class="ger-label">Veículo de operação</div>
-          <select v-model="draftPos.veiculoId" class="ger-input">
-            <option value="">Todos</option>
-            <option v-for="v in veiculos" :key="v.id" :value="v.id">{{ v.nome }}</option>
-          </select>
+          <AdminSelect v-model="draftPos.veiculoId" :options="[{ value: '', label: 'Todos' }, ...veiculos.map((v) => ({ value: v.id, label: v.nome }))]" />
         </label>
         <label>
           <div class="ger-label">Data inicial da cessão</div>
-          <input v-model="draftPos.dataInicial" type="date" class="ger-input" :max="hoje" />
+          <AdminDateField v-model="draftPos.dataInicial" :max="hoje" />
         </label>
         <label>
           <div class="ger-label">Data final da cessão</div>
-          <input v-model="draftPos.dataFinal" type="date" class="ger-input" :max="hoje" />
+          <AdminDateField v-model="draftPos.dataFinal" :max="hoje" />
         </label>
         <label>
           <div class="ger-label">Tipo de cessão</div>
-          <select v-model="draftPos.tipoCessao" class="ger-input">
-            <option value="">Todos</option>
-            <option v-for="t in TIPO_CESSAO_OPCOES" :key="t" :value="t">{{ t }}</option>
-          </select>
+          <AdminSelect v-model="draftPos.tipoCessao" :options="[{ value: '', label: 'Todos' }, ...TIPO_CESSAO_OPCOES.map((t) => ({ value: t, label: t }))]" />
         </label>
       </div>
 

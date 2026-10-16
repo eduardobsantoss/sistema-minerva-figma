@@ -4,6 +4,7 @@ import { CheckCircle2, ChevronDown, ChevronRight, ExternalLink } from 'lucide-vu
 import type { IbamaRestriction } from '../../data/serasaTypes';
 import { formatDateOnly, formatDateTimeUtc, formatDocument } from '../../utils/serasaFormatters';
 import { EmptyState } from '@/features/risco/screens/detail-tabs/shared';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ items: IbamaRestriction[] }>();
 
@@ -54,20 +55,8 @@ function toggleDetails(id: number) {
         {{ items.length }} ocorrência(s) ambiental(is)
       </p>
       <div class="flex flex-wrap items-center" style="gap: 8px">
-        <select
-          v-model="typeFilter"
-          style="height: 34px; padding: 0 10px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); font-size: var(--text-xs); color: var(--text-default)"
-        >
-          <option value="">Todos os tipos</option>
-          <option v-for="t in types" :key="t" :value="t">{{ t }}</option>
-        </select>
-        <select
-          v-model="ufFilter"
-          style="height: 34px; padding: 0 10px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); font-size: var(--text-xs); color: var(--text-default)"
-        >
-          <option value="">Todas as UFs</option>
-          <option v-for="uf in ufs" :key="uf" :value="uf">{{ uf }}</option>
-        </select>
+        <AdminSelect v-model="typeFilter" :options="[{ value: '', label: 'Todos os tipos' }, ...types.map((t) => ({ value: t, label: t }))]" />
+        <AdminSelect v-model="ufFilter" :options="[{ value: '', label: 'Todas as UFs' }, ...ufs.map((uf) => ({ value: uf, label: uf }))]" />
       </div>
     </div>
 

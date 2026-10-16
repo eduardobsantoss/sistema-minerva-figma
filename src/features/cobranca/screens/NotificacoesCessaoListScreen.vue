@@ -41,6 +41,8 @@ import TablePagination from '@/components/ui/TablePagination.vue';
 import ParteNotificacaoModal from '../components/ParteNotificacaoModal.vue';
 import { usePartesNotificacao, type ParteNotificacao } from '../composables/usePartesNotificacao';
 import { useTablePagination } from '@/composables/useTablePagination';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ itens: NotificacaoCessao[] }>();
 const emit = defineEmits<{
@@ -434,10 +436,7 @@ function pillStyle(color: string) {
               <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px">
                 <div>
                   <div class="filter-label">Veículo</div>
-                  <select v-model="draft.veiculoId" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="v in VEICULO_CESSAO_OPTS" :key="v.id" :value="v.id">{{ v.nome }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.veiculoId" :options="[{ value: '', label: 'Todos' }, ...VEICULO_CESSAO_OPTS.map((v) => ({ value: v.id, label: v.nome }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Cessão</div>
@@ -445,24 +444,15 @@ function pillStyle(color: string) {
                 </div>
                 <div>
                   <div class="filter-label">Status</div>
-                  <select v-model="draft.status" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="s in STATUS_CESSAO_OPTS" :key="s" :value="s">{{ statusCessaoLabel(s) }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.status" :options="[{ value: '', label: 'Todos' }, ...STATUS_CESSAO_OPTS.map((s) => ({ value: s, label: statusCessaoLabel(s) }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Grupo empresarial</div>
-                  <select v-model="draft.grupo" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="g in GRUPO_CESSAO_OPTS" :key="g" :value="g">{{ g }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.grupo" :options="[{ value: '', label: 'Todos' }, ...GRUPO_CESSAO_OPTS.map((g) => ({ value: g, label: g }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Situação do grupo</div>
-                  <select v-model="draft.situacaoGrupo" class="filter-input">
-                    <option value="">Todas</option>
-                    <option v-for="s in SITUACAO_GRUPO_OPTS" :key="s" :value="s">{{ situacaoGrupoLabel(s) }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.situacaoGrupo" :options="[{ value: '', label: 'Todas' }, ...SITUACAO_GRUPO_OPTS.map((s) => ({ value: s, label: situacaoGrupoLabel(s) }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Lastro</div>
@@ -482,11 +472,11 @@ function pillStyle(color: string) {
                 </div>
                 <div>
                   <div class="filter-label">Data da cessão</div>
-                  <input v-model="draft.dataCessao" type="date" class="filter-input" />
+                  <AdminDateField v-model="draft.dataCessao" />
                 </div>
                 <div>
                   <div class="filter-label">Data de envio</div>
-                  <input v-model="draft.dataEnvio" type="date" class="filter-input" />
+                  <AdminDateField v-model="draft.dataEnvio" />
                 </div>
               </div>
               <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">

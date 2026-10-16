@@ -4,6 +4,7 @@ import { Plus, Trash2, Pencil } from 'lucide-vue-next';
 import type { ParteTipo, ParteRelacionada } from '@/features/solicitacao-operacao/data/operacaoData';
 import { PARTE_TIPO_LABEL, TIPOS_PARTE_OPTS } from '@/features/solicitacao-operacao/data/parteRelacionadaFields';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ partes: ParteRelacionada[] }>();
 const emit = defineEmits<{
@@ -72,13 +73,7 @@ function confirmRemove() {
           <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
             Tipo
           </div>
-          <select
-            v-model="filtroTipo"
-            style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
-          >
-            <option value="">Todos</option>
-            <option v-for="t in TIPOS_PARTE_OPTS" :key="t.codigo" :value="t.codigo">{{ t.codigo }} — {{ t.label }}</option>
-          </select>
+          <AdminSelect v-model="filtroTipo" :options="[{ value: '', label: 'Todos' }, ...TIPOS_PARTE_OPTS.map((t) => ({ value: t.codigo, label: `${t.codigo} — ${t.label}` }))]" />
         </div>
       </div>
       <button

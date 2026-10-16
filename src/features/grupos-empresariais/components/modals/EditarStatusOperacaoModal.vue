@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { SlidersHorizontal, X } from 'lucide-vue-next';
 import { STATUS_OPERACAO_OPTS, type StatusOperacao } from '../../data/gruposCadastroData';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ grupoNome: string; statusAtual: StatusOperacao }>();
 const emit = defineEmits<{ close: []; confirm: [status: StatusOperacao] }>();
@@ -55,12 +56,7 @@ const canConfirm = computed(() => status.value !== props.statusAtual);
           <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
             Novo status
           </div>
-          <select
-            v-model="status"
-            style="width: 100%; height: 40px; padding: 0 14px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
-          >
-            <option v-for="opt in STATUS_OPERACAO_OPTS" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
+          <AdminSelect v-model="status" :options="[...STATUS_OPERACAO_OPTS.map((opt) => ({ value: opt, label: opt }))]" />
         </label>
       </div>
 

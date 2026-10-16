@@ -28,6 +28,7 @@ import {
   type ValidationConfig,
   type ValidationItem,
 } from '../../data/validacoesConfigData';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ item: ValidationItem }>();
 const emit = defineEmits<{
@@ -412,11 +413,7 @@ function handleAtualizar() {
         </div>
         <div>
           <div :style="labelStyle">Setor Responsável</div>
-          <select v-model="local.responsibleSector" :style="inputStyle">
-            <option v-for="s in SETOR_RESPONSAVEL_OPTS" :key="s.value" :value="s.value">
-              {{ s.text }}
-            </option>
-          </select>
+          <AdminSelect v-model="local.responsibleSector" :options="[...SETOR_RESPONSAVEL_OPTS.map((s) => ({ value: s.value, label: s.text }))]" />
           <div
             v-if="errors.responsibleSector"
             style="font-size: var(--text-xs); color: var(--danger-base, #c53030); margin-top: 6px"
@@ -457,12 +454,7 @@ function handleAtualizar() {
         <div class="flex items-end" style="gap: 12px; flex-wrap: wrap">
           <div style="flex: 1; min-width: 240px">
             <div :style="labelStyle">Tipo de Solicitação</div>
-            <select v-model="newRequestTypeId" :style="inputStyle">
-              <option value="">Selecione</option>
-              <option v-for="t in TIPO_PEDIDO_OPTS" :key="t.value" :value="t.value">
-                {{ t.text }}
-              </option>
-            </select>
+            <AdminSelect v-model="newRequestTypeId" :options="[{ value: '', label: 'Selecione' }, ...TIPO_PEDIDO_OPTS.map((t) => ({ value: t.value, label: t.text }))]" />
           </div>
           <button
             type="button"

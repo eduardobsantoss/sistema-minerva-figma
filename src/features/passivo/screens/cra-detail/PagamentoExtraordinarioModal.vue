@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { X, AlertTriangle } from 'lucide-vue-next';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
 
 const emit = defineEmits<{ close: []; confirm: [] }>();
 
@@ -64,22 +65,7 @@ const valorAmortizacao = ref('');
           >
             Data do Pagamento
           </label>
-          <input
-            v-model="dataPagamento"
-            type="date"
-            style="
-              width: 100%;
-              height: 48px;
-              background: var(--surface-sunken);
-              border: 1px solid var(--border-default);
-              border-radius: var(--radius-lg);
-              padding: 0 16px;
-              font-size: var(--text-sm);
-              font-weight: var(--weight-semibold);
-              color: var(--text-default);
-              outline: none;
-            "
-          />
+          <AdminDateField v-model="dataPagamento" />
         </div>
 
         <div class="flex flex-col" style="gap: 6px">

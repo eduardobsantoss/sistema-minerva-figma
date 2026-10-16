@@ -2,6 +2,8 @@
 import { computed, ref, watch } from 'vue';
 import { X } from 'lucide-vue-next';
 import { CLASSE_LABEL, type NovaCotaInput, type SerieClasse } from '../../data/passivoNovoData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ defaultDateIso: string }>();
 const emit = defineEmits<{ close: []; confirm: [input: NovaCotaInput] }>();
@@ -106,9 +108,7 @@ const fieldStyle =
         <div class="flex flex-col" style="padding: 24px; gap: 16px">
           <label class="flex flex-col" style="gap: 6px">
             <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Classe</span>
-            <select v-model="classe" :style="fieldStyle">
-              <option v-for="c in CLASSES" :key="c.key" :value="c.key">{{ c.label }}</option>
-            </select>
+            <AdminSelect v-model="classe" :options="[...CLASSES.map((c) => ({ value: c.key, label: c.label }))]" />
           </label>
           <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px">
             <label class="flex flex-col" style="gap: 6px">
@@ -123,11 +123,11 @@ const fieldStyle =
           <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px">
             <label class="flex flex-col" style="gap: 6px">
               <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Data inicial</span>
-              <input v-model="dataInicioIso" type="date" :style="fieldStyle" />
+              <AdminDateField v-model="dataInicioIso" />
             </label>
             <label class="flex flex-col" style="gap: 6px">
               <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Vencimento</span>
-              <input v-model="vencimentoIso" type="date" :style="fieldStyle" />
+              <AdminDateField v-model="vencimentoIso" />
             </label>
           </div>
           <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px">

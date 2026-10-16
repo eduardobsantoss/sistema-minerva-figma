@@ -5,6 +5,7 @@ import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { type Sacado } from '../../data/craData';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ sacados: Sacado[] }>();
 const emit = defineEmits<{
@@ -90,19 +91,11 @@ function onEspecialChange(s: Sacado) {
       </div>
       <div>
         <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Parte relacionada</div>
-        <select v-model="filterParte" :style="{ ...filterInputStyle, appearance: 'none' }" @change="setPage(1)">
-          <option value="">Todos</option>
-          <option value="Sim">Sim</option>
-          <option value="Não">Não</option>
-        </select>
+        <AdminSelect v-model="filterParte" :options="[{ value: '', label: 'Todos' }, { value: 'Sim', label: 'Sim' }, { value: 'Não', label: 'Não' }]" @update:model-value="setPage(1)" />
       </div>
       <div>
         <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Sacado especial</div>
-        <select v-model="filterEspecial" :style="{ ...filterInputStyle, appearance: 'none' }" @change="setPage(1)">
-          <option value="">Todos</option>
-          <option value="Sim">Sim</option>
-          <option value="Não">Não</option>
-        </select>
+        <AdminSelect v-model="filterEspecial" :options="[{ value: '', label: 'Todos' }, { value: 'Sim', label: 'Sim' }, { value: 'Não', label: 'Não' }]" @update:model-value="setPage(1)" />
       </div>
     </div>
 

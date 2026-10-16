@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { X } from 'lucide-vue-next';
 import XmlDropzone from '@/features/solicitacao-operacao/components/modals/XmlDropzone.vue';
 import { LAMINA_UPLOAD_KINDS, type LaminaUploadKind } from '../../data/passivoNovoData';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const emit = defineEmits<{
   close: [];
@@ -64,9 +65,7 @@ const fieldStyle =
       <div class="flex flex-col" style="padding: 24px; gap: 16px">
         <label class="flex flex-col" style="gap: 6px">
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Tipo do arquivo</span>
-          <select v-model="kind" :style="fieldStyle">
-            <option v-for="k in LAMINA_UPLOAD_KINDS" :key="k.id" :value="k.id">{{ k.label }}</option>
-          </select>
+          <AdminSelect v-model="kind" :options="[...LAMINA_UPLOAD_KINDS.map((k) => ({ value: k.id, label: k.label }))]" />
         </label>
         <div class="flex flex-col" style="gap: 6px">
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Arquivo</span>

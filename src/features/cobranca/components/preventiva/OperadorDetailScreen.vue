@@ -1,21 +1,33 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { ArrowLeft, BadgeCheck, Banknote, Percent, Users } from 'lucide-vue-next';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
-import { brl, fmtPct, type ContatoOperador } from '../../data/cobrancaPreventivaData';
+import { brl, fmtPct, inPeriodo, type ContatoOperador } from '../../data/cobrancaPreventivaData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
 
-const props = defineProps<{ operador: string; contatos: ContatoOperador[] }>();
+const props = defineProps<{ operador: string; contatos: ContatoOperador[]; inicio: string; fim: string }>();
 const emit = defineEmits<{ back: [] }>();
 
-const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(() => props.contatos, {
+const inicio = ref(props.inicio);
+const fim = ref(props.fim);
+
+const contatosPeriodo = computed(() =>
+  props.contatos.filter((c) => inPeriodo(c.ultimoContato, inicio.value, fim.value)),
+);
+
+const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagination(() => contatosPeriodo.value, {
   defaultPageSize: 10,
 });
 
+function aoMudarPeriodo() {
+  setPage(1);
+}
+
 const kpis = computed(() => {
-  const sacados = props.contatos.length;
-  const confirmados = props.contatos.filter((c) => c.confirmado).length;
-  const valorConfirmado = props.contatos.reduce((acc, c) => acc + c.valorConfirmado, 0);
+  const sacados = contatosPeriodo.value.length;
+  const confirmados = contatosPeriodo.value.filter((c) => c.confirmado).length;
+  const valorConfirmado = contatosPeriodo.value.reduce((acc, c) => acc + c.valorConfirmado, 0);
   const taxa = sacados === 0 ? 0 : (confirmados / sacados) * 100;
   return [
     {
@@ -48,7 +60,7 @@ const kpis = computed(() => {
 
 <template>
   <div class="flex flex-col" style="gap: 24px">
-    <div class="flex items-center" style="gap: 16px">
+    <div class="flex items-center" style="gap: 16px; flex-wrap: wrap">
       <button type="button" aria-label="Voltar" class="back" @click="emit('back')">
         <ArrowLeft :size="20" />
       </button>
@@ -58,6 +70,16 @@ const kpis = computed(() => {
         <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
           Sacados contactados no período da análise.
         </p>
+      </div>
+      <div class="flex items-end" style="gap: 12px; margin-left: auto">
+        <label class="field">
+          <span class="field-label">De</span>
+          <AdminDateField v-model="inicio" @update:model-value="aoMudarPeriodo" />
+        </label>
+        <label class="field">
+          <span class="field-label">Até</span>
+          <AdminDateField v-model="fim" @update:model-value="aoMudarPeriodo" />
+        </label>
       </div>
     </div>
 
@@ -80,7 +102,7 @@ const kpis = computed(() => {
       <div style="padding: 16px 20px">
         <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Sacados contactados</h3>
       </div>
-      <div v-if="contatos.length === 0" class="empty">Nenhum sacado neste período.</div>
+      <div v-if="contatosPeriodo.length === 0" class="empty">Nenhum sacado neste período.</div>
       <template v-else>
         <div class="grid op-row op-header" style="grid-template-columns: 1.6fr 1.2fr 70px 120px 110px">
           <div>Sacado</div>
@@ -110,6 +132,18 @@ const kpis = computed(() => {
 </template>
 
 <style scoped>
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field-label {
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
 .back {
   width: 48px;
   height: 48px;

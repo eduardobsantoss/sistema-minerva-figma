@@ -18,6 +18,7 @@ import {
   type Serie,
   type Veiculo,
 } from '../../data/passivoNovoData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
 
 const props = defineProps<{ veiculo: Veiculo }>();
 const { success } = useToast();
@@ -234,7 +235,7 @@ const TABLE_COLS =
       <div class="flex items-end" style="gap: 10px; flex-wrap: wrap">
         <label class="flex flex-col" style="gap: 6px">
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Data geral</span>
-          <input v-model="globalDate" type="date" class="field-input" />
+          <AdminDateField v-model="globalDate" />
         </label>
         <button type="button" class="ghost-btn" @click="applyGlobalDate">Aplicar data a todas</button>
         <label class="flex flex-col" style="gap: 6px; flex: 1; min-width: 180px">
@@ -300,7 +301,7 @@ const TABLE_COLS =
             <div style="white-space: nowrap">{{ serie.ifCodigo }}</div>
             <div style="font-variant-numeric: tabular-nums">{{ serie.quantidade.toLocaleString('pt-BR') }}</div>
             <div>
-              <input v-model="stateOf(serie).dateKey" type="date" class="cell-input" />
+              <AdminDateField v-model="stateOf(serie).dateKey" />
             </div>
             <div>
               <input v-model.number="stateOf(serie).afLeadDays" type="number" min="0" max="30" class="cell-input" style="width: 64px" />

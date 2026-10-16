@@ -17,6 +17,7 @@ import RentabilidadeSubTab from './sub-tabs/RentabilidadeSubTab.vue';
 import CarteiraSubTab from './sub-tabs/CarteiraSubTab.vue';
 import UploadLaminaModal from './UploadLaminaModal.vue';
 import CaixasModal from './CaixasModal.vue';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
 
 const props = defineProps<{ veiculo: Veiculo }>();
 const { success, error } = useToast();
@@ -79,7 +80,7 @@ watch(
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.55)">
             Data-base
           </span>
-          <input v-model="dateIso" type="date" class="date-input date-input--hero" />
+          <AdminDateField v-model="dateIso" />
         </label>
       </div>
       <div

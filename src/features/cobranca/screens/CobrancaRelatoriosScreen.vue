@@ -41,6 +41,7 @@ import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
 import type { TituloSelecionado } from '@/components/titulos/types';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { useBackgroundReport } from '@/composables/useBackgroundReport';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 type ReportKey = 'inadimplencia' | 'efetividade' | 'boletagem' | 'cessao';
 
@@ -476,23 +477,7 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
           >
             Veículo
           </div>
-          <select
-            v-model="draft.veiculoId"
-            style="
-              width: 100%;
-              height: 38px;
-              padding: 0 12px;
-              background: var(--surface-card);
-              border: 1px solid var(--border-default);
-              border-radius: var(--radius-lg);
-              outline: none;
-              font-size: var(--text-sm);
-              color: var(--text-strong);
-            "
-          >
-            <option value="">Todos</option>
-            <option v-for="v in VEICULO_CESSAO_OPTS" :key="v.id" :value="v.id">{{ v.nome }}</option>
-          </select>
+          <AdminSelect v-model="draft.veiculoId" :options="[{ value: '', label: 'Todos' }, ...VEICULO_CESSAO_OPTS.map((v) => ({ value: v.id, label: v.nome }))]" />
         </div>
         <div v-if="selected === 'cessao'">
           <div
@@ -507,23 +492,7 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
           >
             Status da notificação
           </div>
-          <select
-            v-model="draft.status"
-            style="
-              width: 100%;
-              height: 38px;
-              padding: 0 12px;
-              background: var(--surface-card);
-              border: 1px solid var(--border-default);
-              border-radius: var(--radius-lg);
-              outline: none;
-              font-size: var(--text-sm);
-              color: var(--text-strong);
-            "
-          >
-            <option value="">Todos</option>
-            <option v-for="s in STATUS_CESSAO_OPTS" :key="s" :value="s">{{ statusCessaoLabel(s) }}</option>
-          </select>
+          <AdminSelect v-model="draft.status" :options="[{ value: '', label: 'Todos' }, ...STATUS_CESSAO_OPTS.map((s) => ({ value: s, label: statusCessaoLabel(s) }))]" />
         </div>
         <div v-if="selected !== 'efetividade' && selected !== 'cessao'">
           <div
@@ -538,23 +507,7 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
           >
             Veículo
           </div>
-          <select
-            v-model="draft.veiculoId"
-            style="
-              width: 100%;
-              height: 38px;
-              padding: 0 12px;
-              background: var(--surface-card);
-              border: 1px solid var(--border-default);
-              border-radius: var(--radius-lg);
-              outline: none;
-              font-size: var(--text-sm);
-              color: var(--text-strong);
-            "
-          >
-            <option value="">Todos</option>
-            <option v-for="v in VEICULO_OPTS" :key="v.id" :value="v.id">{{ v.nome }}</option>
-          </select>
+          <AdminSelect v-model="draft.veiculoId" :options="[{ value: '', label: 'Todos' }, ...VEICULO_OPTS.map((v) => ({ value: v.id, label: v.nome }))]" />
         </div>
         <div v-if="selected !== 'efetividade' && selected !== 'cessao'">
           <div
@@ -569,25 +522,7 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
           >
             Status do título
           </div>
-          <select
-            v-model="draft.status"
-            style="
-              width: 100%;
-              height: 38px;
-              padding: 0 12px;
-              background: var(--surface-card);
-              border: 1px solid var(--border-default);
-              border-radius: var(--radius-lg);
-              outline: none;
-              font-size: var(--text-sm);
-              color: var(--text-strong);
-            "
-          >
-            <option value="">Todos</option>
-            <option v-for="s in STATUS_PAGAMENTO_OPTS" :key="s" :value="s">
-              {{ statusPagamentoLabel(s as StatusPagamento) }}
-            </option>
-          </select>
+          <AdminSelect v-model="draft.status" :options="[{ value: '', label: 'Todos' }, ...STATUS_PAGAMENTO_OPTS.map((s) => ({ value: s, label: statusPagamentoLabel(s as StatusPagamento) }))]" />
         </div>
         <div v-if="selected === 'efetividade'">
           <div
@@ -602,23 +537,7 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
           >
             Campanha
           </div>
-          <select
-            v-model="draft.campanha"
-            style="
-              width: 100%;
-              height: 38px;
-              padding: 0 12px;
-              background: var(--surface-card);
-              border: 1px solid var(--border-default);
-              border-radius: var(--radius-lg);
-              outline: none;
-              font-size: var(--text-sm);
-              color: var(--text-strong);
-            "
-          >
-            <option value="">Todas</option>
-            <option v-for="c in CAMPANHAS" :key="c" :value="c">{{ c }}</option>
-          </select>
+          <AdminSelect v-model="draft.campanha" :options="[{ value: '', label: 'Todas' }, ...CAMPANHAS.map((c) => ({ value: c, label: c }))]" />
         </div>
         <div v-if="selected === 'efetividade'">
           <div
@@ -633,25 +552,7 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
           >
             Status do disparo
           </div>
-          <select
-            v-model="draft.status"
-            style="
-              width: 100%;
-              height: 38px;
-              padding: 0 12px;
-              background: var(--surface-card);
-              border: 1px solid var(--border-default);
-              border-radius: var(--radius-lg);
-              outline: none;
-              font-size: var(--text-sm);
-              color: var(--text-strong);
-            "
-          >
-            <option value="">Todos</option>
-            <option value="SUCESSO">Sucesso</option>
-            <option value="FALHA">Falha</option>
-            <option value="PROCESSANDO">Em processamento</option>
-          </select>
+          <AdminSelect v-model="draft.status" :options="[{ value: '', label: 'Todos' }, { value: 'SUCESSO', label: 'Sucesso' }, { value: 'FALHA', label: 'Falha' }, { value: 'PROCESSANDO', label: 'Em processamento' }]" />
         </div>
       </div>
       <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">

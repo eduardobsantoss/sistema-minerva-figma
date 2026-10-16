@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
 import { Filter, X } from 'lucide-vue-next';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 export interface SolicitacaoFilters {
   idPedido: string;
@@ -93,55 +95,37 @@ function handleClear() {
 
     <div style="grid-column: 1 / -1">
       <div :style="labelStyle">Veículo</div>
-      <select v-model="draft.veiculo" :style="inputStyle">
-        <option value="">Todos</option>
-        <option v-for="opt in veiculos" :key="opt" :value="opt">{{ opt }}</option>
-      </select>
+      <AdminSelect v-model="draft.veiculo" :options="[{ value: '', label: 'Todos' }, ...veiculos.map((opt) => ({ value: opt, label: opt }))]" />
     </div>
 
     <div>
       <div :style="labelStyle">Tipo de solicitação</div>
-      <select v-model="draft.tipoPedido" :style="inputStyle">
-        <option value="">Todos</option>
-        <option v-for="opt in tiposPedido" :key="opt" :value="opt">{{ opt }}</option>
-      </select>
+      <AdminSelect v-model="draft.tipoPedido" :options="[{ value: '', label: 'Todos' }, ...tiposPedido.map((opt) => ({ value: opt, label: opt }))]" />
     </div>
 
     <div>
       <div :style="labelStyle">Data de abertura</div>
-      <input v-model="draft.dataAbertura" type="date" :style="inputStyle" />
+      <AdminDateField v-model="draft.dataAbertura" />
     </div>
 
     <div style="grid-column: 1 / -1">
       <div :style="labelStyle">Grupo Empresarial</div>
-      <select v-model="draft.grupoEmpresarial" :style="inputStyle">
-        <option value="">Todos</option>
-        <option v-for="opt in grupos" :key="opt" :value="opt">{{ opt }}</option>
-      </select>
+      <AdminSelect v-model="draft.grupoEmpresarial" :options="[{ value: '', label: 'Todos' }, ...grupos.map((opt) => ({ value: opt, label: opt }))]" />
     </div>
 
     <div style="grid-column: 1 / -1">
       <div :style="labelStyle">Gerente Comercial</div>
-      <select v-model="draft.gerenteComercial" :style="inputStyle">
-        <option value="">Todos</option>
-        <option v-for="opt in gerentes" :key="opt" :value="opt">{{ opt }}</option>
-      </select>
+      <AdminSelect v-model="draft.gerenteComercial" :options="[{ value: '', label: 'Todos' }, ...gerentes.map((opt) => ({ value: opt, label: opt }))]" />
     </div>
 
     <div>
       <div :style="labelStyle">Requerente da solicitação</div>
-      <select v-model="draft.requerente" :style="inputStyle">
-        <option value="">Todos</option>
-        <option v-for="opt in requerentes" :key="opt" :value="opt">{{ opt }}</option>
-      </select>
+      <AdminSelect v-model="draft.requerente" :options="[{ value: '', label: 'Todos' }, ...requerentes.map((opt) => ({ value: opt, label: opt }))]" />
     </div>
 
     <div>
       <div :style="labelStyle">Usuário de atendimento</div>
-      <select v-model="draft.usuarioAtendimento" :style="inputStyle">
-        <option value="">Todos</option>
-        <option v-for="opt in atendentes" :key="opt" :value="opt">{{ opt }}</option>
-      </select>
+      <AdminSelect v-model="draft.usuarioAtendimento" :options="[{ value: '', label: 'Todos' }, ...atendentes.map((opt) => ({ value: opt, label: opt }))]" />
     </div>
   </div>
 

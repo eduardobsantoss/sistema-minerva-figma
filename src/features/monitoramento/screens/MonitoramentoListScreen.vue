@@ -26,6 +26,8 @@ import {
   type PrazoStatus,
   type TipoClienteMon,
 } from '../data/monitoramentoData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const emit = defineEmits<{ open: [id: string] }>();
 
@@ -263,32 +265,23 @@ function filtersBtnStyle() {
               <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 14px">
                 <div>
                   <div class="filter-label">Gerente</div>
-                  <select v-model="draft.gerente" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="g in GERENTES_OPTS" :key="g" :value="g">{{ g }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.gerente" :options="[{ value: '', label: 'Todos' }, ...GERENTES_OPTS.map((g) => ({ value: g, label: g }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Veículo</div>
-                  <select v-model="draft.veiculo" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="v in VEICULO_OPTS" :key="v" :value="v">{{ v }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.veiculo" :options="[{ value: '', label: 'Todos' }, ...VEICULO_OPTS.map((v) => ({ value: v, label: v }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Status do prazo</div>
-                  <select v-model="draft.prazo" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="s in PRAZO_LEGEND" :key="s.status" :value="s.status">{{ PRAZO_STATUS_LABEL[s.status] }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.prazo" :options="[{ value: '', label: 'Todos' }, ...PRAZO_LEGEND.map((s) => ({ value: s.status, label: PRAZO_STATUS_LABEL[s.status] }))]" />
                 </div>
                 <div>
                   <div class="filter-label">Prazo (mín.)</div>
-                  <input v-model="draft.prazoMin" type="date" class="filter-input" />
+                  <AdminDateField v-model="draft.prazoMin" />
                 </div>
                 <div>
                   <div class="filter-label">Prazo (máx.)</div>
-                  <input v-model="draft.prazoMax" type="date" class="filter-input" />
+                  <AdminDateField v-model="draft.prazoMax" />
                 </div>
               </div>
               <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">

@@ -9,6 +9,8 @@ import {
   type StatusPreventivo,
   type TentativaRegistro,
 } from '../../data/cobrancaPreventivaData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ quantidadeTitulos: number }>();
 const emit = defineEmits<{
@@ -101,21 +103,15 @@ function salvar() {
         >
           <label class="field">
             <span class="label">Status</span>
-            <select v-model="linha.status" class="input" :data-empty="linha.status === ''">
-              <option value="" disabled>Selecione</option>
-              <option v-for="s in STATUS_PREVENTIVO" :key="s.key" :value="s.key">{{ s.label }}</option>
-            </select>
+            <AdminSelect v-model="linha.status" placeholder="Selecione" :options="[...STATUS_PREVENTIVO.map((s) => ({ value: s.key, label: s.label }))]" />
           </label>
           <label class="field">
             <span class="label">Data do contato</span>
-            <input v-model="linha.dataContato" type="date" class="input" />
+            <AdminDateField v-model="linha.dataContato" />
           </label>
           <label class="field">
             <span class="label">Canal de contato</span>
-            <select v-model="linha.canal" class="input" :data-empty="linha.canal === ''">
-              <option value="" disabled>Selecione</option>
-              <option v-for="c in CANAL_CONTATO_OPTS" :key="c" :value="c">{{ canalLabel(c) }}</option>
-            </select>
+            <AdminSelect v-model="linha.canal" placeholder="Selecione" :options="[...CANAL_CONTATO_OPTS.map((c) => ({ value: c, label: canalLabel(c) }))]" />
           </label>
           <label class="field">
             <span class="label">Quantidade de tentativas</span>

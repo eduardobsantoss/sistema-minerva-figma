@@ -24,6 +24,7 @@ import {
   type Veiculo,
 } from '../../data/passivoNovoData';
 import type { ValidarDateOption } from './ConfirmPuModal.vue';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
 
 const props = defineProps<{ veiculo: Veiculo }>();
 const serieId = defineModel<string>('serieId', { default: '' });
@@ -220,7 +221,7 @@ const fields = computed(() => [
         <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted)">
           Data-base
         </span>
-        <input v-model="dateIso" type="date" class="date-input" />
+        <AdminDateField v-model="dateIso" />
       </label>
       <div class="flex" style="gap: 8px">
         <button type="button" class="ghost-btn" @click="modalMode = 'atualizar'">

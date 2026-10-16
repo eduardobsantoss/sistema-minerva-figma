@@ -10,6 +10,8 @@ import {
   type VehicleSetting,
   type VehicleRateHistory,
 } from '../../data/taxasVeiculosData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ vehicle: VehicleSetting; tabLabel: string }>();
 const emit = defineEmits<{ back: []; save: [vehicle: VehicleSetting] }>();
@@ -270,13 +272,11 @@ function handleSaveRate() {
         </div>
         <div>
           <div :style="labelStyle">Indexador Pós Fixado</div>
-          <select v-model="postFixedIndex" :style="inputStyle">
-            <option v-for="opt in POST_FIXED_INDEX_OPTS" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
+          <AdminSelect v-model="postFixedIndex" :options="[...POST_FIXED_INDEX_OPTS.map((opt) => ({ value: opt, label: opt }))]" />
         </div>
         <div>
           <div :style="labelStyle">Data de vencimento da taxa</div>
-          <input v-model="dueAtInput" type="date" :min="minDueDate" :style="inputStyle" />
+          <AdminDateField v-model="dueAtInput" :min="minDueDate" />
         </div>
       </div>
 

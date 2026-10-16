@@ -10,6 +10,7 @@ import Checkbox from '@/components/ui/Checkbox.vue';
 import EditarGarantiaModal from '../../components/modals/EditarGarantiaModal.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 interface Props {
   data: ParametrizacaoGarantia;
@@ -121,13 +122,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
         <div class="grid items-end" style="grid-template-columns: 1.2fr 0.7fr 0.7fr 1fr 0.7fr 0.7fr auto; gap: 10px; margin-bottom: 12px">
           <div>
             <FieldLabel>Tipo da garantia</FieldLabel>
-            <select
-              v-model="garTipo"
-              style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)"
-            >
-              <option value="">Selecione</option>
-              <option v-for="t in TIPO_GARANTIA_OPTS" :key="t" :value="t">{{ t }}</option>
-            </select>
+            <AdminSelect v-model="garTipo" :options="[{ value: '', label: 'Selecione' }, ...TIPO_GARANTIA_OPTS.map((t) => ({ value: t, label: t }))]" />
           </div>
           <div>
             <FieldLabel>Percentual exigido</FieldLabel>

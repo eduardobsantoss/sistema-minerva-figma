@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { X } from 'lucide-vue-next';
 import Alert from '@/components/feedback/Alert.vue';
 import type { TituloSelecionado } from './types';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 defineProps<{
   title: string;
@@ -57,10 +58,7 @@ function brl(n: number) {
         <Alert v-if="aviso" type="warning" title="Parte da seleção fica de fora" :message="aviso" :dismissible="false" />
         <label class="lote-field">
           <span class="lote-label">{{ motivoLabel }}</span>
-          <select v-model="motivo" class="lote-input" :data-empty="motivo === ''">
-            <option value="" disabled>Selecione</option>
-            <option v-for="item in motivos" :key="item" :value="item">{{ item }}</option>
-          </select>
+          <AdminSelect v-model="motivo" placeholder="Selecione" :options="[...motivos.map((item) => ({ value: item, label: item }))]" />
         </label>
 
         <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">

@@ -26,6 +26,8 @@ import {
   veiculos,
   type RecortePos,
 } from '../data/gerencialData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const emit = defineEmits<{ open: [payload: { grupoId: string; recorte: RecortePos }] }>();
 const { warn } = useToast();
@@ -203,10 +205,7 @@ function abrir(grupoId: string) {
           <Search :size="15" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--neutral-400); pointer-events: none" />
           <input v-model="applied.cliente" class="filter-input quick-input" placeholder="Grupo empresarial" aria-label="Grupo empresarial" />
         </div>
-        <select v-model="applied.veiculoId" class="filter-input" style="width: 220px" aria-label="Veículo de operação">
-          <option value="">Todos os veículos</option>
-          <option v-for="v in veiculos" :key="v.id" :value="v.id">{{ v.nome }}</option>
-        </select>
+        <AdminSelect v-model="applied.veiculoId" :options="[{ value: '', label: 'Todos os veículos' }, ...veiculos.map((v) => ({ value: v.id, label: v.nome }))]" aria-label="Veículo de operação" style="width: 220px" />
         <div style="position: relative">
         <button ref="filterBtnRef" type="button" class="flex items-center toolbar-btn" @click="openFilters">
           <Filter :size="15" style="color: var(--text-muted)" />
@@ -234,32 +233,23 @@ function abrir(grupoId: string) {
             <div class="grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
               <label>
                 <div class="filter-label">Tipo de cliente</div>
-                <select v-model="draft.tipoCliente" class="filter-input">
-                  <option value="">Todos</option>
-                  <option v-for="t in TIPO_CLIENTE_OPCOES" :key="t" :value="t">{{ t }}</option>
-                </select>
+                <AdminSelect v-model="draft.tipoCliente" :options="[{ value: '', label: 'Todos' }, ...TIPO_CLIENTE_OPCOES.map((t) => ({ value: t, label: t }))]" />
               </label>
               <label>
                 <div class="filter-label">Nível de risco</div>
-                <select v-model="draft.nivelRisco" class="filter-input">
-                  <option value="">Todos</option>
-                  <option v-for="(label, key) in NIVEL_RISCO_LABEL" :key="key" :value="key">{{ label }}</option>
-                </select>
+                <AdminSelect v-model="draft.nivelRisco" :options="[{ value: '', label: 'Todos' }, ...Object.entries(NIVEL_RISCO_LABEL).map(([key, label]) => ({ value: key, label: label }))]" />
               </label>
               <label>
                 <div class="filter-label">Data inicial da cessão</div>
-                <input v-model="draft.dataInicial" type="date" class="filter-input" :max="hoje" />
+                <AdminDateField v-model="draft.dataInicial" :max="hoje" />
               </label>
               <label>
                 <div class="filter-label">Data final da cessão</div>
-                <input v-model="draft.dataFinal" type="date" class="filter-input" :max="hoje" />
+                <AdminDateField v-model="draft.dataFinal" :max="hoje" />
               </label>
               <label style="grid-column: 1 / -1">
                 <div class="filter-label">Tipo de cessão</div>
-                <select v-model="draft.tipoCessao" class="filter-input">
-                  <option value="">Todos</option>
-                  <option v-for="t in TIPO_CESSAO_OPCOES" :key="t" :value="t">{{ t }}</option>
-                </select>
+                <AdminSelect v-model="draft.tipoCessao" :options="[{ value: '', label: 'Todos' }, ...TIPO_CESSAO_OPCOES.map((t) => ({ value: t, label: t }))]" />
               </label>
             </div>
             <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">

@@ -19,6 +19,8 @@ import HabilitarOperarModal from '../components/modals/HabilitarOperarModal.vue'
 import VincularAgrupamentoModal from '../components/modals/VincularAgrupamentoModal.vue';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import Tooltip from '@/components/ui/Tooltip.vue';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const emit = defineEmits<{
   open: [id: string];
@@ -288,40 +290,27 @@ function menuActions(g: GrupoEmpresarial) {
                 </div>
                 <div>
                   <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Gerente</div>
-                  <select v-model="draft.gerente" style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)">
-                    <option value="">Todos</option>
-                    <option v-for="g in GERENTES_SEED" :key="g.id" :value="g.nome">{{ g.nome }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.gerente" :options="[{ value: '', label: 'Todos' }, ...GERENTES_SEED.map((g) => ({ value: g.nome, label: g.nome }))]" />
                 </div>
                 <div>
                   <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Tipo de Cliente</div>
-                  <select v-model="draft.tipoCliente" style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)">
-                    <option value="">Todos</option>
-                    <option v-for="t in TIPO_CLIENTE_OPTS" :key="t" :value="t">{{ t }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.tipoCliente" :options="[{ value: '', label: 'Todos' }, ...TIPO_CLIENTE_OPTS.map((t) => ({ value: t, label: t }))]" />
                 </div>
                 <div>
                   <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Status de Operação</div>
-                  <select v-model="draft.statusOperacao" style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)">
-                    <option value="">Todos</option>
-                    <option v-for="s in STATUS_OPERACAO_OPTS" :key="s" :value="s">{{ s }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.statusOperacao" :options="[{ value: '', label: 'Todos' }, ...STATUS_OPERACAO_OPTS.map((s) => ({ value: s, label: s }))]" />
                 </div>
                 <div>
                   <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Possui Parecer de Crédito</div>
-                  <select v-model="draft.possuiParecer" style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)">
-                    <option value="">Todos</option>
-                    <option value="Sim">Sim</option>
-                    <option value="Não">Não</option>
-                  </select>
+                  <AdminSelect v-model="draft.possuiParecer" :options="[{ value: '', label: 'Todos' }, { value: 'Sim', label: 'Sim' }, { value: 'Não', label: 'Não' }]" />
                 </div>
                 <div>
                   <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Vencimento do Limite (mín.)</div>
-                  <input v-model="draft.vencMin" type="date" style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)" />
+                  <AdminDateField v-model="draft.vencMin" />
                 </div>
                 <div>
                   <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Vencimento do Limite (máx.)</div>
-                  <input v-model="draft.vencMax" type="date" style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)" />
+                  <AdminDateField v-model="draft.vencMax" />
                 </div>
               </div>
               <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">

@@ -3,6 +3,9 @@ import { computed, ref } from 'vue';
 import { Trash2, X } from 'lucide-vue-next';
 import XmlDropzone from '@/features/solicitacao-operacao/components/modals/XmlDropzone.vue';
 import IconAction from '@/features/solicitacao-operacao/components/novo-pedido/IconAction.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminTimeField from '@/components/ui/AdminTimeField.vue';
 import { CONFIRMACAO_OPCOES, type ConfirmacaoTitulo } from '../data/gerencialData';
 
 const emit = defineEmits<{ close: []; confirm: [payload: { status: ConfirmacaoTitulo; dia: string; hora: string; observacao: string; arquivos: string[] }] }>();
@@ -82,22 +85,23 @@ function registrar() {
       </div>
 
       <div class="flex flex-col" style="gap: 14px">
-        <label>
+        <div>
           <div class="ger-label">Status da confirmação</div>
-          <select v-model="status" class="ger-input" required>
-            <option value="">Selecione</option>
-            <option v-for="op in CONFIRMACAO_OPCOES" :key="op" :value="op">{{ op }}</option>
-          </select>
-        </label>
+          <AdminSelect
+            :model-value="status"
+            :options="CONFIRMACAO_OPCOES"
+            @update:model-value="status = $event as ConfirmacaoTitulo"
+          />
+        </div>
         <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 14px">
-          <label>
+          <div>
             <div class="ger-label">Dia</div>
-            <input v-model="dia" type="date" class="ger-input" required />
-          </label>
-          <label>
+            <AdminDateField v-model="dia" />
+          </div>
+          <div>
             <div class="ger-label">Hora</div>
-            <input v-model="hora" type="time" class="ger-input" required />
-          </label>
+            <AdminTimeField v-model="hora" />
+          </div>
         </div>
         <div class="flex flex-col" style="gap: 6px">
           <div class="ger-label">Evidência</div>

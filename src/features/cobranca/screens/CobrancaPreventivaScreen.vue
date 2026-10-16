@@ -11,7 +11,6 @@ import {
   canalLabel,
   hojeIso,
   TITULOS_PREVENTIVA_SEED,
-  inPeriodo,
   type RegistroTentativa,
   type StatusPreventivo,
   type TentativaRegistro,
@@ -73,12 +72,15 @@ const titulosSacado = computed(() => {
 const contatosOperador = computed(() => {
   const current = route.value;
   if (current.level !== 'operador') return [];
-  return CONTATOS_OPERADOR_SEED.filter(
-    (c) => c.operadorId === current.operadorId && inPeriodo(c.ultimoContato, current.inicio, current.fim),
-  );
+  return CONTATOS_OPERADOR_SEED.filter((c) => c.operadorId === current.operadorId);
 });
 
 const nomeOperador = computed(() => (route.value.level === 'operador' ? route.value.operador : ''));
+const periodoOperador = computed(() =>
+  route.value.level === 'operador'
+    ? { inicio: route.value.inicio, fim: route.value.fim }
+    : { inicio: '', fim: '' },
+);
 
 function registrar(payload: { ids: string[]; tentativas: TentativaRegistro[]; observacoes: string }) {
   const status = payload.tentativas.at(-1)?.status as StatusPreventivo | undefined;
@@ -139,8 +141,11 @@ function abrirOperador(payload: { operadorId: string; operador: string; inicio: 
   />
   <OperadorDetailScreen
     v-else-if="route.level === 'operador'"
+    :key="route.operadorId"
     :operador="nomeOperador"
     :contatos="contatosOperador"
+    :inicio="periodoOperador.inicio"
+    :fim="periodoOperador.fim"
     @back="route = { level: 'hub' }"
   />
   <div v-else class="flex flex-col" style="gap: 20px">

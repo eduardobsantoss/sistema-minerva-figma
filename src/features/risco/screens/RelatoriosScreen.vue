@@ -8,6 +8,7 @@ import {
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { useBackgroundReport } from '@/composables/useBackgroundReport';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 type ReportKey = 'parecer-credito';
 
@@ -185,33 +186,15 @@ function handleGerar() {
         </div>
         <div>
           <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Status do grupo</div>
-          <select
-            v-model="draft.statusGrupo"
-            style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
-          >
-            <option value="">Todos</option>
-            <option v-for="o in STATUS_GRUPO_RELATORIO_OPTS" :key="o" :value="o">{{ o }}</option>
-          </select>
+          <AdminSelect v-model="draft.statusGrupo" :options="[{ value: '', label: 'Todos' }, ...STATUS_GRUPO_RELATORIO_OPTS.map((o) => ({ value: o, label: o }))]" />
         </div>
         <div>
           <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Gerente</div>
-          <select
-            v-model="draft.gerente"
-            style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
-          >
-            <option value="">Todos</option>
-            <option v-for="o in GERENTES_SEED" :key="o.id" :value="o.nome">{{ o.nome }}</option>
-          </select>
+          <AdminSelect v-model="draft.gerente" :options="[{ value: '', label: 'Todos' }, ...GERENTES_SEED.map((o) => ({ value: o.nome, label: o.nome }))]" />
         </div>
         <div>
           <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Status do parecer</div>
-          <select
-            v-model="draft.statusParecer"
-            style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
-          >
-            <option value="">Todos</option>
-            <option v-for="o in STATUS_PARECER_RELATORIO_OPTS" :key="o" :value="o">{{ o }}</option>
-          </select>
+          <AdminSelect v-model="draft.statusParecer" :options="[{ value: '', label: 'Todos' }, ...STATUS_PARECER_RELATORIO_OPTS.map((o) => ({ value: o, label: o }))]" />
         </div>
       </div>
       <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">

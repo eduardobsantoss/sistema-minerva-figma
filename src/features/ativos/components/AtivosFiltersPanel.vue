@@ -14,6 +14,8 @@ import {
   statusTituloLabel,
   type AtivosFilters,
 } from '../data/ativosData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{
   modelValue: AtivosFilters;
@@ -187,34 +189,22 @@ function handleClear() {
     <template v-if="view === 'contratos'">
       <div style="grid-column: 1 / -1">
         <div :style="labelStyle">Tipo do ativo</div>
-        <select v-model="draft.tipoAtivo" :style="inputStyle">
-          <option value="">Todos</option>
-          <option v-for="t in TIPO_ATIVO_OPTS" :key="t" :value="t">{{ t }}</option>
-        </select>
+        <AdminSelect v-model="draft.tipoAtivo" :options="[{ value: '', label: 'Todos' }, ...TIPO_ATIVO_OPTS.map((t) => ({ value: t, label: t }))]" />
       </div>
     </template>
 
     <template v-else>
       <div>
         <div :style="labelStyle">Situação do título</div>
-        <select v-model="draft.situacao" :style="inputStyle">
-          <option value="">Todas</option>
-          <option v-for="s in SITUACAO_OPTS" :key="s" :value="s">{{ situacaoLabel(s) }}</option>
-        </select>
+        <AdminSelect v-model="draft.situacao" :options="[{ value: '', label: 'Todas' }, ...SITUACAO_OPTS.map((s) => ({ value: s, label: situacaoLabel(s) }))]" />
       </div>
       <div>
         <div :style="labelStyle">Status do título</div>
-        <select v-model="draft.statusTitulo" :style="inputStyle">
-          <option value="">Todos</option>
-          <option v-for="s in STATUS_TITULO_OPTS" :key="s" :value="s">{{ statusTituloLabel(s) }}</option>
-        </select>
+        <AdminSelect v-model="draft.statusTitulo" :options="[{ value: '', label: 'Todos' }, ...STATUS_TITULO_OPTS.map((s) => ({ value: s, label: statusTituloLabel(s) }))]" />
       </div>
       <div>
         <div :style="labelStyle">Gerente</div>
-        <select v-model="draft.gerente" :style="inputStyle">
-          <option value="">Todos</option>
-          <option v-for="g in GERENTES_OPTS" :key="g" :value="g">{{ g }}</option>
-        </select>
+        <AdminSelect v-model="draft.gerente" :options="[{ value: '', label: 'Todos' }, ...GERENTES_OPTS.map((g) => ({ value: g, label: g }))]" />
       </div>
       <div>
         <div :style="labelStyle">Cessão</div>
@@ -224,19 +214,19 @@ function handleClear() {
 
     <div>
       <div :style="labelStyle">Data entrada inicial</div>
-      <input v-model="draft.dataEntradaIni" type="date" :style="inputStyle" />
+      <AdminDateField v-model="draft.dataEntradaIni" />
     </div>
     <div>
       <div :style="labelStyle">Data entrada final</div>
-      <input v-model="draft.dataEntradaFim" type="date" :style="inputStyle" />
+      <AdminDateField v-model="draft.dataEntradaFim" />
     </div>
     <div>
       <div :style="labelStyle">{{ view === 'contratos' ? 'Último vencimento inicial' : 'Data vencimento inicial' }}</div>
-      <input v-model="draft.dataVencimentoIni" type="date" :style="inputStyle" />
+      <AdminDateField v-model="draft.dataVencimentoIni" />
     </div>
     <div>
       <div :style="labelStyle">{{ view === 'contratos' ? 'Último vencimento final' : 'Data vencimento final' }}</div>
-      <input v-model="draft.dataVencimentoFim" type="date" :style="inputStyle" />
+      <AdminDateField v-model="draft.dataVencimentoFim" />
     </div>
   </div>
 

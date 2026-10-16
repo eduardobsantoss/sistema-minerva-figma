@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Upload, X } from 'lucide-vue-next';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminTimeField from '@/components/ui/AdminTimeField.vue';
 
 const props = withDefaults(defineProps<{ quantidade?: number }>(), { quantidade: 1 });
 const emit = defineEmits<{ close: [] }>();
@@ -61,13 +64,10 @@ function onFile(event: Event) {
       </div>
 
       <div style="padding: 20px 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
-        <label class="lote-field">
+        <div class="lote-field">
           <span class="lote-label">Status da confirmação</span>
-          <select v-model="status" class="lote-input" :data-empty="status === ''">
-            <option value="" disabled>Selecione</option>
-            <option v-for="item in statusConfirmacao" :key="item" :value="item">{{ item }}</option>
-          </select>
-        </label>
+          <AdminSelect v-model="status" :options="statusConfirmacao" />
+        </div>
 
         <div class="lote-field">
           <span class="lote-label">Evidência</span>
@@ -78,15 +78,15 @@ function onFile(event: Event) {
           </button>
         </div>
 
-        <label class="lote-field">
+        <div class="lote-field">
           <span class="lote-label">Dia da confirmação</span>
-          <input v-model="dia" type="date" class="lote-input" />
-        </label>
+          <AdminDateField v-model="dia" />
+        </div>
 
-        <label class="lote-field">
+        <div class="lote-field">
           <span class="lote-label">Hora da confirmação</span>
-          <input v-model="hora" type="time" class="lote-input" />
-        </label>
+          <AdminTimeField v-model="hora" />
+        </div>
 
         <label class="lote-field" style="grid-column: 1 / -1">
           <span class="lote-label">Observação</span>

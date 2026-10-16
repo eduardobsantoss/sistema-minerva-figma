@@ -4,6 +4,7 @@ import { CheckCircle2 } from 'lucide-vue-next';
 import type { SlaveLaborRestriction } from '../../data/serasaTypes';
 import { formatDateOnly, formatDateTimeUtc, formatDocument } from '../../utils/serasaFormatters';
 import { EmptyState } from '@/features/risco/screens/detail-tabs/shared';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ items: SlaveLaborRestriction[] }>();
 
@@ -45,21 +46,8 @@ const activeCount = computed(() => props.items.filter(isActive).length);
         <span v-if="activeCount"> · <strong style="color: var(--status-danger-text)">{{ activeCount }} na lista</strong></span>
       </p>
       <div class="flex flex-wrap items-center" style="gap: 8px">
-        <select
-          v-model="statusFilter"
-          style="height: 34px; padding: 0 10px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); font-size: var(--text-xs); color: var(--text-default)"
-        >
-          <option value="all">Todos os status</option>
-          <option value="active">Na lista</option>
-          <option value="ended">Fora da lista</option>
-        </select>
-        <select
-          v-model="ufFilter"
-          style="height: 34px; padding: 0 10px; border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--surface-card); font-size: var(--text-xs); color: var(--text-default)"
-        >
-          <option value="">Todas as UFs</option>
-          <option v-for="uf in ufs" :key="uf" :value="uf">{{ uf }}</option>
-        </select>
+        <AdminSelect v-model="statusFilter" :options="[{ value: 'all', label: 'Todos os status' }, { value: 'active', label: 'Na lista' }, { value: 'ended', label: 'Fora da lista' }]" />
+        <AdminSelect v-model="ufFilter" :options="[{ value: '', label: 'Todas as UFs' }, ...ufs.map((uf) => ({ value: uf, label: uf }))]" />
       </div>
     </div>
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { X } from 'lucide-vue-next';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = withDefaults(defineProps<{ quantidade?: number }>(), { quantidade: 1 });
 const emit = defineEmits<{ close: [] }>();
@@ -122,10 +123,7 @@ function voltar() {
         <div style="padding: 20px 22px">
           <label class="lote-field">
             <span class="lote-label">Nova situação</span>
-            <select v-model="situacao" class="lote-input" :data-empty="situacao === ''">
-              <option value="" disabled>Selecione nova situação</option>
-              <option v-for="item in lista" :key="item" :value="item">{{ item }}</option>
-            </select>
+            <AdminSelect v-model="situacao" placeholder="Selecione nova situação" :options="[...lista.map((item) => ({ value: item, label: item }))]" />
           </label>
         </div>
 

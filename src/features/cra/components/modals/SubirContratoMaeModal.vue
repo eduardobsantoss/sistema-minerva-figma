@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { X, Upload } from 'lucide-vue-next';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
 
 const props = defineProps<{ initialDate?: string }>();
 const emit = defineEmits<{
@@ -82,11 +83,7 @@ function handleSave() {
           <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px">
             Data firma
           </div>
-          <input
-            v-model="dataFirma"
-            type="date"
-            style="width: 100%; height: 40px; padding: 0 14px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); font-size: var(--text-sm); color: var(--text-strong); outline: none"
-          />
+          <AdminDateField v-model="dataFirma" />
         </div>
         <div>
           <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px">

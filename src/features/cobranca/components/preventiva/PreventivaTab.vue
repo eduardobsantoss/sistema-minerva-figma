@@ -28,6 +28,8 @@ import {
   passaFiltros,
   type FiltrosTitulo,
 } from '../../data/preventivaFiltros';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ sacados: SacadoPreventivo[]; titulos: TituloPreventivo[] }>();
 const emit = defineEmits<{ open: [sacadoId: string, tab?: 'titulos' | 'registros'] }>();
@@ -205,10 +207,7 @@ function toggleStatus(status: StatusPreventivo) {
         <MultiCheckDropdown v-model="draft.tipos" label="Tipo de título" :options="tipoOptions" :panel-width="240" />
         <div>
           <div class="filter-label">Situação</div>
-          <select v-model="draft.situacao" class="filter-input">
-            <option value="">Todas</option>
-            <option v-for="s in SITUACOES_OPTS" :key="s" :value="s">{{ s }}</option>
-          </select>
+          <AdminSelect v-model="draft.situacao" :options="[{ value: '', label: 'Todas' }, ...SITUACOES_OPTS.map((s) => ({ value: s, label: s }))]" />
         </div>
         <div>
           <div class="filter-label">Valor em aberto de</div>
@@ -220,11 +219,11 @@ function toggleStatus(status: StatusPreventivo) {
         </div>
         <div>
           <div class="filter-label">Vencimento de</div>
-          <input v-model="draft.vencDe" type="date" class="filter-input" />
+          <AdminDateField v-model="draft.vencDe" />
         </div>
         <div>
           <div class="filter-label">Vencimento até</div>
-          <input v-model="draft.vencAte" type="date" class="filter-input" />
+          <AdminDateField v-model="draft.vencAte" />
         </div>
         <div>
           <div class="filter-label">Dias para vencimento</div>
@@ -232,10 +231,7 @@ function toggleStatus(status: StatusPreventivo) {
         </div>
         <div>
           <div class="filter-label">Grupo empresarial</div>
-          <select v-model="draft.grupo" class="filter-input">
-            <option value="">Todos</option>
-            <option v-for="g in GRUPOS_EMPRESARIAIS_OPTS" :key="g" :value="g">{{ g }}</option>
-          </select>
+          <AdminSelect v-model="draft.grupo" :options="[{ value: '', label: 'Todos' }, ...GRUPOS_EMPRESARIAIS_OPTS.map((g) => ({ value: g, label: g }))]" />
         </div>
         <MultiCheckDropdown
           v-model="draft.excluirGrupos"
@@ -246,31 +242,19 @@ function toggleStatus(status: StatusPreventivo) {
         />
         <div>
           <div class="filter-label">CRA</div>
-          <select v-model="draft.cra" class="filter-input">
-            <option value="">Todos</option>
-            <option v-for="c in CRA_OPTS" :key="c" :value="c">{{ c }}</option>
-          </select>
+          <AdminSelect v-model="draft.cra" :options="[{ value: '', label: 'Todos' }, ...CRA_OPTS.map((c) => ({ value: c, label: c }))]" />
         </div>
         <div>
           <div class="filter-label">FIDC</div>
-          <select v-model="draft.fidc" class="filter-input">
-            <option value="">Todos</option>
-            <option v-for="f in FIDC_OPTS" :key="f" :value="f">{{ f }}</option>
-          </select>
+          <AdminSelect v-model="draft.fidc" :options="[{ value: '', label: 'Todos' }, ...FIDC_OPTS.map((f) => ({ value: f, label: f }))]" />
         </div>
         <div>
           <div class="filter-label">Gerente comercial</div>
-          <select v-model="draft.gerente" class="filter-input">
-            <option value="">Todos</option>
-            <option v-for="g in GERENTES_OPTS" :key="g" :value="g">{{ g }}</option>
-          </select>
+          <AdminSelect v-model="draft.gerente" :options="[{ value: '', label: 'Todos' }, ...GERENTES_OPTS.map((g) => ({ value: g, label: g }))]" />
         </div>
         <div>
           <div class="filter-label">Superintendente</div>
-          <select v-model="draft.superintendente" class="filter-input">
-            <option value="">Todos</option>
-            <option v-for="s in SUPERINTENDENTES_OPTS" :key="s" :value="s">{{ s }}</option>
-          </select>
+          <AdminSelect v-model="draft.superintendente" :options="[{ value: '', label: 'Todos' }, ...SUPERINTENDENTES_OPTS.map((s) => ({ value: s, label: s }))]" />
         </div>
       </FiltrosPopover>
 

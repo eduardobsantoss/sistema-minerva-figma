@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { ArrowUp, ArrowDown, Trash2, Plus, Info } from 'lucide-vue-next';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 import {
   FUNDOS_DISPONIVEIS,
   fundoLabel,
@@ -54,6 +55,15 @@ function fundOptionsForRow(rowIndex: number) {
       .filter(Boolean),
   );
   return FUNDOS_DISPONIVEIS.filter((f) => !taken.has(f.id));
+}
+
+function fundSelectOptions(rowIndex: number, fundId: string) {
+  const options = fundOptionsForRow(rowIndex).map((fund) => ({ value: fund.id, label: fundoLabel(fund) }));
+  if (fundId && !options.some((option) => option.value === fundId)) {
+    const current = FUNDOS_DISPONIVEIS.find((fund) => fund.id === fundId);
+    if (current) options.push({ value: fundId, label: fundoLabel(current) });
+  }
+  return options;
 }
 
 const hasDuplicateFunds = computed(() => {
@@ -232,29 +242,12 @@ function handleSave() {
           </button>
         </div>
 
-        <select
+        <AdminSelect
           v-model="row.fundId"
-          style="
-            flex: 1 1 200px;
-            min-width: 180px;
-            height: 40px;
-            padding: 0 12px;
-            background: var(--surface-card);
-            border: 1px solid var(--border-default);
-            border-radius: var(--radius-lg);
-            font-size: var(--text-sm);
-            color: var(--text-strong);
-            cursor: pointer;
-          "
-        >
-          <option value="" disabled>Selecione o fundo</option>
-          <option v-for="f in fundOptionsForRow(index)" :key="f.id" :value="f.id">
-            {{ fundoLabel(f) }}
-          </option>
-          <option v-if="row.fundId && !fundOptionsForRow(index).some((f) => f.id === row.fundId)" :value="row.fundId">
-            {{ fundoLabel(FUNDOS_DISPONIVEIS.find((f) => f.id === row.fundId)!) }}
-          </option>
-        </select>
+          placeholder="Selecione o fundo"
+          :options="fundSelectOptions(index, row.fundId)"
+          style="flex: 1 1 200px; min-width: 180px"
+        />
 
         <input
           v-model="row.limite"

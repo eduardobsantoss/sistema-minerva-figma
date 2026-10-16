@@ -2,7 +2,7 @@
 import { computed, nextTick, ref } from 'vue';
 import { Bar, Line } from 'vue-chartjs';
 import type { ChartOptions } from 'chart.js';
-import { ArrowDown, ArrowUp, BadgeCheck, Banknote, Percent, Users, Wallet } from 'lucide-vue-next';
+import { ArrowDown, ArrowUp, BadgeCheck, Banknote, Info, Percent, Users, Wallet } from 'lucide-vue-next';
 import '@/lib/chart';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
@@ -25,6 +25,7 @@ import {
   type TituloPreventivo,
 } from '../../data/cobrancaPreventivaData';
 import StatusTitulosChart from './StatusTitulosChart.vue';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
 
 const props = defineProps<{ titulos: TituloPreventivo[] }>();
 const { success, error: toastError } = useToast();
@@ -57,6 +58,7 @@ const kpis = computed(() => {
   const valorTotal = rows.reduce((acc, c) => acc + c.valorAPagar, 0);
   const valorConfirmado = rows.reduce((acc, c) => acc + c.valorConfirmado, 0);
   const taxa = rows.length === 0 ? 0 : (confirmados / rows.length) * 100;
+  const taxaValor = valorTotal === 0 ? 0 : (valorConfirmado / valorTotal) * 100;
   const tentativas = rows.reduce((acc, c) => acc + c.tentativas, 0);
   return [
     {
@@ -67,6 +69,7 @@ const kpis = computed(() => {
       primaryValue: String(sacados),
       secondaryLabel: 'Tentativas',
       secondaryValue: String(tentativas),
+      hint: '',
     },
     {
       icon: BadgeCheck,
@@ -76,6 +79,7 @@ const kpis = computed(() => {
       primaryValue: String(confirmados),
       secondaryLabel: 'Taxa',
       secondaryValue: fmtPct(taxa),
+      hint: '',
     },
     {
       icon: Wallet,
@@ -85,6 +89,7 @@ const kpis = computed(() => {
       primaryValue: brl(valorTotal),
       secondaryLabel: 'Sacados',
       secondaryValue: String(sacados),
+      hint: '',
     },
     {
       icon: Banknote,
@@ -94,15 +99,17 @@ const kpis = computed(() => {
       primaryValue: brl(valorConfirmado),
       secondaryLabel: 'Confirmados',
       secondaryValue: String(confirmados),
+      hint: '',
     },
     {
       icon: Percent,
       title: 'Taxa de confirmação',
       tone: 'var(--warning-base)',
-      primaryLabel: 'Confirmados / contactados',
-      primaryValue: fmtPct(taxa),
-      secondaryLabel: 'Confirmados',
-      secondaryValue: String(confirmados),
+      primaryLabel: 'No período',
+      primaryValue: fmtPct(taxaValor),
+      secondaryLabel: 'Valor confirmado',
+      secondaryValue: brl(valorConfirmado),
+      hint: 'A conta é do valor: valor confirmado dividido pelo valor contactado.',
     },
   ];
 });
@@ -164,12 +171,6 @@ function pontoVazio(): PontoEvolucao {
   };
 }
 
-const LINHAS_EVOLUCAO: { key: 'tentativas' | StatusPreventivo; label: string; color: string }[] = [
-  { key: 'tentativas', label: 'Tentativas', color: '#083C4A' },
-  { key: 'CONFIRMADO', label: 'Confirmado', color: '#0F766E' },
-  { key: 'NAO_CONFIRMADO', label: 'Não confirmou', color: '#C2410C' },
-];
-
 const ORDEM_RETORNO: StatusPreventivo[] = [
   'PENDENTE',
   'CONFIRMADO',
@@ -185,6 +186,21 @@ const ORDEM_RETORNO: StatusPreventivo[] = [
   'ISENTO_TRADING',
   'AGUARDANDO_RETORNO_COMERCIAL',
   'AGUARDANDO_RETORNO_TELEGRAMA',
+];
+
+const COR_LINHA: Partial<Record<'tentativas' | StatusPreventivo, string>> = {
+  tentativas: '#083C4A',
+  CONFIRMADO: '#0F766E',
+  NAO_CONFIRMADO: '#C2410C',
+  PAGO_A_CEDENTE: '#2563EB',
+};
+
+const LINHAS_EVOLUCAO: { key: 'tentativas' | StatusPreventivo; label: string; color: string }[] = [
+  { key: 'tentativas', label: 'Tentativas', color: COR_LINHA.tentativas! },
+  ...ORDEM_RETORNO.map((key) => {
+    const status = STATUS_PREVENTIVO.find((item) => item.key === key)!;
+    return { key, label: status.label, color: COR_LINHA[key] ?? status.color };
+  }),
 ];
 
 const STATUS_POR_CHAVE = Object.fromEntries(STATUS_PREVENTIVO.map((s) => [s.key, s.label])) as Record<StatusPreventivo, string>;
@@ -272,7 +288,7 @@ const evolucaoData = computed(() => {
       }),
       borderColor: linha.color,
       backgroundColor: linha.color,
-      borderWidth: 2.5,
+      borderWidth: 2,
       tension: 0.35,
       pointRadius: 0,
       pointHoverRadius: 5,
@@ -295,7 +311,8 @@ const lineOptions = computed<ChartOptions<'line'>>(() => {
       if (!(target instanceof HTMLCanvasElement)) return;
       const y = event.native && 'offsetY' in event.native ? Number(event.native.offsetY) : 0;
       const noGrafico = y >= chart.chartArea.top && y <= chart.chartArea.bottom && elements.length > 0;
-      target.style.cursor = noGrafico ? 'pointer' : 'default';
+      const naLegenda = y > chart.chartArea.bottom;
+      target.style.cursor = noGrafico || naLegenda ? 'pointer' : 'default';
     },
     onClick(event, elements, chart) {
       if (!elements.length) return;
@@ -322,7 +339,7 @@ const lineOptions = computed<ChartOptions<'line'>>(() => {
           boxHeight: 4,
           color: '#334155',
           font: { size: 11, weight: 600 },
-          padding: 16,
+          padding: 10,
         },
       },
       tooltip: {
@@ -488,6 +505,10 @@ function abrirOperador(row: RankingRow) {
           <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
             {{ kpi.title }}
           </div>
+          <button v-if="kpi.hint" type="button" class="kpi-hint" :aria-label="kpi.hint">
+            <Info :size="15" />
+            <span class="kpi-hint-pop" role="tooltip">{{ kpi.hint }}</span>
+          </button>
         </div>
         <div class="field-label" style="margin-bottom: 6px">{{ kpi.primaryLabel }}</div>
         <div class="kpi-hero" :style="{ color: kpi.tone }">{{ kpi.primaryValue }}</div>
@@ -503,11 +524,11 @@ function abrirOperador(row: RankingRow) {
     <div class="flex items-end" style="gap: 12px; flex-wrap: wrap">
       <label class="field">
         <span class="field-label">De</span>
-        <input v-model="inicio" type="date" class="field-input" @change="setPage(1)" />
+        <AdminDateField v-model="inicio" @update:model-value="setPage(1)" />
       </label>
       <label class="field">
         <span class="field-label">Até</span>
-        <input v-model="fim" type="date" class="field-input" @change="setPage(1)" />
+        <AdminDateField v-model="fim" @update:model-value="setPage(1)" />
       </label>
     </div>
 
@@ -696,6 +717,45 @@ function abrirOperador(row: RankingRow) {
   background: var(--surface-card);
   padding: 20px;
 }
+.kpi-hint {
+  position: relative;
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: help;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+.kpi-hint-pop {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 5;
+  width: max-content;
+  max-width: 220px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #f8fafb;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+}
+.kpi-hint:hover .kpi-hint-pop,
+.kpi-hint:focus .kpi-hint-pop,
+.kpi-hint:focus-visible .kpi-hint-pop {
+  display: block;
+}
 .kpi-hero {
   font-size: 28px;
   font-weight: var(--weight-bold);
@@ -710,7 +770,7 @@ function abrirOperador(row: RankingRow) {
 }
 .evo-chart {
   position: relative;
-  height: 300px;
+  height: 460px;
 }
 .evo-hint {
   margin: 2px 0 0;

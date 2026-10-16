@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { X } from 'lucide-vue-next';
 import { pu, isoToBr } from '../../data/passivoNovoData';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
 
 export interface ValidarDateOption {
   iso: string;
@@ -89,7 +90,7 @@ const copy =
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted)">
             Data do PU
           </span>
-          <input v-model="selectedIso" type="date" class="date-input" />
+          <AdminDateField v-model="selectedIso" />
         </label>
         <div
           style="

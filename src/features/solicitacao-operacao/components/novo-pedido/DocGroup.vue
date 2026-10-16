@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { CheckCircle2, Download, FileText, Paperclip, Trash2, Upload } from 'lucide-vue-next';
 import IconAction from './IconAction.vue';
+import AdminDateField from '@/components/ui/AdminDateField.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -108,23 +109,7 @@ function validadeOf(id: string) {
 
         <div class="flex items-center" style="gap: 10px; flex-shrink: 0">
           <div v-if="doc.exigeValidade && docFiles[doc.id]" style="width: 148px">
-            <input
-              :value="validadeOf(doc.id)"
-              type="date"
-              :style="{
-                width: '100%',
-                height: '38px',
-                padding: '0 12px',
-                background: 'var(--surface-card)',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-lg)',
-                outline: 'none',
-                fontSize: 'var(--text-sm)',
-                color: 'var(--text-strong)',
-                fontVariantNumeric: 'tabular-nums',
-              }"
-              @input="emit('updateValidade', doc.id, ($event.target as HTMLInputElement).value)"
-            />
+            <AdminDateField :model-value="validadeOf(doc.id)" @update:model-value="emit('updateValidade', doc.id, $event)" />
           </div>
           <template v-if="docFiles[doc.id]">
             <IconAction :icon="Download" label="Baixar" />

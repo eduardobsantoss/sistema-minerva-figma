@@ -6,6 +6,7 @@ import {
   type FrequenciaLaudo, type TipoGarantia, type GarantiaRow,
 } from '../../data/riscoData';
 import Checkbox from '@/components/ui/Checkbox.vue';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 interface Props {
   garantia: GarantiaRow;
@@ -56,9 +57,7 @@ function handleConfirm() {
         <div class="flex flex-col" style="gap: 16px">
           <div>
             <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Tipo da garantia</div>
-            <select v-model="tipo" style="width: 100%; height: 40px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)">
-              <option v-for="t in TIPO_GARANTIA_OPTS" :key="t" :value="t">{{ t }}</option>
-            </select>
+            <AdminSelect v-model="tipo" :options="[...TIPO_GARANTIA_OPTS.map((t) => ({ value: t, label: t }))]" />
           </div>
           <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 12px">
             <div>
@@ -72,9 +71,7 @@ function handleConfirm() {
           </div>
           <div>
             <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Frequência laudos</div>
-            <select v-model="frequencia" style="width: 100%; height: 40px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)">
-              <option v-for="f in FREQUENCIA_LAUDO_OPTS" :key="f" :value="f">{{ f }}</option>
-            </select>
+            <AdminSelect v-model="frequencia" :options="[...FREQUENCIA_LAUDO_OPTS.map((f) => ({ value: f, label: f }))]" />
           </div>
           <div class="flex items-center" style="gap: 24px">
             <label class="flex items-center" style="gap: 8px; cursor: pointer; font-size: var(--text-sm); color: var(--text-default)">

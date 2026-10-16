@@ -23,6 +23,7 @@ import {
 } from '../data/resultadoNotificacoesData';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ disparos: DisparoNotificacao[] }>();
 const emit = defineEmits<{
@@ -270,37 +271,19 @@ function menuActions(d: DisparoNotificacao) {
                   <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
                     Campanha
                   </div>
-                  <select
-                    v-model="draft.campanha"
-                    style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)"
-                  >
-                    <option value="">Todas</option>
-                    <option v-for="c in CAMPANHA_OPTS" :key="c" :value="c">{{ c }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.campanha" :options="[{ value: '', label: 'Todas' }, ...CAMPANHA_OPTS.map((c) => ({ value: c, label: c }))]" />
                 </div>
                 <div>
                   <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
                     Canal
                   </div>
-                  <select
-                    v-model="draft.canal"
-                    style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)"
-                  >
-                    <option value="">Todos</option>
-                    <option v-for="c in CANAL_DISPARO_OPTS" :key="c" :value="c">{{ c }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.canal" :options="[{ value: '', label: 'Todos' }, ...CANAL_DISPARO_OPTS.map((c) => ({ value: c, label: c }))]" />
                 </div>
                 <div>
                   <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
                     Status
                   </div>
-                  <select
-                    v-model="draft.status"
-                    style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)"
-                  >
-                    <option value="">Todos</option>
-                    <option v-for="s in STATUS_DISPARO_OPTS" :key="s" :value="s">{{ statusDisparoLabel(s) }}</option>
-                  </select>
+                  <AdminSelect v-model="draft.status" :options="[{ value: '', label: 'Todos' }, ...STATUS_DISPARO_OPTS.map((s) => ({ value: s, label: statusDisparoLabel(s) }))]" />
                 </div>
               </div>
               <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">

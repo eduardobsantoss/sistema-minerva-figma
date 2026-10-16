@@ -4,6 +4,7 @@ import { brl, type Titulo } from '../../data/titulosData';
 import Section from './Section.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ titulo: Titulo }>();
 
@@ -88,12 +89,7 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
         </div>
         <div>
           <div class="field-label">Tipo</div>
-          <select v-model="form.tipoPagamento" class="field-input">
-            <option value="TED">TED</option>
-            <option value="PIX">PIX</option>
-            <option value="BOLETO">Boleto</option>
-            <option value="OUTRO">Outro</option>
-          </select>
+          <AdminSelect v-model="form.tipoPagamento" :options="[{ value: 'TED', label: 'TED' }, { value: 'PIX', label: 'PIX' }, { value: 'BOLETO', label: 'Boleto' }, { value: 'OUTRO', label: 'Outro' }]" />
         </div>
         <div>
           <div class="field-label">Juros moratório</div>

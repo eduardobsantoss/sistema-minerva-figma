@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { X } from 'lucide-vue-next';
+import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const emit = defineEmits<{ close: [] }>();
 
@@ -43,10 +44,7 @@ const mensagem = ref('');
       <div class="flex flex-col" style="gap: 16px; padding: 20px 22px">
         <label class="lote-field">
           <span class="lote-label">Tipo de arquivo</span>
-          <select v-model="tipoArquivo" class="lote-input" :data-empty="tipoArquivo === ''">
-            <option value="" disabled>Selecione</option>
-            <option v-for="tipo in tiposArquivo" :key="tipo" :value="tipo">{{ tipo }}</option>
-          </select>
+          <AdminSelect v-model="tipoArquivo" placeholder="Selecione" :options="[...tiposArquivo.map((tipo) => ({ value: tipo, label: tipo }))]" />
         </label>
 
         <button type="button" class="lote-switch" @click="enviarSacado = !enviarSacado">
