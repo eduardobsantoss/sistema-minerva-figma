@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, type Component } from 'vue';
-import { AlertTriangle, BarChart3, Building2, CheckCircle2, ChevronDown, Filter, Settings2, Wallet } from 'lucide-vue-next';
+import { AlertTriangle, BarChart3, Building2, CheckCircle2, ChevronDown, Filter, Search, Settings2, Wallet } from 'lucide-vue-next';
 import { Bar } from 'vue-chartjs';
 import type { ChartOptions } from 'chart.js';
 import '@/lib/chart';
@@ -244,11 +244,13 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
   { defaultPageSize: 5 },
 );
 
-watch(applied, () => setPage(1));
+watch(applied, () => setPage(1), { deep: true });
 
 const activeFilterCount = computed(() => {
   const atual = applied.value;
+  // Grupo e veículo são filtros rápidos (fora do popover) e não entram na contagem.
   return (Object.keys(RECORTE_GERENCIAL_INICIAL) as (keyof RecorteGerencial)[])
+    .filter((key) => key !== 'grupoNome' && key !== 'veiculoId')
     .filter((key) => atual[key] !== RECORTE_GERENCIAL_INICIAL[key]).length;
 });
 
@@ -311,7 +313,15 @@ function abrir(grupoId: string) {
           · cessões {{ applied.busca }} · {{ applied.situacao === 'aprovada' ? 'aprovadas' : applied.situacao === 'nao-aprovada' ? 'não aprovadas' : 'todas as situações' }}
         </p>
       </div>
-      <div class="flex items-center" style="gap: 10px; margin-left: auto">
+      <div class="flex items-center flex-wrap" style="gap: 10px; margin-left: auto; justify-content: flex-end">
+        <div class="relative" style="width: 220px">
+          <Search :size="15" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--neutral-400); pointer-events: none" />
+          <input v-model="applied.grupoNome" class="filter-input quick-input" placeholder="Grupo empresarial" aria-label="Grupo empresarial" />
+        </div>
+        <select v-model="applied.veiculoId" class="filter-input" style="width: 220px" aria-label="Veículo de operação">
+          <option value="">Todos os veículos</option>
+          <option v-for="v in ativos" :key="v.id" :value="v.id">{{ v.nome }}</option>
+        </select>
         <div style="position: relative">
           <button ref="filterBtnRef" type="button" class="flex items-center toolbar-btn" @click="openFilters">
             <Filter :size="15" style="color: var(--text-muted)" />
@@ -338,21 +348,10 @@ function abrir(grupoId: string) {
             >
               <div class="grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
                 <label>
-                  <div class="filter-label">Grupo empresarial</div>
-                  <input v-model="draft.grupoNome" class="filter-input" placeholder="Nome do grupo" />
-                </label>
-                <label>
                   <div class="filter-label">Gerente comercial</div>
                   <select v-model="draft.gerente" class="filter-input">
                     <option value="">Todos</option>
                     <option v-for="g in gerentes()" :key="g" :value="g">{{ g }}</option>
-                  </select>
-                </label>
-                <label>
-                  <div class="filter-label">Veículo de operação</div>
-                  <select v-model="draft.veiculoId" class="filter-input">
-                    <option value="">Todos</option>
-                    <option v-for="v in ativos" :key="v.id" :value="v.id">{{ v.nome }}</option>
                   </select>
                 </label>
                 <label>
@@ -648,6 +647,9 @@ function abrir(grupoId: string) {
   outline: none;
   font-size: var(--text-sm);
   color: var(--text-strong);
+}
+.quick-input {
+  padding-left: 36px;
 }
 .fp-clear {
   height: 38px;
