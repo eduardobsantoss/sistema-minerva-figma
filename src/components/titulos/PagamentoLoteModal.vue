@@ -103,11 +103,11 @@ function brl(n: number) {
               <span class="lote-label">Taxa de multa</span>
               <input v-model="taxaMulta" type="text" inputmode="decimal" placeholder="%" class="lote-input" />
             </label>
-            <div class="span-6">
+            <div class="lote-field span-6">
               <div class="lote-label">Taxa de juros do FIDC</div>
               <div class="lote-readonly">—</div>
             </div>
-            <div class="span-6">
+            <div class="lote-field span-6">
               <div class="lote-label">Taxa de multa do FIDC</div>
               <div class="lote-readonly">—</div>
             </div>
@@ -160,11 +160,11 @@ function brl(n: number) {
             </div>
           </div>
           <div class="lote-grid">
-            <div class="span-6">
+            <div class="lote-field span-6">
               <div class="lote-label">Valor total dos títulos</div>
               <div class="lote-readonly lote-readonly-strong">{{ brl(totalValor) }}</div>
             </div>
-            <div class="span-6">
+            <div class="lote-field span-6">
               <div class="lote-label flex items-center" style="gap: 6px">Valor total presente dos títulos<ValorPresenteInfo :size="12" /></div>
               <div class="lote-readonly lote-readonly-strong">{{ totalAberto == null ? '—' : brl(totalAberto) }}</div>
             </div>
@@ -193,23 +193,23 @@ function brl(n: number) {
             </div>
           </div>
           <div class="lote-grid">
-            <div class="span-4">
+            <div class="lote-field span-4">
               <div class="lote-label">Valor total de juros</div>
               <div class="lote-readonly">{{ brl(0) }}</div>
             </div>
-            <div class="span-4">
+            <div class="lote-field span-4">
               <div class="lote-label">Valor total de multa</div>
               <div class="lote-readonly">{{ brl(0) }}</div>
             </div>
-            <div class="span-4">
+            <div class="lote-field span-4">
               <div class="lote-label">Valor total pago</div>
               <div class="lote-readonly">{{ brl(0) }}</div>
             </div>
-            <div class="span-6">
+            <div class="lote-field span-6">
               <div class="lote-label">Valor total de desconto</div>
               <div class="lote-readonly">{{ brl(0) }}</div>
             </div>
-            <div class="span-6">
+            <div class="lote-field span-6">
               <div class="lote-label">Valor total considerado</div>
               <div class="lote-readonly">{{ brl(0) }}</div>
             </div>
