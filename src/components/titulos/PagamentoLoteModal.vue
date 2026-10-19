@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { X } from 'lucide-vue-next';
+import { Calculator, Receipt, Wallet, X } from 'lucide-vue-next';
 import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import type { TituloSelecionado } from './types';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
@@ -72,9 +72,12 @@ function brl(n: number) {
         </button>
       </div>
 
-      <div style="flex: 1; overflow: auto; padding: 24px 28px; display: flex; flex-direction: column; gap: 20px">
-        <section class="flex flex-col" style="gap: 16px">
-          <div class="lote-section" style="margin-bottom: 0">Dados do pagamento</div>
+      <div class="lote-body">
+        <section class="lote-card">
+          <div class="lote-section">
+            <span class="lote-section-icon"><Wallet :size="13" :stroke-width="2" /></span>
+            Dados do pagamento
+          </div>
           <div class="lote-grid">
             <label class="lote-field span-8">
               <span class="lote-label">Motivo da baixa</span>
@@ -130,8 +133,11 @@ function brl(n: number) {
           </div>
         </section>
 
-        <section>
-          <div class="lote-section">Títulos selecionados</div>
+        <section class="lote-card">
+          <div class="lote-section">
+            <span class="lote-section-icon"><Receipt :size="13" :stroke-width="2" /></span>
+            Títulos selecionados
+          </div>
           <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
             <div class="lote-table-row lote-table-head" style="grid-template-columns: 1.2fr 1fr 1fr 1fr">
               <div>Número</div>
@@ -153,7 +159,7 @@ function brl(n: number) {
               <div style="font-variant-numeric: tabular-nums">{{ t.vencimento }}</div>
             </div>
           </div>
-          <div class="lote-grid" style="margin-top: 16px">
+          <div class="lote-grid">
             <div class="span-6">
               <div class="lote-label">Valor total dos títulos</div>
               <div class="lote-readonly lote-readonly-strong">{{ brl(totalValor) }}</div>
@@ -165,13 +171,16 @@ function brl(n: number) {
           </div>
         </section>
 
-        <section>
-          <div class="lote-section">Valores simulados</div>
-          <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
-            <div class="lote-table-row lote-table-head" style="grid-template-columns: repeat(9, minmax(88px, 1fr))">
+        <section class="lote-card">
+          <div class="lote-section">
+            <span class="lote-section-icon"><Calculator :size="13" :stroke-width="2" /></span>
+            Valores simulados
+          </div>
+          <div class="lote-scroll">
+            <div class="lote-table-row lote-table-head lote-sim-row">
               <div>Número</div>
               <div>Valor pago</div>
-              <div class="flex items-center" style="gap: 6px">Valor presente<ValorPresenteInfo :size="12" /></div>
+              <div class="flex items-center" style="gap: 6px; white-space: nowrap">Valor presente<ValorPresenteInfo :size="12" /></div>
               <div>Vencimento</div>
               <div>Dias de atraso</div>
               <div>Juros pago</div>
@@ -179,11 +188,11 @@ function brl(n: number) {
               <div>Desconto concedido</div>
               <div>Pagamento considerado</div>
             </div>
-            <div style="padding: 28px 16px; text-align: center; color: var(--text-muted); font-size: var(--text-sm)">
+            <div class="lote-empty">
               Não foi encontrado nenhum resultado.
             </div>
           </div>
-          <div class="lote-grid" style="margin-top: 16px">
+          <div class="lote-grid">
             <div class="span-4">
               <div class="lote-label">Valor total de juros</div>
               <div class="lote-readonly">{{ brl(0) }}</div>
@@ -309,13 +318,64 @@ function brl(n: number) {
 .lote-switch-track[data-on='true'] .lote-switch-knob {
   left: 23px;
 }
+.lote-body {
+  flex: 1;
+  overflow: auto;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--surface-page);
+}
+.lote-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+}
 .lote-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.14em;
-  color: var(--text-muted);
+  letter-spacing: 0.18em;
+  color: var(--accent);
   text-transform: uppercase;
-  margin-bottom: 8px;
+}
+.lote-section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-md);
+  background: var(--agro-light);
+  color: var(--agro-base);
+  flex-shrink: 0;
+}
+.lote-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+}
+.lote-sim-row {
+  grid-template-columns: 112px 128px 156px 120px 132px 116px 116px 168px 188px;
+  width: max-content;
+  min-width: 100%;
+}
+.lote-sim-row > div {
+  white-space: nowrap;
+}
+.lote-empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  background: var(--surface-card);
 }
 .lote-table-row {
   display: grid;
