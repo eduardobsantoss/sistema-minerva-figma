@@ -6,7 +6,6 @@ import {
   BarChart3,
   CircleCheck,
   Clock,
-  FileSearch,
   Radar,
   Search,
   ShieldAlert,
@@ -19,24 +18,19 @@ import SeveridadeChart from '../components/charts/SeveridadeChart.vue';
 import EvolucaoAlertasChart from '../components/charts/EvolucaoAlertasChart.vue';
 import {
   FILTRO_VAZIO,
-  STATUS_LOTE_LABEL,
   TIPO_ALERTA_LABEL,
   formatDateBR,
   labelsEvolucao,
-  lotesIniciais,
   montarPainel,
-  resumoLote,
   variacaoDoPainel,
   type LinhaMonitorada,
   type PainelSentinela,
-  type StatusLote,
 } from '../data/sentinelaData';
 
 const emit = defineEmits<{ navigate: [view: string] }>();
 
 const busca = ref('');
 const meses = labelsEvolucao();
-const lotes = lotesIniciais();
 const macro = computed(() => montarPainel('credito', FILTRO_VAZIO));
 const contraparte = computed(() => montarPainel('contraparte', FILTRO_VAZIO));
 
@@ -79,18 +73,6 @@ const kpis = computed(() => [
   },
 ]);
 
-const lotePorStatus = computed(() => {
-  const base: Record<StatusLote, number> = { pendente: 0, processando: 0, concluido: 0, 'com-erros': 0 };
-  for (const lote of lotes) base[lote.status] += 1;
-  return base;
-});
-
-const apontamentosLote = computed(() =>
-  lotes.reduce((acc, lote) => acc + lote.itens.filter((item) => item.resultado === 'Negativação encontrada').length, 0),
-);
-
-const statusOrdem: StatusLote[] = ['pendente', 'processando', 'concluido', 'com-erros'];
-
 function delta(value: number | null) {
   if (value == null) return { text: 'sem base', color: 'var(--text-muted)', icon: null };
   if (value > 0) return { text: `+${fmtPct(value)}`, color: 'var(--status-danger-text)', icon: TrendingUp };
@@ -104,13 +86,6 @@ function fila(painel: PainelSentinela): LinhaMonitorada[] {
     .filter((linha) => linha.severidade !== 'ok')
     .filter((linha) => !q || linha.entidade.nome.toLowerCase().includes(q))
     .slice(0, 5);
-}
-
-function statusTone(status: StatusLote) {
-  if (status === 'concluido') return { background: 'var(--status-success-bg)', color: 'var(--status-success-text)' };
-  if (status === 'com-erros') return { background: 'var(--status-danger-bg)', color: 'var(--status-danger-text)' };
-  if (status === 'processando') return { background: 'color-mix(in srgb, var(--info-base) 14%, transparent)', color: 'var(--info-base)' };
-  return { background: 'var(--status-warning-bg)', color: 'var(--status-warning-text)' };
 }
 
 const modulos = computed(() => [
@@ -144,7 +119,7 @@ const modulos = computed(() => [
           Visão geral
         </h1>
         <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-          Carteira, contrapartes e consultas em lote no mesmo recorte.
+          Carteira e contrapartes no mesmo recorte.
         </p>
       </div>
       <div style="position: relative; width: 320px; max-width: 100%">
@@ -283,48 +258,9 @@ const modulos = computed(() => [
         </div>
       </article>
 
-      <article class="flex flex-col" style="gap: 14px; border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); padding: 20px">
-        <div class="flex items-center" style="gap: 10px">
-          <FileSearch :size="16" style="color: var(--text-muted)" />
-          <div>
-            <h2 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Consulta em lote</h2>
-            <p style="margin-top: 2px; font-size: var(--text-xs); color: var(--text-muted)">{{ lotes.length }} lotes · {{ apontamentosLote }} com apontamento</p>
-          </div>
-        </div>
-        <div class="grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
-          <div v-for="status in statusOrdem" :key="status" style="border-radius: var(--radius-lg); padding: 10px 12px" :style="statusTone(status)">
-            <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; text-transform: uppercase">{{ STATUS_LOTE_LABEL[status] }}</div>
-            <div style="font-size: var(--text-xl); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums">{{ lotePorStatus[status] }}</div>
-          </div>
-        </div>
-        <div>
-          <button
-            v-for="lote in lotes.slice(0, 3)"
-            :key="lote.id"
-            type="button"
-            class="sn-focus flex items-center justify-between vg-lote"
-            style="width: 100%; gap: 12px; padding: 8px 0; background: none; border: none; border-top: 1px solid var(--border-default); cursor: pointer; text-align: left"
-            @click="emit('navigate', 'sentinela-lote')"
-          >
-            <div style="min-width: 0">
-              <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">Lote {{ formatDateBR(lote.criadoEm) }}</div>
-              <div style="font-size: var(--text-xs); color: var(--text-muted)">{{ resumoLote(lote) }}</div>
-            </div>
-            <span class="vg-chip" :style="statusTone(lote.status)">{{ STATUS_LOTE_LABEL[lote.status] }}</span>
-          </button>
-        </div>
-        <div class="flex justify-end">
-          <button
-            type="button"
-            class="sn-focus btn-animated flex items-center"
-            style="gap: 6px; height: 38px; padding: 0 14px; background: var(--action-secondary-bg); color: var(--action-secondary-text); border: 1px solid var(--action-secondary-border); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold)"
-            @click="emit('navigate', 'sentinela-lote')"
-          >
-            Abrir
-            <ArrowUpRight :size="15" />
-          </button>
-        </div>
-      </article>
+      <!-- Consulta em lote saiu da visão geral. A subida de lista ficou em Risco > Consultas.
+      <article>Consulta em lote</article>
+      -->
     </div>
 
     <div class="grid vg-split" style="gap: 16px; align-items: start">

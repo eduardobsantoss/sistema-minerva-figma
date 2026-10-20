@@ -32,6 +32,7 @@ import IbamaTab from './tabs/IbamaTab.vue';
 import HistoryTab from './tabs/HistoryTab.vue';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import { EmptyState } from '@/features/risco/screens/detail-tabs/shared';
+import ConsultaLotePanel from '../components/ConsultaLotePanel.vue';
 
 type Tab = 'cadastro' | 'restricoes' | 'processos' | 'trabalho-escravo' | 'ibama' | 'historico';
 
@@ -42,6 +43,12 @@ const TABS: { key: Tab; label: string; icon: Component }[] = [
   { key: 'trabalho-escravo', label: 'Trabalho Escravo', icon: Users },
   { key: 'ibama', label: 'IBAMA', icon: Trees },
   { key: 'historico', label: 'Histórico', icon: History },
+];
+
+const modo = ref<'unitaria' | 'lote'>('unitaria');
+const modoOpcoes = [
+  { key: 'unitaria', label: 'Uma consulta' },
+  { key: 'lote', label: 'Subir lista' },
 ];
 
 const documentInput = ref('');
@@ -205,10 +212,22 @@ async function loadDemoScenario(scenario: MockScenario) {
     <SerasaHeader
       v-model:document-input="documentInput"
       :loading="loading"
-      :latest="phase === 'completed' ? latest : null"
+      :lote="modo === 'lote'"
+      :latest="modo === 'unitaria' && phase === 'completed' ? latest : null"
       @consult="handleConsult"
       @refresh="handleRefreshRequest"
-    />
+    >
+      <SegmentedToggle
+        :model-value="modo"
+        :options="modoOpcoes"
+        variant="brand"
+        @update:model-value="modo = $event as 'unitaria' | 'lote'"
+      />
+    </SerasaHeader>
+
+    <ConsultaLotePanel v-if="modo === 'lote'" />
+
+    <template v-if="modo === 'unitaria'">
 
     <EmptyState
       v-if="phase === 'not-found'"
@@ -292,6 +311,7 @@ async function loadDemoScenario(scenario: MockScenario) {
     />
 
     <div
+      v-if="modo === 'unitaria'"
       style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed var(--border-default)"
     >
       <div style="font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px">
@@ -308,5 +328,6 @@ async function loadDemoScenario(scenario: MockScenario) {
         </button>
       </div>
     </div>
+    </template>
   </div>
 </template>

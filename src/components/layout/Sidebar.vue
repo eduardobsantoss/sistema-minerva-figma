@@ -174,7 +174,8 @@ const items: NavItem[] = [
       { key: "sentinela", label: "Visão geral", icon: Gauge },
       { key: "sentinela-credito", label: "Crédito", icon: AlertCircle },
       { key: "sentinela-contraparte", label: "Cedente/Sacado", icon: Users },
-      { key: "sentinela-lote", label: "Consulta em lote", icon: Search },
+      // Consulta em lote foi para Risco > Consultas (subida de lista).
+      // { key: "sentinela-lote", label: "Consulta em lote", icon: Search },
     ],
   },
   { key: "grupos-cadastro", label: "Grupos Empresariais", icon: Building2 },

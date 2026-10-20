@@ -42,7 +42,7 @@ import {
   SentinelaVisaoGeralScreen,
   SentinelaCreditoScreen,
   SentinelaContraparteScreen,
-  SentinelaLoteScreen,
+  // SentinelaLoteScreen,
 } from '@/features/sentinela';
 import { GerencialScreen, PosDesembolsoScreen, ParametrizacaoScreen, GerencialRelatoriosScreen } from '@/features/gerencial';
 
@@ -323,7 +323,9 @@ function handleModuleClick(title: string) {
           <SentinelaVisaoGeralScreen v-else-if="view === 'sentinela'" @navigate="handleNavigate" />
           <SentinelaCreditoScreen v-else-if="view === 'sentinela-credito'" @navigate="handleNavigate" />
           <SentinelaContraparteScreen v-else-if="view === 'sentinela-contraparte'" @navigate="handleNavigate" />
+          <!-- Consulta em lote comentada: a subida de lista ficou em Risco > Consultas.
           <SentinelaLoteScreen v-else-if="view === 'sentinela-lote'" @navigate="handleNavigate" />
+          -->
           <GerencialScreen v-else-if="view === 'gerencial'" />
           <PosDesembolsoScreen v-else-if="view === 'gerencial-pos'" />
           <ParametrizacaoScreen v-else-if="view === 'gerencial-veiculos'" />

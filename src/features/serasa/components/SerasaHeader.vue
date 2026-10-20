@@ -10,6 +10,7 @@ const props = defineProps<{
   documentInput: string;
   loading?: boolean;
   latest?: CreditQueryLatest | null;
+  lote?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -43,11 +44,15 @@ const statusTone = computed(() =>
         Consultas
       </h1>
       <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-        Consulte crédito, restrições oficiais e processos por CPF ou CNPJ.
+        {{ lote ? 'Suba uma lista de CPF ou CNPJ e consulte o lote de uma vez.' : 'Consulte crédito, restrições oficiais e processos por CPF ou CNPJ.' }}
       </p>
+      <div style="margin-top: 16px">
+        <slot />
+      </div>
     </div>
 
     <div
+      v-if="!lote"
       class="flex flex-wrap items-end"
       style="gap: 12px; padding: 20px 22px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl)"
     >
