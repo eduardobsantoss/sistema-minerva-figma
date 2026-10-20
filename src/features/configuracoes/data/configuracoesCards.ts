@@ -1,4 +1,4 @@
-export type ConfiguracoesCardKey = 'componentes' | 'telas';
+export type ConfiguracoesCardKey = 'componentes' | 'telas' | 'nps';
 
 export interface ConfiguracoesCard {
   key: ConfiguracoesCardKey;
@@ -21,5 +21,12 @@ export const CONFIGURACOES_CARDS: ConfiguracoesCard[] = [
     description:
       'Dissecção por tela em Markdown: imports, componente e style scoped para colar no front sem reinventar o visual.',
     cta: 'Abrir dissecção',
+  },
+  {
+    key: 'nps',
+    title: 'Pesquisa de usabilidade',
+    description:
+      'Pesquisa interna: avalie de 0 a 10 a usabilidade do Minerva no seu dia a dia e justifique a nota atribuída.',
+    cta: 'Avaliar agora',
   },
 ];

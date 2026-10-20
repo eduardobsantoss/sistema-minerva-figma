@@ -1,23 +1,40 @@
 <script setup lang="ts">
 import { ref, type Component } from 'vue';
-import { Boxes, ChevronRight, PanelTop } from 'lucide-vue-next';
+import { Boxes, ChevronRight, MessageSquare, PanelTop } from 'lucide-vue-next';
 import {
   CONFIGURACOES_CARDS,
   type ConfiguracoesCardKey,
 } from '../data/configuracoesCards';
+import { useToast } from '@/composables/useToast';
 import ComponentesScreen from './ComponentesScreen.vue';
 import TelasScreen from './TelasScreen.vue';
+import NpsModal, { type NpsSubmitPayload } from '../components/NpsModal.vue';
 
 const CARD_ICONS: Record<ConfiguracoesCardKey, Component> = {
   componentes: Boxes,
   telas: PanelTop,
+  nps: MessageSquare,
 };
 
-const section = ref<ConfiguracoesCardKey | null>(null);
+type SectionKey = Exclude<ConfiguracoesCardKey, 'nps'>;
+
+const { success } = useToast();
+
+const section = ref<SectionKey | null>(null);
 const hoveredKey = ref<ConfiguracoesCardKey | null>(null);
+const npsOpen = ref(false);
 
 function openSection(key: ConfiguracoesCardKey) {
+  if (key === 'nps') {
+    npsOpen.value = true;
+    return;
+  }
   section.value = key;
+}
+
+function submitNps(payload: NpsSubmitPayload) {
+  npsOpen.value = false;
+  success(`Avaliação enviada (nota ${payload.nota}). Obrigado pelo feedback!`);
 }
 
 function goHub() {
@@ -127,5 +144,7 @@ function goHub() {
         </div>
       </button>
     </div>
+
+    <NpsModal v-if="npsOpen" @close="npsOpen = false" @submit="submitNps" />
   </div>
 </template>
