@@ -9,7 +9,7 @@ const props = withDefaults(
     title: string;
     subtitle?: string;
     aviso?: string;
-    /** Cancelar à esquerda e confirmar à direita. */
+    /** @deprecated O rodapé agora é sempre Cancelar à esquerda e confirmar à direita. */
     spreadFooter?: boolean;
     /** Texto orientando o usuário (ex.: “Digite o código abaixo…”). */
     instruction: string;
@@ -52,8 +52,6 @@ watch(
     :title="title"
     :subtitle="subtitle"
     :persistent="persistent"
-    body-tone="card"
-    :footer-align="spreadFooter ? 'between' : 'end'"
     @close="emit('close')"
   >
     <Alert

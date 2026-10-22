@@ -85,7 +85,7 @@ function confirmar() {
 </script>
 
 <template>
-  <AdminModal :width="1100" title="Vincular veículos" footer-align="end" @close="emit('close')">
+  <AdminModal :width="1100" title="Vincular veículos" @close="emit('close')">
     <template #header>
       <div style="min-width: 0; flex: 1">
         <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.18em; color: var(--accent); text-transform: uppercase; margin-bottom: 6px">

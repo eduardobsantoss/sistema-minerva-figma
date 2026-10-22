@@ -38,7 +38,7 @@ function handleAtualizar() {
 </script>
 
 <template>
-  <AdminModal :width="760" eyebrow="Risco · Cedentes" title="Editar Cadastro" @close="emit('close')">
+  <AdminModal size="md" eyebrow="Risco · Cedentes" title="Editar Cadastro" @close="emit('close')">
     <div v-if="isPF" class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 16px">
       <div style="grid-column: span 4">
         <FieldLabel>CPF</FieldLabel>

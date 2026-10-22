@@ -28,7 +28,7 @@ function confirmar() {
 </script>
 
 <template>
-  <AdminModal size="md" :title="`Habilitar ${grupoNome} para operar?`" footer-align="end" @close="emit('close')">
+  <AdminModal size="md" :title="`Habilitar ${grupoNome} para operar?`" @close="emit('close')">
     <template #header>
       <div class="flex items-start" style="gap: 14px">
         <div
@@ -95,7 +95,7 @@ function confirmar() {
             gridTemplateColumns: '1fr 140px',
             padding: '10px 16px',
             borderTop: '1px solid var(--border-default)',
-            background: i % 2 === 0 ? 'var(--surface-card)' : 'color-mix(in srgb, var(--gci-base) 4%, transparent)',
+            background: 'var(--surface-card)',
           }"
         >
           <div style="font-size: var(--text-sm); color: var(--text-strong); font-weight: var(--weight-semibold)">
