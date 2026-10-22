@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { X } from 'lucide-vue-next';
 import Alert from '@/components/feedback/Alert.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -37,25 +38,6 @@ const typed = ref('');
 
 const confirmEnabled = computed(() => typed.value === props.confirmPhrase);
 
-const confirmButtonStyle = computed(() => {
-  if (!confirmEnabled.value) {
-    return {
-      background: 'var(--neutral-200)',
-      color: 'var(--text-disabled)',
-    };
-  }
-  if (props.variant === 'danger') {
-    return {
-      background: 'var(--danger-base)',
-      color: 'var(--text-on-danger)',
-    };
-  }
-  return {
-    background: 'var(--gci-base)',
-    color: '#fff',
-  };
-});
-
 watch(
   () => props.confirmPhrase,
   () => {
@@ -65,132 +47,69 @@ watch(
 </script>
 
 <template>
-  <div
-    class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 500; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 32px"
-    @click.self="!persistent && emit('close')"
+  <AdminModal
+    :width="420"
+    :title="title"
+    :subtitle="subtitle"
+    :persistent="persistent"
+    body-tone="card"
+    :footer-align="spreadFooter ? 'between' : 'end'"
+    @close="emit('close')"
   >
-    <div
-      style="
-        width: 100%;
-        max-width: 420px;
-        background: var(--surface-card);
-        border-radius: var(--radius-xl);
-        box-shadow: 0 30px 60px -20px rgba(8, 60, 74, 0.4);
-        overflow: hidden;
-      "
-      @click.stop
-    >
-      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
-        <div>
-          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
-            {{ title }}
-          </h2>
-          <p v-if="subtitle" style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            {{ subtitle }}
-          </p>
-        </div>
-        <button
-          type="button"
-          aria-label="Fechar"
-          class="flex items-center justify-center"
-          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
-          @click="emit('close')"
-        >
-          <X :size="18" />
-        </button>
-      </div>
+    <Alert
+      v-if="aviso"
+      type="warning"
+      title="Parte da seleção fica de fora"
+      :message="aviso"
+      :dismissible="false"
+      style="margin-bottom: 16px"
+    />
+    <p style="font-size: var(--text-sm); color: var(--text-muted); line-height: 1.5; margin: 0 0 14px">
+      {{ instruction }}
+    </p>
 
-      <div style="padding: 20px 22px 22px">
-        <Alert
-          v-if="aviso"
-          type="warning"
-          title="Parte da seleção fica de fora"
-          :message="aviso"
-          :dismissible="false"
-          style="margin-bottom: 16px"
-        />
-        <p style="font-size: var(--text-sm); color: var(--text-muted); line-height: 1.5; margin: 0 0 14px">
-          {{ instruction }}
-        </p>
-
-        <div class="flex justify-center" style="margin-bottom: 12px">
-          <div
-            style="
-              display: inline-block;
-              padding: 4px 10px;
-              background: var(--surface-sunken);
-              border-radius: var(--radius-md);
-              font-size: 11px;
-              font-weight: var(--weight-bold);
-              color: var(--text-muted);
-              letter-spacing: 0.06em;
-              user-select: all;
-              text-align: center;
-            "
-          >
-            {{ confirmPhrase }}
-          </div>
-        </div>
-
-        <input
-          v-model="typed"
-          type="text"
-          autocomplete="off"
-          spellcheck="false"
-          style="
-            width: 100%;
-            height: 42px;
-            padding: 0 14px;
-            background: var(--surface-card);
-            border: 1px solid var(--border-default);
-            border-radius: var(--radius-lg);
-            outline: none;
-            font-size: var(--text-sm);
-            color: var(--text-strong);
-          "
-        />
-
-        <div
-          class="flex items-center"
-          :style="{ gap: '10px', marginTop: '22px', justifyContent: spreadFooter ? 'space-between' : 'flex-end' }"
-        >
-          <button
-            type="button"
-            style="
-              height: 40px;
-              padding: 0 18px;
-              background: var(--surface-card);
-              color: var(--text-strong);
-              border: 1px solid var(--border-default);
-              border-radius: var(--radius-lg);
-              cursor: pointer;
-              font-weight: var(--weight-bold);
-              font-size: var(--text-sm);
-            "
-            @click="emit('close')"
-          >
-            {{ cancelLabel }}
-          </button>
-          <button
-            type="button"
-            :disabled="!confirmEnabled"
-            :style="{
-              height: '40px',
-              padding: '0 18px',
-              border: 'none',
-              borderRadius: 'var(--radius-lg)',
-              cursor: confirmEnabled ? 'pointer' : 'not-allowed',
-              fontWeight: 'var(--weight-bold)',
-              fontSize: 'var(--text-sm)',
-              ...confirmButtonStyle,
-            }"
-            @click="confirmEnabled && emit('confirm')"
-          >
-            {{ confirmLabel }}
-          </button>
-        </div>
+    <div class="flex justify-center" style="margin-bottom: 12px">
+      <div
+        style="
+          display: inline-block;
+          padding: 4px 10px;
+          background: var(--surface-sunken);
+          border-radius: var(--radius-md);
+          font-size: 11px;
+          font-weight: var(--weight-bold);
+          color: var(--text-muted);
+          letter-spacing: 0.06em;
+          user-select: all;
+          text-align: center;
+        "
+      >
+        {{ confirmPhrase }}
       </div>
     </div>
-  </div>
+
+    <input
+      v-model="typed"
+      type="text"
+      autocomplete="off"
+      spellcheck="false"
+      style="
+        width: 100%;
+        height: 40px;
+        padding: 0 14px;
+        background: var(--surface-card);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-lg);
+        outline: none;
+        font-size: var(--text-sm);
+        color: var(--text-strong);
+      "
+    />
+
+    <template #footer>
+      <AdminButton variant="secondary" @click="emit('close')">{{ cancelLabel }}</AdminButton>
+      <AdminButton :variant="variant" :disabled="!confirmEnabled" @click="emit('confirm')">
+        {{ confirmLabel }}
+      </AdminButton>
+    </template>
+  </AdminModal>
 </template>

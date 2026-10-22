@@ -69,6 +69,11 @@
   --action-danger-text:      var(--text-on-danger);
   --action-danger-text-only: var(--danger-base);
 
+  --action-agro-bg:        var(--agro-base);
+  --action-agro-bg-hover:  var(--agro-hover);
+  --action-agro-bg-active: var(--agro-active);
+  --action-agro-text:      var(--text-on-brand);
+
   --accent:              var(--agro-base);
   --accent-bg:           var(--agro-light);
 
@@ -141,8 +146,14 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-out:      cubic-bezier(0, 0, 0.2, 1);
 
-  --z-modal: 1000;
-  --z-toast: 1100;
+  /* Mesmos valores do front (theme-admin.css): overlays do Vuetify ficam em 2000–2500. */
+  --z-modal: 2000;
+  --z-popover: 2500;
+  --z-toast: 4000;
+
+  --opacity-disabled: 0.45;
+  --overlay-backdrop: rgba(8, 60, 74, 0.55);
+  --overlay-blur: 8px;
 
   /* ===== RESPONSIVIDADE (layout shell) ===== */
   --sidebar-width-expanded: 280px;

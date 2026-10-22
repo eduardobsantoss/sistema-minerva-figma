@@ -23,7 +23,7 @@ export function useAnchoredMenu(
       top: openUp ? `${rect.top - 8}px` : `${rect.bottom + 8}px`,
       left: `${left}px`,
       width: `${menuWidth}px`,
-      zIndex: 2500,
+      zIndex: 'var(--z-popover)',
       transform: openUp ? 'translateY(-100%)' : undefined,
     };
   }
@@ -36,13 +36,16 @@ export function useAnchoredMenu(
   }
 
   function onKey(event: KeyboardEvent) {
-    if (event.key === 'Escape') open.value = false;
+    if (event.key !== 'Escape') return;
+    // Esc fecha só o menu; o AdminModal ignora eventos já tratados.
+    event.preventDefault();
+    open.value = false;
   }
 
   function bind(active: boolean) {
     const method = active ? 'addEventListener' : 'removeEventListener';
     window[method]('pointerdown', onDoc, true);
-    window[method]('keydown', onKey);
+    window[method]('keydown', onKey, true);
     window[method]('resize', place);
     window[method]('scroll', place, true);
   }

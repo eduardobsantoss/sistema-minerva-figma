@@ -177,7 +177,7 @@ const arrowStyle = computed(() => {
           position: 'fixed',
           top: `${coords.top}px`,
           left: `${coords.left}px`,
-          zIndex: 600,
+          zIndex: 'var(--z-popover)',
           pointerEvents: 'none',
           background: tone.bg,
           color: tone.fg,
