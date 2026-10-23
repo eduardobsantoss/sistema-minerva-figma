@@ -94,7 +94,7 @@ function handleUpdate(updated: Cedente) {
   </div>
 
   <!-- Overlay (Risco e demais usos) -->
-  <AdminModal v-else size="lg" :title="cedente.nome" body-tone="card" footer-align="end" @close="emit('close')">
+  <AdminModal v-else size="lg" :title="cedente.nome" footer-align="end" @close="emit('close')">
     <template #header>
       <div class="flex items-start justify-between" style="flex: 1; min-width: 0; gap: 16px">
         <div style="min-width: 0">

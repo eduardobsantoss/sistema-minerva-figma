@@ -17,7 +17,7 @@ function handleConfirm() {
 </script>
 
 <template>
-  <AdminModal :width="460" :title="`Excluir o agrupamento ${agrupamento.nome}?`" body-tone="card" headless flush @close="emit('close')">
+  <AdminModal size="sm" :title="`Excluir o agrupamento ${agrupamento.nome}?`" headless flush @close="emit('close')">
     <div style="padding: 28px">
       <div class="flex items-center justify-center" style="width: 52px; height: 52px; border-radius: var(--radius-full); background: var(--status-danger-bg); color: var(--danger-base); margin-bottom: 18px">
         <AlertTriangle :size="24" />
@@ -46,7 +46,7 @@ function handleConfirm() {
         />
       </div>
 
-      <div class="flex items-center justify-end" style="gap: 10px">
+      <div class="flex items-center justify-between" style="gap: 10px">
         <AdminButton variant="secondary" @click="emit('close')">Cancelar</AdminButton>
         <AdminButton variant="danger" :disabled="!canConfirm" @click="handleConfirm">Confirmar exclusão</AdminButton>
       </div>

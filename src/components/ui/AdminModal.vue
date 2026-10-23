@@ -12,8 +12,10 @@ import { X } from 'lucide-vue-next';
  *
  * - Tamanhos: sm 480 · md 640 · lg 960 · xl 1280 (ou `width` em px para os casos do Patterns: 420, 520, 1100).
  * - Header: eyebrow laranja (módulo · contexto), título e subtítulo; ou o slot `header`.
- * - Corpo em --surface-sunken (padrão do DS); use `body-tone="card"` quando o conteúdo já é uma tabela/card.
- * - Rodapé: slot `footer`, com Cancelar (AdminButton ghost) à esquerda e a ação principal à direita.
+ * - Corpo branco (--surface-card), entre as bordas do header e do rodapé.
+ * - Rodapé: slot `footer`. Cancelar SEMPRE à esquerda e a ação (Salvar/Aprovar/Avançar) à direita,
+ *   para o usuário não clicar numa achando que é a outra.
+ * - Clicar fora NÃO fecha. Fecha pelo X, pelo Cancelar ou pelo Esc (Esc desligado com `persistent`).
  * - Altura máxima 85vh; só o corpo rola.
  */
 const props = withDefaults(
@@ -24,16 +26,15 @@ const props = withDefaults(
     eyebrow?: string;
     title?: string;
     subtitle?: string;
-    /** Clique fora e Esc não fecham. */
+    /** Esc não fecha (clicar fora nunca fecha). */
     persistent?: boolean;
     /** Esconde o botão de fechar do header. */
     hideClose?: boolean;
     /** Sem header (ex.: Confirm Dialog). `title` continua como rótulo acessível. */
     headless?: boolean;
-    bodyTone?: 'sunken' | 'card';
     /** Remove o padding do corpo (tabelas e layouts próprios). */
     flush?: boolean;
-    /** Alinhamento do rodapé. */
+    /** Rodapé com uma ação só (ex.: "Fechar") alinhada à direita. */
     footerAlign?: 'between' | 'end';
   }>(),
   {
@@ -45,7 +46,6 @@ const props = withDefaults(
     persistent: false,
     hideClose: false,
     headless: false,
-    bodyTone: 'sunken',
     flush: false,
     footerAlign: 'between',
   },
@@ -82,7 +82,7 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <div class="admin-modal__overlay" @click.self="requestClose">
+    <div class="admin-modal__overlay">
       <div
         class="admin-modal"
         role="dialog"
@@ -114,7 +114,7 @@ onBeforeUnmount(() => {
 
         <div
           class="admin-modal__body"
-          :class="{ 'admin-modal__body--card': bodyTone === 'card', 'admin-modal__body--flush': flush }"
+          :class="{ 'admin-modal__body--flush': flush }"
         >
           <slot />
         </div>
@@ -195,15 +195,16 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
   width: 40px;
   height: 40px;
-  border: none;
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
-  background: var(--surface-sunken);
+  background: var(--surface-card);
   color: var(--text-muted);
   cursor: pointer;
   outline: none;
   transition: background var(--duration-base) var(--ease-standard), color var(--duration-base) var(--ease-standard);
 }
 .admin-modal__close:hover {
+  background: var(--action-secondary-bg-hover);
   color: var(--text-strong);
 }
 .admin-modal__close:focus-visible {
@@ -214,9 +215,6 @@ onBeforeUnmount(() => {
   min-height: 0;
   overflow-y: auto;
   padding: var(--space-6) 28px;
-  background: var(--surface-sunken);
-}
-.admin-modal__body--card {
   background: var(--surface-card);
 }
 .admin-modal__body--flush {

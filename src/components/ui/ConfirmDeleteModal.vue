@@ -17,7 +17,7 @@ const emit = defineEmits<{ close: []; confirm: [] }>();
 
 <template>
   <!-- Figma → Overlays → Confirm Dialog (440px) -->
-  <AdminModal :width="440" :title="title" body-tone="card" headless flush @close="emit('close')">
+  <AdminModal :width="440" :title="title" headless flush @close="emit('close')">
     <div class="confirm-dialog">
       <div class="confirm-dialog__icon">
         <AlertTriangle :size="24" />
@@ -62,7 +62,7 @@ const emit = defineEmits<{ close: []; confirm: [] }>();
 .confirm-dialog__actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 10px;
 }
 </style>

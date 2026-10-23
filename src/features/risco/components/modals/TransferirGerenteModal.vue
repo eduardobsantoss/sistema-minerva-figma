@@ -17,7 +17,7 @@ const gerenteOptions = computed(() => [
 </script>
 
 <template>
-  <AdminModal :width="460" eyebrow="Risco · Grupos" title="Transferir gerente" :subtitle="grupoNome" @close="emit('close')">
+  <AdminModal size="sm" eyebrow="Risco · Grupos" title="Transferir gerente" :subtitle="grupoNome" @close="emit('close')">
     <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Gerente atual</div>
     <div style="font-size: var(--text-sm); color: var(--text-default); margin-bottom: 18px">{{ gerenteAtual }}</div>
 
