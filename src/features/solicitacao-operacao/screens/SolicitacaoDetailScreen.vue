@@ -45,6 +45,7 @@ import DetalheValidacaoModal from '../components/modals/DetalheValidacaoModal.vu
 import { ActionMenu, RejectModal } from './solicitacao-detail';
 import { ParteRelacionadaDetailView } from './detail-tabs/parte-relacionada';
 import { AtivoDetailView } from './detail-tabs/ativo';
+import { deveIncluirConjugeAnuenteNoTermo, partesRelacionadasDoGrupo } from '@/features/risco/data/riscoData';
 
 const props = defineProps<{ solicitacao: Solicitacao }>();
 const emit = defineEmits<{ back: [] }>();
@@ -79,6 +80,10 @@ const showConfirmarModal = ref(false);
 const showProrrogarModal = ref(false);
 const showAtualizarCessao = ref(false);
 const showGerarTermo = ref(false);
+
+const conjugeAnuenteTermoInicial = computed(() =>
+  deveIncluirConjugeAnuenteNoTermo(partesRelacionadasDoGrupo(props.solicitacao.grupoEmpresarial)),
+);
 const showGerarCnab = ref(false);
 const showVincularVeiculo = ref(false);
 const showDefinirAtendente = ref(false);
@@ -490,6 +495,7 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
 
     <GerarTermoCessaoModal
       v-if="showGerarTermo"
+      :conjuge-assina-anuente-inicial="conjugeAnuenteTermoInicial"
       @close="showGerarTermo = false"
     />
 

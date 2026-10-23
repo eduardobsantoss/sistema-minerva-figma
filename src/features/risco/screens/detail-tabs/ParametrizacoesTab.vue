@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { Parametrizacoes, ParteRelacionada } from '../../data/riscoData';
+import type { Parametrizacoes, ParteRelacionada, Cedente } from '../../data/riscoData';
 import LimiteSubTab from './LimiteSubTab.vue';
 import AutoatendimentoSubTab from './AutoatendimentoSubTab.vue';
 import GeralSubTab from './GeralSubTab.vue';
@@ -10,6 +10,7 @@ interface Props {
   data: Parametrizacoes;
   partesRelacionadas: ParteRelacionada[];
   grupoId: string;
+  cedentes: Cedente[];
 }
 
 const props = defineProps<Props>();
@@ -54,6 +55,7 @@ const tab = ref<SubTab>('Limite');
     <GeralSubTab
       v-if="tab === 'Geral'"
       :data="data.geral"
+      :cedentes="cedentes"
       :partes-relacionadas="partesRelacionadas"
       @save="(geral) => emit('change', { ...data, geral })"
       @update:partes-relacionadas="(pr) => emit('update:partes-relacionadas', pr)"

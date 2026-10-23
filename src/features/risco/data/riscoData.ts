@@ -186,11 +186,25 @@ export interface ParametrizacaoAutoatendimento {
   veiculosOperacao: VeiculoOperacao[];
 }
 
+export interface FaixaConcentracaoSacado {
+  position: number;
+  percentual: number;
+}
+
 export interface ExcecaoConcentracao {
   id: string;
   sacadoDocumento: string;
   sacadoNome: string;
   percentual: number;
+  aceitaRestritivo: boolean;
+  valorRestritivoAceito: number;
+}
+
+export interface ExcecaoSerasaCedente {
+  id: string;
+  cedenteId: string;
+  aceitaRestritivo: boolean;
+  valorRestritivoAceito: number;
 }
 
 export type FrequenciaLaudo = 'Mensal' | 'Trimestral' | 'Semestral' | 'Anual';
@@ -210,7 +224,9 @@ export interface ParametrizacaoGeral {
   validadeSerasaSacadoDias: number;
   validadeSerasaAvalistaDias: number;
   validadeSerasaCedenteDias: number;
+  faixasConcentracaoSacado: FaixaConcentracaoSacado[];
   excecoesConcentracao: ExcecaoConcentracao[];
+  excecoesSerasaCedente: ExcecaoSerasaCedente[];
 }
 
 export const TIPO_GARANTIA_OPTS = ['AF Imóvel', 'AF Estoque', 'AF Agrícola', 'AF Bens Móvel'] as const;
@@ -242,6 +258,8 @@ export interface Parametrizacoes {
 
 export type TipoCedente = 'Pessoa Física' | 'Pessoa Jurídica';
 export const TIPO_CEDENTE_OPTS: TipoCedente[] = ['Pessoa Física', 'Pessoa Jurídica'];
+
+export type PapelEmpresaCedente = 'Matriz' | 'Filial';
 
 export type StatusCedente = 'Apto' | 'Inapto';
 
@@ -293,6 +311,7 @@ export interface Cedente {
   cidade: string;
   uf: string;
   tipo: TipoCedente;
+  papelEmpresa: PapelEmpresaCedente;
   status: StatusCedente;
   qtdTitulosAberto: number;
   riscoTomado: number;
@@ -442,6 +461,144 @@ function buildLimites(grupo: GrupoEmpresarial): LimiteProdutoRow[] {
   return rows.filter((l) => l.valor > 0);
 }
 
+export function buildFaixasConcentracaoDefault(grupo: GrupoEmpresarial): FaixaConcentracaoSacado[] {
+  if (grupo.tipoCliente !== 'Multicedente') return [];
+  return [
+    { position: 1, percentual: 20 },
+    { position: 2, percentual: 15 },
+    { position: 3, percentual: 12 },
+    { position: 4, percentual: 10 },
+  ];
+}
+
+export function cedentesMatriz(cedentes: Cedente[]): Cedente[] {
+  return cedentes.filter((c) => c.papelEmpresa === 'Matriz');
+}
+
+export function deveIncluirConjugeAnuenteNoTermo(partes: ParteRelacionada[]): boolean {
+  return partes.some((p) => p.conjugeAnuente);
+}
+
+export function partesRelacionadasDoGrupo(nomeOuId: string): ParteRelacionada[] {
+  const key = nomeOuId.trim().toLowerCase();
+  const grupo = GRUPOS_SEED.find(
+    (g) => g.id === nomeOuId || g.nome === nomeOuId || g.nome.toLowerCase() === key,
+  );
+  if (!grupo) return [];
+  return detalheGrupo(grupo).partesRelacionadas;
+}
+
+function buildCedentes(grupo: GrupoEmpresarial): Cedente[] {
+  const slug = grupo.nome.toLowerCase().split(' ')[0];
+  const matrizPrincipal: Cedente = {
+    id: `ced-${grupo.id}-1`,
+    documento: grupo.documento,
+    nome: grupo.nome,
+    email: `financeiro@${slug}.com.br`,
+    cidade: 'Rio Verde',
+    uf: 'GO',
+    tipo: 'Pessoa Jurídica',
+    papelEmpresa: 'Matriz',
+    status: 'Apto',
+    qtdTitulosAberto: 3,
+    riscoTomado: grupo.riscoTotal * 0.4,
+    dataAbertura: '14/03/2021',
+    razaoSocial: grupo.nome,
+    nomeFantasia: grupo.nome.split(' ')[0],
+    tipoEmpresa: 'Ltda',
+    porte: 'Médio',
+    atividadePrincipal: 'Comércio de insumos agrícolas',
+    naturezaJuridica: 'Sociedade Empresária Limitada',
+    inscricaoMunicipal: '00123456',
+    inscricaoEstadual: '10.234.567-8',
+    contatos: [
+      {
+        id: `cont-${grupo.id}-1`,
+        nome: `Financeiro ${grupo.nome.split(' ')[0]}`,
+        email: `financeiro@${slug}.com.br`,
+        ddi: '+55',
+        telefone: '(64) 99909-1183',
+      },
+    ],
+    enderecos: [
+      {
+        id: `end-${grupo.id}-1`,
+        cep: '75901-000',
+        localidade: 'Fazenda Santa Bárbara',
+        numero: 'S/N',
+        bairro: 'Zona Rural',
+        infoAdicionais: '',
+        cidade: 'Rio Verde',
+        uf: 'GO',
+        pais: 'Brasil',
+      },
+    ],
+    documentos: [],
+  };
+
+  const filialPf: Cedente = {
+    id: `ced-${grupo.id}-2`,
+    documento: '234.567.890-12',
+    nome: `José Carlos ${grupo.gerente.split(' ')[1] ?? 'Silva'}`,
+    email: null,
+    cidade: 'Luís Eduardo Magalhães',
+    uf: 'BA',
+    tipo: 'Pessoa Física',
+    papelEmpresa: 'Filial',
+    status: 'Inapto',
+    qtdTitulosAberto: 0,
+    riscoTomado: 0,
+    dataAbertura: '02/07/1995',
+    rg: '0000000',
+    inscricaoProdutorRural: '',
+    nacionalidade: 'Brasileira',
+    dataNascimento: '02/07/1995',
+    profissao: 'Produtor Rural',
+    estadoCivil: 'Casado(a)',
+    contatos: [
+      {
+        id: `cont-${grupo.id}-2`,
+        nome: `José Carlos ${grupo.gerente.split(' ')[1] ?? 'Silva'}`,
+        email: 'jose.carlos620@gmail.com',
+        ddi: '+55',
+        telefone: '(77) 3351-8356',
+      },
+    ],
+    enderecos: [],
+    documentos: [],
+  };
+
+  const list: Cedente[] = [matrizPrincipal, filialPf];
+
+  if (grupo.tipoCliente === 'Multicedente') {
+    list.splice(1, 0, {
+      id: `ced-${grupo.id}-mat2`,
+      documento: '45.678.901/0001-88',
+      nome: `${grupo.nome.split(' ')[0]} Holdings LTDA`,
+      email: `holdings@${slug}.com.br`,
+      cidade: 'Goiânia',
+      uf: 'GO',
+      tipo: 'Pessoa Jurídica',
+      papelEmpresa: 'Matriz',
+      status: 'Apto',
+      qtdTitulosAberto: 1,
+      riscoTomado: grupo.riscoTotal * 0.15,
+      dataAbertura: '08/11/2019',
+      razaoSocial: `${grupo.nome.split(' ')[0]} Holdings LTDA`,
+      nomeFantasia: 'Holdings',
+      tipoEmpresa: 'Ltda',
+      porte: 'Médio',
+      atividadePrincipal: 'Holdings',
+      naturezaJuridica: 'Sociedade Empresária Limitada',
+      contatos: [],
+      enderecos: [],
+      documentos: [],
+    });
+  }
+
+  return list;
+}
+
 function buildPartesRelacionadas(grupo: GrupoEmpresarial): ParteRelacionada[] {
   return [
     {
@@ -524,7 +681,9 @@ export function detalheGrupo(grupo: GrupoEmpresarial): DetalheGrupo {
         validadeSerasaSacadoDias: 30,
         validadeSerasaAvalistaDias: 30,
         validadeSerasaCedenteDias: 60,
+        faixasConcentracaoSacado: buildFaixasConcentracaoDefault(grupo),
         excecoesConcentracao: [],
+        excecoesSerasaCedente: [],
       },
       garantia: {
         requerConfirmacaoTitulos: grupo.statusOperacao !== 'Normal',
@@ -544,36 +703,7 @@ export function detalheGrupo(grupo: GrupoEmpresarial): DetalheGrupo {
       },
     },
     parametrizacoesAdicionais: PARAMETRIZACOES_ADICIONAIS_SEED.map((p) => ({ ...p })),
-    cedentes: [
-      {
-        id: 'ced-1', documento: '12.345.678/0001-90', nome: grupo.nome,
-        email: 'financeiro@' + grupo.nome.toLowerCase().split(' ')[0] + '.com.br',
-        cidade: 'Rio Verde', uf: 'GO', tipo: 'Pessoa Jurídica',
-        status: 'Apto', qtdTitulosAberto: 3, riscoTomado: grupo.riscoTotal * 0.4, dataAbertura: '14/03/2021',
-        razaoSocial: grupo.nome, nomeFantasia: grupo.nome.split(' ')[0], tipoEmpresa: 'Ltda',
-        porte: 'Médio', atividadePrincipal: 'Comércio de insumos agrícolas', naturezaJuridica: 'Sociedade Empresária Limitada',
-        inscricaoMunicipal: '00123456', inscricaoEstadual: '10.234.567-8',
-        contatos: [
-          { id: 'cont-1', nome: 'Financeiro ' + grupo.nome.split(' ')[0], email: 'financeiro@' + grupo.nome.toLowerCase().split(' ')[0] + '.com.br', ddi: '+55', telefone: '(64) 99909-1183' },
-        ],
-        enderecos: [
-          { id: 'end-1', cep: '75901-000', localidade: 'Fazenda Santa Bárbara', numero: 'S/N', bairro: 'Zona Rural', infoAdicionais: '', cidade: 'Rio Verde', uf: 'GO', pais: 'Brasil' },
-        ],
-        documentos: [],
-      },
-      {
-        id: 'ced-2', documento: '234.567.890-12', nome: 'José Carlos ' + grupo.gerente.split(' ')[1],
-        email: null, cidade: 'Luís Eduardo Magalhães', uf: 'BA', tipo: 'Pessoa Física',
-        status: 'Inapto', qtdTitulosAberto: 0, riscoTomado: 0, dataAbertura: '02/07/1995',
-        rg: '0000000', inscricaoProdutorRural: '', nacionalidade: 'Brasileira',
-        dataNascimento: '02/07/1995', profissao: 'Produtor Rural', estadoCivil: 'Casado(a)',
-        contatos: [
-          { id: 'cont-2', nome: 'José Carlos ' + grupo.gerente.split(' ')[1], email: 'jose.carlos620@gmail.com', ddi: '+55', telefone: '(77) 3351-8356' },
-        ],
-        enderecos: [],
-        documentos: [],
-      },
-    ],
+    cedentes: buildCedentes(grupo),
     historico: [
       { id: 'hist-3', datetime: '18/06/2026 09:12', descricao: `Parecer de crédito atualizado — status alterado para "${parecerLabel(grupo.parecerCredito)}".` },
       { id: 'hist-2', datetime: '02/05/2026 14:40', descricao: `Limite de autoatendimento ajustado para ${brl(grupo.limiteAutoatendimento, { compact: true })}.` },

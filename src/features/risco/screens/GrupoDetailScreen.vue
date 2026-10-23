@@ -183,6 +183,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
       v-if="tab === 'parametrizacoes'"
       :data="det.parametrizacoes"
       :grupo-id="grupo.id"
+      :cedentes="det.cedentes"
       :partes-relacionadas="det.partesRelacionadas"
       @change="(parametrizacoes) => { det.parametrizacoes = parametrizacoes; }"
       @update:partes-relacionadas="(pr) => { det.partesRelacionadas = pr; }"

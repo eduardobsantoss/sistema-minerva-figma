@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import { X, MapPin, Building2, PenLine } from 'lucide-vue-next';
 import { UF_OPTIONS } from '../../data/operacaoData';
 import { FormField, SelectField, ToggleRow, StepGrid, BentoBox } from './adicionar-contrato';
 
+const props = withDefaults(
+  defineProps<{ conjugeAssinaAnuenteInicial?: boolean }>(),
+  { conjugeAssinaAnuenteInicial: false },
+);
+
 const emit = defineEmits<{ close: []; confirm: [] }>();
+
+const prefilledFromRisco = computed(() => props.conjugeAssinaAnuenteInicial);
 
 const TERMOS_OPTS = [
   'Termo padrão Ceres',
@@ -19,12 +26,19 @@ const form = reactive({
   semCoobrigacao: false,
   dataFirma: '',
   possuiDevedorSolidario: false,
-  conjugeAssinaAnuente: false,
+  conjugeAssinaAnuente: props.conjugeAssinaAnuenteInicial,
   cidade: '',
   estado: '',
   gestoras: '',
   signatarios: '',
 });
+
+watch(
+  () => props.conjugeAssinaAnuenteInicial,
+  (next) => {
+    form.conjugeAssinaAnuente = next;
+  },
+);
 
 function salvar() {
   emit('confirm');
@@ -108,6 +122,12 @@ function salvar() {
                 compact
                 @toggle="form.conjugeAssinaAnuente = !form.conjugeAssinaAnuente"
               />
+              <p
+                v-if="prefilledFromRisco"
+                style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 6px; line-height: 1.4"
+              >
+                Pré-preenchido conforme Risco → Partes relacionadas.
+              </p>
             </div>
           </StepGrid>
 

@@ -751,9 +751,10 @@ export const solicitacoes: Solicitacao[] = [
     unidadeNegocio: 'Ceres Confina', tipoTaxa: 'Pré-fixado',
   },
   {
-    id: '#1383', cedente: 'Fazenda São João', tipoContrato: 'CCB', validacao: 'VALIDO',
-    valor: 1_250_000, vinculo: 'Grupo Ceres', veiculo: 'Ceres Investimentos', etapa: 'RASCUNHO',
-    esteira: 'CRA_MONOCEDENTE', tipoOperacao: 'Desconto Duplicata', grupoEmpresarial: 'Grupo Ceres',
+    // QA: grupo alinhado ao seed Risco (3A) — termo de cessão pré-preenche cônjuge anuente
+    id: '#1383', cedente: '3A MAQUINAS E TRANSPORTES LTDA', tipoContrato: 'CCB', validacao: 'VALIDO',
+    valor: 1_250_000, vinculo: '3A MAQUINAS E TRANSPORTES LTDA', veiculo: 'Ceres Investimentos', etapa: 'RASCUNHO',
+    esteira: 'CRA_MONOCEDENTE', tipoOperacao: 'Desconto Duplicata', grupoEmpresarial: '3A MAQUINAS E TRANSPORTES LTDA',
     abertura: '2026-06-22', tempoTotalHoras: 6, tempoEtapaHoras: 6, slaEtapaHoras: 24,
     taxa: 1.92, gerente: 'Ana Martins', atendente: 'Eduardo Resende Mota',
   },

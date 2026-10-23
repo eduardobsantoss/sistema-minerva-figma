@@ -74,11 +74,12 @@ export function resolvePreview(relPath: string, name: string): PreviewConfig {
         data: sampleDet.parametrizacoes,
         partesRelacionadas: sampleDet.partesRelacionadas,
         grupoId: sampleGrupo.id,
+        cedentes: sampleDet.cedentes,
       },
       frame: 'wide',
       example: exampleBlock(
         `import ${name} from './${name}.vue';\nimport { GRUPOS_SEED, detalheGrupo } from '../../data/riscoData';\nconst g = GRUPOS_SEED[0];\nconst det = detalheGrupo(g);`,
-        `  <${name} :data="det.parametrizacoes" :partes-relacionadas="det.partesRelacionadas" :grupo-id="g.id" />`,
+        `  <${name} :data="det.parametrizacoes" :cedentes="det.cedentes" :partes-relacionadas="det.partesRelacionadas" :grupo-id="g.id" />`,
       ),
     };
   }
@@ -136,11 +137,12 @@ export function resolvePreview(relPath: string, name: string): PreviewConfig {
       props: {
         data: sampleDet.parametrizacoes.geral,
         partesRelacionadas: sampleDet.partesRelacionadas,
+        cedentes: sampleDet.cedentes,
       },
       frame: 'wide',
       example: exampleBlock(
         `import ${name} from './${name}.vue';\nimport { GRUPOS_SEED, detalheGrupo } from '../../data/riscoData';\nconst det = detalheGrupo(GRUPOS_SEED[0]);`,
-        `  <${name} :data="det.parametrizacoes.geral" :partes-relacionadas="det.partesRelacionadas" />`,
+        `  <${name} :data="det.parametrizacoes.geral" :cedentes="det.cedentes" :partes-relacionadas="det.partesRelacionadas" />`,
       ),
     };
   }
