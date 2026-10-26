@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Download, Eye, FileText, X } from 'lucide-vue-next';
-import { useToast } from '@/composables/useToast';
 import type { ConfirmacaoHistoricoItem } from './confirmacoesHistorico';
 
 defineProps<{ items: ConfirmacaoHistoricoItem[] }>();
@@ -16,6 +13,11 @@ function tone(resultado: string) {
   return toneMap[resultado] ?? toneMap.PENDENTE;
 }
 
+/* Ver evidência — reativar quando houver viewer/download real
+import { ref } from 'vue';
+import { Download, Eye, FileText, X } from 'lucide-vue-next';
+import { useToast } from '@/composables/useToast';
+
 const evidenciaAberta = ref<ConfirmacaoHistoricoItem | null>(null);
 const { success } = useToast();
 
@@ -29,6 +31,7 @@ function baixarEvidencia() {
   if (!nome) return;
   success(`Download iniciado: ${nome}`);
 }
+*/
 </script>
 
 <template>
@@ -58,50 +61,21 @@ function baixarEvidencia() {
         >
           {{ c.resultado }}
         </span>
+        <!-- Ver evidência — reativar junto com o modal abaixo
         <button v-if="c.evidencia" type="button" class="conf-ev-btn" @click="abrirEvidencia(c)">
           <Eye :size="14" />
           Ver evidência
         </button>
+        -->
       </div>
     </div>
   </div>
 
+  <!-- Modal de evidência (mock) — reativar com o botão acima
   <div v-if="evidenciaAberta?.evidencia" class="conf-ev-overlay" @click.self="evidenciaAberta = null">
-    <div class="conf-ev-dialog" role="dialog" aria-labelledby="evidencia-titulo">
-      <div class="flex items-start justify-between" style="gap: 12px">
-        <div class="flex items-center" style="gap: 10px; min-width: 0">
-          <div class="conf-ev-icon">
-            <FileText :size="20" />
-          </div>
-          <div style="min-width: 0">
-            <h3 id="evidencia-titulo" class="conf-ev-title">{{ evidenciaAberta.evidencia }}</h3>
-            <p class="conf-ev-sub">
-              {{ evidenciaAberta.tipo }} · {{ evidenciaAberta.data }} às {{ evidenciaAberta.hora }}
-            </p>
-          </div>
-        </div>
-        <button type="button" class="conf-ev-close" aria-label="Fechar" @click="evidenciaAberta = null">
-          <X :size="18" />
-        </button>
-      </div>
-
-      <p class="conf-ev-obs">{{ evidenciaAberta.observacoes }}</p>
-      <p class="conf-ev-by">Registrado por {{ evidenciaAberta.registradoPor }}</p>
-
-      <div class="conf-ev-preview">
-        <FileText :size="32" style="color: var(--text-muted); opacity: 0.5" />
-        <span>Pré-visualização da evidência (mock)</span>
-      </div>
-
-      <div class="conf-ev-actions">
-        <button type="button" class="conf-ev-secondary" @click="evidenciaAberta = null">Fechar</button>
-        <button type="button" class="conf-ev-primary" @click="baixarEvidencia">
-          <Download :size="15" />
-          Baixar
-        </button>
-      </div>
-    </div>
+    ...
   </div>
+  -->
 </template>
 
 <style scoped>
