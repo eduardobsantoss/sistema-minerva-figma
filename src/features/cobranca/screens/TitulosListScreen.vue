@@ -29,6 +29,7 @@ import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
+import RegistrarConfirmacaoModal from '@/components/titulos/RegistrarConfirmacaoModal.vue';
 import type { TituloSelecionado } from '@/components/titulos/types';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
 
@@ -105,6 +106,7 @@ const visibleCols = ref<Set<ColKey>>(new Set(ALL_COLS.map((c) => c.key)));
 const colsMenuOpen = ref(false);
 const selectedIds = ref<string[]>([]);
 const menuOpenId = ref<string | null>(null);
+const confirmacaoTituloId = ref<string | null>(null);
 
 const QUICK_FILTERS: { key: NonNullable<QuickFilter>; label: string; color: string }[] = [
   { key: 'VENCIDO', label: 'Vencidos', color: statusPagamentoColor('VENCIDO') },
@@ -279,10 +281,10 @@ function menuActions(t: Titulo) {
     },
     {
       icon: BadgeCheck,
-      label: 'Confirmar Ativo',
+      label: 'Registrar confirmação',
       onClick: () => {
         menuOpenId.value = null;
-        emit('confirmar', t.id);
+        confirmacaoTituloId.value = t.id;
       },
     },
     {
@@ -787,6 +789,12 @@ function menuActions(t: Titulo) {
       :titulos="selecionados"
       @notificacoes-disparadas="(ids) => { emit('notificarLote', ids); selectedIds = []; }"
       @observacao-inserida="(ids, texto) => { emit('observacao', ids, texto); selectedIds = []; }"
+    />
+
+    <RegistrarConfirmacaoModal
+      v-if="confirmacaoTituloId"
+      :quantidade="1"
+      @close="confirmacaoTituloId = null"
     />
   </div>
 </template>

@@ -32,6 +32,7 @@ import PagamentosTab from './titulo-detail/PagamentosTab.vue';
 import ConfirmacoesTab from './titulo-detail/ConfirmacoesTab.vue';
 import MovimentacoesTab from './titulo-detail/MovimentacoesTab.vue';
 import HistoricoTab from './titulo-detail/HistoricoTab.vue';
+import RegistrarConfirmacaoModal from '@/components/titulos/RegistrarConfirmacaoModal.vue';
 
 const props = defineProps<{ titulo: Titulo }>();
 const emit = defineEmits<{
@@ -57,6 +58,7 @@ const TABS = [
 const tab = ref<Tab>('detalhes');
 const actionMenuOpen = ref(false);
 const actionMenuRef = ref<HTMLDivElement | null>(null);
+const confirmacaoModalOpen = ref(false);
 const statusColor = computed(() => statusPagamentoColor(props.titulo.statusPagamento));
 
 const StatusIcon = computed<Component>(() => {
@@ -72,9 +74,11 @@ const actions = [
     onClick: () => emit('gerarBoleto', props.titulo.id),
   },
   {
-    label: 'Confirmar Ativo',
+    label: 'Registrar confirmação',
     icon: BadgeCheck,
-    onClick: () => emit('confirmar', props.titulo.id),
+    onClick: () => {
+      confirmacaoModalOpen.value = true;
+    },
   },
   {
     label: 'Notificar Ativo',
@@ -354,6 +358,12 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
       <MovimentacoesTab v-else-if="tab === 'movimentacoes'" :titulo="titulo" />
       <HistoricoTab v-else-if="tab === 'historico'" :titulo="titulo" />
     </div>
+
+    <RegistrarConfirmacaoModal
+      v-if="confirmacaoModalOpen"
+      :quantidade="1"
+      @close="confirmacaoModalOpen = false"
+    />
   </div>
 </template>
 

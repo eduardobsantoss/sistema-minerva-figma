@@ -91,6 +91,7 @@ const ITENS_COBRANCA: ItemMenu[] = [
     disabled: true,
     hint: 'Indisponível',
   },
+  { key: 'confirmacao', label: 'Registrar confirmação', icon: BadgeCheck },
   { key: 'disparar-notificacoes', label: 'Disparar notificações', icon: BellRing },
   { key: 'observacao-cobranca', label: 'Inserir observação de cobrança', icon: MessageSquarePlus },
 ];

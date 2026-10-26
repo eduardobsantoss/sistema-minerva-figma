@@ -19,7 +19,19 @@ const OPTIONS = [
     :model-value="modelValue"
     :options="OPTIONS"
     variant="brand"
-    style="align-self: flex-start"
+    single-row
+    class="titulos-hub-tabs"
     @update:model-value="emit('update:modelValue', $event as TitulosTab)"
   />
 </template>
+
+<style scoped>
+.titulos-hub-tabs {
+  width: 100%;
+  overflow-x: auto;
+}
+.titulos-hub-tabs :deep(button) {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+</style>

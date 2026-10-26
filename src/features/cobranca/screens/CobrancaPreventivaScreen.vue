@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { BarChart3, Phone } from 'lucide-vue-next';
+import { AlertTriangle, BadgeCheck, BarChart3, Phone } from 'lucide-vue-next';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import { useToast } from '@/composables/useToast';
 import {
@@ -18,6 +18,8 @@ import {
 } from '../data/cobrancaPreventivaData';
 import PreventivaTab from '../components/preventiva/PreventivaTab.vue';
 import AnaliseTab from '../components/preventiva/AnaliseTab.vue';
+import ConfirmacaoTab from '../components/preventiva/ConfirmacaoTab.vue';
+import AtivaTab from '../components/preventiva/AtivaTab.vue';
 import SacadoDetailScreen, { type SacadoTab } from '../components/preventiva/SacadoDetailScreen.vue';
 import EvidenciaScreen from '../components/preventiva/EvidenciaScreen.vue';
 import OperadorDetailScreen from '../components/preventiva/OperadorDetailScreen.vue';
@@ -28,15 +30,19 @@ type Route =
   | { level: 'evidencia'; sacadoId: string; registroId: string }
   | { level: 'operador'; operadorId: string; operador: string; inicio: string; fim: string };
 
-const tab = ref<'preventiva' | 'analise'>('preventiva');
+type HubTab = 'analise' | 'confirmacao' | 'preventiva' | 'ativa';
+
+const tab = ref<HubTab>('analise');
 const route = ref<Route>({ level: 'hub' });
 const titulos = ref<TituloPreventivo[]>(TITULOS_PREVENTIVA_SEED.map((t) => ({ ...t })));
 const registros = ref<RegistroTentativa[]>(REGISTROS_TENTATIVA_SEED.map((r) => ({ ...r })));
 const { success } = useToast();
 
 const tabs = [
-  { key: 'preventiva', label: 'Cobrança preventiva', icon: Phone },
   { key: 'analise', label: 'Análise', icon: BarChart3 },
+  { key: 'confirmacao', label: 'Cobrança de confirmação', icon: BadgeCheck },
+  { key: 'preventiva', label: 'Cobrança preventiva', icon: Phone },
+  { key: 'ativa', label: 'Cobrança ativa', icon: AlertTriangle },
 ];
 
 const sacadoAberto = computed(() => {
@@ -148,7 +154,7 @@ function abrirOperador(payload: { operadorId: string; operador: string; inicio: 
     :fim="periodoOperador.fim"
     @back="route = { level: 'hub' }"
   />
-  <div v-else class="flex flex-col" style="gap: 20px">
+  <div v-else class="flex flex-col" style="gap: 24px">
     <div>
       <div
         style="
@@ -174,7 +180,7 @@ function abrirOperador(payload: { operadorId: string; operador: string; inicio: 
         Cobrança preventiva
       </h1>
       <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-        Títulos a vencer e a análise da atuação.
+        Análise, confirmação, preventiva e cobrança ativa no mesmo fluxo operacional.
       </p>
     </div>
 
@@ -182,16 +188,30 @@ function abrirOperador(payload: { operadorId: string; operador: string; inicio: 
       :model-value="tab"
       :options="tabs"
       variant="brand"
-      style="align-self: flex-start"
-      @update:model-value="tab = $event as 'preventiva' | 'analise'"
+      single-row
+      class="hub-tabs"
+      @update:model-value="tab = $event as HubTab"
     />
 
+    <AnaliseTab v-if="tab === 'analise'" :titulos="titulos" @open="abrirOperador" />
+    <ConfirmacaoTab v-else-if="tab === 'confirmacao'" :titulos="titulos" />
     <PreventivaTab
-      v-if="tab === 'preventiva'"
+      v-else-if="tab === 'preventiva'"
       :sacados="SACADOS_PREVENTIVA_SEED"
       :titulos="titulos"
       @open="abrirSacado"
     />
-    <AnaliseTab v-else :titulos="titulos" @open="abrirOperador" />
+    <AtivaTab v-else :titulos="titulos" />
   </div>
 </template>
+
+<style scoped>
+.hub-tabs {
+  width: 100%;
+  overflow-x: auto;
+}
+.hub-tabs :deep(button) {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+</style>

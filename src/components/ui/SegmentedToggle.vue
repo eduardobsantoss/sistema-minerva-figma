@@ -16,8 +16,10 @@ const props = withDefaults(
     iconOnly?: boolean;
     /** sm: versão compacta do toggle de ícones (38px), alinhada aos botões da barra de ferramentas. */
     size?: 'md' | 'sm';
+    /** Abas brand em uma única linha (detalhe de solicitação, hubs com rótulos longos). */
+    singleRow?: boolean;
   }>(),
-  { variant: 'surface', iconOnly: false, size: 'md' },
+  { variant: 'surface', iconOnly: false, size: 'md', singleRow: false },
 );
 
 const emit = defineEmits<{ 'update:modelValue': [key: string] }>();
@@ -90,7 +92,7 @@ const shellStyle = computed(() => {
       background: 'var(--surface-card)',
       border: '1px solid var(--border-default)',
       borderRadius: 'var(--radius-xl)',
-      flexWrap: 'wrap' as const,
+      flexWrap: (props.singleRow ? 'nowrap' : 'wrap') as const,
     };
   }
   return {
