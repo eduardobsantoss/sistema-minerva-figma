@@ -117,27 +117,8 @@ function brl(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function csvCampo(valor: string | number) {
-  return `"${String(valor).replace(/"/g, '""')}"`;
-}
-
 function gerarRelatorioSelecionados() {
-  const lista = props.titulos;
-  enqueueReport({
-    reportName: 'Relatório de títulos selecionados',
-    buildFile: () => {
-      const cabecalho = ['Lastro', 'Número', 'Valor', 'Valor em aberto', 'Vencimento'];
-      const linhas = lista.map((t) =>
-        [t.lastro, t.numero, brl(t.valor), t.valorAberto == null ? '' : brl(t.valorAberto), t.vencimento]
-          .map(csvCampo)
-          .join(';'),
-      );
-      return {
-        blob: new Blob(['\uFEFF' + [cabecalho.join(';'), ...linhas].join('\n')], { type: 'text/csv;charset=utf-8;' }),
-        filename: 'titulos-selecionados.csv',
-      };
-    },
-  });
+  enqueueReport({ reportName: 'Relatório de títulos selecionados' });
 }
 
 const contagem = computed(() => {

@@ -3,6 +3,7 @@ import { computed, ref, watch, type Component } from 'vue';
 import { ArrowLeft, BarChart3, ChevronRight, Download, Radar } from 'lucide-vue-next';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import { useBackgroundReport } from '@/composables/useBackgroundReport';
 import { useToast } from '@/composables/useToast';
 import {
   NIVEL_DISPENSA_LABEL,
@@ -21,8 +22,6 @@ import {
   corInadimplencia,
   corNaoConfirmado,
   datasValidas,
-  exportarGerencial,
-  exportarPos,
   filtrarGerencial,
   filtrarPos,
   fmtPct,
@@ -55,6 +54,7 @@ const REPORTS: { key: ReportKey; title: string; description: string; icon: Compo
 ];
 
 const { warn } = useToast();
+const { enqueueReport } = useBackgroundReport();
 const selected = ref<ReportKey | null>(null);
 const hoveredKey = ref<ReportKey | null>(null);
 const draftGerencial = ref<RecorteGerencial>({ ...RECORTE_GERENCIAL_INICIAL });
@@ -126,8 +126,9 @@ function limpar() {
 }
 
 function baixar() {
-  if (selected.value === 'gerencial') exportarGerencial(grupos.value);
-  else exportarPos(clientes.value);
+  const titulo = report.value?.title;
+  if (!titulo) return;
+  enqueueReport({ reportName: titulo });
 }
 
 const gridGerencial = 'minmax(200px, 1.8fr) minmax(130px, 1.1fr) 150px 130px 160px 150px';

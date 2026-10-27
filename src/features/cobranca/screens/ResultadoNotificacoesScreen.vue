@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { DISPAROS_SEED, type DisparoNotificacao } from '../data/resultadoNotificacoesData';
+import { useBackgroundReport } from '@/composables/useBackgroundReport';
 import { useToast } from '@/composables/useToast';
 import ResultadoNotificacoesListScreen from './ResultadoNotificacoesListScreen.vue';
 import DisparoDetailScreen from './DisparoDetailScreen.vue';
@@ -10,6 +11,7 @@ type Route = { level: 'list' } | { level: 'detail'; id: string };
 const list = ref<DisparoNotificacao[]>(DISPAROS_SEED.map((d) => ({ ...d })));
 const route = ref<Route>({ level: 'list' });
 const { success } = useToast();
+const { enqueueReport } = useBackgroundReport();
 
 const atual = computed(() => {
   const r = route.value;
@@ -44,18 +46,7 @@ function handleReenviar(id: string) {
 function handleExportar(id: string) {
   const d = list.value.find((x) => x.id === id);
   if (!d) return;
-  const csv = [
-    'Lote;Campanha;Canal;Data;Destinatarios;Entregues;Abertos;Falhas;Status',
-    `"${d.lote}";"${d.campanha}";"${d.canal}";"${d.dataHora}";${d.totalDestinatarios};${d.entregues};${d.abertos};${d.falhas};"${d.status}"`,
-  ].join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${d.lote}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('CSV exportado');
+  enqueueReport({ reportName: `Exportação do lote ${d.lote}` });
 }
 </script>
 

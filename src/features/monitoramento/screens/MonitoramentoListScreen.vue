@@ -6,7 +6,7 @@ import {
 import TablePagination from '@/components/ui/TablePagination.vue';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
-import { useToast } from '@/composables/useToast';
+import { useBackgroundReport } from '@/composables/useBackgroundReport';
 import {
   PEDIDOS_SEED,
   TIPO_CLIENTE_OPTS,
@@ -31,7 +31,7 @@ import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const emit = defineEmits<{ open: [id: string] }>();
 
-const { success } = useToast();
+const { enqueueReport } = useBackgroundReport();
 const searchQuery = ref('');
 const selectedClasses = ref<TipoClienteMon[]>([]);
 const classesOpen = ref(false);
@@ -101,7 +101,7 @@ function chipsOf(p: MonitoringPedido) {
 }
 
 function exportRelatorio() {
-  success('Relatório exportado (mock)');
+  enqueueReport({ reportName: 'Relatório de monitoramento' });
 }
 
 function toggleClass(tipo: TipoClienteMon) {

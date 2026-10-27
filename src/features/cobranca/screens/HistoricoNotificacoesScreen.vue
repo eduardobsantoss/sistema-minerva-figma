@@ -4,7 +4,7 @@ import { ChevronDown, Download, Filter, History, SlidersHorizontal } from 'lucid
 import Checkbox from '@/components/ui/Checkbox.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
-import { useToast } from '@/composables/useToast';
+import { useBackgroundReport } from '@/composables/useBackgroundReport';
 import {
   HISTORICO_NOTIFICACOES_SEED,
   METODO_OPTS,
@@ -109,7 +109,7 @@ const EMPTY_FILTERS: Filters = {
 };
 
 const itens = HISTORICO_NOTIFICACOES_SEED;
-const { success } = useToast();
+const { enqueueReport } = useBackgroundReport();
 const lastroQuery = ref('');
 const tituloQuery = ref('');
 const sacadoQuery = ref('');
@@ -229,54 +229,7 @@ function pillStyle(color: string) {
 }
 
 function exportarCsv() {
-  const header = [
-    'Lastro',
-    'Título',
-    'Valor',
-    'Sacado',
-    'Contato',
-    'Assunto',
-    'Método',
-    'Data de envio',
-    'Operação',
-    'Cedente',
-    'Informação',
-    'Tipo informação',
-    'Status notificação',
-    'Status pagamento',
-    'Tipo notificação',
-  ];
-  const lines = filtered.value.map((n) =>
-    [
-      n.lastro,
-      n.titulo,
-      n.valor.toFixed(2),
-      n.sacado,
-      n.contato,
-      n.assunto,
-      n.metodo,
-      n.dataEnvio,
-      n.operacao,
-      n.cedente,
-      n.informacao,
-      tipoInformacaoLabel(n.tipoInformacao),
-      statusEnvioLabel(n.statusNotificacao),
-      statusPagamentoHistLabel(n.statusPagamento),
-      tipoNotificacaoHistLabel(n.tipoNotificacao),
-    ]
-      .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
-      .join(';'),
-  );
-  const blob = new Blob(['\uFEFF' + [header.join(';'), ...lines].join('\n')], {
-    type: 'text/csv;charset=utf-8;',
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'historico-notificacoes.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-  success('CSV exportado');
+  enqueueReport({ reportName: 'Histórico de notificações (CSV)' });
 }
 
 function cellText(n: HistoricoNotificacao, key: ColKey): string {
