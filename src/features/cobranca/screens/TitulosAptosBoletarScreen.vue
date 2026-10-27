@@ -13,7 +13,7 @@ const list = computed<Titulo[]>({
   set: (value) => emit('update:titulos', value),
 });
 const tituloAbertoId = ref<string | null>(null);
-const { gerarBoleto, gerarBoletos, notificar, confirmar, negociar } = useTitulosActions(list);
+const { gerarBoleto, gerarBoletos, notificar, confirmar } = useTitulosActions(list);
 
 const tituloAtual = computed(() => list.value.find((t) => t.id === tituloAbertoId.value));
 </script>
@@ -26,7 +26,6 @@ const tituloAtual = computed(() => list.value.find((t) => t.id === tituloAbertoI
     @gerar-boleto="gerarBoleto"
     @notificar="notificar"
     @confirmar="confirmar"
-    @negociar="negociar"
   />
   <TitulosAptosBoletarListScreen
     v-else

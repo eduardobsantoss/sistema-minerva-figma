@@ -15,7 +15,7 @@ const list = computed<Titulo[]>({
   set: (value) => emit('update:titulos', value),
 });
 const route = ref<Route>({ level: 'list' });
-const { gerarBoleto, notificar, notificarLote, confirmar, negociar, inserirObservacao } = useTitulosActions(list);
+const { gerarBoleto, notificar, notificarLote, confirmar, inserirObservacao } = useTitulosActions(list);
 
 const tituloAtual = computed(() => {
   const r = route.value;
@@ -35,7 +35,6 @@ function openDetail(tituloId: string) {
     @gerar-boleto="gerarBoleto"
     @notificar="notificar"
     @confirmar="confirmar"
-    @negociar="negociar"
   />
   <TitulosListScreen
     v-else
@@ -44,7 +43,6 @@ function openDetail(tituloId: string) {
     @gerar-boleto="gerarBoleto"
     @notificar="notificar"
     @confirmar="confirmar"
-    @negociar="negociar"
     @notificar-lote="notificarLote"
     @observacao="inserirObservacao"
   >

@@ -7,7 +7,6 @@ import {
   FileText,
   BellRing,
   Receipt,
-  Handshake,
   BadgeCheck,
   Paperclip,
   CreditCard,
@@ -40,7 +39,6 @@ const emit = defineEmits<{
   gerarBoleto: [id: string];
   notificar: [id: string];
   confirmar: [id: string];
-  negociar: [id: string];
 }>();
 
 type Tab = 'detalhes' | 'anexos' | 'accrual' | 'pagamentos' | 'confirmacoes' | 'movimentacoes' | 'historico';
@@ -84,11 +82,6 @@ const actions = [
     label: 'Notificar Ativo',
     icon: BellRing,
     onClick: () => emit('notificar', props.titulo.id),
-  },
-  {
-    label: 'Sinalizar Negociação',
-    icon: Handshake,
-    onClick: () => emit('negociar', props.titulo.id),
   },
 ];
 

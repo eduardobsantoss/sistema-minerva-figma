@@ -32,7 +32,7 @@ const titulosList = computed<Titulo[]>({
 
 const route = ref<Route>({ level: 'list' });
 const { success } = useToast();
-const { gerarBoleto, notificar, confirmar, negociar } = useTitulosActions(titulosList);
+const { gerarBoleto, notificar, confirmar } = useTitulosActions(titulosList);
 
 const atual = computed(() => {
   const r = route.value;
@@ -122,7 +122,6 @@ function handleCancelar(id: string) {
       @gerar-boleto="gerarBoleto"
       @notificar="notificar"
       @confirmar="confirmar"
-      @negociar="negociar"
     />
   </template>
 </template>

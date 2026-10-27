@@ -227,13 +227,6 @@ function handleConfirmar(id: string) {
   showToast('Ativo confirmado (mock)');
 }
 
-function handleNegociar(id: string) {
-  titulos.value = titulos.value.map((t) =>
-    t.id === id ? { ...t, emNegociacao: true } : t,
-  );
-  showToast('Negociação sinalizada');
-}
-
 const VEICULO_GRID = 'minmax(140px, 1.6fr) minmax(100px, 1fr) minmax(100px, 1fr) minmax(80px, 0.8fr) minmax(70px, 0.7fr)';
 const CLIENTE_GRID = 'minmax(120px, 1.3fr) minmax(160px, 1.8fr) minmax(100px, 1fr) minmax(100px, 1fr) minmax(80px, 0.8fr)';
 const BOLETA_GRID = 'minmax(140px, 1.6fr) minmax(120px, 1.2fr) minmax(90px, 0.9fr) minmax(90px, 0.9fr)';
@@ -249,7 +242,6 @@ const CONF_GRID = 'minmax(110px, 1.2fr) minmax(150px, 1.6fr) minmax(100px, 1fr) 
     @gerar-boleto="handleGerarBoleto"
     @notificar="handleNotificarTitulo"
     @confirmar="handleConfirmar"
-    @negociar="handleNegociar"
   />
 
   <div v-else class="flex flex-col" style="gap: 24px">

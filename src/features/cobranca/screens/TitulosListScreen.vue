@@ -9,7 +9,6 @@ import {
   FileText,
   Receipt,
   BellRing,
-  Handshake,
   BadgeCheck,
 } from 'lucide-vue-next';
 import {
@@ -39,7 +38,6 @@ const emit = defineEmits<{
   gerarBoleto: [id: string];
   notificar: [id: string];
   confirmar: [id: string];
-  negociar: [id: string];
   notificarLote: [ids: string[]];
   observacao: [ids: string[], texto: string];
 }>();
@@ -293,14 +291,6 @@ function menuActions(t: Titulo) {
       onClick: () => {
         menuOpenId.value = null;
         emit('notificar', t.id);
-      },
-    },
-    {
-      icon: Handshake,
-      label: 'Sinalizar Negociação',
-      onClick: () => {
-        menuOpenId.value = null;
-        emit('negociar', t.id);
       },
     },
   ];
