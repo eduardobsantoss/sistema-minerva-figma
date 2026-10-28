@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { NotificacaoCessao } from '../data/notificacoesCessaoData';
+import type { NotificacaoCessao, NotificacaoCessaoDetailTab } from '../data/notificacoesCessaoData';
 import type { Titulo } from '../data/titulosData';
 import { useTitulosActions } from '../composables/useTitulosActions';
 import { useToast } from '@/composables/useToast';
 import NotificacoesCessaoListScreen from './NotificacoesCessaoListScreen.vue';
 import NotificacaoCessaoDetailScreen from './NotificacaoCessaoDetailScreen.vue';
-import NotificacaoCessaoTitulosScreen from './NotificacaoCessaoTitulosScreen.vue';
 import TituloDetailScreen from './TituloDetailScreen.vue';
 
 type Route =
   | { level: 'list' }
-  | { level: 'detail'; id: string }
-  | { level: 'titulos'; id: string }
+  | { level: 'detail'; id: string; tab: NotificacaoCessaoDetailTab }
   | { level: 'titulo'; id: string; tituloId: string };
 
 const props = defineProps<{ itens: NotificacaoCessao[]; titulos: Titulo[] }>();
@@ -39,6 +37,8 @@ const atual = computed(() => {
   return r.level === 'list' ? undefined : list.value.find((n) => n.id === r.id);
 });
 
+const detailTab = computed(() => (route.value.level === 'detail' ? route.value.tab : 'detalhes'));
+
 const tituloAtual = computed(() => {
   const r = route.value;
   return r.level === 'titulo' ? titulosList.value.find((t) => t.id === r.tituloId) : undefined;
@@ -49,22 +49,18 @@ function nowBR() {
   return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 }
 
-function openDetail(id: string) {
-  route.value = { level: 'detail', id };
-}
-
-function openTitulos(id: string) {
-  route.value = { level: 'titulos', id };
+function openDetail(id: string, tab: NotificacaoCessaoDetailTab = 'detalhes') {
+  route.value = { level: 'detail', id, tab };
 }
 
 function openTitulo(tituloId: string) {
   const r = route.value;
-  if (r.level === 'titulos') route.value = { level: 'titulo', id: r.id, tituloId };
+  if (r.level === 'detail') route.value = { level: 'titulo', id: r.id, tituloId };
 }
 
 function backFromTitulo() {
   const r = route.value;
-  route.value = r.level === 'titulo' ? { level: 'titulos', id: r.id } : { level: 'list' };
+  route.value = r.level === 'titulo' ? { level: 'detail', id: r.id, tab: 'titulos' } : { level: 'list' };
 }
 
 function handleReenviar(id: string) {
@@ -76,6 +72,11 @@ function handleReenviar(id: string) {
           dataEnvio: nowBR(),
           tentativas: n.tentativas + 1,
           comprovanteRef: n.comprovanteRef ?? `CMP-${id.toUpperCase()}`,
+          historico: [
+            ...n.historico,
+            { subject: 'Notificação de cessão', to: n.destinatario, status: 'ENVIADO' as const, sentAt: nowBR() },
+            { subject: 'Notificação de cessão', to: n.destinatario, status: 'ENTREGUE' as const, sentAt: nowBR(), deliveredAt: nowBR() },
+          ],
         }
       : n,
   );
@@ -92,10 +93,10 @@ function handleCancelar(id: string) {
   <NotificacoesCessaoListScreen
     v-show="route.level === 'list' || !atual"
     :itens="list"
-    @open="openDetail"
+    @open="(id, tab) => openDetail(id, tab)"
     @reenviar="handleReenviar"
     @cancelar="handleCancelar"
-    @ver-titulos="openTitulos"
+    @ver-titulos="(id) => openDetail(id, 'titulos')"
   >
     <template #tabs><slot name="tabs" /></template>
   </NotificacoesCessaoListScreen>
@@ -104,15 +105,11 @@ function handleCancelar(id: string) {
     <NotificacaoCessaoDetailScreen
       v-if="route.level === 'detail'"
       :notificacao="atual"
+      :titulos="titulosList"
+      :initial-tab="detailTab"
       @back="route = { level: 'list' }"
       @reenviar="handleReenviar"
       @cancelar="handleCancelar"
-    />
-    <NotificacaoCessaoTitulosScreen
-      v-else-if="route.level === 'titulos'"
-      :notificacao="atual"
-      :titulos="titulosList"
-      @back="route = { level: 'list' }"
       @open-titulo="openTitulo"
     />
     <TituloDetailScreen

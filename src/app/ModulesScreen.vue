@@ -10,6 +10,7 @@ import { SemiestruturadasScreen } from '@/features/semiestruturadas';
 import {
   CobrancaScreen,
   TitulosHubScreen,
+  NotificacoesCessaoHubScreen,
   CobrancaDashboardScreen,
   ResultadoNotificacoesScreen,
   CobrancaRelatoriosScreen,
@@ -64,6 +65,7 @@ type View =
   | 'semiestruturadas'
   | 'cobranca'
   | 'cobranca-titulos'
+  | 'cobranca-notif-cessao'
   | 'cobranca-dashboard'
   | 'cobranca-notif'
   | 'cobranca-resultado-notif'
@@ -111,6 +113,7 @@ const titleMap: Record<View, string> = {
   semiestruturadas: 'Gestão de Semiestruturadas',
   cobranca: 'Cobrança',
   'cobranca-titulos': 'Títulos',
+  'cobranca-notif-cessao': 'Notificações de Cessão',
   'cobranca-dashboard': 'Dashboard de Cobrança',
   'cobranca-notif': 'Notificação de Régua de Cobrança',
   'cobranca-resultado-notif': 'Resultado de Notificações',
@@ -147,7 +150,7 @@ const VALID_VIEWS = new Set<View>([
   'fidcs', 'fidcs-simulador', 'fidcs-relatorios',
   'cras', 'cras-simulador', 'cras-relatorios',
   'semiestruturadas',
-  'cobranca', 'cobranca-titulos', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-resultado-notif', 'cobranca-historico-notif', 'cobranca-preventiva', 'cobranca-rel',
+  'cobranca', 'cobranca-titulos', 'cobranca-notif-cessao', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-resultado-notif', 'cobranca-historico-notif', 'cobranca-preventiva', 'cobranca-rel',
   'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-taxa-operacao', 'risco-agrupamentos', 'risco-serasa', 'risco-rel',
   'grupos-cadastro',
   'monitoramento',
@@ -158,7 +161,6 @@ const VALID_VIEWS = new Set<View>([
 
 function normalizeView(key: string | null): View {
   if (key === 'passivo-novo') return 'passivo';
-  if (key === 'cobranca-notif-cessao') return 'cobranca-titulos';
   return VALID_VIEWS.has(key as View) ? (key as View) : 'dashboard';
 }
 
@@ -169,9 +171,7 @@ function getViewFromUrl(): View {
 const LAPTOP_BREAKPOINT = 1366;
 
 const view = ref<View>(getViewFromUrl());
-const titulosTab = ref<'titulos' | 'cessao' | 'aptos'>(
-  new URLSearchParams(window.location.search).get('view') === 'cobranca-notif-cessao' ? 'cessao' : 'titulos',
-);
+const titulosTab = ref<'titulos' | 'aptos'>('titulos');
 const titulosHubKey = ref(0);
 const collapsed = ref(window.innerWidth <= LAPTOP_BREAKPOINT);
 const openMenu = ref<string | null>((() => {
@@ -209,10 +209,7 @@ onUnmounted(() => {
 });
 
 function handleNavigate(key: string) {
-  if (key === 'cobranca-notif-cessao') {
-    titulosTab.value = 'cessao';
-    titulosHubKey.value += 1;
-  } else if (key === 'cobranca-titulos' && view.value !== 'cobranca-titulos') {
+  if (key === 'cobranca-titulos' && view.value !== 'cobranca-titulos') {
     titulosTab.value = 'titulos';
     titulosHubKey.value += 1;
   }
@@ -303,6 +300,7 @@ function handleModuleClick(title: string) {
             :key="titulosHubKey"
             :initial-tab="titulosTab"
           />
+          <NotificacoesCessaoHubScreen v-else-if="view === 'cobranca-notif-cessao'" />
           <CobrancaDashboardScreen
             v-else-if="view === 'cobranca-dashboard'"
             @navigate="handleNavigate"

@@ -1,17 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ArrowLeft, BadgeCheck, CheckCircle2, Clock, FileText, Wallet, XCircle } from 'lucide-vue-next';
+import { BadgeCheck, CheckCircle2, Clock, FileText, Wallet, XCircle } from 'lucide-vue-next';
 import { brl, type Titulo } from '../data/titulosData';
-import {
-  situacaoGrupoColor,
-  situacaoGrupoLabel,
-  type NotificacaoCessao,
-} from '../data/notificacoesCessaoData';
+import type { NotificacaoCessao } from '../data/notificacoesCessaoData';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 
 const props = defineProps<{ notificacao: NotificacaoCessao; titulos: Titulo[] }>();
-const emit = defineEmits<{ back: []; openTitulo: [id: string] }>();
+const emit = defineEmits<{ openTitulo: [id: string] }>();
 
 const rows = computed(() =>
   props.notificacao.titulosGrupoIds
@@ -57,64 +53,7 @@ const GRID = 'minmax(110px, 0.9fr) minmax(160px, 1.3fr) minmax(130px, 1fr) minma
 </script>
 
 <template>
-  <div class="flex flex-col" style="gap: 24px">
-    <div class="flex items-center" style="gap: 16px">
-      <button
-        type="button"
-        aria-label="Voltar"
-        class="flex items-center justify-center"
-        style="
-          width: 48px;
-          height: 48px;
-          border-radius: var(--radius-lg);
-          background: var(--surface-card);
-          border: 1px solid var(--border-default);
-          cursor: pointer;
-          color: var(--text-strong);
-          flex-shrink: 0;
-        "
-        @click="emit('back')"
-      >
-        <ArrowLeft :size="20" />
-      </button>
-      <div style="flex: 1; min-width: 0">
-        <div
-          style="
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.18em;
-            color: var(--accent);
-            font-weight: var(--weight-bold);
-            margin-bottom: 4px;
-          "
-        >
-          Notificações de cessão · {{ notificacao.protocolo }}
-        </div>
-        <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.01em">
-          Títulos de {{ notificacao.grupoEmpresarial }}
-        </h2>
-        <p
-          class="flex items-center"
-          style="gap: 8px; flex-wrap: wrap; margin-top: 4px; font-size: var(--text-sm); color: var(--text-muted)"
-        >
-          <span>{{ notificacao.sacado }} · {{ notificacao.veiculoNome }}</span>
-          <span
-            :style="{
-              fontSize: '10px',
-              fontWeight: 'var(--weight-bold)',
-              letterSpacing: '0.04em',
-              padding: '4px 9px',
-              borderRadius: '9999px',
-              background: `color-mix(in srgb, ${situacaoGrupoColor(notificacao.situacaoGrupo)} 14%, transparent)`,
-              color: situacaoGrupoColor(notificacao.situacaoGrupo),
-            }"
-          >
-            Grupo {{ situacaoGrupoLabel(notificacao.situacaoGrupo).toLowerCase() }}
-          </span>
-        </p>
-      </div>
-    </div>
-
+  <div class="flex flex-col" style="gap: 16px">
     <div class="grid kpi-grid">
       <div v-for="kpi in kpis" :key="kpi.label" class="kpi">
         <div
@@ -148,7 +87,7 @@ const GRID = 'minmax(110px, 0.9fr) minmax(160px, 1.3fr) minmax(130px, 1fr) minma
           >
             <FileText :size="30" :stroke-width="1.5" style="color: var(--text-muted); opacity: 0.5" />
             <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-default)">
-              Nenhum título neste grupo
+              Nenhum título nesta cessão
             </div>
           </div>
 

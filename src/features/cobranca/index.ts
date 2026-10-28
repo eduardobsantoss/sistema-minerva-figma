@@ -1,5 +1,6 @@
 export { default as CobrancaScreen } from './screens/CobrancaScreen.vue';
 export { default as TitulosHubScreen } from './screens/TitulosHubScreen.vue';
+export { default as NotificacoesCessaoHubScreen } from './screens/NotificacoesCessaoHubScreen.vue';
 export { default as CobrancaDashboardScreen } from './screens/CobrancaDashboardScreen.vue';
 export { default as ResultadoNotificacoesScreen } from './screens/ResultadoNotificacoesScreen.vue';
 export { default as CobrancaRelatoriosScreen } from './screens/CobrancaRelatoriosScreen.vue';

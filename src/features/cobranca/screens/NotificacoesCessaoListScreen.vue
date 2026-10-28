@@ -32,6 +32,7 @@ import {
   tagsCessao,
   tipoNotificacaoLabel,
   type NotificacaoCessao,
+  type NotificacaoCessaoDetailTab,
   type StatusNotificacaoCessao,
   type TomTag,
 } from '../data/notificacoesCessaoData';
@@ -46,11 +47,24 @@ import AdminSelect from '@/components/ui/AdminSelect.vue';
 
 const props = defineProps<{ itens: NotificacaoCessao[] }>();
 const emit = defineEmits<{
-  open: [id: string];
+  open: [id: string, tab?: NotificacaoCessaoDetailTab];
   reenviar: [id: string];
   cancelar: [id: string];
   verTitulos: [id: string];
 }>();
+
+function cardEyebrow(n: NotificacaoCessao) {
+  return n.dataCessao ? `Cessão · ${n.dataCessao}` : 'Cessão';
+}
+
+function cardSubtitle(n: NotificacaoCessao) {
+  return `${n.veiculoNome} · ${brl(n.valorCessao)}`;
+}
+
+function tituloColLabel(n: NotificacaoCessao) {
+  if (n.bonds.length > 1) return `${n.bonds.length} títulos`;
+  return `#${n.bonds[0]?.numero ?? n.tituloNumero}`;
+}
 
 type ColKey = 'titulo' | 'veiculo' | 'cessao' | 'grupo' | 'cedente' | 'sacado' | 'canal' | 'dataEnvio' | 'valor' | 'status';
 
@@ -100,20 +114,6 @@ const parteModal = ref<{ parte: ParteNotificacao; n: NotificacaoCessao; tab: 'no
 
 function abrirParte(parte: ParteNotificacao, n: NotificacaoCessao, tab: 'notificacoes' | 'contatos' = 'notificacoes') {
   parteModal.value = { parte, n, tab };
-}
-
-function resumoTexto(label: string, r: { texto: string }) {
-  return `${label}: ${r.texto}`;
-}
-
-function contatosTexto(n: NotificacaoCessao) {
-  const lista = partes.contatosDe(n.sacadoCnpj);
-  if (!lista.length) return { texto: 'Sem contatos cadastrados', tom: 'falta' as TomTag };
-  const temEmail = lista.some((c) => c.email.trim());
-  const total = `${lista.length} ${lista.length === 1 ? 'contato' : 'contatos'}`;
-  return temEmail
-    ? { texto: total, tom: 'ok' as TomTag }
-    : { texto: `${total} · sem e-mail`, tom: 'alerta' as TomTag };
 }
 
 const viewMode = ref<'cards' | 'table'>('cards');
@@ -229,8 +229,24 @@ function openFilters() {
   filterOpen.value = !filterOpen.value;
 }
 
+function indicadoresBloqueio(n: NotificacaoCessao) {
+  if (n.requireBill) return n.indicators;
+  return n.indicators.filter((i) => i.name.toLowerCase() !== 'bondhasboleto');
+}
+
+function envioDesabilitado(n: NotificacaoCessao) {
+  if (n.status === 'ENVIADA' || n.status === 'CANCELADA') return true;
+  return indicadoresBloqueio(n).length > 0;
+}
+
+function envioDesabilitadoMotivo(n: NotificacaoCessao) {
+  if (n.status === 'ENVIADA' || n.status === 'CANCELADA') return undefined;
+  if (indicadoresBloqueio(n).length > 0) return 'Corrija as condições da cessão antes de enviar.';
+  return undefined;
+}
+
 function podeEnviar(n: NotificacaoCessao) {
-  return n.status === 'PENDENTE' || n.status === 'FALHOU';
+  return (n.status === 'PENDENTE' || n.status === 'FALHOU') && !envioDesabilitado(n);
 }
 
 function podeCancelar(n: NotificacaoCessao) {
@@ -244,7 +260,7 @@ function menuActions(n: NotificacaoCessao) {
       label: 'Histórico',
       onClick: () => {
         menuOpenId.value = null;
-        emit('open', n.id);
+        emit('open', n.id, 'historico');
       },
     },
     {
@@ -594,65 +610,22 @@ function pillStyle(color: string) {
       <article v-for="n in pageItems" :key="n.id" class="nc-card" :aria-label="`Cessão ${n.protocolo}`">
         <div class="flex items-start justify-between" style="gap: 10px">
           <div style="min-width: 0">
-            <div class="nc-eyebrow">Lastro {{ n.lastro }} · #{{ n.tituloNumero }}</div>
-            <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); margin-top: 4px">
-              {{ n.sacado }}
-            </div>
-            <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums">
-              {{ n.sacadoCnpj }}
-            </div>
+            <div class="nc-eyebrow">{{ cardEyebrow(n) }}</div>
+            <div class="nc-card-name">{{ n.roundName || n.protocolo }}</div>
+            <div class="nc-card-meta">{{ cardSubtitle(n) }}</div>
           </div>
-          <span class="flex items-center" :style="pillStyle(statusCessaoColor(n.status))">
-            <span :style="{ width: '6px', height: '6px', borderRadius: '9999px', background: statusCessaoColor(n.status) }" />
+          <span class="nc-pill" :style="{ '--status-color': statusCessaoColor(n.status) }">
+            <span class="nc-pill__dot" />
             {{ statusCessaoLabel(n.status) }}
-          </span>
-        </div>
-
-        <div class="grid nc-meta">
-          <div>
-            <div class="nc-eyebrow">Veículo</div>
-            <div class="nc-meta-value">{{ n.veiculoNome }}</div>
-          </div>
-          <div>
-            <div class="nc-eyebrow">Cessão</div>
-            <div class="nc-meta-value" style="font-variant-numeric: tabular-nums">
-              {{ n.protocolo }} · {{ n.dataCessao }}
-            </div>
-          </div>
-          <div>
-            <div class="nc-eyebrow">Cedente</div>
-            <div class="nc-meta-value">{{ n.cedente }}</div>
-          </div>
-          <div>
-            <div class="nc-eyebrow">VR. Cessão</div>
-            <div class="nc-meta-value" style="font-variant-numeric: tabular-nums">{{ brl(n.valorCessao) }}</div>
-          </div>
-        </div>
-
-        <div class="flex items-center" style="gap: 8px; margin-top: 12px; flex-wrap: wrap">
-          <span class="nc-eyebrow">Grupo empresarial</span>
-          <span style="font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--text-strong)">
-            {{ n.grupoEmpresarial }}
-          </span>
-          <span class="flex items-center" :style="pillStyle(situacaoGrupoColor(n.situacaoGrupo))">
-            Grupo {{ situacaoGrupoLabel(n.situacaoGrupo).toLowerCase() }}
           </span>
         </div>
 
         <div class="nc-partes">
           <div class="nc-parte">
             <div class="nc-parte-info">
-              <div class="nc-parte-title">Cedente</div>
-              <ul class="nc-resumo">
-                <li :style="{ color: TOM_COR[partes.resumoCessao('cedente', n.cedenteCnpj).tom] }">
-                  <component :is="TOM_ICONE[partes.resumoCessao('cedente', n.cedenteCnpj).tom]" :size="13" :stroke-width="2.5" aria-hidden="true" />
-                  <span>{{ resumoTexto('Cessão', partes.resumoCessao('cedente', n.cedenteCnpj)) }}</span>
-                </li>
-                <li :style="{ color: TOM_COR[partes.resumoCobranca(n.cedenteCnpj).tom] }">
-                  <component :is="TOM_ICONE[partes.resumoCobranca(n.cedenteCnpj).tom]" :size="13" :stroke-width="2.5" aria-hidden="true" />
-                  <span>{{ resumoTexto('Cobrança', partes.resumoCobranca(n.cedenteCnpj)) }}</span>
-                </li>
-              </ul>
+              <div class="nc-parte-label">Cedente</div>
+              <div class="nc-parte-name">{{ n.cedente }}</div>
+              <div class="nc-parte-meta">{{ n.cedenteCnpj }}</div>
             </div>
             <div class="nc-parte-actions">
               <button
@@ -668,17 +641,9 @@ function pillStyle(color: string) {
 
           <div class="nc-parte">
             <div class="nc-parte-info">
-              <div class="nc-parte-title">Sacado</div>
-              <ul class="nc-resumo">
-                <li :style="{ color: TOM_COR[partes.resumoCessao('sacado', n.sacadoCnpj).tom] }">
-                  <component :is="TOM_ICONE[partes.resumoCessao('sacado', n.sacadoCnpj).tom]" :size="13" :stroke-width="2.5" aria-hidden="true" />
-                  <span>{{ resumoTexto('Cessão', partes.resumoCessao('sacado', n.sacadoCnpj)) }}</span>
-                </li>
-                <li :style="{ color: TOM_COR[contatosTexto(n).tom] }">
-                  <component :is="TOM_ICONE[contatosTexto(n).tom]" :size="13" :stroke-width="2.5" aria-hidden="true" />
-                  <span>{{ contatosTexto(n).texto }}</span>
-                </li>
-              </ul>
+              <div class="nc-parte-label">Sacado</div>
+              <div class="nc-parte-name">{{ n.sacado }}</div>
+              <div class="nc-parte-meta">{{ n.sacadoCnpj }}</div>
             </div>
             <div class="nc-parte-actions">
               <button
@@ -701,7 +666,7 @@ function pillStyle(color: string) {
           </div>
         </div>
 
-        <div style="margin: 14px 0 16px">
+        <div class="nc-card-conditions">
           <div class="nc-eyebrow" style="margin-bottom: 8px">Condições da cessão</div>
           <ul class="flex" style="gap: 6px; flex-wrap: wrap; list-style: none; margin: 0; padding: 0">
             <li v-for="tag in tagsCessao(partes.efetivo(n))" :key="tag.key" class="nc-tag" :style="tagStyle(tag.tom)">
@@ -712,14 +677,21 @@ function pillStyle(color: string) {
         </div>
 
         <div class="nc-card-actions">
-          <button type="button" class="nc-action" @click="emit('open', n.id)">
+          <button type="button" class="nc-action" @click="emit('open', n.id, 'historico')">
             <History :size="14" /> Histórico
           </button>
-          <button type="button" class="nc-action" :disabled="!podeEnviar(n)" @click="emit('reenviar', n.id)">
-            <Send :size="14" /> {{ n.status === 'FALHOU' ? 'Reenviar' : 'Enviar' }}
-          </button>
-          <button type="button" class="nc-action nc-action-primary" @click="emit('verTitulos', n.id)">
+          <button type="button" class="nc-action" @click="emit('verTitulos', n.id)">
             <ListChecks :size="14" /> Ver títulos
+          </button>
+          <button
+            type="button"
+            class="nc-action nc-action-primary"
+            :disabled="envioDesabilitado(n)"
+            :title="envioDesabilitadoMotivo(n)"
+            @click="emit('reenviar', n.id)"
+          >
+            <Send :size="14" />
+            {{ n.status === 'FALHOU' ? 'Reenviar' : 'Enviar' }}
           </button>
         </div>
       </article>
@@ -752,7 +724,7 @@ function pillStyle(color: string) {
             :key="n.id"
             class="grid items-center nc-row nc-table-row"
             :style="{ gridTemplateColumns: gridTemplate }"
-            @click="emit('open', n.id)"
+            @click="emit('open', n.id, 'detalhes')"
           >
             <div>
               <div style="font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: 0.04em">
@@ -795,7 +767,7 @@ function pillStyle(color: string) {
               v-if="visibleCols.has('titulo')"
               style="font-variant-numeric: tabular-nums; font-weight: var(--weight-semibold); color: var(--text-strong)"
             >
-              #{{ n.tituloNumero }}
+              {{ tituloColLabel(n) }}
             </div>
             <div v-if="visibleCols.has('veiculo')" style="color: var(--text-default)">{{ n.veiculoNome }}</div>
             <div v-if="visibleCols.has('cessao')">
@@ -983,17 +955,45 @@ function pillStyle(color: string) {
   border: 1px solid var(--border-default);
   border-radius: var(--radius-xl);
 }
-.nc-meta {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 14px;
-}
-.nc-meta-value {
-  margin-top: 2px;
+.nc-card-name {
+  margin-top: 4px;
+  overflow: hidden;
   font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
+  font-weight: 600;
   color: var(--text-strong);
-  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nc-card-meta {
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.nc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 4px 9px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--status-color) 14%, transparent);
+  color: var(--status-color);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.nc-pill__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--status-color);
+  flex-shrink: 0;
+}
+.nc-card-conditions {
+  margin: 14px 0 16px;
 }
 .nc-tag {
   display: inline-flex;
@@ -1026,25 +1026,26 @@ function pillStyle(color: string) {
   flex: 1 1 180px;
   min-width: 0;
 }
-.nc-parte-title {
+.nc-parte-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.nc-parte-name {
+  margin-top: 4px;
   font-size: var(--text-sm);
-  font-weight: var(--weight-bold);
+  font-weight: 700;
   color: var(--text-strong);
+  line-height: 1.35;
 }
-.nc-resumo {
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+.nc-parte-meta {
+  margin-top: 2px;
   font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-}
-.nc-resumo li {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 .nc-parte-actions {
   display: flex;
@@ -1083,12 +1084,12 @@ function pillStyle(color: string) {
 }
 .nc-action-primary {
   margin-left: auto;
-  background: var(--action-primary-bg);
-  color: var(--action-primary-text);
+  background: var(--gci-base);
+  color: #fff;
   border-color: transparent;
 }
 .nc-action-primary:hover:not(:disabled) {
-  background: var(--action-primary-bg-hover);
+  background: var(--gci-hover);
 }
 .nc-pager {
   grid-column: 1 / -1;

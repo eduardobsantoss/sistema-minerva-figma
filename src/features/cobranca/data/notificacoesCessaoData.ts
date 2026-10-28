@@ -1,9 +1,40 @@
+import { TITULOS_SEED } from './titulosData';
+
 export type CanalCessao = 'Email' | 'WhatsApp' | 'SMS' | 'Carta';
 export type StatusNotificacaoCessao = 'PENDENTE' | 'ENVIADA' | 'FALHOU' | 'CANCELADA';
 export type VeiculoTipoCessao = 'CRA' | 'FIDC';
 export type TipoNotificacao = 'Regua' | 'Cessao';
 
 export type SituacaoGrupo = 'ATIVO' | 'EM_ANALISE' | 'BLOQUEADO';
+
+export type NotificacaoCessaoDetailTab = 'detalhes' | 'titulos' | 'historico';
+
+export type NotificacaoCessaoLogStatus = 'PENDENTE' | 'ENVIADO' | 'ENTREGUE' | 'ABERTO' | 'REJEITADO';
+
+export interface NotificacaoCessaoBond {
+  tituloId: string;
+  numero: string;
+  lastro: string;
+  valor: number;
+  vencimento: string;
+  boletoGerado: boolean;
+}
+
+export interface NotificacaoCessaoLog {
+  subject: string;
+  to: string;
+  status: NotificacaoCessaoLogStatus;
+  sentAt?: string;
+  deliveredAt?: string;
+  openedAt?: string;
+  failedAt?: string;
+  failureMessage?: string;
+}
+
+export interface NotificacaoCessaoIndicator {
+  name: string;
+  message: string;
+}
 
 /** Dados do grupo empresarial e condições que a cessão precisa cumprir. */
 export interface CessaoExtra {
@@ -23,10 +54,19 @@ export interface CessaoExtra {
 export interface NotificacaoCessao extends CessaoExtra {
   id: string;
   protocolo: string;
+  /** Nome exibido da cessão (paridade `roundName` no Minerva). */
+  roundName: string;
   tipo: TipoNotificacao;
+  /** Título principal (legado / colunas); ver `bonds`. */
   lastro: string;
   tituloNumero: string;
   tituloId: string;
+  bonds: NotificacaoCessaoBond[];
+  /** Quando false, boleto não entra na checklist (veículo permite cessão sem boleto). */
+  requireBill: boolean;
+  /** Indicadores que bloqueiam envio (espelho API Minerva). */
+  indicators: NotificacaoCessaoIndicator[];
+  historico: NotificacaoCessaoLog[];
   veiculoTipo: VeiculoTipoCessao;
   veiculoNome: string;
   veiculoId: string;
@@ -68,6 +108,18 @@ export function statusCessaoLabel(s: StatusNotificacaoCessao): string {
       ENVIADA: 'Enviada',
       FALHOU: 'Falhou',
       CANCELADA: 'Cancelada',
+    } as const
+  )[s];
+}
+
+export function logCessaoStatusLabel(s: NotificacaoCessaoLogStatus): string {
+  return (
+    {
+      PENDENTE: 'Pendente',
+      ENVIADO: 'Enviado',
+      ENTREGUE: 'Entregue',
+      ABERTO: 'Aberto',
+      REJEITADO: 'Rejeitado',
     } as const
   )[s];
 }
@@ -348,6 +400,19 @@ const x = (
   titulosGrupoIds,
 });
 
+const ROUND_NAMES: Record<string, string> = {
+  'nc-1': 'CES-SANTA-CLARA-07/26',
+  'nc-2': 'TECH_RURAL_OP_118',
+  'nc-3': 'FUTURA_OP_022',
+  'nc-4': 'VALE-SOL-033',
+  'nc-5': 'HORIZONTE-CONF-055',
+  'nc-6': 'CAMPO-VERDE-042',
+  'nc-7': 'NATIVA-014',
+  'nc-8': 'VALORIZA-007',
+  'nc-9': 'BOA-SAFRA-SEA4',
+  'nc-10': 'SOFTAGRO-TITEC-101',
+};
+
 const EXTRAS: Record<string, CessaoExtra> = {
   'nc-1': x('Grupo Santa Clara', 'ATIVO', '05/07/2026', [false, false, true, true, true, true, true], ['tit-2', 'tit-1', 'tit-3']),
   'nc-2': x('Grupo Tech Rural', 'EM_ANALISE', '10/07/2026', [true, false, true, false, true, false, true], ['tit-5', 'tit-4']),
@@ -361,10 +426,99 @@ const EXTRAS: Record<string, CessaoExtra> = {
   'nc-10': x('Grupo SoftAgro', 'ATIVO', '12/07/2026', [false, false, true, true, true, false, true], ['tit-4', 'tit-5']),
 };
 
-export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = NOTIFICACOES_BASE.map((n) => ({
-  ...n,
-  ...EXTRAS[n.id],
-}));
+const TITULO_BY_ID = new Map(TITULOS_SEED.map((t) => [t.id, t]));
+
+function bondsForIds(ids: string[], fallback: (typeof NOTIFICACOES_BASE)[number]): NotificacaoCessaoBond[] {
+  return ids.map((id) => {
+    const t = TITULO_BY_ID.get(id);
+    if (t) {
+      return {
+        tituloId: t.id,
+        numero: t.numero,
+        lastro: t.lastro,
+        valor: t.vrNominal,
+        vencimento: t.vencimento,
+        boletoGerado: Boolean(t.boletoGeradoEm),
+      };
+    }
+    return {
+      tituloId: id,
+      numero: fallback.tituloNumero,
+      lastro: fallback.lastro,
+      valor: fallback.valorCessao,
+      vencimento: '—',
+      boletoGerado: false,
+    };
+  });
+}
+
+function indicatorsFromExtra(extra: CessaoExtra): NotificacaoCessaoIndicator[] {
+  const out: NotificacaoCessaoIndicator[] = [];
+  if (!extra.boleto) out.push({ name: 'bondhasboleto', message: 'Existem títulos sem boleto gerado.' });
+  if (!extra.cartaGerada) out.push({ name: 'lettergenerated', message: 'Carta de notificação ainda não foi gerada.' });
+  if (extra.titulosAVencerOuVencidos) {
+    out.push({ name: 'bondoverdue', message: 'Há títulos vencidos ou a vencer na cessão.' });
+  }
+  if (!extra.emailSacado) out.push({ name: 'payeremail', message: 'Sacado sem e-mail cadastrado.' });
+  if (!extra.cedentePermiteNotificacao) {
+    out.push({ name: 'transferornotification', message: 'Cedente não permite notificação de cessão.' });
+  }
+  if (!extra.sacadoPermiteNotificacao) {
+    out.push({ name: 'payernotification', message: 'Sacado não permite notificação de cessão.' });
+  }
+  if (!extra.contaBancariaVeiculo) {
+    out.push({ name: 'vehiclebankaccount', message: 'Veículo sem conta bancária configurada.' });
+  }
+  return out;
+}
+
+function historicoFor(
+  n: (typeof NOTIFICACOES_BASE)[number] & CessaoExtra,
+  status: StatusNotificacaoCessao,
+): NotificacaoCessaoLog[] {
+  const base = { subject: 'Notificação de cessão', to: n.destinatario };
+  if (status === 'FALHOU') {
+    return [
+      {
+        ...base,
+        status: 'REJEITADO',
+        sentAt: n.dataEnvio ?? n.dataCriacao,
+        failedAt: n.dataEnvio ?? n.dataCriacao,
+        failureMessage: 'Falha na entrega ao provedor (mock).',
+      },
+    ];
+  }
+  if (status === 'ENVIADA' && n.dataEnvio) {
+    const logs: NotificacaoCessaoLog[] = [
+      { ...base, status: 'ENVIADO', sentAt: n.dataEnvio },
+      { ...base, status: 'ENTREGUE', sentAt: n.dataEnvio, deliveredAt: n.dataEnvio },
+    ];
+    if (n.canal === 'Email') {
+      logs.push({ ...base, status: 'ABERTO', sentAt: n.dataEnvio, openedAt: n.dataEnvio });
+    }
+    return logs;
+  }
+  if (status === 'CANCELADA' && n.dataEnvio) {
+    return [{ ...base, status: 'ENVIADO', sentAt: n.dataEnvio }];
+  }
+  return [];
+}
+
+export const NOTIFICACOES_CESSAO_SEED: NotificacaoCessao[] = NOTIFICACOES_BASE.map((n) => {
+  const extra = EXTRAS[n.id];
+  const bonds = bondsForIds(extra.titulosGrupoIds, n);
+  const requireBill = n.id !== 'nc-6';
+  const indicators = indicatorsFromExtra(extra);
+  return {
+    ...n,
+    ...extra,
+    roundName: ROUND_NAMES[n.id] ?? n.protocolo,
+    bonds,
+    requireBill,
+    indicators,
+    historico: historicoFor({ ...n, ...extra }, n.status),
+  };
+});
 
 export const GRUPO_CESSAO_OPTS = Array.from(new Set(NOTIFICACOES_CESSAO_SEED.map((n) => n.grupoEmpresarial))).sort();
 

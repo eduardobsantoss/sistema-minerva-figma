@@ -1,41 +1,73 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import {
   ArrowLeft,
-  MoreVertical,
-  FileText,
-  RefreshCw,
-  XCircle,
   Building2,
+  Clock,
+  FileText,
+  ListChecks,
+  MoreVertical,
+  RefreshCw,
   User,
-  Mail,
+  XCircle,
 } from 'lucide-vue-next';
 import {
   brl,
+  logCessaoStatusLabel,
   statusCessaoColor,
   statusCessaoLabel,
   type NotificacaoCessao,
+  type NotificacaoCessaoDetailTab,
 } from '../data/notificacoesCessaoData';
+import type { Titulo } from '../data/titulosData';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
+import NotificacaoCessaoTitulosPanel from '../components/NotificacaoCessaoTitulosPanel.vue';
 
-const props = defineProps<{ notificacao: NotificacaoCessao }>();
+const props = withDefaults(
+  defineProps<{ notificacao: NotificacaoCessao; titulos: Titulo[]; initialTab?: NotificacaoCessaoDetailTab }>(),
+  { initialTab: 'detalhes' },
+);
 const emit = defineEmits<{
   back: [];
   reenviar: [id: string];
   cancelar: [id: string];
+  openTitulo: [id: string];
 }>();
-
-type Tab = 'detalhes' | 'comprovante';
 
 const TABS = [
   { key: 'detalhes' as const, label: 'Detalhes', icon: FileText },
-  { key: 'comprovante' as const, label: 'Comprovante', icon: Mail },
+  { key: 'titulos' as const, label: 'Títulos', icon: ListChecks },
+  { key: 'historico' as const, label: 'Histórico', icon: Clock },
 ];
 
-const tab = ref<Tab>('detalhes');
+const tab = ref<NotificacaoCessaoDetailTab>(props.initialTab);
 const actionMenuOpen = ref(false);
 const actionMenuRef = ref<HTMLDivElement | null>(null);
 const statusColor = computed(() => statusCessaoColor(props.notificacao.status));
+
+watch(
+  () => [props.notificacao.id, props.initialTab] as const,
+  ([, nextTab]) => {
+    tab.value = nextTab;
+  },
+);
+
+const pageSubtitle = computed(() => {
+  const bonds = props.notificacao.bonds;
+  if (bonds.length > 1) return `${bonds.length} títulos · ${props.notificacao.veiculoNome}`;
+  const num = bonds[0]?.numero ?? props.notificacao.tituloNumero;
+  return `Título ${num} · ${props.notificacao.veiculoNome}`;
+});
+
+const titulosLine = computed(() => {
+  const bonds = props.notificacao.bonds;
+  if (!bonds.length) return `#${props.notificacao.tituloNumero}`;
+  return bonds.map((b) => b.numero).join(', ');
+});
+
+const attemptCount = computed(() =>
+  props.notificacao.historico.length > 0 ? props.notificacao.historico.length : props.notificacao.tentativas,
+);
 
 const actions = computed(() => {
   const items: { label: string; icon: typeof RefreshCw; onClick: () => void; danger?: boolean }[] = [];
@@ -132,7 +164,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
           </span>
         </h2>
         <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-          Título #{{ notificacao.tituloNumero }} · {{ notificacao.veiculoNome }}
+          {{ pageSubtitle }}
         </p>
       </div>
 
@@ -256,7 +288,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
       :options="TABS"
       variant="brand"
       style="align-self: flex-start"
-      @update:model-value="tab = $event as Tab"
+      @update:model-value="tab = $event as NotificacaoCessaoDetailTab"
     />
 
     <div
@@ -283,10 +315,10 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
             </div>
             <div>
               <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">
-                Título
+                Título(s)
               </div>
               <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">
-                #{{ notificacao.tituloNumero }}
+                {{ titulosLine }}
               </div>
             </div>
             <div>
@@ -302,7 +334,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
                 Tentativas
               </div>
               <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); font-variant-numeric: tabular-nums">
-                {{ notificacao.tentativas }}
+                {{ attemptCount }}
               </div>
             </div>
           </div>
@@ -370,25 +402,60 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
         </section>
       </div>
 
+      <NotificacaoCessaoTitulosPanel
+        v-else-if="tab === 'titulos'"
+        :notificacao="notificacao"
+        :titulos="titulos"
+        @open-titulo="emit('openTitulo', $event)"
+      />
+
       <div v-else class="flex flex-col" style="gap: 16px">
         <div style="font-size: 10px; font-weight: 800; letter-spacing: 0.14em; color: var(--accent); text-transform: uppercase">
-          Comprovante de envio
+          Histórico
         </div>
         <div
           v-if="notificacao.comprovanteRef"
-          style="padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-default); background: var(--surface-sunken)"
+          style="padding: 16px; border-radius: var(--radius-lg); border: 1px solid var(--border-default); background: var(--surface-sunken)"
         >
-          <div style="font-size: var(--text-xs); color: var(--text-muted)">Referência</div>
-          <div style="font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-strong); margin-top: 6px; font-variant-numeric: tabular-nums">
-            {{ notificacao.comprovanteRef }}
+          <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase">
+            Carta de notificação
           </div>
-          <div style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 10px">
-            Enviado em {{ notificacao.dataEnvio }} via {{ notificacao.canal }} para
-            <strong style="color: var(--text-default)">{{ notificacao.destinatario }}</strong>.
-          </div>
+          <a
+            href="#"
+            style="display: inline-block; margin-top: 6px; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--accent)"
+            @click.prevent
+          >
+            Abrir carta ({{ notificacao.comprovanteRef }})
+          </a>
         </div>
+        <ul v-if="notificacao.historico.length" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px">
+          <li
+            v-for="(entry, index) in notificacao.historico"
+            :key="`${entry.to}-${entry.sentAt}-${index}`"
+            style="padding: 16px; border-radius: var(--radius-lg); border: 1px solid var(--border-default); background: var(--surface-sunken)"
+          >
+            <div class="flex items-center justify-between" style="gap: 12px; flex-wrap: wrap">
+              <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">
+                {{ entry.subject }}
+              </div>
+              <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase">
+                {{ logCessaoStatusLabel(entry.status) }}
+              </span>
+            </div>
+            <p style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 8px; line-height: 1.5">
+              Para <strong style="color: var(--text-default)">{{ entry.to || '—' }}</strong>
+              <template v-if="entry.sentAt"> · Enviado em {{ entry.sentAt }}</template>
+              <template v-if="entry.deliveredAt"> · Entregue em {{ entry.deliveredAt }}</template>
+              <template v-if="entry.openedAt"> · Aberto em {{ entry.openedAt }}</template>
+              <template v-if="entry.failedAt"> · Falhou em {{ entry.failedAt }}</template>
+            </p>
+            <p v-if="entry.failureMessage" style="font-size: var(--text-xs); color: var(--danger-base); margin-top: 6px">
+              {{ entry.failureMessage }}
+            </p>
+          </li>
+        </ul>
         <div
-          v-else
+          v-else-if="!notificacao.comprovanteRef"
           style="
             padding: 32px;
             text-align: center;
@@ -398,7 +465,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
             font-size: var(--text-sm);
           "
         >
-          Nenhum comprovante disponível para esta notificação.
+          Nenhum histórico disponível para esta notificação.
         </div>
       </div>
     </div>

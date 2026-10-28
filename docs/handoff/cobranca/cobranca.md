@@ -4,18 +4,38 @@
 
 ## Navegação
 
-Menu **Cobrança** (`Sidebar.vue`). Clique no pai ou no card do dashboard geral abre **Títulos** (`cobranca-titulos`).
+Menu **Cobrança** (`Sidebar.vue`). Ordem alinhada ao `front-minerva` (`app/layouts/home-admin.vue`), com uma entrada extra no protótipo.
+
+| Ordem | Protótipo (`Sidebar` key) | front-minerva (rota) | Observação |
+|---:|---|---|---|
+| 1 | `cobranca-dashboard` | `/home-admin/cobranca/dashboard` | Paridade |
+| 2 | `cobranca-titulos` | `/home-admin/billing/titles` | Hub só **Títulos** + **Aptos para boletar** (cessão fora do hub) |
+| 3 | `cobranca-notif-cessao` | `/home-admin/cobranca/notificacoes-de-cessao` | Item próprio; `NotificacoesCessaoHubScreen` |
+| 4 | `cobranca-notif` | `/home-admin/cobranca/notificacoes-de-cobranca` | Régua |
+| 5 | `cobranca-resultado-notif` | — | **Só protótipo** (Minerva: fluxo a partir da régua) |
+| 6 | `cobranca-historico-notif` | `/home-admin/cobranca/historico-de-notificacoes` | Paridade |
+| 7 | `cobranca-preventiva` | `/home-admin/cobranca/preventiva` | Minerva: 2 abas; protótipo: 4 abas (2 esboço) |
+| 8 | `cobranca-rel` | `/home-admin/cobranca/relatorios` | Paridade |
 
 | View (`?view=`) | Tela | Componente |
 |---|---|---|
-| `cobranca-titulos` | Listagem + detalhe de títulos | `TitulosScreen.vue` |
+| `cobranca-titulos` | Hub títulos + aptos | `TitulosHubScreen.vue` |
 | `cobranca-dashboard` | Dashboard de atuação | `CobrancaDashboardScreen.vue` |
 | `cobranca-notif` | Réguas de notificação | `CobrancaScreen.vue` |
-| `cobranca-notif-cessao` | Notificações de cessão | `NotificacoesCessaoScreen.vue` |
+| `cobranca-notif-cessao` | Notificações de cessão | `NotificacoesCessaoHubScreen.vue` → `NotificacoesCessaoScreen.vue` |
 | `cobranca-resultado-notif` | Resultado / disparos | `ResultadoNotificacoesScreen.vue` |
+| `cobranca-historico-notif` | Histórico unificado | `HistoricoNotificacoesScreen.vue` |
+| `cobranca-preventiva` | Cobrança preventiva | `CobrancaPreventivaScreen.vue` |
 | `cobranca-rel` | Relatórios | `CobrancaRelatoriosScreen.vue` |
 
 Montagem em `ModulesScreen.vue`.
+
+### Notificações de cessão (paridade UX Minerva)
+
+- Listagem: cards/tabela; atalhos Pendentes / Enviadas / Falhas.
+- Detalhe único com abas **Detalhes · Títulos · Histórico** (`NotificacaoCessaoDetailScreen.vue`).
+- Card (espelho `BillingRoundCards.vue`): topo `Cessão · data`, `roundName`, `veículo · valor`, status; bloco **Cedente/Sacado** com nome + documento e botões Notificações/Contatos; **Condições da cessão**; rodapé **Histórico · Ver títulos · Enviar** (primário à direita, desabilitado se condições bloqueiam).
+- Mock: `bonds[]`, `historico[]` em `notificacoesCessaoData.ts`.
 
 ## Árvore
 
@@ -31,7 +51,7 @@ src/features/cobranca/
 │   ├── CobrancaScreen / CobrancaListScreen
 │   ├── TitulosScreen / TitulosListScreen / TituloDetailScreen
 │   ├── CobrancaDashboardScreen
-│   ├── NotificacoesCessaoScreen / …List / NotificacaoCessaoDetailScreen
+│   ├── NotificacoesCessaoHubScreen / NotificacoesCessaoScreen / …List / NotificacaoCessaoDetailScreen
 │   ├── ResultadoNotificacoesScreen / …List / DisparoDetailScreen
 │   └── CobrancaRelatoriosScreen
 └── components/

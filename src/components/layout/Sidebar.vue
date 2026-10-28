@@ -115,6 +115,11 @@ const items: NavItem[] = [
       { key: "cobranca-dashboard", label: "Dashboard", icon: Gauge },
       { key: "cobranca-titulos", label: "Títulos", icon: FileText },
       {
+        key: "cobranca-notif-cessao",
+        label: "Notificações de cessão",
+        icon: ScrollText,
+      },
+      {
         key: "cobranca-notif",
         label: "Notf. de Régua de Cobrança",
         icon: BellRing,
