@@ -2,7 +2,9 @@
 import { ref, type Component } from 'vue';
 import {
   Boxes,
+  Check,
   ChevronRight,
+  Copy,
   KeyRound,
   MessageSquare,
   PanelTop,
@@ -13,6 +15,12 @@ import {
   CONFIGURACOES_CARDS,
   type ConfiguracoesCardKey,
 } from '../data/configuracoesCards';
+import {
+  buildModalPackageMarkdown,
+  isModalPackageKey,
+  type ModalPackageKey,
+} from '../data/configuracoesModalPackages';
+import { copyText } from '../utils/copyText';
 import { useToast } from '@/composables/useToast';
 import ComponentesScreen from './ComponentesScreen.vue';
 import TelasScreen from './TelasScreen.vue';
@@ -31,7 +39,7 @@ const CARD_ICONS: Record<ConfiguracoesCardKey, Component> = {
 };
 
 type SectionKey = 'componentes' | 'telas';
-type AuthModalKey = 'auth-forgot' | 'auth-2fa' | 'auth-2fa-setup';
+type AuthModalKey = Exclude<ModalPackageKey, 'nps'>;
 
 const { success } = useToast();
 
@@ -39,6 +47,8 @@ const section = ref<SectionKey | null>(null);
 const hoveredKey = ref<ConfiguracoesCardKey | null>(null);
 const npsOpen = ref(false);
 const authModal = ref<AuthModalKey | null>(null);
+const copiedKey = ref<ConfiguracoesCardKey | null>(null);
+const copyErrorKey = ref<ConfiguracoesCardKey | null>(null);
 
 function openSection(key: ConfiguracoesCardKey) {
   if (key === 'nps') {
@@ -50,6 +60,22 @@ function openSection(key: ConfiguracoesCardKey) {
     return;
   }
   section.value = key;
+}
+
+async function copyPackage(key: ConfiguracoesCardKey) {
+  if (!isModalPackageKey(key)) return;
+  copiedKey.value = null;
+  copyErrorKey.value = null;
+  const md = buildModalPackageMarkdown(key);
+  const ok = await copyText(md);
+  if (ok) {
+    copiedKey.value = key;
+    window.setTimeout(() => {
+      if (copiedKey.value === key) copiedKey.value = null;
+    }, 1800);
+  } else {
+    copyErrorKey.value = key;
+  }
 }
 
 function submitNps(payload: NpsSubmitPayload) {
@@ -98,7 +124,7 @@ function goHub() {
     </div>
 
     <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px">
-      <button
+      <div
         v-for="card in CONFIGURACOES_CARDS"
         :key="card.key"
         class="flex flex-col"
@@ -109,45 +135,119 @@ function goHub() {
           background: 'var(--surface-card)',
           border: `1px solid ${hoveredKey === card.key ? 'rgba(242,125,38,0.30)' : 'var(--border-default)'}`,
           borderRadius: 'var(--radius-xl)',
-          cursor: 'pointer',
           boxShadow: hoveredKey === card.key ? '0 20px 40px -16px rgba(8,60,74,0.10)' : 'none',
           transform: hoveredKey === card.key ? 'translateY(-4px)' : 'translateY(0)',
           transition:
             'transform var(--duration-base) var(--ease-standard), box-shadow var(--duration-base), border-color var(--duration-base)',
         }"
-        @click="openSection(card.key)"
         @mouseenter="hoveredKey = card.key"
         @mouseleave="hoveredKey = null"
       >
-        <div
-          class="flex items-center justify-center"
+        <button
+          type="button"
+          class="flex flex-col"
           style="
-            width: 42px;
-            height: 42px;
-            border-radius: var(--radius-lg);
-            background: var(--accent-bg);
-            color: var(--accent);
+            gap: 14px;
+            text-align: left;
+            padding: 0;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            flex: 1;
+            min-height: 0;
           "
+          @click="openSection(card.key)"
         >
-          <component :is="CARD_ICONS[card.key]" :size="20" />
-        </div>
-        <div>
           <div
+            class="flex items-center justify-center"
             style="
-              font-size: var(--text-sm);
-              font-weight: var(--weight-bold);
-              color: var(--text-strong);
-              margin-bottom: 6px;
+              width: 42px;
+              height: 42px;
+              border-radius: var(--radius-lg);
+              background: var(--accent-bg);
+              color: var(--accent);
             "
           >
-            {{ card.title }}
+            <component :is="CARD_ICONS[card.key]" :size="20" />
           </div>
-          <div style="font-size: var(--text-xs); color: var(--text-muted); line-height: 1.5">
-            {{ card.description }}
+          <div>
+            <div
+              style="
+                font-size: var(--text-sm);
+                font-weight: var(--weight-bold);
+                color: var(--text-strong);
+                margin-bottom: 6px;
+              "
+            >
+              {{ card.title }}
+            </div>
+            <div style="font-size: var(--text-xs); color: var(--text-muted); line-height: 1.5">
+              {{ card.description }}
+            </div>
           </div>
+        </button>
+
+        <div v-if="card.copyable" class="flex items-center" style="gap: 8px; flex-wrap: wrap">
+          <button
+            type="button"
+            class="btn-animated flex items-center"
+            :style="{
+              gap: '6px',
+              height: '34px',
+              padding: '0 12px',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border-default)',
+              cursor: 'pointer',
+              background:
+                copiedKey === card.key
+                  ? 'var(--success-light)'
+                  : copyErrorKey === card.key
+                    ? 'var(--danger-light)'
+                    : 'var(--surface-card)',
+              color:
+                copiedKey === card.key
+                  ? 'var(--success-dark)'
+                  : copyErrorKey === card.key
+                    ? 'var(--danger-dark)'
+                    : 'var(--text-default)',
+              fontSize: 'var(--text-xs)',
+              fontWeight: 'var(--weight-bold)',
+              flexShrink: 0,
+            }"
+            @click.stop="copyPackage(card.key)"
+          >
+            <Check v-if="copiedKey === card.key" :size="14" />
+            <Copy v-else :size="14" />
+            {{
+              copiedKey === card.key
+                ? 'Copiado'
+                : copyErrorKey === card.key
+                  ? 'Falha ao copiar'
+                  : 'Copiar MD + tokens'
+            }}
+          </button>
+          <button
+            type="button"
+            class="btn-animated flex items-center"
+            style="
+              gap: 4px;
+              height: 34px;
+              padding: 0 10px;
+              border: none;
+              background: transparent;
+              cursor: pointer;
+              font-size: var(--text-xs);
+              font-weight: var(--weight-bold);
+              color: var(--accent);
+            "
+            @click.stop="openSection(card.key)"
+          >
+            {{ card.cta }} <ChevronRight :size="14" />
+          </button>
         </div>
-        <div style="flex: 1" />
-        <div
+        <button
+          v-else
+          type="button"
           class="flex items-center"
           :style="{
             gap: '4px',
@@ -158,11 +258,17 @@ function goHub() {
             transform: hoveredKey === card.key ? 'translateY(0)' : 'translateY(4px)',
             transition:
               'opacity var(--duration-base) var(--ease-standard), transform var(--duration-base) var(--ease-standard)',
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+            padding: 0,
+            alignSelf: 'flex-start',
           }"
+          @click="openSection(card.key)"
         >
           {{ card.cta }} <ChevronRight :size="14" />
-        </div>
-      </button>
+        </button>
+      </div>
     </div>
 
     <NpsModal v-if="npsOpen" @close="npsOpen = false" @submit="submitNps" />

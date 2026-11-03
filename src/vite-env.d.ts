@@ -5,6 +5,11 @@ declare module '*.md?raw' {
   export default content;
 }
 
+declare module '*.vue?raw' {
+  const content: string;
+  export default content;
+}
+
 declare module '*minerva-design-tokens.json' {
   const content: Record<string, { declaration: string; resolved: string }>;
   export default content;

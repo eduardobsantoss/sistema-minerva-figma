@@ -11,6 +11,8 @@ export interface ConfiguracoesCard {
   title: string;
   description: string;
   cta: string;
+  /** Cards que abrem modal e também permitem copiar o MD (como em Telas). */
+  copyable?: boolean;
 }
 
 export const CONFIGURACOES_CARDS: ConfiguracoesCard[] = [
@@ -33,7 +35,8 @@ export const CONFIGURACOES_CARDS: ConfiguracoesCard[] = [
     title: 'Pesquisa de usabilidade',
     description:
       'Pesquisa interna: avalie de 0 a 10 a usabilidade do Minerva no seu dia a dia e justifique a nota atribuída.',
-    cta: 'Avaliar agora',
+    cta: 'Abrir modal',
+    copyable: true,
   },
   {
     key: 'auth-forgot',
@@ -41,6 +44,7 @@ export const CONFIGURACOES_CARDS: ConfiguracoesCard[] = [
     description:
       'Modal de recuperação: o usuário informa só o e-mail e recebe a senha temporária por e-mail.',
     cta: 'Abrir modal',
+    copyable: true,
   },
   {
     key: 'auth-2fa',
@@ -48,6 +52,7 @@ export const CONFIGURACOES_CARDS: ConfiguracoesCard[] = [
     description:
       'Modal de entrada com código de 6 dígitos gerado no Microsoft Authenticator.',
     cta: 'Abrir modal',
+    copyable: true,
   },
   {
     key: 'auth-2fa-setup',
@@ -55,5 +60,6 @@ export const CONFIGURACOES_CARDS: ConfiguracoesCard[] = [
     description:
       'Modal de setup: QR Code, chave manual e confirmação do código do autenticador.',
     cta: 'Abrir modal',
+    copyable: true,
   },
 ];
