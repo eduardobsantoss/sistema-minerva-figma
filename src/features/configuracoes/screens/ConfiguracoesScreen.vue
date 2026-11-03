@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { ref, type Component } from 'vue';
-import { Boxes, ChevronRight, MessageSquare, PanelTop } from 'lucide-vue-next';
+import {
+  Boxes,
+  ChevronRight,
+  KeyRound,
+  MessageSquare,
+  PanelTop,
+  QrCode,
+  ShieldCheck,
+} from 'lucide-vue-next';
 import {
   CONFIGURACOES_CARDS,
   type ConfiguracoesCardKey,
@@ -9,24 +17,36 @@ import { useToast } from '@/composables/useToast';
 import ComponentesScreen from './ComponentesScreen.vue';
 import TelasScreen from './TelasScreen.vue';
 import NpsModal, { type NpsSubmitPayload } from '../components/NpsModal.vue';
+import ForgotPasswordModal from '@/features/auth/components/ForgotPasswordModal.vue';
+import TwoFactorAuthModal from '@/features/auth/components/TwoFactorAuthModal.vue';
+import ConfigureTwoFactorModal from '@/features/auth/components/ConfigureTwoFactorModal.vue';
 
 const CARD_ICONS: Record<ConfiguracoesCardKey, Component> = {
   componentes: Boxes,
   telas: PanelTop,
   nps: MessageSquare,
+  'auth-forgot': KeyRound,
+  'auth-2fa': ShieldCheck,
+  'auth-2fa-setup': QrCode,
 };
 
-type SectionKey = Exclude<ConfiguracoesCardKey, 'nps'>;
+type SectionKey = 'componentes' | 'telas';
+type AuthModalKey = 'auth-forgot' | 'auth-2fa' | 'auth-2fa-setup';
 
 const { success } = useToast();
 
 const section = ref<SectionKey | null>(null);
 const hoveredKey = ref<ConfiguracoesCardKey | null>(null);
 const npsOpen = ref(false);
+const authModal = ref<AuthModalKey | null>(null);
 
 function openSection(key: ConfiguracoesCardKey) {
   if (key === 'nps') {
     npsOpen.value = true;
+    return;
+  }
+  if (key === 'auth-forgot' || key === 'auth-2fa' || key === 'auth-2fa-setup') {
+    authModal.value = key;
     return;
   }
   section.value = key;
@@ -146,5 +166,21 @@ function goHub() {
     </div>
 
     <NpsModal v-if="npsOpen" @close="npsOpen = false" @submit="submitNps" />
+    <ForgotPasswordModal
+      v-if="authModal === 'auth-forgot'"
+      initial-email="exemplo@empresa.com.br"
+      @close="authModal = null"
+    />
+    <TwoFactorAuthModal
+      v-if="authModal === 'auth-2fa'"
+      @close="authModal = null"
+      @verify="authModal = null"
+    />
+    <ConfigureTwoFactorModal
+      v-if="authModal === 'auth-2fa-setup'"
+      account-label="usuario@empresa.com.br"
+      @close="authModal = null"
+      @activate="authModal = null"
+    />
   </div>
 </template>

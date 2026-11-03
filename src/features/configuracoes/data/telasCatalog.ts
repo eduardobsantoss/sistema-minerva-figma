@@ -33,7 +33,7 @@ export const TELAS_DISSECCOES: TelaDisseccao[] = [
   {
     key: 'shell',
     title: 'Login / Shell / Home',
-    description: 'Login, topbar, sidebar, home, toasts, alerts e tela de erro HTTP.',
+    description: 'Login, 2FA (entrar/configurar QR), esqueci a senha, shell, toasts, alerts e erro HTTP.',
     cta: 'Abrir dissecção',
   },
   {

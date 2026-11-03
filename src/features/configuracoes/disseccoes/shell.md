@@ -1,6 +1,6 @@
 # Login / Shell / Home
 
-> Shell global do Minerva: login, topbar, sidebar, home (DashboardView), ModuleCard, toasts, alerts e tela de erro.
+> Shell global do Minerva: login, topbar, sidebar, home (DashboardView), ModuleCard, toasts, alerts, tela de erro e modais de auth (esqueci a senha / 2FA / configurar QR).
 > Preview em `src/features/shell/`; source canônico nos caminhos originais.
 > Handoff: `docs/handoff/login-header-sidebar.md` · `docs/handoff/layout-shell.md`.
 
@@ -14,6 +14,9 @@ import { ref, computed, type CSSProperties } from 'vue';
 import { Mail, Lock, Eye, EyeOff, ChevronRight } from 'lucide-vue-next';
 import ImageWithFallback from '@/components/figma/ImageWithFallback.vue';
 import logoSrc from '@/assets/logo-azul-sem-bg.png';
+import ForgotPasswordModal from '../components/ForgotPasswordModal.vue';
+import TwoFactorAuthModal from '../components/TwoFactorAuthModal.vue';
+import ConfigureTwoFactorModal from '../components/ConfigureTwoFactorModal.vue';
 
 const HERO_IMG =
   'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2000&auto=format&fit=crop';
@@ -24,7 +27,33 @@ const showPwd = ref(false);
 const focused = ref<string | null>(null);
 const email = ref('');
 const password = ref('');
+const showForgot = ref(false);
+const showConfigure = ref(false);
+const showTwoFactor = ref(false);
+/** Mock: primeiro acesso pede configuração do autenticador; depois só o código. */
+const twoFactorConfigured = ref(false);
+
 function handle() {
+  if (twoFactorConfigured.value) {
+    showTwoFactor.value = true;
+  } else {
+    showConfigure.value = true;
+  }
+}
+
+function openForgot(e: Event) {
+  e.preventDefault();
+  showForgot.value = true;
+}
+
+function completeConfigure() {
+  showConfigure.value = false;
+  twoFactorConfigured.value = true;
+  showTwoFactor.value = true;
+}
+
+function completeTwoFactor() {
+  showTwoFactor.value = false;
   emit('submit');
 }
 
@@ -182,6 +211,7 @@ const submitButtonStyle = {
                 font-weight: var(--weight-bold);
                 text-decoration: none;
               "
+              @click="openForgot"
             >
               Esqueceu a senha?
             </a>
@@ -356,6 +386,23 @@ const submitButtonStyle = {
         </p>
       </div>
     </div>
+
+    <ForgotPasswordModal
+      v-if="showForgot"
+      :initial-email="email"
+      @close="showForgot = false"
+    />
+    <ConfigureTwoFactorModal
+      v-if="showConfigure"
+      :account-label="email.trim() || 'usuario@empresa.com.br'"
+      @close="showConfigure = false"
+      @activate="completeConfigure"
+    />
+    <TwoFactorAuthModal
+      v-if="showTwoFactor"
+      @close="showTwoFactor = false"
+      @verify="completeTwoFactor"
+    />
   </div>
 </template>
 ```
@@ -757,7 +804,6 @@ import {
   LayoutDashboard,
   Landmark,
   Briefcase,
-  Database,
   Users,
   FileText,
   Settings,
@@ -781,7 +827,10 @@ import {
   Package,
   Search,
   Radar,
+  ShieldAlert,
   Banknote,
+  History,
+  Phone,
 } from "lucide-vue-next";
 import gciLogoMark from "@/assets/gci-logo-mark.png";
 import gciLogoFull from "@/assets/gci-logo-full.png";
@@ -802,7 +851,7 @@ interface NavItem {
 }
 
 const items: NavItem[] = [
-  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { key: "dashboard", label: "Home", icon: LayoutDashboard },
   {
     key: "solicitacoes",
     label: "Solicitação de Operação",
@@ -866,19 +915,29 @@ const items: NavItem[] = [
       { key: "cobranca-dashboard", label: "Dashboard", icon: Gauge },
       { key: "cobranca-titulos", label: "Títulos", icon: FileText },
       {
-        key: "cobranca-notif",
-        label: "Notificações de Cobrança",
-        icon: BellRing,
+        key: "cobranca-notif-cessao",
+        label: "Notificações de cessão",
+        icon: ScrollText,
       },
       {
-        key: "cobranca-notif-cessao",
-        label: "Notificações de Cessão",
-        icon: ScrollText,
+        key: "cobranca-notif",
+        label: "Notf. de Régua de Cobrança",
+        icon: BellRing,
       },
       {
         key: "cobranca-resultado-notif",
         label: "Resultado de Notificações",
         icon: Layers,
+      },
+      {
+        key: "cobranca-historico-notif",
+        label: "Histórico de Notificações",
+        icon: History,
+      },
+      {
+        key: "cobranca-preventiva",
+        label: "Cobrança Preventiva",
+        icon: Phone,
       },
       { key: "cobranca-rel", label: "Relatórios", icon: BarChart3 },
     ],
@@ -891,6 +950,7 @@ const items: NavItem[] = [
       { key: "risco-dashboard", label: "Dashboard", icon: Gauge },
       { key: "risco-grupos", label: "Grupos Empresariais", icon: Building2 },
       { key: "risco-ratings", label: "Ratings", icon: Layers },
+      { key: "risco-taxa-operacao", label: "Taxa de Operação", icon: Percent },
       {
         key: "risco-agrupamentos",
         label: "Agrupamentos de Limite",
@@ -900,10 +960,34 @@ const items: NavItem[] = [
       { key: "risco-rel", label: "Relatórios", icon: BarChart3 },
     ],
   },
+  {
+    key: "gerencial",
+    label: "Gerencial",
+    icon: BarChart3,
+    children: [
+      { key: "gerencial", label: "Gerencial", icon: BarChart3 },
+      { key: "gerencial-pos", label: "Monitoramento pós desembolso", icon: Radar },
+      { key: "gerencial-veiculos", label: "Parametrização de veículos", icon: Settings },
+      { key: "gerencial-relatorios", label: "Relatórios", icon: BarChart3 },
+    ],
+  },
+  {
+    key: "sentinela",
+    label: "Sentinela",
+    icon: ShieldAlert,
+    children: [
+      { key: "sentinela", label: "Visão geral", icon: Gauge },
+      { key: "sentinela-credito", label: "Crédito", icon: AlertCircle },
+      { key: "sentinela-contraparte", label: "Cedente/Sacado", icon: Users },
+      // Consulta em lote foi para Risco > Consultas (subida de lista).
+      // { key: "sentinela-lote", label: "Consulta em lote", icon: Search },
+    ],
+  },
   { key: "grupos-cadastro", label: "Grupos Empresariais", icon: Building2 },
   { key: "monitoramento", label: "Monitoramento", icon: Radar },
-  { key: "passivo", label: "Passivo", icon: Database },
-  { key: "passivo-novo", label: "Passivo (novo)", icon: Banknote },
+  // Passivo (antigo) — oculto; componentes ainda em @/features/passivo
+  // { key: "passivo-antigo", label: "Passivo (antigo)", icon: Database },
+  { key: "passivo", label: "Passivo", icon: Banknote },
   { key: "colab", label: "Colaboradores", icon: Users },
   { key: "rel", label: "Relatórios", icon: FileText },
   { key: "conf", label: "Configurações", icon: Settings },
@@ -1876,5 +1960,600 @@ const tone = computed(() => {
       <X :size="14" :stroke-width="2.25" />
     </button>
   </div>
+</template>
+```
+
+## Auth
+
+### ForgotPasswordModal
+
+```vue
+<script setup lang="ts">
+import { computed, ref, type CSSProperties } from 'vue';
+import { Mail, CheckCircle2 } from 'lucide-vue-next';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
+
+const props = withDefaults(
+  defineProps<{
+    /** Pré-preenche o e-mail (ex.: valor já digitado no login). */
+    initialEmail?: string;
+  }>(),
+  { initialEmail: '' },
+);
+
+const emit = defineEmits<{
+  close: [];
+  /** Disparado ao enviar o e-mail (mock). */
+  submit: [email: string];
+}>();
+
+const step = ref<'form' | 'sent'>('form');
+const email = ref(props.initialEmail);
+const focused = ref(false);
+const submittedEmail = ref('');
+
+const canSubmit = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()));
+
+const inputStyle = computed((): CSSProperties => ({
+  background: 'var(--surface-sunken)',
+  borderWidth: 1,
+  borderStyle: 'solid',
+  borderColor: focused.value ? 'var(--gci-base)' : 'var(--border-default)',
+  boxShadow: focused.value ? '0 0 0 4px rgba(8,60,74,0.06)' : 'none',
+  borderRadius: 'var(--radius-xl)',
+  height: '50px',
+  color: 'var(--text-strong)',
+  width: '100%',
+  paddingLeft: '44px',
+  paddingRight: '16px',
+  outline: 'none',
+  fontSize: 'var(--text-base)',
+  transition: 'box-shadow var(--duration-base), border-color var(--duration-base)',
+}));
+
+function handleSubmit() {
+  if (!canSubmit.value) return;
+  const value = email.value.trim();
+  submittedEmail.value = value;
+  emit('submit', value);
+  step.value = 'sent';
+}
+</script>
+
+<template>
+  <AdminModal
+    size="sm"
+    eyebrow="Acesso"
+    :title="step === 'form' ? 'Esqueceu a senha?' : 'E-mail enviado'"
+    :subtitle="
+      step === 'form'
+        ? 'Informe o e-mail corporativo. Enviaremos uma nova senha temporária.'
+        : undefined
+    "
+    :footer-align="step === 'sent' ? 'end' : 'between'"
+    @close="emit('close')"
+  >
+    <template v-if="step === 'form'">
+      <label
+        style="
+          display: block;
+          font-size: 11px;
+          font-weight: var(--weight-bold);
+          color: var(--neutral-400);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          margin-bottom: 8px;
+        "
+      >
+        E-mail corporativo
+      </label>
+      <div class="relative">
+        <Mail
+          :size="18"
+          style="
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--neutral-400);
+          "
+        />
+        <input
+          v-model="email"
+          type="email"
+          autocomplete="email"
+          placeholder="exemplo@empresa.com.br"
+          :style="inputStyle"
+          @focus="focused = true"
+          @blur="focused = false"
+          @keydown.enter.prevent="handleSubmit"
+        />
+      </div>
+    </template>
+
+    <template v-else>
+      <div class="flex flex-col items-center" style="text-align: center; padding: 8px 0 4px">
+        <div
+          class="flex items-center justify-center"
+          style="
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-full);
+            background: var(--success-light);
+            color: var(--success-base);
+            margin-bottom: 16px;
+          "
+        >
+          <CheckCircle2 :size="28" :stroke-width="2" />
+        </div>
+        <p
+          style="
+            margin: 0;
+            font-size: var(--text-sm);
+            color: var(--text-default);
+            line-height: var(--leading-relaxed);
+            max-width: 360px;
+          "
+        >
+          Se existir uma conta para
+          <strong style="color: var(--text-strong); font-weight: var(--weight-bold)">{{
+            submittedEmail
+          }}</strong
+          >, você receberá uma nova senha temporária por e-mail em instantes.
+        </p>
+        <p
+          style="
+            margin: 12px 0 0;
+            font-size: var(--text-xs);
+            color: var(--text-muted);
+            line-height: var(--leading-relaxed);
+          "
+        >
+          Verifique também a pasta de spam. Em caso de dúvidas, fale com a Equipe de TI.
+        </p>
+      </div>
+    </template>
+
+    <template #footer>
+      <template v-if="step === 'form'">
+        <AdminButton variant="ghost" size="large" @click="emit('close')">Cancelar</AdminButton>
+        <AdminButton size="large" :disabled="!canSubmit" @click="handleSubmit">
+          Enviar nova senha
+        </AdminButton>
+      </template>
+      <AdminButton v-else size="large" @click="emit('close')">Voltar ao login</AdminButton>
+    </template>
+  </AdminModal>
+</template>
+```
+
+### TwoFactorAuthModal
+
+```vue
+<script setup lang="ts">
+import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue';
+import { ShieldCheck } from 'lucide-vue-next';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
+
+const CODE_LENGTH = 6;
+
+withDefaults(
+  defineProps<{
+    /** Nome do app autenticador exibido no subtítulo. */
+    authenticatorApp?: string;
+  }>(),
+  { authenticatorApp: 'Microsoft Authenticator' },
+);
+
+const emit = defineEmits<{
+  close: [];
+  /** Código completo (6 dígitos). */
+  verify: [code: string];
+}>();
+
+const digits = ref<string[]>(Array.from({ length: CODE_LENGTH }, () => ''));
+const focusedIndex = ref(0);
+const inputsRef = useTemplateRef<HTMLInputElement[]>('inputs');
+
+const code = computed(() => digits.value.join(''));
+const canVerify = computed(() => code.value.length === CODE_LENGTH && /^\d{6}$/.test(code.value));
+
+onMounted(() => {
+  focusAt(0);
+});
+
+function focusAt(index: number) {
+  focusedIndex.value = index;
+  nextTick(() => {
+    const el = inputsRef.value?.[index];
+    el?.focus();
+    el?.select();
+  });
+}
+
+function setDigit(index: number, value: string) {
+  const cleaned = value.replace(/\D/g, '');
+  if (!cleaned) {
+    digits.value[index] = '';
+    return;
+  }
+  for (let i = 0; i < cleaned.length && index + i < CODE_LENGTH; i++) {
+    digits.value[index + i] = cleaned[i]!;
+  }
+  focusAt(Math.min(index + cleaned.length, CODE_LENGTH - 1));
+}
+
+function onKeydown(index: number, e: KeyboardEvent) {
+  if (e.key === 'Backspace') {
+    e.preventDefault();
+    if (digits.value[index]) {
+      digits.value[index] = '';
+    } else if (index > 0) {
+      digits.value[index - 1] = '';
+      focusAt(index - 1);
+    }
+    return;
+  }
+  if (e.key === 'ArrowLeft' && index > 0) {
+    e.preventDefault();
+    focusAt(index - 1);
+  }
+  if (e.key === 'ArrowRight' && index < CODE_LENGTH - 1) {
+    e.preventDefault();
+    focusAt(index + 1);
+  }
+  if (e.key === 'Enter' && canVerify.value) {
+    e.preventDefault();
+    handleVerify();
+  }
+}
+
+function onPaste(e: ClipboardEvent) {
+  e.preventDefault();
+  const pasted = (e.clipboardData?.getData('text') ?? '').replace(/\D/g, '').slice(0, CODE_LENGTH);
+  if (!pasted) return;
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    digits.value[i] = pasted[i] ?? '';
+  }
+  focusAt(Math.min(pasted.length, CODE_LENGTH - 1));
+}
+
+function handleVerify() {
+  if (!canVerify.value) return;
+  emit('verify', code.value);
+}
+</script>
+
+<template>
+  <AdminModal
+    size="sm"
+    eyebrow="Acesso"
+    title="Autenticação em dois fatores"
+    :subtitle="`Digite o código de ${CODE_LENGTH} dígitos gerado no ${authenticatorApp}.`"
+    @close="emit('close')"
+  >
+    <div class="flex flex-col items-center" style="gap: 20px">
+      <div
+        class="flex items-center justify-center"
+        style="
+          width: 48px;
+          height: 48px;
+          border-radius: var(--radius-xl);
+          background: var(--gci-light);
+          color: var(--gci-base);
+        "
+      >
+        <ShieldCheck :size="24" :stroke-width="2" />
+      </div>
+
+      <div
+        class="flex items-center justify-center"
+        style="gap: 8px"
+        role="group"
+        aria-label="Código de verificação"
+        @paste="onPaste"
+      >
+        <input
+          v-for="(_, index) in digits"
+          :key="index"
+          ref="inputs"
+          :value="digits[index]"
+          type="text"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          maxlength="1"
+          :aria-label="`Dígito ${index + 1}`"
+          :style="{
+            width: '48px',
+            height: '56px',
+            textAlign: 'center',
+            fontSize: 'var(--text-xl)',
+            fontWeight: 'var(--weight-bold)',
+            color: 'var(--text-strong)',
+            background: 'var(--surface-sunken)',
+            borderWidth: 1,
+            borderStyle: 'solid',
+            borderColor: focusedIndex === index ? 'var(--gci-base)' : 'var(--border-default)',
+            boxShadow: focusedIndex === index ? '0 0 0 4px rgba(8,60,74,0.06)' : 'none',
+            borderRadius: 'var(--radius-xl)',
+            outline: 'none',
+            transition: 'box-shadow var(--duration-base), border-color var(--duration-base)',
+          }"
+          @focus="focusedIndex = index"
+          @input="setDigit(index, ($event.target as HTMLInputElement).value)"
+          @keydown="onKeydown(index, $event)"
+        />
+      </div>
+    </div>
+
+    <template #footer>
+      <AdminButton variant="ghost" size="large" @click="emit('close')">Cancelar</AdminButton>
+      <AdminButton size="large" :disabled="!canVerify" @click="handleVerify">Confirmar</AdminButton>
+    </template>
+  </AdminModal>
+</template>
+```
+
+### ConfigureTwoFactorModal
+
+```vue
+<script setup lang="ts">
+import { computed, nextTick, ref, useTemplateRef } from 'vue';
+import { Check, Copy } from 'lucide-vue-next';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
+import TotpQrPlaceholder from './TotpQrPlaceholder.vue';
+
+const CODE_LENGTH = 6;
+
+/** Segredo mock (TOTP) — em produção viria da API. */
+const DEFAULT_SECRET = 'CGZJSIHEKA4HWQVZWTOIOPQWZFZSWF7Z';
+
+const props = withDefaults(
+  defineProps<{
+    secret?: string;
+    accountLabel?: string;
+    issuer?: string;
+    authenticatorApp?: string;
+  }>(),
+  {
+    secret: DEFAULT_SECRET,
+    accountLabel: 'usuario@empresa.com.br',
+    issuer: 'Minerva',
+    authenticatorApp: 'Microsoft Authenticator',
+  },
+);
+
+const emit = defineEmits<{
+  close: [];
+  activate: [code: string];
+}>();
+
+const digits = ref<string[]>(Array.from({ length: CODE_LENGTH }, () => ''));
+const focusedIndex = ref<number | null>(null);
+const copied = ref(false);
+const inputsRef = useTemplateRef<HTMLInputElement[]>('inputs');
+
+const code = computed(() => digits.value.join(''));
+const canActivate = computed(() => code.value.length === CODE_LENGTH && /^\d{6}$/.test(code.value));
+
+function focusAt(index: number) {
+  focusedIndex.value = index;
+  nextTick(() => {
+    const el = inputsRef.value?.[index];
+    el?.focus();
+    el?.select();
+  });
+}
+
+function setDigit(index: number, value: string) {
+  const cleaned = value.replace(/\D/g, '');
+  if (!cleaned) {
+    digits.value[index] = '';
+    return;
+  }
+  for (let i = 0; i < cleaned.length && index + i < CODE_LENGTH; i++) {
+    digits.value[index + i] = cleaned[i]!;
+  }
+  focusAt(Math.min(index + cleaned.length, CODE_LENGTH - 1));
+}
+
+function onKeydown(index: number, e: KeyboardEvent) {
+  if (e.key === 'Backspace') {
+    e.preventDefault();
+    if (digits.value[index]) {
+      digits.value[index] = '';
+    } else if (index > 0) {
+      digits.value[index - 1] = '';
+      focusAt(index - 1);
+    }
+    return;
+  }
+  if (e.key === 'ArrowLeft' && index > 0) {
+    e.preventDefault();
+    focusAt(index - 1);
+  }
+  if (e.key === 'ArrowRight' && index < CODE_LENGTH - 1) {
+    e.preventDefault();
+    focusAt(index + 1);
+  }
+  if (e.key === 'Enter' && canActivate.value) {
+    e.preventDefault();
+    handleActivate();
+  }
+}
+
+function onPaste(e: ClipboardEvent) {
+  e.preventDefault();
+  const pasted = (e.clipboardData?.getData('text') ?? '').replace(/\D/g, '').slice(0, CODE_LENGTH);
+  if (!pasted) return;
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    digits.value[i] = pasted[i] ?? '';
+  }
+  focusAt(Math.min(pasted.length, CODE_LENGTH - 1));
+}
+
+async function copySecret() {
+  try {
+    await navigator.clipboard.writeText(props.secret);
+  } catch {
+    /* ignore */
+  }
+  copied.value = true;
+  window.setTimeout(() => {
+    copied.value = false;
+  }, 1500);
+}
+
+function handleActivate() {
+  if (!canActivate.value) return;
+  emit('activate', code.value);
+}
+</script>
+
+<template>
+  <AdminModal
+    :width="480"
+    eyebrow="Acesso"
+    title="Configurar autenticação em dois fatores"
+    :subtitle="`Escaneie o QR Code no ${authenticatorApp} ou use a chave manual.`"
+    @close="emit('close')"
+  >
+    <div class="flex flex-col items-center" style="gap: 20px">
+      <div
+        style="
+          padding: 12px;
+          background: var(--surface-card);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-xl);
+        "
+      >
+        <TotpQrPlaceholder :seed="`${secret}:${accountLabel}`" :size="180" />
+      </div>
+
+      <div style="width: 100%">
+        <div
+          style="
+            font-size: 11px;
+            font-weight: var(--weight-bold);
+            color: var(--neutral-400);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+          "
+        >
+          Chave manual
+        </div>
+        <div
+          class="flex items-center"
+          style="
+            gap: 8px;
+            padding: 12px 14px;
+            background: var(--surface-sunken);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-xl);
+          "
+        >
+          <code
+            style="
+              flex: 1;
+              min-width: 0;
+              font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+              font-size: var(--text-xs);
+              color: var(--text-strong);
+              letter-spacing: 0.04em;
+              word-break: break-all;
+              line-height: var(--leading-relaxed);
+            "
+            >{{ secret }}</code
+          >
+          <button
+            type="button"
+            :aria-label="copied ? 'Copiado' : 'Copiar chave'"
+            :title="copied ? 'Copiado!' : 'Copiar'"
+            style="
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              width: 32px;
+              height: 32px;
+              flex-shrink: 0;
+              border: 1px solid var(--border-default);
+              border-radius: var(--radius-lg);
+              background: var(--surface-card);
+              color: var(--text-muted);
+              cursor: pointer;
+              padding: 0;
+            "
+            @click="copySecret"
+          >
+            <Check v-if="copied" :size="14" style="color: var(--success-base)" />
+            <Copy v-else :size="14" />
+          </button>
+        </div>
+      </div>
+
+      <div style="width: 100%">
+        <div
+          style="
+            font-size: 11px;
+            font-weight: var(--weight-bold);
+            color: var(--neutral-400);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+            text-align: center;
+          "
+        >
+          Código de {{ CODE_LENGTH }} dígitos
+        </div>
+        <div
+          class="flex items-center justify-center"
+          style="gap: 8px"
+          role="group"
+          aria-label="Código de verificação"
+          @paste="onPaste"
+        >
+          <input
+            v-for="(_, index) in digits"
+            :key="index"
+            ref="inputs"
+            :value="digits[index]"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="1"
+            :aria-label="`Dígito ${index + 1}`"
+            :style="{
+              width: '44px',
+              height: '52px',
+              textAlign: 'center',
+              fontSize: 'var(--text-xl)',
+              fontWeight: 'var(--weight-bold)',
+              color: 'var(--text-strong)',
+              background: 'var(--surface-sunken)',
+              borderWidth: 1,
+              borderStyle: 'solid',
+              borderColor: focusedIndex === index ? 'var(--gci-base)' : 'var(--border-default)',
+              boxShadow: focusedIndex === index ? '0 0 0 4px rgba(8,60,74,0.06)' : 'none',
+              borderRadius: 'var(--radius-xl)',
+              outline: 'none',
+              transition: 'box-shadow var(--duration-base), border-color var(--duration-base)',
+            }"
+            @focus="focusedIndex = index"
+            @input="setDigit(index, ($event.target as HTMLInputElement).value)"
+            @keydown="onKeydown(index, $event)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
+      <AdminButton variant="ghost" size="large" @click="emit('close')">Cancelar</AdminButton>
+      <AdminButton size="large" :disabled="!canActivate" @click="handleActivate">Ativar</AdminButton>
+    </template>
+  </AdminModal>
 </template>
 ```

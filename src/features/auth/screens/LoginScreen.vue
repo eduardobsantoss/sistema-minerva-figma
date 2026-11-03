@@ -3,6 +3,9 @@ import { ref, computed, type CSSProperties } from 'vue';
 import { Mail, Lock, Eye, EyeOff, ChevronRight } from 'lucide-vue-next';
 import ImageWithFallback from '@/components/figma/ImageWithFallback.vue';
 import logoSrc from '@/assets/logo-azul-sem-bg.png';
+import ForgotPasswordModal from '../components/ForgotPasswordModal.vue';
+import TwoFactorAuthModal from '../components/TwoFactorAuthModal.vue';
+import ConfigureTwoFactorModal from '../components/ConfigureTwoFactorModal.vue';
 
 const HERO_IMG =
   'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2000&auto=format&fit=crop';
@@ -13,7 +16,33 @@ const showPwd = ref(false);
 const focused = ref<string | null>(null);
 const email = ref('');
 const password = ref('');
+const showForgot = ref(false);
+const showConfigure = ref(false);
+const showTwoFactor = ref(false);
+/** Mock: primeiro acesso pede configuração do autenticador; depois só o código. */
+const twoFactorConfigured = ref(false);
+
 function handle() {
+  if (twoFactorConfigured.value) {
+    showTwoFactor.value = true;
+  } else {
+    showConfigure.value = true;
+  }
+}
+
+function openForgot(e: Event) {
+  e.preventDefault();
+  showForgot.value = true;
+}
+
+function completeConfigure() {
+  showConfigure.value = false;
+  twoFactorConfigured.value = true;
+  showTwoFactor.value = true;
+}
+
+function completeTwoFactor() {
+  showTwoFactor.value = false;
   emit('submit');
 }
 
@@ -171,6 +200,7 @@ const submitButtonStyle = {
                 font-weight: var(--weight-bold);
                 text-decoration: none;
               "
+              @click="openForgot"
             >
               Esqueceu a senha?
             </a>
@@ -345,5 +375,22 @@ const submitButtonStyle = {
         </p>
       </div>
     </div>
+
+    <ForgotPasswordModal
+      v-if="showForgot"
+      :initial-email="email"
+      @close="showForgot = false"
+    />
+    <ConfigureTwoFactorModal
+      v-if="showConfigure"
+      :account-label="email.trim() || 'usuario@empresa.com.br'"
+      @close="showConfigure = false"
+      @activate="completeConfigure"
+    />
+    <TwoFactorAuthModal
+      v-if="showTwoFactor"
+      @close="showTwoFactor = false"
+      @verify="completeTwoFactor"
+    />
   </div>
 </template>

@@ -1,4 +1,10 @@
-export type ConfiguracoesCardKey = 'componentes' | 'telas' | 'nps';
+export type ConfiguracoesCardKey =
+  | 'componentes'
+  | 'telas'
+  | 'nps'
+  | 'auth-forgot'
+  | 'auth-2fa'
+  | 'auth-2fa-setup';
 
 export interface ConfiguracoesCard {
   key: ConfiguracoesCardKey;
@@ -28,5 +34,26 @@ export const CONFIGURACOES_CARDS: ConfiguracoesCard[] = [
     description:
       'Pesquisa interna: avalie de 0 a 10 a usabilidade do Minerva no seu dia a dia e justifique a nota atribuída.',
     cta: 'Avaliar agora',
+  },
+  {
+    key: 'auth-forgot',
+    title: 'Esqueceu a senha?',
+    description:
+      'Modal de recuperação: o usuário informa só o e-mail e recebe a senha temporária por e-mail.',
+    cta: 'Abrir modal',
+  },
+  {
+    key: 'auth-2fa',
+    title: 'Autenticação em dois fatores',
+    description:
+      'Modal de entrada com código de 6 dígitos gerado no Microsoft Authenticator.',
+    cta: 'Abrir modal',
+  },
+  {
+    key: 'auth-2fa-setup',
+    title: 'Configurar 2FA (QR Code)',
+    description:
+      'Modal de setup: QR Code, chave manual e confirmação do código do autenticador.',
+    cta: 'Abrir modal',
   },
 ];

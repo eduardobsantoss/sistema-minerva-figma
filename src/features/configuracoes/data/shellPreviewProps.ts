@@ -24,6 +24,36 @@ export function resolvePreview(relPath: string, name: string): PreviewConfig {
     };
   }
 
+  if (/ForgotPasswordModal\.vue$/i.test(path)) {
+    return {
+      frame: 'modal',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ForgotPasswordModal from '@/features/auth/components/ForgotPasswordModal.vue';\n\nconst open = ref(true);`,
+        `  <ForgotPasswordModal\n    v-if="open"\n    initial-email="exemplo@empresa.com.br"\n    @close="open = false"\n  />`,
+      ),
+    };
+  }
+
+  if (/TwoFactorAuthModal\.vue$/i.test(path)) {
+    return {
+      frame: 'modal',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport TwoFactorAuthModal from '@/features/auth/components/TwoFactorAuthModal.vue';\n\nconst open = ref(true);`,
+        `  <TwoFactorAuthModal\n    v-if="open"\n    @close="open = false"\n    @verify="open = false"\n  />`,
+      ),
+    };
+  }
+
+  if (/ConfigureTwoFactorModal\.vue$/i.test(path)) {
+    return {
+      frame: 'modal',
+      example: exampleBlock(
+        `import { ref } from 'vue';\nimport ConfigureTwoFactorModal from '@/features/auth/components/ConfigureTwoFactorModal.vue';\n\nconst open = ref(true);`,
+        `  <ConfigureTwoFactorModal\n    v-if="open"\n    account-label="usuario@empresa.com.br"\n    @close="open = false"\n    @activate="open = false"\n  />`,
+      ),
+    };
+  }
+
   if (/DashboardView\.vue$/i.test(path)) {
     return {
       frame: 'wide',

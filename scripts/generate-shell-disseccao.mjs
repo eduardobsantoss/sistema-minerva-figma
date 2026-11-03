@@ -74,6 +74,27 @@ const COMPONENTS = [
     path: 'components/Alert.vue',
     sourceFile: 'src/components/feedback/Alert.vue',
   },
+  {
+    section: 'Auth',
+    id: 'components__ForgotPasswordModal',
+    name: 'ForgotPasswordModal',
+    path: 'components/ForgotPasswordModal.vue',
+    sourceFile: 'src/features/auth/components/ForgotPasswordModal.vue',
+  },
+  {
+    section: 'Auth',
+    id: 'components__TwoFactorAuthModal',
+    name: 'TwoFactorAuthModal',
+    path: 'components/TwoFactorAuthModal.vue',
+    sourceFile: 'src/features/auth/components/TwoFactorAuthModal.vue',
+  },
+  {
+    section: 'Auth',
+    id: 'components__ConfigureTwoFactorModal',
+    name: 'ConfigureTwoFactorModal',
+    path: 'components/ConfigureTwoFactorModal.vue',
+    sourceFile: 'src/features/auth/components/ConfigureTwoFactorModal.vue',
+  },
 ];
 
 function readSource(relFromRoot) {
@@ -85,7 +106,7 @@ const title = 'Login / Shell / Home';
 const lines = [
   `# ${title}`,
   '',
-  '> Shell global do Minerva: login, topbar, sidebar, home (DashboardView), ModuleCard, toasts, alerts e tela de erro.',
+  '> Shell global do Minerva: login, topbar, sidebar, home (DashboardView), ModuleCard, toasts, alerts, tela de erro e modais de auth (esqueci a senha / 2FA / configurar QR).',
   '> Preview em `src/features/shell/`; source canônico nos caminhos originais.',
   '> Handoff: `docs/handoff/login-header-sidebar.md` · `docs/handoff/layout-shell.md`.',
   '',
