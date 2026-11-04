@@ -7,6 +7,7 @@
 > - [relatorio-pedidos.md](./relatorio-pedidos.md)
 > - [taxas-veiculos.md](./taxas-veiculos.md)
 > - [validacoes-config.md](./validacoes-config.md)
+> - [desembolso-cliente.md](./desembolso-cliente.md)
 > - [novo-pedido.md](./novo-pedido.md) — wizard Novo Pedido (pixel-perfect)
 
 ---

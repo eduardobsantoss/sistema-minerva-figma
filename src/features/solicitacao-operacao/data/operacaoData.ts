@@ -61,6 +61,11 @@ export interface Solicitacao {
   percSeguro?: number;
   valorSeguro?: number;
   quitacaoVencidos?: boolean;
+  /**
+   * Esteira Cliente em Desembolso do Cliente: quando false, as etapas BMP
+   * não existem neste pedido. Ausente = passa pelo BMP.
+   */
+  possuiBmp?: boolean;
 }
 
 /* ─── Tipos auxiliares da tela de detalhe (somente exibição) ──────── */
@@ -877,6 +882,28 @@ export const solicitacoes: Solicitacao[] = [
     esteira: 'CLIENTE', tipoOperacao: 'Aquisição', grupoEmpresarial: 'Lavoro',
     abertura: '2026-05-12', tempoTotalHoras: 960, tempoEtapaHoras: 30, slaEtapaHoras: 48,
     taxa: 1.85, gerente: 'Fernanda Lima', atendente: 'Eduardo Resende Mota',
+  },
+  {
+    id: '#1403', cedente: 'Agro Serra Dourada', tipoContrato: 'CPR-F', validacao: 'VALIDO',
+    valor: 3_150_000, vinculo: 'Grupo Ceres', veiculo: 'Ceres Investimentos', etapa: 'DESEMBOLSO_CLIENTE',
+    esteira: 'CLIENTE', tipoOperacao: 'Aquisição', grupoEmpresarial: 'Grupo Ceres',
+    abertura: '2026-05-20', tempoTotalHoras: 880, tempoEtapaHoras: 18, slaEtapaHoras: 48,
+    taxa: 1.96, gerente: 'Ana Martins', atendente: 'Juliana Prado',
+  },
+  {
+    id: '#1404', cedente: 'Fazendas União LTDA', tipoContrato: 'CCB', validacao: 'VALIDO',
+    valor: 980_000, vinculo: 'SLC Agrícola', veiculo: 'Ceres Investimentos', etapa: 'DESEMBOLSO_CLIENTE',
+    esteira: 'CLIENTE', tipoOperacao: 'Desconto', grupoEmpresarial: 'SLC Agrícola',
+    abertura: '2026-05-28', tempoTotalHoras: 740, tempoEtapaHoras: 40, slaEtapaHoras: 48,
+    taxa: 1.88, gerente: 'Carlos Eduardo', atendente: 'Marcos Vinícius',
+    possuiBmp: false,
+  },
+  {
+    id: '#1405', cedente: 'Grãos do Cerrado S/A', tipoContrato: 'NC', validacao: 'INVALIDO',
+    valor: 5_400_000, vinculo: '', veiculo: 'CRA Ceres Agro', etapa: 'DESEMBOLSO_CLIENTE',
+    esteira: 'CLIENTE', tipoOperacao: 'Contrato NC', grupoEmpresarial: 'Grupo Ceres',
+    abertura: '2026-06-01', tempoTotalHoras: 620, tempoEtapaHoras: 8, slaEtapaHoras: 48,
+    taxa: 2.02, gerente: 'Fernanda Lima', atendente: 'Patrícia Gomes',
   },
   {
     id: '#1401', cedente: 'Cooperativa Integrada', tipoContrato: 'CCB', validacao: 'VALIDO',

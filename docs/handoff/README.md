@@ -29,7 +29,8 @@ docs/handoff/
 │   ├── fundo-padrao.md
 │   ├── relatorio-pedidos.md
 │   ├── taxas-veiculos.md
-│   └── validacoes-config.md
+│   ├── validacoes-config.md
+│   └── desembolso-cliente.md
 └── cobranca/
     └── cobranca.md
 ```

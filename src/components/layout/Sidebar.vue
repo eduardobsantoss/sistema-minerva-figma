@@ -31,6 +31,11 @@ import {
   Banknote,
   History,
   Phone,
+  UsersRound,
+  IdCard,
+  MapPin,
+  Megaphone,
+  Star,
 } from "lucide-vue-next";
 import gciLogoMark from "@/assets/gci-logo-mark.png";
 import gciLogoFull from "@/assets/gci-logo-full.png";
@@ -53,22 +58,47 @@ interface NavItem {
 const items: NavItem[] = [
   { key: "dashboard", label: "Home", icon: LayoutDashboard },
   {
+    key: "admin",
+    label: "Admin",
+    icon: Settings,
+    children: [
+      { key: "admin", label: "Usuários", icon: Users },
+      { key: "admin-grupos", label: "Grupos", icon: UsersRound },
+      { key: "admin-participantes", label: "Participantes", icon: IdCard },
+      { key: "admin-pracas", label: "Praças Bancárias", icon: MapPin },
+      { key: "admin-avisos", label: "Avisos", icon: Megaphone },
+      { key: "admin-nps", label: "NPS", icon: Star },
+    ],
+  },
+  {
+    key: "gerencial",
+    label: "Gerencial",
+    icon: BarChart3,
+    children: [
+      { key: "gerencial", label: "Gerencial", icon: BarChart3 },
+      { key: "gerencial-pos", label: "Monitoramento pós desembolso", icon: Radar },
+      { key: "gerencial-veiculos", label: "Parametrização de veículos", icon: Settings },
+      { key: "gerencial-relatorios", label: "Relatórios", icon: BarChart3 },
+    ],
+  },
+  {
     key: "solicitacoes",
     label: "Solicitação de Operação",
     icon: ClipboardList,
     children: [
       { key: "solicitacoes", label: "Solicitações", icon: ClipboardList },
-      { key: "solicitacoes-fundo-padrao", label: "Fundo Padrão", icon: Wallet },
-      { key: "solicitacoes-relatorios", label: "Relatórios", icon: BarChart3 },
-      {
-        key: "solicitacoes-taxas-veiculos",
-        label: "Taxas dos Veículos",
-        icon: Percent,
-      },
       {
         key: "solicitacoes-validacoes",
         label: "Validações",
         icon: ShieldCheck,
+      },
+      { key: "solicitacoes-relatorios", label: "Relatórios", icon: BarChart3 },
+      { key: "solicitacoes-desembolso-cliente", label: "Desembolso do Cliente", icon: Banknote },
+      { key: "solicitacoes-fundo-padrao", label: "Fundo Padrão", icon: Wallet },
+      {
+        key: "solicitacoes-taxas-veiculos",
+        label: "Taxas dos Veículos",
+        icon: Percent,
       },
     ],
   },
@@ -82,16 +112,6 @@ const items: NavItem[] = [
     ],
   },
   {
-    key: "fidcs",
-    label: "FIDC's",
-    icon: Landmark,
-    children: [
-      { key: "fidcs", label: "Gestão", icon: Landmark },
-      { key: "fidcs-simulador", label: "Simulador", icon: Gauge },
-      { key: "fidcs-relatorios", label: "Relatórios", icon: BarChart3 },
-    ],
-  },
-  {
     key: "cras",
     label: "CRA's",
     icon: Briefcase,
@@ -102,10 +122,41 @@ const items: NavItem[] = [
     ],
   },
   {
+    key: "fidcs",
+    label: "FIDC's",
+    icon: Landmark,
+    children: [
+      { key: "fidcs", label: "Gestão", icon: Landmark },
+      { key: "fidcs-simulador", label: "Simulador", icon: Gauge },
+      { key: "fidcs-relatorios", label: "Relatórios", icon: BarChart3 },
+    ],
+  },
+  {
     key: "semiestruturadas",
     label: "Semiestruturadas",
     icon: Layers,
     children: [{ key: "semiestruturadas", label: "Gestão", icon: Layers }],
+  },
+  // Passivo (antigo) — oculto; componentes ainda em @/features/passivo
+  // { key: "passivo-antigo", label: "Passivo (antigo)", icon: Database },
+  { key: "passivo", label: "Passivo", icon: Banknote },
+  {
+    key: "risco",
+    label: "Risco",
+    icon: AlertCircle,
+    children: [
+      { key: "risco-dashboard", label: "Dashboard", icon: Gauge },
+      { key: "risco-grupos", label: "Grupos Empresariais", icon: Building2 },
+      { key: "risco-ratings", label: "Ratings", icon: Layers },
+      {
+        key: "risco-agrupamentos",
+        label: "Agrupamentos de Limite",
+        icon: ScrollText,
+      },
+      { key: "risco-taxa-operacao", label: "Taxa de Operação", icon: Percent },
+      { key: "risco-serasa", label: "Consultas", icon: Search },
+      { key: "risco-rel", label: "Relatórios", icon: BarChart3 },
+    ],
   },
   {
     key: "cobranca",
@@ -142,35 +193,7 @@ const items: NavItem[] = [
       { key: "cobranca-rel", label: "Relatórios", icon: BarChart3 },
     ],
   },
-  {
-    key: "risco",
-    label: "Risco",
-    icon: AlertCircle,
-    children: [
-      { key: "risco-dashboard", label: "Dashboard", icon: Gauge },
-      { key: "risco-grupos", label: "Grupos Empresariais", icon: Building2 },
-      { key: "risco-ratings", label: "Ratings", icon: Layers },
-      { key: "risco-taxa-operacao", label: "Taxa de Operação", icon: Percent },
-      {
-        key: "risco-agrupamentos",
-        label: "Agrupamentos de Limite",
-        icon: ScrollText,
-      },
-      { key: "risco-serasa", label: "Consultas", icon: Search },
-      { key: "risco-rel", label: "Relatórios", icon: BarChart3 },
-    ],
-  },
-  {
-    key: "gerencial",
-    label: "Gerencial",
-    icon: BarChart3,
-    children: [
-      { key: "gerencial", label: "Gerencial", icon: BarChart3 },
-      { key: "gerencial-pos", label: "Monitoramento pós desembolso", icon: Radar },
-      { key: "gerencial-veiculos", label: "Parametrização de veículos", icon: Settings },
-      { key: "gerencial-relatorios", label: "Relatórios", icon: BarChart3 },
-    ],
-  },
+  { key: "grupos-cadastro", label: "Grupos Empresariais", icon: Building2 },
   {
     key: "sentinela",
     label: "Sentinela",
@@ -183,11 +206,7 @@ const items: NavItem[] = [
       // { key: "sentinela-lote", label: "Consulta em lote", icon: Search },
     ],
   },
-  { key: "grupos-cadastro", label: "Grupos Empresariais", icon: Building2 },
   { key: "monitoramento", label: "Monitoramento", icon: Radar },
-  // Passivo (antigo) — oculto; componentes ainda em @/features/passivo
-  // { key: "passivo-antigo", label: "Passivo (antigo)", icon: Database },
-  { key: "passivo", label: "Passivo", icon: Banknote },
   { key: "colab", label: "Colaboradores", icon: Users },
   { key: "rel", label: "Relatórios", icon: FileText },
   { key: "conf", label: "Configurações", icon: Settings },

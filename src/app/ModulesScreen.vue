@@ -23,6 +23,7 @@ import {
   RelatorioPedidosScreen,
   TaxasVeiculosScreen,
   ValidacoesConfigScreen,
+  DesembolsoClienteScreen,
 } from '@/features/solicitacao-operacao';
 // import { PassivoScreen } from '@/features/passivo';
 import { PassivoNovoScreen } from '@/features/passivo-novo';
@@ -49,11 +50,18 @@ import { GerencialScreen, PosDesembolsoScreen, ParametrizacaoScreen, GerencialRe
 
 type View =
   | 'dashboard'
+  | 'admin'
+  | 'admin-grupos'
+  | 'admin-participantes'
+  | 'admin-pracas'
+  | 'admin-avisos'
+  | 'admin-nps'
   | 'solicitacoes'
   | 'solicitacoes-fundo-padrao'
   | 'solicitacoes-relatorios'
   | 'solicitacoes-taxas-veiculos'
   | 'solicitacoes-validacoes'
+  | 'solicitacoes-desembolso-cliente'
   | 'ativos'
   | 'ativos-relatorios'
   | 'fidcs'
@@ -97,11 +105,18 @@ type View =
 
 const titleMap: Record<View, string> = {
   dashboard: 'Bem-vindo(a) ao Minerva Gestão',
+  admin: 'Usuários',
+  'admin-grupos': 'Grupos',
+  'admin-participantes': 'Participantes',
+  'admin-pracas': 'Praças Bancárias',
+  'admin-avisos': 'Avisos',
+  'admin-nps': 'NPS',
   solicitacoes: 'Solicitação de Operação',
   'solicitacoes-fundo-padrao': 'Fundo Padrão',
   'solicitacoes-relatorios': 'Relatórios de Solicitações',
   'solicitacoes-taxas-veiculos': 'Taxas dos Veículos',
   'solicitacoes-validacoes': 'Validações',
+  'solicitacoes-desembolso-cliente': 'Desembolso do Cliente',
   ativos: 'Ativos',
   'ativos-relatorios': 'Relatórios',
   fidcs: "Gestão de FIDC's",
@@ -145,7 +160,8 @@ const titleMap: Record<View, string> = {
 };
 
 const VALID_VIEWS = new Set<View>([
-  'dashboard', 'solicitacoes', 'solicitacoes-fundo-padrao', 'solicitacoes-relatorios', 'solicitacoes-taxas-veiculos', 'solicitacoes-validacoes',
+  'dashboard', 'admin', 'admin-grupos', 'admin-participantes', 'admin-pracas', 'admin-avisos', 'admin-nps',
+  'solicitacoes', 'solicitacoes-fundo-padrao', 'solicitacoes-relatorios', 'solicitacoes-taxas-veiculos', 'solicitacoes-validacoes', 'solicitacoes-desembolso-cliente',
   'ativos', 'ativos-relatorios',
   'fidcs', 'fidcs-simulador', 'fidcs-relatorios',
   'cras', 'cras-simulador', 'cras-relatorios',
@@ -176,6 +192,7 @@ const titulosHubKey = ref(0);
 const collapsed = ref(window.innerWidth <= LAPTOP_BREAKPOINT);
 const openMenu = ref<string | null>((() => {
   const v = new URLSearchParams(window.location.search).get('view') ?? '';
+  if (v.startsWith('admin')) return 'admin';
   if (v.startsWith('cobranca')) return 'cobranca';
   if (v.startsWith('risco')) return 'risco';
   if (v.startsWith('solicitacoes')) return 'solicitacoes';
@@ -226,7 +243,10 @@ function handleToggleSidebar() {
 }
 
 function handleModuleClick(title: string) {
-  if (title === 'Solicitação de Operação') {
+  if (title === 'Admin') {
+    view.value = 'admin';
+    openMenu.value = 'admin';
+  } else if (title === 'Solicitação de Operação') {
     view.value = 'solicitacoes';
     openMenu.value = 'solicitacoes';
   } else if (title === 'Ativos') {
@@ -286,6 +306,7 @@ function handleModuleClick(title: string) {
           <RelatorioPedidosScreen v-else-if="view === 'solicitacoes-relatorios'" />
           <TaxasVeiculosScreen v-else-if="view === 'solicitacoes-taxas-veiculos'" />
           <ValidacoesConfigScreen v-else-if="view === 'solicitacoes-validacoes'" />
+          <DesembolsoClienteScreen v-else-if="view === 'solicitacoes-desembolso-cliente'" />
           <AtivosScreen v-else-if="view === 'ativos'" />
           <AtivosRelatoriosScreen v-else-if="view === 'ativos-relatorios'" />
           <FidcScreen v-else-if="view === 'fidcs'" />

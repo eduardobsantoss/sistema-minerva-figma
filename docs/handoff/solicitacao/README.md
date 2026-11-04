@@ -11,5 +11,6 @@
 | [relatorio-pedidos.md](./relatorio-pedidos.md) | `solicitacoes-relatorios` |
 | [taxas-veiculos.md](./taxas-veiculos.md) | `solicitacoes-taxas-veiculos` |
 | [validacoes-config.md](./validacoes-config.md) | `solicitacoes-validacoes` |
+| [desembolso-cliente.md](./desembolso-cliente.md) | `solicitacoes-desembolso-cliente` |
 
 Índice geral: [../README.md](../README.md).
