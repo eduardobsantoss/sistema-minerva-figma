@@ -163,8 +163,8 @@ const hintVazio = computed(() =>
 
 const grid = computed(() =>
   modo.value === 'operacional'
-    ? '36px 72px minmax(180px, 1.7fr) 96px 112px minmax(180px, 1.5fr) 148px 128px minmax(170px, 1.2fr) 112px 132px'
-    : '72px minmax(180px, 1.8fr) 96px 112px minmax(180px, 1.4fr) 148px 128px 132px',
+    ? '36px 132px minmax(180px, 1.7fr) 96px 112px minmax(180px, 1.5fr) 148px 128px minmax(170px, 1.2fr) 112px 132px'
+    : '132px minmax(180px, 1.8fr) 96px 112px minmax(180px, 1.4fr) 148px 128px 132px',
 );
 
 function tone(severidade: Severidade) {
@@ -452,7 +452,7 @@ function encaminhar() {
             <div v-if="modo === 'operacional'">
               <Checkbox :checked="allPage" :indeterminate="somePage" @change="togglePage" />
             </div>
-            <div>Classe</div>
+            <div>Rating Crédito</div>
             <div>Entidade</div>
             <div>Tipo</div>
             <div>Severidade</div>
