@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
-import { ChevronsDownUp, ChevronsUpDown, Search } from 'lucide-vue-next';
+import { ChevronsDownUp, ChevronsUpDown } from 'lucide-vue-next';
 import { useToast } from '@/composables/useToast';
 import { brl, slaRatio, solicitacoes } from '../data/operacaoData';
 import {
@@ -21,7 +21,9 @@ import EncarteirarModal from '../components/desembolso-cliente/EncarteirarModal.
 
 const toast = useToast();
 const cards = reactive<CardDesembolso[]>(cardsIniciais(solicitacoes));
-const q = ref('');
+const buscaId = ref('');
+const buscaCedente = ref('');
+const buscaVeiculo = ref('');
 const encarteirando = ref<CardDesembolso | null>(null);
 
 type Filtro = 'TODOS' | 'COM_BMP' | 'SEM_BMP' | 'ATRASADOS';
@@ -61,12 +63,16 @@ function setExpandido(id: string, value: boolean) {
 }
 
 const filtrados = computed(() => {
-  const needle = q.value.trim().toLowerCase();
+  const id = buscaId.value.trim().toLowerCase().replace(/^#/, '');
+  const cedente = buscaCedente.value.trim().toLowerCase();
+  const veiculo = buscaVeiculo.value.trim().toLowerCase();
   return emAberto.value.filter((card) => {
     if (!passaFiltro(card, filtro.value)) return false;
-    if (!needle) return true;
     const s = card.solicitacao;
-    return `${s.id} ${s.cedente} ${s.veiculo} ${s.vinculo}`.toLowerCase().includes(needle);
+    if (id && !s.id.toLowerCase().replace('#', '').includes(id)) return false;
+    if (cedente && !s.cedente.toLowerCase().includes(cedente)) return false;
+    if (veiculo && !s.veiculo.toLowerCase().includes(veiculo)) return false;
+    return true;
   });
 });
 
@@ -175,16 +181,20 @@ function onEncarteirar(payload: EncarteirarPayload) {
       </button>
     </div>
 
-    <!-- Busca + expandir/recolher todos -->
-    <div class="flex items-center" style="gap: 12px; flex-wrap: wrap">
-      <div class="relative" style="flex: 1; min-width: 240px; background: var(--surface-card); border-radius: var(--radius-lg); border: 1px solid var(--border-default)">
-        <Search :size="16" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--neutral-400)" />
-        <input
-          v-model="q"
-          placeholder="Buscar por ID, cedente ou veículo..."
-          style="width: 100%; height: 42px; padding-left: 40px; padding-right: 14px; background: transparent; border: none; outline: none; font-size: var(--text-sm); color: var(--text-strong); border-radius: var(--radius-lg)"
-        />
-      </div>
+    <!-- Buscas separadas (mesmo padrão de Ativos) + expandir/recolher todos -->
+    <div class="flex items-end" style="gap: 12px; flex-wrap: wrap">
+      <label class="search-field">
+        <span>ID</span>
+        <input v-model="buscaId" placeholder="Ex: 1400" />
+      </label>
+      <label class="search-field">
+        <span>Cedente</span>
+        <input v-model="buscaCedente" placeholder="Nome do cedente" />
+      </label>
+      <label class="search-field">
+        <span>Veículo</span>
+        <input v-model="buscaVeiculo" placeholder="Nome do veículo" />
+      </label>
       <button
         type="button"
         class="flex items-center"
@@ -242,3 +252,34 @@ function onEncarteirar(payload: EncarteirarPayload) {
     />
   </div>
 </template>
+
+<style scoped>
+.search-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 160px;
+}
+.search-field span {
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.search-field input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  outline: none;
+  font-size: var(--text-sm);
+  color: var(--text-strong);
+}
+.search-field input:focus {
+  box-shadow: var(--focus-ring);
+}
+</style>
