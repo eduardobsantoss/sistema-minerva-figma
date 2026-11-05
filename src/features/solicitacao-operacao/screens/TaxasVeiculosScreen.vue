@@ -10,6 +10,8 @@ import {
   type VehicleTypeTab,
 } from '../data/taxasVeiculosData';
 import VehicleRateDetailView from '../components/taxas-veiculos/VehicleRateDetailView.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const TABS: { key: VehicleTypeTab; label: string; icon: Component }[] = [
   { key: 'FIDC', label: 'FIDC', icon: Landmark },
@@ -320,74 +322,17 @@ function cancelSaveTab() {
       </div>
     </div>
 
-    <div
-      v-if="saveConfirmOpen"
-      class="flex items-center justify-center"
-      style="position: fixed; inset: 0; z-index: 500; background: rgba(15, 23, 42, 0.45); padding: 24px"
-    >
-      <div
-        style="
-          width: 100%;
-          max-width: 440px;
-          background: var(--surface-card);
-          border-radius: var(--radius-xl);
-          box-shadow: var(--shadow-lg);
-          padding: 28px;
-        "
-        @click.stop
-      >
-        <h3
-          style="
-            font-size: var(--text-lg);
-            font-weight: var(--weight-bold);
-            color: var(--text-strong);
-            margin-bottom: 10px;
-          "
-        >
-          Deseja salvar as configurações de veículos?
-        </h3>
-        <p style="font-size: var(--text-sm); color: var(--text-muted); line-height: 1.5; margin-bottom: 22px">
-          As alterações de ativação e taxas permanecem apenas neste protótipo local (aba
-          {{ TAB_LABELS[activeTab] }}).
-        </p>
-        <div class="flex items-center justify-end" style="gap: 10px">
-          <button
-            type="button"
-            style="
-              height: 42px;
-              padding: 0 18px;
-              background: var(--surface-card);
-              color: var(--text-strong);
-              border: 1px solid var(--border-default);
-              border-radius: var(--radius-lg);
-              cursor: pointer;
-              font-weight: var(--weight-bold);
-              font-size: var(--text-sm);
-            "
-            @click="cancelSaveTab"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            style="
-              height: 42px;
-              padding: 0 18px;
-              background: var(--agro-base);
-              color: #fff;
-              border: none;
-              border-radius: var(--radius-lg);
-              cursor: pointer;
-              font-weight: var(--weight-bold);
-              font-size: var(--text-sm);
-            "
-            @click="confirmSaveTab"
-          >
-            Confirmar
-          </button>
-        </div>
-      </div>
-    </div>
+    <AdminModal v-if="saveConfirmOpen" :width="440" eyebrow="Solicitação" title="Deseja salvar as configurações de veículos?" @close="cancelSaveTab">
+      <p style="font-size: var(--text-sm); color: var(--text-muted); line-height: 1.5; margin-bottom: 22px">
+        As alterações de ativação e taxas permanecem apenas neste protótipo local (aba
+        {{ TAB_LABELS[activeTab] }}).
+      </p>
+
+      <template #footer>
+        <AdminButton variant="secondary" size="large" @click="cancelSaveTab" type="button">Cancelar</AdminButton>
+        <AdminButton variant="agro" size="large" @click="confirmSaveTab" type="button">Confirmar</AdminButton>
+      </template>
+    </AdminModal>
   </div>
 </template>
 
