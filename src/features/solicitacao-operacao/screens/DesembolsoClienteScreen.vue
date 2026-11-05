@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
-import { Search } from 'lucide-vue-next';
+import { ChevronsDownUp, ChevronsUpDown, Search } from 'lucide-vue-next';
 import { useToast } from '@/composables/useToast';
 import { brl, slaRatio, solicitacoes } from '../data/operacaoData';
 import {
@@ -50,6 +50,16 @@ const contagens = computed(() =>
   ) as Record<Filtro, number>,
 );
 
+/** Cards abertos por ID. Por padrão todos entram recolhidos. */
+const expandidos = ref<Set<string>>(new Set());
+
+function setExpandido(id: string, value: boolean) {
+  const next = new Set(expandidos.value);
+  if (value) next.add(id);
+  else next.delete(id);
+  expandidos.value = next;
+}
+
 const filtrados = computed(() => {
   const needle = q.value.trim().toLowerCase();
   return emAberto.value.filter((card) => {
@@ -59,6 +69,19 @@ const filtrados = computed(() => {
     return `${s.id} ${s.cedente} ${s.veiculo} ${s.vinculo}`.toLowerCase().includes(needle);
   });
 });
+
+const todosExpandidos = computed(
+  () => filtrados.value.length > 0 && filtrados.value.every((card) => expandidos.value.has(card.solicitacao.id)),
+);
+
+function alternarTodos() {
+  const next = new Set(expandidos.value);
+  for (const card of filtrados.value) {
+    if (todosExpandidos.value) next.delete(card.solicitacao.id);
+    else next.add(card.solicitacao.id);
+  }
+  expandidos.value = next;
+}
 
 function onConcluir(card: CardDesembolso, key: EtapaDesembolsoKey) {
   const proxima = proximaEtapa(card);
@@ -152,14 +175,39 @@ function onEncarteirar(payload: EncarteirarPayload) {
       </button>
     </div>
 
-    <!-- Busca -->
-    <div class="relative" style="background: var(--surface-card); border-radius: var(--radius-lg); border: 1px solid var(--border-default)">
-      <Search :size="16" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--neutral-400)" />
-      <input
-        v-model="q"
-        placeholder="Buscar por ID, cedente ou veículo..."
-        style="width: 100%; height: 42px; padding-left: 40px; padding-right: 14px; background: transparent; border: none; outline: none; font-size: var(--text-sm); color: var(--text-strong); border-radius: var(--radius-lg)"
-      />
+    <!-- Busca + expandir/recolher todos -->
+    <div class="flex items-center" style="gap: 12px; flex-wrap: wrap">
+      <div class="relative" style="flex: 1; min-width: 240px; background: var(--surface-card); border-radius: var(--radius-lg); border: 1px solid var(--border-default)">
+        <Search :size="16" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--neutral-400)" />
+        <input
+          v-model="q"
+          placeholder="Buscar por ID, cedente ou veículo..."
+          style="width: 100%; height: 42px; padding-left: 40px; padding-right: 14px; background: transparent; border: none; outline: none; font-size: var(--text-sm); color: var(--text-strong); border-radius: var(--radius-lg)"
+        />
+      </div>
+      <button
+        type="button"
+        class="flex items-center"
+        :disabled="filtrados.length === 0"
+        :style="{
+          gap: '8px',
+          height: '42px',
+          padding: '0 16px',
+          cursor: filtrados.length === 0 ? 'not-allowed' : 'pointer',
+          opacity: filtrados.length === 0 ? 0.5 : 1,
+          background: 'var(--surface-card)',
+          border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-lg)',
+          fontWeight: 'var(--weight-bold)',
+          fontSize: 'var(--text-xs)',
+          letterSpacing: '0.04em',
+          color: 'var(--text-muted)',
+        }"
+        @click="alternarTodos"
+      >
+        <component :is="todosExpandidos ? ChevronsDownUp : ChevronsUpDown" :size="15" :stroke-width="2" />
+        {{ todosExpandidos ? 'Recolher todos' : 'Expandir todos' }}
+      </button>
     </div>
 
     <div
@@ -176,6 +224,8 @@ function onEncarteirar(payload: EncarteirarPayload) {
         :solicitacao="card.solicitacao"
         :concluidas="card.concluidas"
         :atividade="card.atividade"
+        :expandido="expandidos.has(card.solicitacao.id)"
+        @update:expandido="setExpandido(card.solicitacao.id, $event)"
         @concluir="onConcluir(card, $event)"
         @desfazer="onDesfazer(card, $event)"
         @baixar="onBaixar"

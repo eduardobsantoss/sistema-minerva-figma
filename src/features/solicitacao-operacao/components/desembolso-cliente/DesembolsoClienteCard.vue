@@ -26,9 +26,12 @@ const props = defineProps<{
   solicitacao: Solicitacao;
   concluidas: EtapaDesembolsoKey[];
   atividade: AtividadeDesembolso[];
+  /** Mostra vínculo, informações básicas, documentos e atividade. Recolhido, ficam só o resumo e o stepper. */
+  expandido?: boolean;
 }>();
 
 const emit = defineEmits<{
+  'update:expandido': [value: boolean];
   concluir: [key: EtapaDesembolsoKey];
   desfazer: [key: EtapaDesembolsoKey];
   baixar: [arquivo: string];
@@ -109,9 +112,41 @@ const meta = computed(() => [
         <h2 class="cedente">{{ s.cedente }}</h2>
         <div class="id">{{ s.id }}</div>
       </div>
-      <div class="valor">{{ brl(s.valor) }}</div>
+      <div class="flex items-center" style="gap: 12px; flex-shrink: 0">
+        <div class="valor">{{ brl(s.valor) }}</div>
+        <button
+          type="button"
+          class="toggle"
+          :aria-expanded="expandido"
+          :aria-label="expandido ? 'Recolher card' : 'Expandir card'"
+          :title="expandido ? 'Recolher' : 'Expandir'"
+          @click="emit('update:expandido', !expandido)"
+        >
+          <ChevronDown
+            :size="16"
+            :style="{ transform: expandido ? 'rotate(180deg)' : 'none', transition: 'transform var(--duration-base)' }"
+          />
+        </button>
+      </div>
     </div>
 
+    <!-- Stepper (sempre visível) -->
+    <div class="stepper-panel">
+      <div class="flex items-center justify-between" style="margin-bottom: 14px">
+        <span class="eyebrow" style="margin: 0">Esteira de desembolso</span>
+        <span class="progress">{{ progresso }} concluídas</span>
+      </div>
+      <div class="stepper-scroll">
+        <DesembolsoStepper
+          :etapas="etapas"
+          :concluidas="concluidas"
+          @concluir="emit('concluir', $event)"
+          @desfazer="emit('desfazer', $event)"
+        />
+      </div>
+    </div>
+
+    <template v-if="expandido">
     <!-- Vínculo (pill) -->
     <div class="vinculo" :style="{ color: s.vinculo ? 'var(--text-default)' : 'var(--text-muted)' }">
       <Building2 :size="13" :stroke-width="2" style="flex-shrink: 0; color: var(--text-muted)" />
@@ -154,22 +189,6 @@ const meta = computed(() => [
       </AdminButton>
     </div>
 
-    <!-- Stepper -->
-    <div class="stepper-panel">
-      <div class="flex items-center justify-between" style="margin-bottom: 14px">
-        <span class="eyebrow" style="margin: 0">Esteira de desembolso</span>
-        <span class="progress">{{ progresso }} concluídas</span>
-      </div>
-      <div class="stepper-scroll">
-        <DesembolsoStepper
-          :etapas="etapas"
-          :concluidas="concluidas"
-          @concluir="emit('concluir', $event)"
-          @desfazer="emit('desfazer', $event)"
-        />
-      </div>
-    </div>
-
     <!-- Atividade -->
     <div class="atividade">
       <button type="button" class="atividade-toggle" @click="atividadeAberta = !atividadeAberta">
@@ -188,6 +207,7 @@ const meta = computed(() => [
         </li>
       </ul>
     </div>
+    </template>
   </article>
 </template>
 
@@ -251,6 +271,27 @@ const meta = computed(() => [
   font-size: 11px;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+}
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  outline: none;
+  transition: background var(--duration-base) var(--ease-standard), color var(--duration-base) var(--ease-standard);
+}
+.toggle:hover {
+  background: var(--action-secondary-bg-hover);
+  color: var(--text-strong);
+}
+.toggle:focus-visible {
+  box-shadow: var(--focus-ring);
 }
 .valor {
   flex-shrink: 0;
