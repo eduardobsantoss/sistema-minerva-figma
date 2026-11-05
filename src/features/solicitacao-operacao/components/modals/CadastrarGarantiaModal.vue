@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
-import { X } from 'lucide-vue-next';
+
 import {
   TIPO_GARANTIA_OPERACAO_OPTS,
   emptyGarantiaAnexos,
@@ -13,6 +13,8 @@ import {
 import { parseCurrencyInput } from '../../utils/currencyMask';
 import { FormField, SelectField, StepGrid } from './adicionar-contrato';
 import DocGroup from '../novo-pedido/DocGroup.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const props = defineProps<{
   garantia?: GarantiaOperacao | null;
@@ -102,141 +104,70 @@ function salvar() {
 </script>
 
 <template>
-  <div
-    style="
-      position: fixed;
-      inset: 0;
-      z-index: 400;
-      background: rgba(8, 60, 74, 0.55);
-      backdrop-filter: blur(8px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 32px;
-    "
-    @click.self="emit('close')"
-  >
-    <div
-      style="
-        width: 100%;
-        max-width: 720px;
-        max-height: calc(100vh - 64px);
-        background: var(--surface-card);
-        border-radius: var(--radius-xl);
-        box-shadow: var(--shadow-lg);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      "
-      @click.stop
-    >
-      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
-        <div>
-          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
-            {{ isEdit ? 'Editar garantia' : 'Cadastrar garantia' }}
-          </h2>
-          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Dados da garantia e documentos comprobatórios
-          </p>
-        </div>
-        <button
-          aria-label="Fechar"
-          class="flex items-center justify-center"
-          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted)"
-          @click="emit('close')"
-        >
-          <X :size="18" />
-        </button>
-      </div>
-
-      <div style="flex: 1; overflow-y: auto; padding: 24px 28px">
-        <div class="flex flex-col" style="gap: 20px">
-          <StepGrid>
-            <SelectField
-              label="Tipo de garantia"
-              :options="TIPO_GARANTIA_OPERACAO_OPTS"
-              placeholder="Selecione"
-              required
-              :span="4"
-              v-model="form.tipo"
-            />
-            <FormField
-              label="Nome da garantia"
-              placeholder="Ex: AF Estoque Safra 2026"
-              required
-              :span="5"
-              v-model="form.nome"
-            />
-            <FormField
-              label="Valor da garantia"
-              placeholder="R$ 0,00"
-              required
-              currency
-              :span="3"
-              v-model="form.valor"
-            />
-          </StepGrid>
-
-          <div v-if="!showAnexos" class="flex justify-end">
-            <button
-              type="button"
-              :disabled="!dadosOk"
-              :style="{
-                height: '42px',
-                padding: '0 20px',
-                background: dadosOk ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
-                color: dadosOk ? '#fff' : 'var(--text-disabled)',
-                border: 'none',
-                borderRadius: 'var(--radius-lg)',
-                cursor: dadosOk ? 'pointer' : 'not-allowed',
-                fontWeight: 'var(--weight-bold)',
-                fontSize: 'var(--text-xs)',
-                letterSpacing: '0.08em',
-              }"
-              @click="continuar"
-            >
-              CONTINUAR
-            </button>
-          </div>
-
-          <DocGroup
-            v-if="showAnexos"
-            title="Documentos da garantia"
-            :docs="docsForGroup"
-            :doc-files="docFiles"
-            @toggle-doc="toggleDoc"
+  <AdminModal size="md" eyebrow="Solicitação" :title="`${isEdit ? 'Editar garantia' : 'Cadastrar garantia'}`" subtitle="Dados da garantia e documentos comprobatórios" @close="emit('close')">
+    <div>
+      <div class="flex flex-col" style="gap: 20px">
+        <StepGrid>
+          <SelectField
+            label="Tipo de garantia"
+            :options="TIPO_GARANTIA_OPERACAO_OPTS"
+            placeholder="Selecione"
+            required
+            :span="4"
+            v-model="form.tipo"
           />
-        </div>
-      </div>
+          <FormField
+            label="Nome da garantia"
+            placeholder="Ex: AF Estoque Safra 2026"
+            required
+            :span="5"
+            v-model="form.nome"
+          />
+          <FormField
+            label="Valor da garantia"
+            placeholder="R$ 0,00"
+            required
+            currency
+            :span="3"
+            v-model="form.valor"
+          />
+        </StepGrid>
 
-      <div class="flex items-center justify-between" style="padding: 16px 28px; border-top: 1px solid var(--border-default)">
-        <button
-          type="button"
-          style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
-          @click="emit('close')"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          :disabled="!canSave"
-          :style="{
-            height: '44px',
-            padding: '0 24px',
-            background: canSave ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
-            color: canSave ? '#fff' : 'var(--text-disabled)',
-            border: 'none',
-            borderRadius: 'var(--radius-lg)',
-            cursor: canSave ? 'pointer' : 'not-allowed',
-            fontWeight: 'var(--weight-bold)',
-            fontSize: 'var(--text-xs)',
-            letterSpacing: '0.08em',
-          }"
-          @click="salvar"
-        >
-          {{ isEdit ? 'SALVAR' : 'ADICIONAR' }}
-        </button>
+        <div v-if="!showAnexos" class="flex justify-end">
+          <button
+            type="button"
+            :disabled="!dadosOk"
+            :style="{
+              height: '42px',
+              padding: '0 20px',
+              background: dadosOk ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
+              color: dadosOk ? '#fff' : 'var(--text-disabled)',
+              border: 'none',
+              borderRadius: 'var(--radius-lg)',
+              cursor: dadosOk ? 'pointer' : 'not-allowed',
+              fontWeight: 'var(--weight-bold)',
+              fontSize: 'var(--text-xs)',
+              letterSpacing: '0.08em',
+            }"
+            @click="continuar"
+          >
+            CONTINUAR
+          </button>
+        </div>
+
+        <DocGroup
+          v-if="showAnexos"
+          title="Documentos da garantia"
+          :docs="docsForGroup"
+          :doc-files="docFiles"
+          @toggle-doc="toggleDoc"
+        />
       </div>
     </div>
-  </div>
+
+    <template #footer>
+      <AdminButton variant="ghost" size="large" @click="emit('close')" type="button">Cancelar</AdminButton>
+      <AdminButton variant="primary" size="large" :disabled="!canSave" @click="salvar" type="button">{{ isEdit ? 'Salvar' : 'Adicionar' }}</AdminButton>
+    </template>
+  </AdminModal>
 </template>

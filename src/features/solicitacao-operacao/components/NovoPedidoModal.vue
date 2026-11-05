@@ -1,16 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
-import {
-  X,
-  ChevronRight,
-  ChevronLeft,
-  Check,
-  FileText,
-  ShieldCheck,
-  Paperclip,
-  Boxes,
-  AlertTriangle,
-} from 'lucide-vue-next';
+import { ChevronRight, ChevronLeft, Check, FileText, ShieldCheck, Paperclip, Boxes, AlertTriangle } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import {
   DadosGeraisStep,
@@ -29,6 +19,8 @@ import {
   type TituloExtraidoDuplicata,
   type XmlUploadItem,
 } from '../data/novoPedidoDuplicataData';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const emit = defineEmits<{ close: []; create: [data: NewPedidoData] }>();
 
@@ -218,64 +210,8 @@ function goNext() {
 </script>
 
 <template>
-  <div
-    style="
-      position: fixed;
-      inset: 0;
-      background: rgba(8, 60, 74, 0.55);
-      backdrop-filter: blur(8px);
-      z-index: 400;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 32px;
-      animation: fadeIn 0.2s ease-out;
-    "
-  >
-    <div
-      style="
-        background: var(--surface-card);
-        border-radius: var(--radius-xl);
-        width: 100%;
-        max-width: 980px;
-        height: 85vh;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        box-shadow: var(--shadow-lg);
-      "
-      @click.stop
-    >
-      <div
-        class="flex items-start justify-between"
-        style="padding: 24px 32px; border-bottom: 1px solid var(--border-default)"
-      >
-        <div>
-          <h2 style="font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.01em">
-            Nova Solicitação de Operação
-          </h2>
-          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            {{ step.hint }} · Etapa {{ stepIdx + 1 }} de {{ steps.length }}
-          </p>
-        </div>
-        <button
-          aria-label="Fechar"
-          class="flex items-center justify-center"
-          style="
-            width: 36px;
-            height: 36px;
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-default);
-            background: var(--surface-card);
-            cursor: pointer;
-            color: var(--text-muted);
-          "
-          @click="emit('close')"
-        >
-          <X :size="18" />
-        </button>
-      </div>
-
+  <AdminModal size="lg" tall eyebrow="Solicitação" title="Nova solicitação de operação" :subtitle="`${step.hint} · Etapa ${stepIdx + 1} de ${steps.length}`" @close="emit('close')">
+    <template #subheader>
       <div class="flex" style="background: var(--surface-sunken); border-bottom: 1px solid var(--border-default)">
         <div
           v-for="(s, i) in steps"
@@ -297,158 +233,79 @@ function goNext() {
           </span>
         </div>
       </div>
+    </template>
 
-      <div style="flex: 1; overflow-y: auto; padding: 32px">
-        <DadosGeraisStep v-if="step.key === 'dados'" :form="form" />
+    <div>
+      <DadosGeraisStep v-if="step.key === 'dados'" :form="form" />
 
-        <GarantiaStep
-          v-else-if="step.key === 'garantia'"
-          :requer="form.requerGarantia"
-          :itens="garantiaItens"
-          :g-form="garantiaForm"
-          @toggle-requer="form.requerGarantia = !form.requerGarantia"
-          @add="addGarantia"
-          @remove="removeGarantia"
-        />
+      <GarantiaStep
+        v-else-if="step.key === 'garantia'"
+        :requer="form.requerGarantia"
+        :itens="garantiaItens"
+        :g-form="garantiaForm"
+        @toggle-requer="form.requerGarantia = !form.requerGarantia"
+        @add="addGarantia"
+        @remove="removeGarantia"
+      />
 
-        <AtivosDuplicataStep
-          v-else-if="step.key === 'ativos'"
-          :phase="duplicataPhase"
-          :xml-files="xmlFiles"
-          :titulos-extraidos="titulosExtraidos"
-          :ativos-vinculados="ativosVinculados"
-          @add-xml="addXml"
-          @remove-xml="removeXml"
-          @open-vincular="showVincular = true"
-        />
+      <AtivosDuplicataStep
+        v-else-if="step.key === 'ativos'"
+        :phase="duplicataPhase"
+        :xml-files="xmlFiles"
+        :titulos-extraidos="titulosExtraidos"
+        :ativos-vinculados="ativosVinculados"
+        @add-xml="addXml"
+        @remove-xml="removeXml"
+        @open-vincular="showVincular = true"
+      />
 
-        <AnexosStep
-          v-else-if="step.key === 'anexos'"
-          :docs-gerais="docsAnexos"
-          :docs-garantia="docsGarantia"
-          :doc-files="docFiles"
-          :hide-garantia-docs="isDescontoDuplicata"
-          :gerais-title="isDescontoDuplicata ? 'Documentos da operação' : 'Documentos gerais'"
-          @toggle-doc="toggleDoc"
-        />
-      </div>
-
-      <div
-        class="flex items-center justify-between"
-        style="padding: 16px 32px; border-top: 1px solid var(--border-default); background: var(--surface-card)"
-      >
-        <button
-          class="flex items-center"
-          style="
-            gap: 6px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-muted);
-            font-weight: var(--weight-semibold);
-            font-size: var(--text-sm);
-            padding: 10px 4px;
-          "
-          @click="isFirst ? emit('close') : stepIdx--"
-        >
-          <template v-if="isFirst">Cancelar</template>
-          <template v-else><ChevronLeft :size="15" /> Voltar</template>
-        </button>
-
-        <div class="flex items-center" style="gap: 12px">
-          <span
-            v-if="isLast && !canConfirm"
-            class="flex items-center"
-            style="gap: 6px; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--warning-base)"
-          >
-            <AlertTriangle :size="14" />
-            {{ pendingRequired }} {{ pendingRequired === 1 ? 'documento obrigatório pendente' : 'documentos obrigatórios pendentes' }}
-          </span>
-
-          <template v-if="isAtivosStep && duplicataPhase === 'upload'">
-            <button
-              type="button"
-              :disabled="!canExtract"
-              class="flex items-center"
-              :style="{
-                gap: '8px',
-                height: '44px',
-                padding: '0 20px',
-                border: 'none',
-                borderRadius: 'var(--radius-lg)',
-                cursor: canExtract ? 'pointer' : 'not-allowed',
-                fontWeight: 'var(--weight-bold)',
-                fontSize: 'var(--text-xs)',
-                letterSpacing: '0.08em',
-                background: canExtract ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
-                color: canExtract ? '#fff' : 'var(--text-disabled)',
-              }"
-              @click="extrairDados"
-            >
-              Extrair dados
-            </button>
-            <button
-              type="button"
-              :disabled="!canContinueAtivos"
-              class="flex items-center"
-              :style="{
-                gap: '8px',
-                height: '44px',
-                padding: '0 22px',
-                border: 'none',
-                borderRadius: 'var(--radius-lg)',
-                cursor: canContinueAtivos ? 'pointer' : 'not-allowed',
-                fontWeight: 'var(--weight-bold)',
-                fontSize: 'var(--text-xs)',
-                letterSpacing: '0.08em',
-                background: canContinueAtivos ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
-                color: canContinueAtivos ? '#fff' : 'var(--text-disabled)',
-              }"
-              @click="goNext"
-            >
-              Continuar <ChevronRight :size="15" />
-            </button>
-          </template>
-
-          <button
-            v-else
-            :disabled="(isLast && !canConfirm) || (isAtivosStep && !canContinueAtivos)"
-            class="flex items-center"
-            :style="{
-              gap: '8px',
-              height: '44px',
-              padding: '0 22px',
-              border: 'none',
-              borderRadius: 'var(--radius-lg)',
-              cursor: (isLast && !canConfirm) || (isAtivosStep && !canContinueAtivos) ? 'not-allowed' : 'pointer',
-              fontWeight: 'var(--weight-bold)',
-              fontSize: 'var(--text-xs)',
-              letterSpacing: '0.08em',
-              background: isLast
-                ? canConfirm
-                  ? 'var(--success-base)'
-                  : 'var(--neutral-200)'
-                : isAtivosStep && !canContinueAtivos
-                  ? 'var(--neutral-200)'
-                  : 'var(--action-primary-bg)',
-              color:
-                (isLast && !canConfirm) || (isAtivosStep && !canContinueAtivos) ? 'var(--text-disabled)' : '#fff',
-              transition: 'background var(--duration-base)',
-            }"
-            @click="goNext"
-          >
-            <template v-if="isLast">Confirmar solicitação <Check :size="15" /></template>
-            <template v-else-if="isAtivosStep">Continuar <ChevronRight :size="15" /></template>
-            <template v-else>Próxima etapa <ChevronRight :size="15" /></template>
-          </button>
-        </div>
-      </div>
+      <AnexosStep
+        v-else-if="step.key === 'anexos'"
+        :docs-gerais="docsAnexos"
+        :docs-garantia="docsGarantia"
+        :doc-files="docFiles"
+        :hide-garantia-docs="isDescontoDuplicata"
+        :gerais-title="isDescontoDuplicata ? 'Documentos da operação' : 'Documentos gerais'"
+        @toggle-doc="toggleDoc"
+      />
     </div>
 
-    <VincularAtivosModal
-      v-if="showVincular"
-      @close="showVincular = false"
-      @vincular="onVincular"
-    />
-  </div>
+    <template #footer>
+      <AdminButton variant="ghost" size="large" :icon="isFirst ? undefined : ChevronLeft" @click="isFirst ? emit('close') : stepIdx--">
+        {{ isFirst ? 'Cancelar' : 'Voltar' }}
+      </AdminButton>
+
+      <div class="flex items-center" style="gap: 12px">
+        <span
+          v-if="isLast && !canConfirm"
+          class="flex items-center"
+          style="gap: 6px; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--warning-base)"
+        >
+          <AlertTriangle :size="14" />
+          {{ pendingRequired }} {{ pendingRequired === 1 ? 'documento obrigatório pendente' : 'documentos obrigatórios pendentes' }}
+        </span>
+
+        <template v-if="isAtivosStep && duplicataPhase === 'upload'">
+          <AdminButton variant="secondary" size="large" :disabled="!canExtract" @click="extrairDados" type="button">Extrair dados</AdminButton>
+          <AdminButton variant="primary" size="large" :trailing-icon="ChevronRight" :disabled="!canContinueAtivos" @click="goNext" type="button">Continuar</AdminButton>
+        </template>
+
+        <AdminButton
+          v-else
+          variant="primary"
+          size="large"
+          :trailing-icon="isLast ? Check : ChevronRight"
+          :disabled="(isLast && !canConfirm) || (isAtivosStep && !canContinueAtivos)"
+          @click="goNext"
+        >
+          {{ isLast ? 'Confirmar solicitação' : isAtivosStep ? 'Continuar' : 'Próxima etapa' }}
+        </AdminButton>
+      </div>
+    </template>
+  </AdminModal>
+  <VincularAtivosModal
+    v-if="showVincular"
+    @close="showVincular = false"
+    @vincular="onVincular"
+  />
 </template>

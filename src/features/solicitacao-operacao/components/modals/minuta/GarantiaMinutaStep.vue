@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
-import { X, Trash2, Shield, Home, Scale, User, MoreVertical, Pencil, Settings2 } from 'lucide-vue-next';
+import { Trash2, Shield, Home, Scale, User, MoreVertical, Pencil, Settings2 } from 'lucide-vue-next';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
@@ -56,6 +56,8 @@ import EnderecosLocacaoFields from './EnderecosLocacaoFields.vue';
 import ConfigurarConstituicaoGarantiaModal from './ConfigurarConstituicaoGarantiaModal.vue';
 import GarantiaDocumentosFields from './GarantiaDocumentosFields.vue';
 import DocGroup from '../../novo-pedido/DocGroup.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const garantias = defineModel<GarantiaMinuta[]>('garantias', { default: () => [] });
 
@@ -582,1067 +584,989 @@ defineExpose({ openNova, openEdit, openConstituicao, closeEditor });
     </template>
 
     <!-- Sub-modal Nova / Editar Garantia -->
-    <div
-      v-if="showNova"
-      style="
-        position: fixed;
-        inset: 0;
-        background: rgba(8, 60, 74, 0.55);
-        backdrop-filter: blur(8px);
-        z-index: 500;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 32px;
-      "
-    >
-      <div
-        style="
-          background: var(--surface-card);
-          border-radius: var(--radius-xl);
-          width: 100%;
-          max-width: 860px;
-          height: 85vh;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-          box-shadow: var(--shadow-lg);
-        "
-        @click.stop
-      >
-        <div class="flex items-start justify-between" style="padding: 24px 32px; border-bottom: 1px solid var(--border-default)">
-          <div>
-            <h2 style="font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--text-strong)">
-              {{ editingIndex != null ? 'Editar Garantia' : 'Nova Garantia' }}
-            </h2>
-            <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-              Catálogo completo · constituição e vínculo com o título
-            </p>
-          </div>
-          <button
-            aria-label="Fechar"
-            class="flex items-center justify-center"
-            style="
-              width: 36px;
-              height: 36px;
-              border-radius: var(--radius-lg);
-              border: 1px solid var(--border-default);
-              background: var(--surface-card);
-              cursor: pointer;
-              color: var(--text-muted);
-            "
-            @click="showNova = false"
-          >
-            <X :size="18" />
-          </button>
+    <AdminModal v-if="showNova" size="lg" tall eyebrow="Solicitação" :title="editingIndex != null ? 'Editar garantia' : 'Nova garantia'" subtitle="Catálogo completo · constituição e vínculo com o título" @close="showNova = false">
+      <div>
+        <div v-if="editingIndex != null" style="margin-bottom: 20px">
+          <SegmentedToggle
+            :model-value="editTab"
+            :options="EDIT_GARANTIA_TABS"
+            variant="brand"
+            @update:model-value="editTab = $event as 'dados' | 'documentos'"
+          />
         </div>
 
-        <div style="flex: 1; overflow-y: auto; padding: 32px">
-          <div v-if="editingIndex != null" style="margin-bottom: 20px">
-            <SegmentedToggle
-              :model-value="editTab"
-              :options="EDIT_GARANTIA_TABS"
-              variant="brand"
-              @update:model-value="editTab = $event as 'dados' | 'documentos'"
-            />
-          </div>
+        <GarantiaDocumentosFields
+          v-if="editingIndex != null && editTab === 'documentos'"
+          v-model:documentos="form.documentos"
+        />
 
-          <GarantiaDocumentosFields
-            v-if="editingIndex != null && editTab === 'documentos'"
-            v-model:documentos="form.documentos"
-          />
-
-          <div v-show="editingIndex == null || editTab === 'dados'" class="flex flex-col" style="gap: 20px">
-            <BentoBox title="Dados da garantia" :icon="Scale">
-              <div class="flex flex-col" style="gap: 14px">
-                <StepGrid>
-                  <SelectField
-                    label="Tipo de garantia"
-                    :options="TIPO_GARANTIA_MINUTA_OPTS"
-                    placeholder="Selecione"
-                    required
-                    :span="showCamposPadraoGarantia ? 5 : 7"
-                    v-model="form.tipo"
-                  />
-                  <FormField
-                    label="Valor da garantia"
-                    placeholder="R$ 0,00"
-                    required
-                    currency
-                    :span="showCamposPadraoGarantia ? 3 : 5"
-                    v-model="form.valor"
-                  />
-                  <FormField
-                    v-if="showCamposPadraoGarantia"
-                    label="Nº de testemunhas"
-                    placeholder="—"
-                    :span="4"
-                    v-model="form.numeroTestemunhas"
-                  />
-                  <FormField v-if="!hideCabecalhoExtra" label="Descrição" placeholder="—" :span="12" v-model="form.descricao" />
-                  <FormField
-                    v-if="showCamposPadraoGarantia"
-                    label="Obrigação garantida / vínculo com o título"
-                    placeholder="—"
-                    required
-                    :span="8"
-                    v-model="form.obrigacaoGarantida"
-                  />
-                  <SelectField
-                    v-if="showFormaProduto"
-                    label="Forma do produto"
-                    :options="FORMA_PRODUTO_GARANTIA_OPTS"
-                    placeholder="Selecione"
-                    :span="4"
-                    v-model="form.formaProduto"
-                  />
-                </StepGrid>
-                <ToggleRow
-                  v-if="!hideCabecalhoExtra"
-                  label="É instrumento particular"
-                  :on="form.instrumentoParticular"
-                  @toggle="form.instrumentoParticular = !form.instrumentoParticular"
-                />
-                <ToggleRow
-                  v-if="showCamposPadraoGarantia"
-                  label="Vai constituir garantia"
-                  :on="form.constituirGarantia"
-                  @toggle="form.constituirGarantia = !form.constituirGarantia"
-                />
-              </div>
-            </BentoBox>
-
-            <BentoBox v-if="showCamposPadraoGarantia && form.constituirGarantia" title="Constituição da garantia" :icon="Scale">
+        <div v-show="editingIndex == null || editTab === 'dados'" class="flex flex-col" style="gap: 20px">
+          <BentoBox title="Dados da garantia" :icon="Scale">
+            <div class="flex flex-col" style="gap: 14px">
               <StepGrid>
-                <FormField label="Órgão / cartório de registro" placeholder="—" required :span="6" v-model="form.cartorioConstituicao" />
-                <FormField label="Data prevista de constituição" placeholder="dd/mm/aaaa" required :span="6" v-model="form.dataPrevistaConstituicao" />
-                <FormField label="Observações" placeholder="—" :span="12" v-model="form.observacoesConstituicao" />
-              </StepGrid>
-            </BentoBox>
-
-            <template v-if="showEstoque">
-              <StepGrid>
+                <SelectField
+                  label="Tipo de garantia"
+                  :options="TIPO_GARANTIA_MINUTA_OPTS"
+                  placeholder="Selecione"
+                  required
+                  :span="showCamposPadraoGarantia ? 5 : 7"
+                  v-model="form.tipo"
+                />
                 <FormField
-                  label="Número do contrato de estoque (terceiro)"
+                  label="Valor da garantia"
+                  placeholder="R$ 0,00"
+                  required
+                  currency
+                  :span="showCamposPadraoGarantia ? 3 : 5"
+                  v-model="form.valor"
+                />
+                <FormField
+                  v-if="showCamposPadraoGarantia"
+                  label="Nº de testemunhas"
                   placeholder="—"
-                  :span="12"
-                  v-model="form.numeroContratoEstoque"
+                  :span="4"
+                  v-model="form.numeroTestemunhas"
                 />
-              </StepGrid>
-
-              <BentoBox title="Informações do estoque de formação" :icon="Home">
-                <div class="flex flex-col" style="gap: 14px">
-                  <StepGrid>
-                    <FormField label="Nome do imóvel" placeholder="—" :span="3" v-model="form.nomeImovel" />
-                    <FormField label="Matrícula" placeholder="—" :span="3" v-model="form.matricula" />
-                    <SelectField label="Zona" :options="ZONA_OPTS" placeholder="Selecione" :span="3" v-model="form.zona" />
-                    <SelectField label="Tipo" :options="TIPO_IMOVEL_OPTS" placeholder="Selecione" :span="3" v-model="form.tipoImovel" />
-                    <FormField label="Área total afetada" placeholder="—" :span="3" v-model="form.areaTotal" />
-                    <SelectField
-                      label="Unidade de medida"
-                      :options="UNIDADE_MEDIDA_OPTS"
-                      placeholder="Selecione"
-                      :span="3"
-                      v-model="form.unidadeMedidaArea"
-                    />
-                    <FormField label="Cartório de registro" placeholder="—" :span="3" v-model="form.cartorioRegistro" />
-                    <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="3" v-model="form.ufRegistro" />
-                    <SelectField
-                      label="Cidade de registro"
-                      :options="cidadeRegistroOpts"
-                      placeholder="Selecione"
-                      :span="3"
-                      :disabled="!form.ufRegistro"
-                      v-model="form.cidadeRegistro"
-                    />
-                  </StepGrid>
-
-                  <ToggleRow label="Imóvel locado" :on="form.imovelLocado" @toggle="form.imovelLocado = !form.imovelLocado" />
-
-                  <template v-if="form.imovelLocado">
-                    <BentoBox title="Informações da locação">
-                      <div class="flex flex-col" style="gap: 14px">
-                        <StepGrid>
-                          <SelectField
-                            label="Tipo de Locação"
-                            :options="TIPO_LOCACAO_OPTS"
-                            placeholder="Selecione"
-                            required
-                            :span="6"
-                            v-model="form.tipoLocacao"
-                          />
-                          <FormField label="Data de início" placeholder="dd/mm/aaaa" required :span="6" v-model="form.dataInicio" />
-                        </StepGrid>
-                        <ToggleRow
-                          label="Prazo indeterminado"
-                          :on="form.prazoIndeterminado"
-                          @toggle="form.prazoIndeterminado = !form.prazoIndeterminado"
-                        />
-                        <StepGrid v-if="!form.prazoIndeterminado">
-                          <FormField
-                            label="Data de término"
-                            placeholder="dd/mm/aaaa"
-                            required
-                            :span="6"
-                            v-model="form.dataTermino"
-                          />
-                        </StepGrid>
-                      </div>
-                    </BentoBox>
-
-                    <BentoBox title="Proprietário do imóvel locado">
-                      <PessoaNaturezaFields v-model="form.proprietarioLocado" />
-                    </BentoBox>
-
-                    <BentoBox title="Partes">
-                      <StepGrid>
-                        <FormField label="Nome do contratante" placeholder="—" :span="6" v-model="form.nomeContratante" />
-                        <FormField label="Nome do contratado" placeholder="—" :span="6" v-model="form.nomeContratado" />
-                      </StepGrid>
-                    </BentoBox>
-                  </template>
-                </div>
-              </BentoBox>
-
-              <BentoBox title="Informações do endereço da locação" :icon="Home">
-                <StepGrid>
-                  <FormField label="CEP" placeholder="—" :span="4" v-model="form.cep" />
-                  <FormField label="Localidade" placeholder="—" :span="8" v-model="form.localidade" />
-                  <FormField label="Número" placeholder="—" :span="4" v-model="form.numero" />
-                  <FormField label="Bairro" placeholder="—" :span="8" v-model="form.bairro" />
-                  <FormField label="Informações adicionais" placeholder="—" :span="12" v-model="form.infoAdicionais" />
-                  <FormField label="Cidade" placeholder="—" :span="12" v-model="form.cidade" />
-                  <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="6" v-model="form.estado" />
-                  <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="6" v-model="form.pais" />
-                </StepGrid>
-              </BentoBox>
-
-              <BentoBox title="Informações do proprietário da garantia" :icon="User">
-                <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
-              </BentoBox>
-
-              <div class="flex justify-end">
-                <AddButton @click="addEstoque">Adicionar dados do estoque</AddButton>
-              </div>
-
-              <BentoBox title="Estoques" :icon="Home">
-                <div
-                  v-if="form.estoques.length === 0"
-                  style="padding: 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
-                >
-                  Não foi encontrado nenhum resultado.
-                </div>
-                <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
-                  <div
-                    class="grid"
-                    style="
-                      grid-template-columns: 1fr 1fr auto;
-                      padding: 10px 14px;
-                      background: var(--surface-sunken);
-                      font-size: 10px;
-                      font-weight: var(--weight-bold);
-                      letter-spacing: 0.12em;
-                      color: var(--text-muted);
-                      text-transform: uppercase;
-                    "
-                  >
-                    <div>Propriedade</div>
-                    <div>Proprietário</div>
-                    <div />
-                  </div>
-                  <div
-                    v-for="(e, i) in form.estoques"
-                    :key="i"
-                    class="grid items-center"
-                    style="
-                      grid-template-columns: 1fr 1fr auto;
-                      padding: 10px 14px;
-                      border-top: 1px solid var(--border-default);
-                      font-size: var(--text-sm);
-                    "
-                  >
-                    <div>{{ e.propriedade }}</div>
-                    <div>{{ e.proprietario }}</div>
-                    <button
-                      aria-label="Remover"
-                      style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
-                      @click="removeEstoque(i)"
-                    >
-                      <Trash2 :size="14" />
-                    </button>
-                  </div>
-                </div>
-              </BentoBox>
-
-              <BentoBox title="Informações do relatório" :icon="Scale">
-                <StepGrid>
-                  <FormField label="Data do relatório" placeholder="dd/mm/aaaa" required :span="4" v-model="form.dataRelatorio" />
-                  <SelectField
-                    label="Periodicidade do relatório"
-                    :options="PERIODICIDADE_RELATORIO_OPTS"
-                    placeholder="Selecione"
-                    :span="4"
-                    v-model="form.periodicidadeRelatorio"
-                  />
-                  <FormField
-                    label="Data da primeira atualização"
-                    placeholder="dd/mm/aaaa"
-                    required
-                    :span="4"
-                    v-model="form.dataPrimeiraAtualizacao"
-                  />
-                </StepGrid>
-              </BentoBox>
-
-              <DocGroup
-                title="Anexos do estoque"
-                :docs="[RELACAO_ESTOQUE_DOC]"
-                :doc-files="{ [RELACAO_ESTOQUE_DOC.id]: form.relacaoEstoqueDetalhadoEnviado }"
-                :doc-validades="{ [RELACAO_ESTOQUE_DOC.id]: form.relacaoEstoqueDetalhadoValidade }"
-                @toggle-doc="toggleRelacaoEstoque"
-                @update-validade="(_, value) => (form.relacaoEstoqueDetalhadoValidade = value)"
-              />
-            </template>
-
-            <template v-if="showAtivosBiologicos">
-              <StepGrid>
-                <FormField label="Quantidade de animais" placeholder="—" :span="3" v-model="form.quantidadeAnimais" />
-                <SelectField
-                  label="Categoria"
-                  :options="CATEGORIA_ANIMAL_OPTS"
-                  placeholder="Selecione"
-                  :span="3"
-                  v-model="form.categoriaAnimal"
+                <FormField v-if="!hideCabecalhoExtra" label="Descrição" placeholder="—" :span="12" v-model="form.descricao" />
+                <FormField
+                  v-if="showCamposPadraoGarantia"
+                  label="Obrigação garantida / vínculo com o título"
+                  placeholder="—"
+                  required
+                  :span="8"
+                  v-model="form.obrigacaoGarantida"
                 />
-                <FormField label="Peso médio" placeholder="—" :span="3" v-model="form.pesoMedio" />
                 <SelectField
-                  label="Unidade de medida"
-                  :options="UNIDADE_PESO_ANIMAL_OPTS"
-                  placeholder="Selecione"
-                  :span="3"
-                  v-model="form.unidadeMedidaPeso"
-                />
-              </StepGrid>
-
-              <BentoBox title="Informações do local de formação" :icon="Home">
-                <div class="flex flex-col" style="gap: 14px">
-                  <StepGrid>
-                    <FormField label="Nome do imóvel" placeholder="—" :span="6" v-model="form.nomeImovel" />
-                    <FormField label="Matrícula" placeholder="—" :span="6" v-model="form.matricula" />
-                    <SelectField label="Zona" :options="ZONA_OPTS" placeholder="Selecione" :span="3" v-model="form.zona" />
-                    <SelectField label="Tipo" :options="TIPO_IMOVEL_OPTS" placeholder="Selecione" :span="3" v-model="form.tipoImovel" />
-                    <FormField label="Área total afetada" placeholder="—" :span="3" v-model="form.areaTotal" />
-                    <SelectField
-                      label="Unidade de medida"
-                      :options="UNIDADE_MEDIDA_OPTS"
-                      placeholder="Selecione"
-                      :span="3"
-                      v-model="form.unidadeMedidaArea"
-                    />
-                    <FormField label="Cartório de registro" placeholder="—" :span="4" v-model="form.cartorioRegistro" />
-                    <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="4" v-model="form.ufRegistro" />
-                    <SelectField
-                      label="Cidade de registro"
-                      :options="cidadeRegistroOpts"
-                      placeholder="Selecione"
-                      :span="4"
-                      :disabled="!form.ufRegistro"
-                      v-model="form.cidadeRegistro"
-                    />
-                  </StepGrid>
-
-                  <ToggleRow
-                    label="Imóvel arrendado"
-                    :on="form.imovelLocado"
-                    @toggle="form.imovelLocado = !form.imovelLocado"
-                  />
-
-                  <template v-if="form.imovelLocado">
-                    <BentoBox title="Informações da locação">
-                      <div class="flex flex-col" style="gap: 14px">
-                        <StepGrid>
-                          <SelectField
-                            label="Tipo de Locação"
-                            :options="TIPO_LOCACAO_OPTS"
-                            placeholder="Selecione"
-                            required
-                            :span="6"
-                            v-model="form.tipoLocacao"
-                          />
-                          <FormField label="Data de início" placeholder="dd/mm/aaaa" required :span="6" v-model="form.dataInicio" />
-                        </StepGrid>
-                        <ToggleRow
-                          label="Prazo indeterminado"
-                          :on="form.prazoIndeterminado"
-                          @toggle="form.prazoIndeterminado = !form.prazoIndeterminado"
-                        />
-                        <StepGrid v-if="!form.prazoIndeterminado">
-                          <FormField
-                            label="Data de término"
-                            placeholder="dd/mm/aaaa"
-                            required
-                            :span="6"
-                            v-model="form.dataTermino"
-                          />
-                        </StepGrid>
-                      </div>
-                    </BentoBox>
-
-                    <BentoBox title="Proprietário do imóvel arrendado">
-                      <PessoaNaturezaFields v-model="form.proprietarioLocado" />
-                    </BentoBox>
-
-                    <BentoBox title="Partes">
-                      <StepGrid>
-                        <FormField label="Nome do contratante" placeholder="—" :span="6" v-model="form.nomeContratante" />
-                        <FormField label="Nome do contratado" placeholder="—" :span="6" v-model="form.nomeContratado" />
-                      </StepGrid>
-                    </BentoBox>
-                  </template>
-                </div>
-              </BentoBox>
-
-              <BentoBox title="Endereços da locação" :icon="Home">
-                <EnderecosLocacaoFields v-model:lista="form.enderecosLocacao" v-model:draft="enderecoDraft" />
-              </BentoBox>
-
-              <BentoBox title="Informações do proprietário da garantia">
-                <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
-              </BentoBox>
-            </template>
-
-            <template v-if="showLavoura">
-              <StepGrid>
-                <FormField label="Tamanho de área" placeholder="—" :span="4" v-model="form.tamanhoArea" />
-                <SelectField
-                  label="Unidade de medida"
-                  :options="UNIDADE_MEDIDA_OPTS"
+                  v-if="showFormaProduto"
+                  label="Forma do produto"
+                  :options="FORMA_PRODUTO_GARANTIA_OPTS"
                   placeholder="Selecione"
                   :span="4"
-                  v-model="form.unidadeMedidaTamanhoArea"
+                  v-model="form.formaProduto"
                 />
-                <FormField label="Ano da safra" placeholder="—" :span="4" v-model="form.anoSafra" />
               </StepGrid>
+              <ToggleRow
+                v-if="!hideCabecalhoExtra"
+                label="É instrumento particular"
+                :on="form.instrumentoParticular"
+                @toggle="form.instrumentoParticular = !form.instrumentoParticular"
+              />
+              <ToggleRow
+                v-if="showCamposPadraoGarantia"
+                label="Vai constituir garantia"
+                :on="form.constituirGarantia"
+                @toggle="form.constituirGarantia = !form.constituirGarantia"
+              />
+            </div>
+          </BentoBox>
 
-              <BentoBox title="Informações do produto" :icon="Scale">
+          <BentoBox v-if="showCamposPadraoGarantia && form.constituirGarantia" title="Constituição da garantia" :icon="Scale">
+            <StepGrid>
+              <FormField label="Órgão / cartório de registro" placeholder="—" required :span="6" v-model="form.cartorioConstituicao" />
+              <FormField label="Data prevista de constituição" placeholder="dd/mm/aaaa" required :span="6" v-model="form.dataPrevistaConstituicao" />
+              <FormField label="Observações" placeholder="—" :span="12" v-model="form.observacoesConstituicao" />
+            </StepGrid>
+          </BentoBox>
+
+          <template v-if="showEstoque">
+            <StepGrid>
+              <FormField
+                label="Número do contrato de estoque (terceiro)"
+                placeholder="—"
+                :span="12"
+                v-model="form.numeroContratoEstoque"
+              />
+            </StepGrid>
+
+            <BentoBox title="Informações do estoque de formação" :icon="Home">
+              <div class="flex flex-col" style="gap: 14px">
                 <StepGrid>
-                  <SelectField
-                    label="Produto"
-                    :options="PRODUTO_TIPO_OPTS"
-                    placeholder="Selecione"
-                    :span="3"
-                    v-model="form.produto"
-                  />
-                  <FormField label="Quantidade" placeholder="—" :span="3" v-model="form.quantidadeProduto" />
+                  <FormField label="Nome do imóvel" placeholder="—" :span="3" v-model="form.nomeImovel" />
+                  <FormField label="Matrícula" placeholder="—" :span="3" v-model="form.matricula" />
+                  <SelectField label="Zona" :options="ZONA_OPTS" placeholder="Selecione" :span="3" v-model="form.zona" />
+                  <SelectField label="Tipo" :options="TIPO_IMOVEL_OPTS" placeholder="Selecione" :span="3" v-model="form.tipoImovel" />
+                  <FormField label="Área total afetada" placeholder="—" :span="3" v-model="form.areaTotal" />
                   <SelectField
                     label="Unidade de medida"
                     :options="UNIDADE_MEDIDA_OPTS"
                     placeholder="Selecione"
                     :span="3"
-                    v-model="form.unidadeMedidaProduto"
+                    v-model="form.unidadeMedidaArea"
                   />
-                  <FormField
-                    label="Preço unitário"
-                    placeholder="R$ 0,00"
-                    currency
-                    :span="3"
-                    v-model="form.precoUnitario"
-                  />
-                </StepGrid>
-              </BentoBox>
-
-              <BentoBox title="Informações do local de formação" :icon="Home">
-                <div class="flex flex-col" style="gap: 14px">
-                  <StepGrid>
-                    <FormField label="Nome da fazenda" placeholder="—" :span="6" v-model="form.nomeImovel" />
-                    <FormField label="Matrícula" placeholder="—" :span="6" v-model="form.matricula" />
-                    <SelectField label="Zona" :options="ZONA_OPTS" placeholder="Selecione" :span="3" v-model="form.zona" />
-                    <SelectField label="Tipo" :options="TIPO_IMOVEL_OPTS" placeholder="Selecione" :span="3" v-model="form.tipoImovel" />
-                    <FormField label="Área total afetada" placeholder="—" :span="3" v-model="form.areaTotal" />
-                    <SelectField
-                      label="Unidade de medida"
-                      :options="UNIDADE_MEDIDA_OPTS"
-                      placeholder="Selecione"
-                      :span="3"
-                      v-model="form.unidadeMedidaArea"
-                    />
-                    <FormField label="Cartório de registro" placeholder="—" :span="4" v-model="form.cartorioRegistro" />
-                    <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="4" v-model="form.ufRegistro" />
-                    <SelectField
-                      label="Cidade de registro"
-                      :options="cidadeRegistroOpts"
-                      placeholder="Selecione"
-                      :span="4"
-                      :disabled="!form.ufRegistro"
-                      v-model="form.cidadeRegistro"
-                    />
-                  </StepGrid>
-
-                  <ToggleRow
-                    label="Imóvel arrendado"
-                    :on="form.imovelLocado"
-                    @toggle="form.imovelLocado = !form.imovelLocado"
-                  />
-
-                  <template v-if="form.imovelLocado">
-                    <BentoBox title="Informações da locação">
-                      <div class="flex flex-col" style="gap: 14px">
-                        <StepGrid>
-                          <SelectField
-                            label="Tipo de Locação"
-                            :options="TIPO_LOCACAO_OPTS"
-                            placeholder="Selecione"
-                            required
-                            :span="6"
-                            v-model="form.tipoLocacao"
-                          />
-                          <FormField label="Data de início" placeholder="dd/mm/aaaa" required :span="6" v-model="form.dataInicio" />
-                        </StepGrid>
-                        <ToggleRow
-                          label="Prazo indeterminado"
-                          :on="form.prazoIndeterminado"
-                          @toggle="form.prazoIndeterminado = !form.prazoIndeterminado"
-                        />
-                        <StepGrid v-if="!form.prazoIndeterminado">
-                          <FormField
-                            label="Data de término"
-                            placeholder="dd/mm/aaaa"
-                            required
-                            :span="6"
-                            v-model="form.dataTermino"
-                          />
-                        </StepGrid>
-                      </div>
-                    </BentoBox>
-
-                    <BentoBox title="Proprietário do imóvel arrendado">
-                      <PessoaNaturezaFields v-model="form.proprietarioLocado" />
-                    </BentoBox>
-
-                    <BentoBox title="Partes">
-                      <StepGrid>
-                        <FormField label="Nome do contratante" placeholder="—" :span="6" v-model="form.nomeContratante" />
-                        <FormField label="Nome do contratado" placeholder="—" :span="6" v-model="form.nomeContratado" />
-                      </StepGrid>
-                    </BentoBox>
-                  </template>
-                </div>
-              </BentoBox>
-
-              <BentoBox title="Endereços da locação" :icon="Home">
-                <EnderecosLocacaoFields v-model:lista="form.enderecosLocacao" v-model:draft="enderecoDraft" />
-              </BentoBox>
-
-              <BentoBox title="Informações do proprietário da garantia">
-                <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
-              </BentoBox>
-            </template>
-
-            <template v-if="showImovel">
-              <BentoBox title="Informações do imóvel" :icon="Home">
-                <div class="flex flex-col" style="gap: 14px">
-                  <StepGrid>
-                    <FormField label="Nome do imóvel" placeholder="—" :span="6" v-model="form.nomeImovel" />
-                    <FormField label="Matrícula" placeholder="—" :span="6" v-model="form.matricula" />
-                    <SelectField label="Zona" :options="ZONA_OPTS" placeholder="Selecione" :span="3" v-model="form.zona" />
-                    <SelectField label="Tipo" :options="TIPO_IMOVEL_OPTS" placeholder="Selecione" :span="3" v-model="form.tipoImovel" />
-                    <FormField label="Área total afetada" placeholder="—" :span="3" v-model="form.areaTotal" />
-                    <SelectField
-                      label="Unidade de medida"
-                      :options="UNIDADE_MEDIDA_OPTS"
-                      placeholder="Selecione"
-                      :span="3"
-                      v-model="form.unidadeMedidaArea"
-                    />
-                    <FormField label="Cartório de registro" placeholder="—" :span="4" v-model="form.cartorioRegistro" />
-                    <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="4" v-model="form.ufRegistro" />
-                    <SelectField
-                      label="Cidade de registro"
-                      :options="cidadeRegistroOpts"
-                      placeholder="Selecione"
-                      :span="4"
-                      :disabled="!form.ufRegistro"
-                      v-model="form.cidadeRegistro"
-                    />
-                    <FormField label="CAR (Cadastro Ambiental Rural)" placeholder="—" :span="4" v-model="form.car" />
-                    <FormField label="NIRF (Número do Imóvel na Receita Federal)" placeholder="—" :span="4" v-model="form.nirf" />
-                    <FormField label="CCIR (Certificado de Cadastro de Imóvel Rural)" placeholder="—" :span="4" v-model="form.ccir" />
-                    <FormField label="CCIR Ano" placeholder="—" :span="3" v-model="form.ccirAno" />
-                    <FormField label="SIGEF/INCRA" placeholder="—" :span="5" v-model="form.sigefIncra" />
-                  </StepGrid>
-
-                  <ToggleRow
-                    label="Possui seguro"
-                    :on="form.possuiSeguro"
-                    @toggle="form.possuiSeguro = !form.possuiSeguro"
-                  />
-                </div>
-              </BentoBox>
-
-              <BentoBox title="Informações do proprietário da garantia">
-                <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
-              </BentoBox>
-            </template>
-
-            <template v-if="showBensMoveis">
-              <BentoBox title="Dados do bem" :icon="Scale">
-                <StepGrid>
-                  <FormField label="Descrição" placeholder="—" :span="6" v-model="bemDraft.descricao" />
-                  <FormField label="Preço unitário" placeholder="R$ 0,00" :span="3" v-model="bemDraft.precoUnitario" />
-                  <FormField label="Quantidade" placeholder="—" :span="3" v-model="bemDraft.quantidade" />
-                  <FormField label="Marca" placeholder="—" :span="3" v-model="bemDraft.marca" />
-                  <FormField label="Modelo" placeholder="—" :span="3" v-model="bemDraft.modelo" />
-                  <FormField label="Ano de fabricação" placeholder="—" :span="3" v-model="bemDraft.anoFabricacao" />
-                  <FormField label="Número de série" placeholder="—" :span="3" v-model="bemDraft.numeroSerie" />
-                  <FormField label="Matrícula" placeholder="—" :span="3" v-model="bemDraft.matricula" />
-                </StepGrid>
-              </BentoBox>
-
-              <BentoBox title="Local de armazenamento" :icon="Home">
-                <StepGrid>
-                  <FormField label="CEP" placeholder="—" :span="4" v-model="bemDraft.cep" />
-                  <FormField label="Localidade" placeholder="—" :span="8" v-model="bemDraft.localidade" />
-                  <FormField label="Número" placeholder="—" :span="4" v-model="bemDraft.numero" />
-                  <FormField label="Bairro" placeholder="—" :span="8" v-model="bemDraft.bairro" />
-                  <FormField label="Informações adicionais" placeholder="—" :span="12" v-model="bemDraft.infoAdicionais" />
-                  <FormField label="Cidade" placeholder="—" :span="12" v-model="bemDraft.cidade" />
-                  <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="6" v-model="bemDraft.estado" />
-                  <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="6" v-model="bemDraft.pais" />
-                </StepGrid>
-              </BentoBox>
-
-              <BentoBox title="Dados de registro" :icon="Scale">
-                <StepGrid>
-                  <FormField label="Cartório de registro" placeholder="—" :span="4" v-model="bemDraft.cartorioRegistro" />
-                  <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="4" v-model="bemDraft.ufRegistro" />
+                  <FormField label="Cartório de registro" placeholder="—" :span="3" v-model="form.cartorioRegistro" />
+                  <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="3" v-model="form.ufRegistro" />
                   <SelectField
                     label="Cidade de registro"
-                    :options="cidadeBemRegistroOpts"
+                    :options="cidadeRegistroOpts"
+                    placeholder="Selecione"
+                    :span="3"
+                    :disabled="!form.ufRegistro"
+                    v-model="form.cidadeRegistro"
+                  />
+                </StepGrid>
+
+                <ToggleRow label="Imóvel locado" :on="form.imovelLocado" @toggle="form.imovelLocado = !form.imovelLocado" />
+
+                <template v-if="form.imovelLocado">
+                  <BentoBox title="Informações da locação">
+                    <div class="flex flex-col" style="gap: 14px">
+                      <StepGrid>
+                        <SelectField
+                          label="Tipo de Locação"
+                          :options="TIPO_LOCACAO_OPTS"
+                          placeholder="Selecione"
+                          required
+                          :span="6"
+                          v-model="form.tipoLocacao"
+                        />
+                        <FormField label="Data de início" placeholder="dd/mm/aaaa" required :span="6" v-model="form.dataInicio" />
+                      </StepGrid>
+                      <ToggleRow
+                        label="Prazo indeterminado"
+                        :on="form.prazoIndeterminado"
+                        @toggle="form.prazoIndeterminado = !form.prazoIndeterminado"
+                      />
+                      <StepGrid v-if="!form.prazoIndeterminado">
+                        <FormField
+                          label="Data de término"
+                          placeholder="dd/mm/aaaa"
+                          required
+                          :span="6"
+                          v-model="form.dataTermino"
+                        />
+                      </StepGrid>
+                    </div>
+                  </BentoBox>
+
+                  <BentoBox title="Proprietário do imóvel locado">
+                    <PessoaNaturezaFields v-model="form.proprietarioLocado" />
+                  </BentoBox>
+
+                  <BentoBox title="Partes">
+                    <StepGrid>
+                      <FormField label="Nome do contratante" placeholder="—" :span="6" v-model="form.nomeContratante" />
+                      <FormField label="Nome do contratado" placeholder="—" :span="6" v-model="form.nomeContratado" />
+                    </StepGrid>
+                  </BentoBox>
+                </template>
+              </div>
+            </BentoBox>
+
+            <BentoBox title="Informações do endereço da locação" :icon="Home">
+              <StepGrid>
+                <FormField label="CEP" placeholder="—" :span="4" v-model="form.cep" />
+                <FormField label="Localidade" placeholder="—" :span="8" v-model="form.localidade" />
+                <FormField label="Número" placeholder="—" :span="4" v-model="form.numero" />
+                <FormField label="Bairro" placeholder="—" :span="8" v-model="form.bairro" />
+                <FormField label="Informações adicionais" placeholder="—" :span="12" v-model="form.infoAdicionais" />
+                <FormField label="Cidade" placeholder="—" :span="12" v-model="form.cidade" />
+                <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="6" v-model="form.estado" />
+                <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="6" v-model="form.pais" />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Informações do proprietário da garantia" :icon="User">
+              <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
+            </BentoBox>
+
+            <div class="flex justify-end">
+              <AddButton @click="addEstoque">Adicionar dados do estoque</AddButton>
+            </div>
+
+            <BentoBox title="Estoques" :icon="Home">
+              <div
+                v-if="form.estoques.length === 0"
+                style="padding: 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+              >
+                Não foi encontrado nenhum resultado.
+              </div>
+              <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+                <div
+                  class="grid"
+                  style="
+                    grid-template-columns: 1fr 1fr auto;
+                    padding: 10px 14px;
+                    background: var(--surface-sunken);
+                    font-size: 10px;
+                    font-weight: var(--weight-bold);
+                    letter-spacing: 0.12em;
+                    color: var(--text-muted);
+                    text-transform: uppercase;
+                  "
+                >
+                  <div>Propriedade</div>
+                  <div>Proprietário</div>
+                  <div />
+                </div>
+                <div
+                  v-for="(e, i) in form.estoques"
+                  :key="i"
+                  class="grid items-center"
+                  style="
+                    grid-template-columns: 1fr 1fr auto;
+                    padding: 10px 14px;
+                    border-top: 1px solid var(--border-default);
+                    font-size: var(--text-sm);
+                  "
+                >
+                  <div>{{ e.propriedade }}</div>
+                  <div>{{ e.proprietario }}</div>
+                  <button
+                    aria-label="Remover"
+                    style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
+                    @click="removeEstoque(i)"
+                  >
+                    <Trash2 :size="14" />
+                  </button>
+                </div>
+              </div>
+            </BentoBox>
+
+            <BentoBox title="Informações do relatório" :icon="Scale">
+              <StepGrid>
+                <FormField label="Data do relatório" placeholder="dd/mm/aaaa" required :span="4" v-model="form.dataRelatorio" />
+                <SelectField
+                  label="Periodicidade do relatório"
+                  :options="PERIODICIDADE_RELATORIO_OPTS"
+                  placeholder="Selecione"
+                  :span="4"
+                  v-model="form.periodicidadeRelatorio"
+                />
+                <FormField
+                  label="Data da primeira atualização"
+                  placeholder="dd/mm/aaaa"
+                  required
+                  :span="4"
+                  v-model="form.dataPrimeiraAtualizacao"
+                />
+              </StepGrid>
+            </BentoBox>
+
+            <DocGroup
+              title="Anexos do estoque"
+              :docs="[RELACAO_ESTOQUE_DOC]"
+              :doc-files="{ [RELACAO_ESTOQUE_DOC.id]: form.relacaoEstoqueDetalhadoEnviado }"
+              :doc-validades="{ [RELACAO_ESTOQUE_DOC.id]: form.relacaoEstoqueDetalhadoValidade }"
+              @toggle-doc="toggleRelacaoEstoque"
+              @update-validade="(_, value) => (form.relacaoEstoqueDetalhadoValidade = value)"
+            />
+          </template>
+
+          <template v-if="showAtivosBiologicos">
+            <StepGrid>
+              <FormField label="Quantidade de animais" placeholder="—" :span="3" v-model="form.quantidadeAnimais" />
+              <SelectField
+                label="Categoria"
+                :options="CATEGORIA_ANIMAL_OPTS"
+                placeholder="Selecione"
+                :span="3"
+                v-model="form.categoriaAnimal"
+              />
+              <FormField label="Peso médio" placeholder="—" :span="3" v-model="form.pesoMedio" />
+              <SelectField
+                label="Unidade de medida"
+                :options="UNIDADE_PESO_ANIMAL_OPTS"
+                placeholder="Selecione"
+                :span="3"
+                v-model="form.unidadeMedidaPeso"
+              />
+            </StepGrid>
+
+            <BentoBox title="Informações do local de formação" :icon="Home">
+              <div class="flex flex-col" style="gap: 14px">
+                <StepGrid>
+                  <FormField label="Nome do imóvel" placeholder="—" :span="6" v-model="form.nomeImovel" />
+                  <FormField label="Matrícula" placeholder="—" :span="6" v-model="form.matricula" />
+                  <SelectField label="Zona" :options="ZONA_OPTS" placeholder="Selecione" :span="3" v-model="form.zona" />
+                  <SelectField label="Tipo" :options="TIPO_IMOVEL_OPTS" placeholder="Selecione" :span="3" v-model="form.tipoImovel" />
+                  <FormField label="Área total afetada" placeholder="—" :span="3" v-model="form.areaTotal" />
+                  <SelectField
+                    label="Unidade de medida"
+                    :options="UNIDADE_MEDIDA_OPTS"
+                    placeholder="Selecione"
+                    :span="3"
+                    v-model="form.unidadeMedidaArea"
+                  />
+                  <FormField label="Cartório de registro" placeholder="—" :span="4" v-model="form.cartorioRegistro" />
+                  <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="4" v-model="form.ufRegistro" />
+                  <SelectField
+                    label="Cidade de registro"
+                    :options="cidadeRegistroOpts"
                     placeholder="Selecione"
                     :span="4"
-                    :disabled="!bemDraft.ufRegistro"
-                    v-model="bemDraft.cidadeRegistro"
+                    :disabled="!form.ufRegistro"
+                    v-model="form.cidadeRegistro"
                   />
                 </StepGrid>
-              </BentoBox>
 
-              <BentoBox title="Informações do proprietário da garantia" :icon="User">
-                <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
-              </BentoBox>
+                <ToggleRow
+                  label="Imóvel arrendado"
+                  :on="form.imovelLocado"
+                  @toggle="form.imovelLocado = !form.imovelLocado"
+                />
 
-              <BentoBox title="Documentos" :icon="Shield">
-                <div>
-                  <FieldLabel>Documentos</FieldLabel>
-                  <div style="position: relative">
-                    <textarea
-                      v-model="bemDraft.documentos"
-                      placeholder="Descreva o documento…"
-                      rows="3"
-                      :style="{
-                        width: '100%',
-                        padding: '12px 14px',
-                        paddingBottom: '28px',
-                        background: 'var(--surface-card)',
-                        border: '1px solid var(--border-default)',
-                        borderRadius: 'var(--radius-lg)',
-                        outline: 'none',
-                        fontSize: 'var(--text-sm)',
-                        color: 'var(--text-strong)',
-                        resize: 'vertical',
-                        fontFamily: 'inherit',
-                      }"
-                    />
-                    <span
-                      style="
-                        position: absolute;
-                        right: 12px;
-                        bottom: 12px;
-                        font-size: 11px;
-                        color: var(--text-muted);
-                      "
-                    >{{ documentosBemLen }}</span>
-                  </div>
-                </div>
-              </BentoBox>
+                <template v-if="form.imovelLocado">
+                  <BentoBox title="Informações da locação">
+                    <div class="flex flex-col" style="gap: 14px">
+                      <StepGrid>
+                        <SelectField
+                          label="Tipo de Locação"
+                          :options="TIPO_LOCACAO_OPTS"
+                          placeholder="Selecione"
+                          required
+                          :span="6"
+                          v-model="form.tipoLocacao"
+                        />
+                        <FormField label="Data de início" placeholder="dd/mm/aaaa" required :span="6" v-model="form.dataInicio" />
+                      </StepGrid>
+                      <ToggleRow
+                        label="Prazo indeterminado"
+                        :on="form.prazoIndeterminado"
+                        @toggle="form.prazoIndeterminado = !form.prazoIndeterminado"
+                      />
+                      <StepGrid v-if="!form.prazoIndeterminado">
+                        <FormField
+                          label="Data de término"
+                          placeholder="dd/mm/aaaa"
+                          required
+                          :span="6"
+                          v-model="form.dataTermino"
+                        />
+                      </StepGrid>
+                    </div>
+                  </BentoBox>
 
-              <div class="flex justify-end">
-                <AddButton @click="addBemMovel">Adicionar bem</AddButton>
+                  <BentoBox title="Proprietário do imóvel arrendado">
+                    <PessoaNaturezaFields v-model="form.proprietarioLocado" />
+                  </BentoBox>
+
+                  <BentoBox title="Partes">
+                    <StepGrid>
+                      <FormField label="Nome do contratante" placeholder="—" :span="6" v-model="form.nomeContratante" />
+                      <FormField label="Nome do contratado" placeholder="—" :span="6" v-model="form.nomeContratado" />
+                    </StepGrid>
+                  </BentoBox>
+                </template>
               </div>
+            </BentoBox>
 
-              <BentoBox title="Bens adicionados" :icon="Scale">
-                <div
-                  v-if="form.bensMoveis.length === 0"
-                  style="padding: 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
-                >
-                  Não foi encontrado nenhum resultado.
-                </div>
-                <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
-                  <div
-                    class="grid"
-                    style="
-                      grid-template-columns: 1.4fr 1fr 0.6fr 1fr auto;
-                      padding: 10px 14px;
-                      background: var(--surface-sunken);
-                      font-size: 10px;
-                      font-weight: var(--weight-bold);
-                      letter-spacing: 0.12em;
-                      color: var(--text-muted);
-                      text-transform: uppercase;
-                    "
-                  >
-                    <div>Descrição</div>
-                    <div>Marca / Modelo</div>
-                    <div>Ano</div>
-                    <div>Proprietário</div>
-                    <div />
-                  </div>
-                  <div
-                    v-for="(b, i) in form.bensMoveis"
-                    :key="i"
-                    class="grid items-center"
-                    style="
-                      grid-template-columns: 1.4fr 1fr 0.6fr 1fr auto;
-                      padding: 10px 14px;
-                      border-top: 1px solid var(--border-default);
-                      font-size: var(--text-sm);
-                    "
-                  >
-                    <div>{{ b.descricao || '—' }}</div>
-                    <div>{{ [b.marca, b.modelo].filter(Boolean).join(' / ') || '—' }}</div>
-                    <div>{{ b.anoFabricacao || '—' }}</div>
-                    <div>{{ b.proprietario || '—' }}</div>
-                    <button
-                      aria-label="Remover"
-                      style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
-                      @click="removeBemMovel(i)"
-                    >
-                      <Trash2 :size="14" />
-                    </button>
-                  </div>
-                </div>
-              </BentoBox>
-            </template>
+            <BentoBox title="Endereços da locação" :icon="Home">
+              <EnderecosLocacaoFields v-model:lista="form.enderecosLocacao" v-model:draft="enderecoDraft" />
+            </BentoBox>
 
-            <template v-if="showCessaoDuplicatas">
-              <StepGrid>
-                <SelectField
-                  label="Tipo de contrato"
-                  :options="TIPO_CONTRATO_CESSAO_OPTS"
-                  placeholder="Selecione"
-                  required
-                  :span="4"
-                  v-model="form.tipoContrato"
-                />
-                <FormField
-                  label="Data de emissão"
-                  placeholder="dd/mm/aaaa"
-                  required
-                  :span="4"
-                  v-model="form.dataEmissaoContrato"
-                />
-                <FormField
-                  label="Data de vencimento"
-                  placeholder="dd/mm/aaaa"
-                  required
-                  :span="4"
-                  v-model="form.dataVencimentoContrato"
-                />
-              </StepGrid>
+            <BentoBox title="Informações do proprietário da garantia">
+              <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
+            </BentoBox>
+          </template>
 
-              <div>
-                <FieldLabel>Descrição do contrato</FieldLabel>
-                <div style="position: relative">
-                  <textarea
-                    v-model="form.descricaoContrato"
-                    placeholder="—"
-                    rows="4"
-                    :style="{
-                      width: '100%',
-                      padding: '12px 14px',
-                      paddingBottom: '28px',
-                      background: 'var(--surface-card)',
-                      border: '1px solid var(--border-default)',
-                      borderRadius: 'var(--radius-lg)',
-                      outline: 'none',
-                      fontSize: 'var(--text-sm)',
-                      color: 'var(--text-strong)',
-                      resize: 'vertical',
-                      fontFamily: 'inherit',
-                    }"
-                  />
-                  <span
-                    style="
-                      position: absolute;
-                      right: 12px;
-                      bottom: 12px;
-                      font-size: 11px;
-                      color: var(--text-muted);
-                    "
-                  >{{ descricaoContratoLen }}</span>
-                </div>
-              </div>
-
-              <BentoBox title="Cedente" :icon="User">
-                <StepGrid>
-                  <FormField label="CPF/CNPJ" placeholder="—" required :span="6" v-model="form.cedenteDocumento" />
-                  <FormField label="Nome/Razão social" placeholder="—" required :span="6" v-model="form.cedenteNome" />
-                </StepGrid>
-              </BentoBox>
-
-              <BentoBox title="Sacado" :icon="User">
-                <StepGrid>
-                  <FormField label="CPF/CNPJ" placeholder="—" required :span="6" v-model="form.sacadoDocumento" />
-                  <FormField label="Nome/Razão social" placeholder="—" required :span="6" v-model="form.sacadoNome" />
-                </StepGrid>
-              </BentoBox>
-
-              <ToggleRow
-                label="Cadastrar campos opcionais"
-                :on="form.cadastrarCamposOpcionais"
-                @toggle="form.cadastrarCamposOpcionais = !form.cadastrarCamposOpcionais"
+          <template v-if="showLavoura">
+            <StepGrid>
+              <FormField label="Tamanho de área" placeholder="—" :span="4" v-model="form.tamanhoArea" />
+              <SelectField
+                label="Unidade de medida"
+                :options="UNIDADE_MEDIDA_OPTS"
+                placeholder="Selecione"
+                :span="4"
+                v-model="form.unidadeMedidaTamanhoArea"
               />
+              <FormField label="Ano da safra" placeholder="—" :span="4" v-model="form.anoSafra" />
+            </StepGrid>
 
-              <template v-if="form.cadastrarCamposOpcionais">
-                <BentoBox title="Informações adicionais">
-                  <StepGrid>
-                    <FormField
-                      label="Porcentagem equivalente sobre a CPRF %"
-                      placeholder="—"
-                      :span="6"
-                      v-model="form.pctEquivalenteCprf"
-                    />
-                  </StepGrid>
-                </BentoBox>
-
-                <BentoBox title="Informações bancárias">
-                  <StepGrid>
-                    <SelectField
-                      label="Banco"
-                      :options="BANCO_OPTS"
-                      placeholder="Selecione"
-                      :span="6"
-                      v-model="form.bancoEscrow"
-                    />
-                    <FormField label="Conta Escrow" placeholder="—" :span="3" v-model="form.contaEscrow" />
-                    <FormField label="Agência Escrow" placeholder="—" :span="3" v-model="form.agenciaEscrow" />
-                    <FormField label="Titular" placeholder="—" :span="12" v-model="form.titularEscrow" />
-                  </StepGrid>
-                </BentoBox>
-              </template>
-            </template>
-
-            <template v-if="showCessaoContrato">
+            <BentoBox title="Informações do produto" :icon="Scale">
               <StepGrid>
                 <SelectField
-                  label="Tipo de título"
-                  :options="TIPO_TITULO_CESSAO_OPTS"
+                  label="Produto"
+                  :options="PRODUTO_TIPO_OPTS"
                   placeholder="Selecione"
-                  required
                   :span="3"
-                  v-model="form.tipoTitulo"
+                  v-model="form.produto"
                 />
+                <FormField label="Quantidade" placeholder="—" :span="3" v-model="form.quantidadeProduto" />
                 <SelectField
-                  label="Tipo de contrato"
-                  :options="TIPO_CONTRATO_CESSAO_OPTS"
+                  label="Unidade de medida"
+                  :options="UNIDADE_MEDIDA_OPTS"
                   placeholder="Selecione"
-                  required
                   :span="3"
-                  v-model="form.tipoContrato"
+                  v-model="form.unidadeMedidaProduto"
                 />
                 <FormField
-                  label="Data de emissão"
-                  placeholder="dd/mm/aaaa"
-                  required
+                  label="Preço unitário"
+                  placeholder="R$ 0,00"
+                  currency
                   :span="3"
-                  v-model="form.dataEmissaoContrato"
-                />
-                <FormField
-                  label="Data de vencimento"
-                  placeholder="dd/mm/aaaa"
-                  required
-                  :span="3"
-                  v-model="form.dataVencimentoContrato"
+                  v-model="form.precoUnitario"
                 />
               </StepGrid>
+            </BentoBox>
 
-              <div>
-                <FieldLabel>Descrição do contrato</FieldLabel>
-                <div style="position: relative">
-                  <textarea
-                    v-model="form.descricaoContrato"
-                    placeholder="—"
-                    rows="4"
-                    :style="{
-                      width: '100%',
-                      padding: '12px 14px',
-                      paddingBottom: '28px',
-                      background: 'var(--surface-card)',
-                      border: '1px solid var(--border-default)',
-                      borderRadius: 'var(--radius-lg)',
-                      outline: 'none',
-                      fontSize: 'var(--text-sm)',
-                      color: 'var(--text-strong)',
-                      resize: 'vertical',
-                      fontFamily: 'inherit',
-                    }"
-                  />
-                  <span
-                    style="
-                      position: absolute;
-                      right: 12px;
-                      bottom: 12px;
-                      font-size: 11px;
-                      color: var(--text-muted);
-                    "
-                  >{{ descricaoContratoLen }}</span>
-                </div>
-              </div>
-
-              <BentoBox title="Cedente" :icon="User">
+            <BentoBox title="Informações do local de formação" :icon="Home">
+              <div class="flex flex-col" style="gap: 14px">
                 <StepGrid>
-                  <FormField label="CPF/CNPJ" placeholder="—" required :span="6" v-model="form.cedenteDocumento" />
-                  <FormField label="Nome/Razão social" placeholder="—" required :span="6" v-model="form.cedenteNome" />
-                </StepGrid>
-              </BentoBox>
-
-              <BentoBox title="Sacado" :icon="User">
-                <StepGrid>
-                  <FormField label="CPF/CNPJ" placeholder="—" required :span="6" v-model="form.sacadoDocumento" />
-                  <FormField label="Nome/Razão social" placeholder="—" required :span="6" v-model="form.sacadoNome" />
-                  <FormField label="CEP" placeholder="—" :span="3" v-model="form.sacadoCep" />
-                  <FormField label="Localidade" placeholder="—" :span="6" v-model="form.sacadoLocalidade" />
-                  <FormField label="Número" placeholder="—" :span="3" v-model="form.sacadoNumero" />
-                  <FormField label="Bairro" placeholder="—" :span="4" v-model="form.sacadoBairro" />
-                  <FormField label="Informações adicionais" placeholder="—" :span="8" v-model="form.sacadoInfoAdicionais" />
-                  <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="3" v-model="form.sacadoEstado" />
+                  <FormField label="Nome da fazenda" placeholder="—" :span="6" v-model="form.nomeImovel" />
+                  <FormField label="Matrícula" placeholder="—" :span="6" v-model="form.matricula" />
+                  <SelectField label="Zona" :options="ZONA_OPTS" placeholder="Selecione" :span="3" v-model="form.zona" />
+                  <SelectField label="Tipo" :options="TIPO_IMOVEL_OPTS" placeholder="Selecione" :span="3" v-model="form.tipoImovel" />
+                  <FormField label="Área total afetada" placeholder="—" :span="3" v-model="form.areaTotal" />
                   <SelectField
-                    label="Cidade"
-                    :options="cidadeSacadoOpts"
+                    label="Unidade de medida"
+                    :options="UNIDADE_MEDIDA_OPTS"
                     placeholder="Selecione"
-                    :span="5"
-                    :disabled="!form.sacadoEstado"
-                    v-model="form.sacadoCidade"
+                    :span="3"
+                    v-model="form.unidadeMedidaArea"
                   />
-                  <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="4" v-model="form.sacadoPais" />
+                  <FormField label="Cartório de registro" placeholder="—" :span="4" v-model="form.cartorioRegistro" />
+                  <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="4" v-model="form.ufRegistro" />
+                  <SelectField
+                    label="Cidade de registro"
+                    :options="cidadeRegistroOpts"
+                    placeholder="Selecione"
+                    :span="4"
+                    :disabled="!form.ufRegistro"
+                    v-model="form.cidadeRegistro"
+                  />
+                </StepGrid>
+
+                <ToggleRow
+                  label="Imóvel arrendado"
+                  :on="form.imovelLocado"
+                  @toggle="form.imovelLocado = !form.imovelLocado"
+                />
+
+                <template v-if="form.imovelLocado">
+                  <BentoBox title="Informações da locação">
+                    <div class="flex flex-col" style="gap: 14px">
+                      <StepGrid>
+                        <SelectField
+                          label="Tipo de Locação"
+                          :options="TIPO_LOCACAO_OPTS"
+                          placeholder="Selecione"
+                          required
+                          :span="6"
+                          v-model="form.tipoLocacao"
+                        />
+                        <FormField label="Data de início" placeholder="dd/mm/aaaa" required :span="6" v-model="form.dataInicio" />
+                      </StepGrid>
+                      <ToggleRow
+                        label="Prazo indeterminado"
+                        :on="form.prazoIndeterminado"
+                        @toggle="form.prazoIndeterminado = !form.prazoIndeterminado"
+                      />
+                      <StepGrid v-if="!form.prazoIndeterminado">
+                        <FormField
+                          label="Data de término"
+                          placeholder="dd/mm/aaaa"
+                          required
+                          :span="6"
+                          v-model="form.dataTermino"
+                        />
+                      </StepGrid>
+                    </div>
+                  </BentoBox>
+
+                  <BentoBox title="Proprietário do imóvel arrendado">
+                    <PessoaNaturezaFields v-model="form.proprietarioLocado" />
+                  </BentoBox>
+
+                  <BentoBox title="Partes">
+                    <StepGrid>
+                      <FormField label="Nome do contratante" placeholder="—" :span="6" v-model="form.nomeContratante" />
+                      <FormField label="Nome do contratado" placeholder="—" :span="6" v-model="form.nomeContratado" />
+                    </StepGrid>
+                  </BentoBox>
+                </template>
+              </div>
+            </BentoBox>
+
+            <BentoBox title="Endereços da locação" :icon="Home">
+              <EnderecosLocacaoFields v-model:lista="form.enderecosLocacao" v-model:draft="enderecoDraft" />
+            </BentoBox>
+
+            <BentoBox title="Informações do proprietário da garantia">
+              <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
+            </BentoBox>
+          </template>
+
+          <template v-if="showImovel">
+            <BentoBox title="Informações do imóvel" :icon="Home">
+              <div class="flex flex-col" style="gap: 14px">
+                <StepGrid>
+                  <FormField label="Nome do imóvel" placeholder="—" :span="6" v-model="form.nomeImovel" />
+                  <FormField label="Matrícula" placeholder="—" :span="6" v-model="form.matricula" />
+                  <SelectField label="Zona" :options="ZONA_OPTS" placeholder="Selecione" :span="3" v-model="form.zona" />
+                  <SelectField label="Tipo" :options="TIPO_IMOVEL_OPTS" placeholder="Selecione" :span="3" v-model="form.tipoImovel" />
+                  <FormField label="Área total afetada" placeholder="—" :span="3" v-model="form.areaTotal" />
+                  <SelectField
+                    label="Unidade de medida"
+                    :options="UNIDADE_MEDIDA_OPTS"
+                    placeholder="Selecione"
+                    :span="3"
+                    v-model="form.unidadeMedidaArea"
+                  />
+                  <FormField label="Cartório de registro" placeholder="—" :span="4" v-model="form.cartorioRegistro" />
+                  <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="4" v-model="form.ufRegistro" />
+                  <SelectField
+                    label="Cidade de registro"
+                    :options="cidadeRegistroOpts"
+                    placeholder="Selecione"
+                    :span="4"
+                    :disabled="!form.ufRegistro"
+                    v-model="form.cidadeRegistro"
+                  />
+                  <FormField label="CAR (Cadastro Ambiental Rural)" placeholder="—" :span="4" v-model="form.car" />
+                  <FormField label="NIRF (Número do Imóvel na Receita Federal)" placeholder="—" :span="4" v-model="form.nirf" />
+                  <FormField label="CCIR (Certificado de Cadastro de Imóvel Rural)" placeholder="—" :span="4" v-model="form.ccir" />
+                  <FormField label="CCIR Ano" placeholder="—" :span="3" v-model="form.ccirAno" />
+                  <FormField label="SIGEF/INCRA" placeholder="—" :span="5" v-model="form.sigefIncra" />
+                </StepGrid>
+
+                <ToggleRow
+                  label="Possui seguro"
+                  :on="form.possuiSeguro"
+                  @toggle="form.possuiSeguro = !form.possuiSeguro"
+                />
+              </div>
+            </BentoBox>
+
+            <BentoBox title="Informações do proprietário da garantia">
+              <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
+            </BentoBox>
+          </template>
+
+          <template v-if="showBensMoveis">
+            <BentoBox title="Dados do bem" :icon="Scale">
+              <StepGrid>
+                <FormField label="Descrição" placeholder="—" :span="6" v-model="bemDraft.descricao" />
+                <FormField label="Preço unitário" placeholder="R$ 0,00" :span="3" v-model="bemDraft.precoUnitario" />
+                <FormField label="Quantidade" placeholder="—" :span="3" v-model="bemDraft.quantidade" />
+                <FormField label="Marca" placeholder="—" :span="3" v-model="bemDraft.marca" />
+                <FormField label="Modelo" placeholder="—" :span="3" v-model="bemDraft.modelo" />
+                <FormField label="Ano de fabricação" placeholder="—" :span="3" v-model="bemDraft.anoFabricacao" />
+                <FormField label="Número de série" placeholder="—" :span="3" v-model="bemDraft.numeroSerie" />
+                <FormField label="Matrícula" placeholder="—" :span="3" v-model="bemDraft.matricula" />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Local de armazenamento" :icon="Home">
+              <StepGrid>
+                <FormField label="CEP" placeholder="—" :span="4" v-model="bemDraft.cep" />
+                <FormField label="Localidade" placeholder="—" :span="8" v-model="bemDraft.localidade" />
+                <FormField label="Número" placeholder="—" :span="4" v-model="bemDraft.numero" />
+                <FormField label="Bairro" placeholder="—" :span="8" v-model="bemDraft.bairro" />
+                <FormField label="Informações adicionais" placeholder="—" :span="12" v-model="bemDraft.infoAdicionais" />
+                <FormField label="Cidade" placeholder="—" :span="12" v-model="bemDraft.cidade" />
+                <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="6" v-model="bemDraft.estado" />
+                <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="6" v-model="bemDraft.pais" />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Dados de registro" :icon="Scale">
+              <StepGrid>
+                <FormField label="Cartório de registro" placeholder="—" :span="4" v-model="bemDraft.cartorioRegistro" />
+                <SelectField label="UF de registro" :options="ufOpts" placeholder="UF" :span="4" v-model="bemDraft.ufRegistro" />
+                <SelectField
+                  label="Cidade de registro"
+                  :options="cidadeBemRegistroOpts"
+                  placeholder="Selecione"
+                  :span="4"
+                  :disabled="!bemDraft.ufRegistro"
+                  v-model="bemDraft.cidadeRegistro"
+                />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Informações do proprietário da garantia" :icon="User">
+              <PessoaNaturezaFields v-model="form.proprietarioGarantia" />
+            </BentoBox>
+
+            <BentoBox title="Documentos" :icon="Shield">
+              <div>
+                <FieldLabel>Documentos</FieldLabel>
+                <div style="position: relative">
+                  <textarea
+                    v-model="bemDraft.documentos"
+                    placeholder="Descreva o documento…"
+                    rows="3"
+                    :style="{
+                      width: '100%',
+                      padding: '12px 14px',
+                      paddingBottom: '28px',
+                      background: 'var(--surface-card)',
+                      border: '1px solid var(--border-default)',
+                      borderRadius: 'var(--radius-lg)',
+                      outline: 'none',
+                      fontSize: 'var(--text-sm)',
+                      color: 'var(--text-strong)',
+                      resize: 'vertical',
+                      fontFamily: 'inherit',
+                    }"
+                  />
+                  <span
+                    style="
+                      position: absolute;
+                      right: 12px;
+                      bottom: 12px;
+                      font-size: 11px;
+                      color: var(--text-muted);
+                    "
+                  >{{ documentosBemLen }}</span>
+                </div>
+              </div>
+            </BentoBox>
+
+            <div class="flex justify-end">
+              <AddButton @click="addBemMovel">Adicionar bem</AddButton>
+            </div>
+
+            <BentoBox title="Bens adicionados" :icon="Scale">
+              <div
+                v-if="form.bensMoveis.length === 0"
+                style="padding: 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+              >
+                Não foi encontrado nenhum resultado.
+              </div>
+              <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+                <div
+                  class="grid"
+                  style="
+                    grid-template-columns: 1.4fr 1fr 0.6fr 1fr auto;
+                    padding: 10px 14px;
+                    background: var(--surface-sunken);
+                    font-size: 10px;
+                    font-weight: var(--weight-bold);
+                    letter-spacing: 0.12em;
+                    color: var(--text-muted);
+                    text-transform: uppercase;
+                  "
+                >
+                  <div>Descrição</div>
+                  <div>Marca / Modelo</div>
+                  <div>Ano</div>
+                  <div>Proprietário</div>
+                  <div />
+                </div>
+                <div
+                  v-for="(b, i) in form.bensMoveis"
+                  :key="i"
+                  class="grid items-center"
+                  style="
+                    grid-template-columns: 1.4fr 1fr 0.6fr 1fr auto;
+                    padding: 10px 14px;
+                    border-top: 1px solid var(--border-default);
+                    font-size: var(--text-sm);
+                  "
+                >
+                  <div>{{ b.descricao || '—' }}</div>
+                  <div>{{ [b.marca, b.modelo].filter(Boolean).join(' / ') || '—' }}</div>
+                  <div>{{ b.anoFabricacao || '—' }}</div>
+                  <div>{{ b.proprietario || '—' }}</div>
+                  <button
+                    aria-label="Remover"
+                    style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
+                    @click="removeBemMovel(i)"
+                  >
+                    <Trash2 :size="14" />
+                  </button>
+                </div>
+              </div>
+            </BentoBox>
+          </template>
+
+          <template v-if="showCessaoDuplicatas">
+            <StepGrid>
+              <SelectField
+                label="Tipo de contrato"
+                :options="TIPO_CONTRATO_CESSAO_OPTS"
+                placeholder="Selecione"
+                required
+                :span="4"
+                v-model="form.tipoContrato"
+              />
+              <FormField
+                label="Data de emissão"
+                placeholder="dd/mm/aaaa"
+                required
+                :span="4"
+                v-model="form.dataEmissaoContrato"
+              />
+              <FormField
+                label="Data de vencimento"
+                placeholder="dd/mm/aaaa"
+                required
+                :span="4"
+                v-model="form.dataVencimentoContrato"
+              />
+            </StepGrid>
+
+            <div>
+              <FieldLabel>Descrição do contrato</FieldLabel>
+              <div style="position: relative">
+                <textarea
+                  v-model="form.descricaoContrato"
+                  placeholder="—"
+                  rows="4"
+                  :style="{
+                    width: '100%',
+                    padding: '12px 14px',
+                    paddingBottom: '28px',
+                    background: 'var(--surface-card)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: 'var(--radius-lg)',
+                    outline: 'none',
+                    fontSize: 'var(--text-sm)',
+                    color: 'var(--text-strong)',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                  }"
+                />
+                <span
+                  style="
+                    position: absolute;
+                    right: 12px;
+                    bottom: 12px;
+                    font-size: 11px;
+                    color: var(--text-muted);
+                  "
+                >{{ descricaoContratoLen }}</span>
+              </div>
+            </div>
+
+            <BentoBox title="Cedente" :icon="User">
+              <StepGrid>
+                <FormField label="CPF/CNPJ" placeholder="—" required :span="6" v-model="form.cedenteDocumento" />
+                <FormField label="Nome/Razão social" placeholder="—" required :span="6" v-model="form.cedenteNome" />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Sacado" :icon="User">
+              <StepGrid>
+                <FormField label="CPF/CNPJ" placeholder="—" required :span="6" v-model="form.sacadoDocumento" />
+                <FormField label="Nome/Razão social" placeholder="—" required :span="6" v-model="form.sacadoNome" />
+              </StepGrid>
+            </BentoBox>
+
+            <ToggleRow
+              label="Cadastrar campos opcionais"
+              :on="form.cadastrarCamposOpcionais"
+              @toggle="form.cadastrarCamposOpcionais = !form.cadastrarCamposOpcionais"
+            />
+
+            <template v-if="form.cadastrarCamposOpcionais">
+              <BentoBox title="Informações adicionais">
+                <StepGrid>
+                  <FormField
+                    label="Porcentagem equivalente sobre a CPRF %"
+                    placeholder="—"
+                    :span="6"
+                    v-model="form.pctEquivalenteCprf"
+                  />
                 </StepGrid>
               </BentoBox>
 
-              <ToggleRow
-                label="Cadastrar campos opcionais"
-                :on="form.cadastrarCamposOpcionais"
-                @toggle="form.cadastrarCamposOpcionais = !form.cadastrarCamposOpcionais"
+              <BentoBox title="Informações bancárias">
+                <StepGrid>
+                  <SelectField
+                    label="Banco"
+                    :options="BANCO_OPTS"
+                    placeholder="Selecione"
+                    :span="6"
+                    v-model="form.bancoEscrow"
+                  />
+                  <FormField label="Conta Escrow" placeholder="—" :span="3" v-model="form.contaEscrow" />
+                  <FormField label="Agência Escrow" placeholder="—" :span="3" v-model="form.agenciaEscrow" />
+                  <FormField label="Titular" placeholder="—" :span="12" v-model="form.titularEscrow" />
+                </StepGrid>
+              </BentoBox>
+            </template>
+          </template>
+
+          <template v-if="showCessaoContrato">
+            <StepGrid>
+              <SelectField
+                label="Tipo de título"
+                :options="TIPO_TITULO_CESSAO_OPTS"
+                placeholder="Selecione"
+                required
+                :span="3"
+                v-model="form.tipoTitulo"
               />
+              <SelectField
+                label="Tipo de contrato"
+                :options="TIPO_CONTRATO_CESSAO_OPTS"
+                placeholder="Selecione"
+                required
+                :span="3"
+                v-model="form.tipoContrato"
+              />
+              <FormField
+                label="Data de emissão"
+                placeholder="dd/mm/aaaa"
+                required
+                :span="3"
+                v-model="form.dataEmissaoContrato"
+              />
+              <FormField
+                label="Data de vencimento"
+                placeholder="dd/mm/aaaa"
+                required
+                :span="3"
+                v-model="form.dataVencimentoContrato"
+              />
+            </StepGrid>
 
-              <template v-if="form.cadastrarCamposOpcionais">
-                <BentoBox title="Informações adicionais">
-                  <StepGrid>
-                    <FormField label="Data da assinatura" placeholder="dd/mm/aaaa" :span="4" v-model="form.dataAssinatura" />
-                  </StepGrid>
-                </BentoBox>
+            <div>
+              <FieldLabel>Descrição do contrato</FieldLabel>
+              <div style="position: relative">
+                <textarea
+                  v-model="form.descricaoContrato"
+                  placeholder="—"
+                  rows="4"
+                  :style="{
+                    width: '100%',
+                    padding: '12px 14px',
+                    paddingBottom: '28px',
+                    background: 'var(--surface-card)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: 'var(--radius-lg)',
+                    outline: 'none',
+                    fontSize: 'var(--text-sm)',
+                    color: 'var(--text-strong)',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                  }"
+                />
+                <span
+                  style="
+                    position: absolute;
+                    right: 12px;
+                    bottom: 12px;
+                    font-size: 11px;
+                    color: var(--text-muted);
+                  "
+                >{{ descricaoContratoLen }}</span>
+              </div>
+            </div>
 
-                <BentoBox title="Representantes" :icon="User">
-                  <div class="flex flex-col" style="gap: 14px">
-                    <div class="flex items-end" style="gap: 12px">
-                      <div style="flex: 1">
-                        <FormField label="Nome" placeholder="—" :span="12" v-model="representanteDraft" />
-                      </div>
-                      <AddButton @click="addRepresentante">Cadastrar representante</AddButton>
+            <BentoBox title="Cedente" :icon="User">
+              <StepGrid>
+                <FormField label="CPF/CNPJ" placeholder="—" required :span="6" v-model="form.cedenteDocumento" />
+                <FormField label="Nome/Razão social" placeholder="—" required :span="6" v-model="form.cedenteNome" />
+              </StepGrid>
+            </BentoBox>
+
+            <BentoBox title="Sacado" :icon="User">
+              <StepGrid>
+                <FormField label="CPF/CNPJ" placeholder="—" required :span="6" v-model="form.sacadoDocumento" />
+                <FormField label="Nome/Razão social" placeholder="—" required :span="6" v-model="form.sacadoNome" />
+                <FormField label="CEP" placeholder="—" :span="3" v-model="form.sacadoCep" />
+                <FormField label="Localidade" placeholder="—" :span="6" v-model="form.sacadoLocalidade" />
+                <FormField label="Número" placeholder="—" :span="3" v-model="form.sacadoNumero" />
+                <FormField label="Bairro" placeholder="—" :span="4" v-model="form.sacadoBairro" />
+                <FormField label="Informações adicionais" placeholder="—" :span="8" v-model="form.sacadoInfoAdicionais" />
+                <SelectField label="Estado" :options="UF_OPTIONS" placeholder="UF" :span="3" v-model="form.sacadoEstado" />
+                <SelectField
+                  label="Cidade"
+                  :options="cidadeSacadoOpts"
+                  placeholder="Selecione"
+                  :span="5"
+                  :disabled="!form.sacadoEstado"
+                  v-model="form.sacadoCidade"
+                />
+                <SelectField label="País" :options="PAIS_OPTS" placeholder="Selecione" :span="4" v-model="form.sacadoPais" />
+              </StepGrid>
+            </BentoBox>
+
+            <ToggleRow
+              label="Cadastrar campos opcionais"
+              :on="form.cadastrarCamposOpcionais"
+              @toggle="form.cadastrarCamposOpcionais = !form.cadastrarCamposOpcionais"
+            />
+
+            <template v-if="form.cadastrarCamposOpcionais">
+              <BentoBox title="Informações adicionais">
+                <StepGrid>
+                  <FormField label="Data da assinatura" placeholder="dd/mm/aaaa" :span="4" v-model="form.dataAssinatura" />
+                </StepGrid>
+              </BentoBox>
+
+              <BentoBox title="Representantes" :icon="User">
+                <div class="flex flex-col" style="gap: 14px">
+                  <div class="flex items-end" style="gap: 12px">
+                    <div style="flex: 1">
+                      <FormField label="Nome" placeholder="—" :span="12" v-model="representanteDraft" />
+                    </div>
+                    <AddButton @click="addRepresentante">Cadastrar representante</AddButton>
+                  </div>
+                  <div
+                    v-if="form.representantes.length === 0"
+                    style="padding: 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+                  >
+                    Nenhum representante adicionado.
+                  </div>
+                  <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+                    <div
+                      class="grid"
+                      style="
+                        grid-template-columns: 1fr auto;
+                        padding: 10px 14px;
+                        background: var(--surface-sunken);
+                        font-size: 10px;
+                        font-weight: var(--weight-bold);
+                        letter-spacing: 0.12em;
+                        color: var(--text-muted);
+                        text-transform: uppercase;
+                      "
+                    >
+                      <div>Representante</div>
+                      <div />
                     </div>
                     <div
-                      v-if="form.representantes.length === 0"
-                      style="padding: 16px; text-align: center; font-size: var(--text-sm); color: var(--text-muted)"
+                      v-for="(nome, i) in form.representantes"
+                      :key="i"
+                      class="grid items-center"
+                      style="
+                        grid-template-columns: 1fr auto;
+                        padding: 10px 14px;
+                        border-top: 1px solid var(--border-default);
+                        font-size: var(--text-sm);
+                      "
                     >
-                      Nenhum representante adicionado.
-                    </div>
-                    <div v-else style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
-                      <div
-                        class="grid"
-                        style="
-                          grid-template-columns: 1fr auto;
-                          padding: 10px 14px;
-                          background: var(--surface-sunken);
-                          font-size: 10px;
-                          font-weight: var(--weight-bold);
-                          letter-spacing: 0.12em;
-                          color: var(--text-muted);
-                          text-transform: uppercase;
-                        "
+                      <div>{{ nome }}</div>
+                      <button
+                        aria-label="Remover"
+                        style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
+                        @click="removeRepresentante(i)"
                       >
-                        <div>Representante</div>
-                        <div />
-                      </div>
-                      <div
-                        v-for="(nome, i) in form.representantes"
-                        :key="i"
-                        class="grid items-center"
-                        style="
-                          grid-template-columns: 1fr auto;
-                          padding: 10px 14px;
-                          border-top: 1px solid var(--border-default);
-                          font-size: var(--text-sm);
-                        "
-                      >
-                        <div>{{ nome }}</div>
-                        <button
-                          aria-label="Remover"
-                          style="width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--danger-base)"
-                          @click="removeRepresentante(i)"
-                        >
-                          <Trash2 :size="14" />
-                        </button>
-                      </div>
+                        <Trash2 :size="14" />
+                      </button>
                     </div>
                   </div>
-                </BentoBox>
+                </div>
+              </BentoBox>
 
-                <BentoBox title="Informações bancárias">
-                  <StepGrid>
-                    <SelectField
-                      label="Banco"
-                      :options="BANCO_OPTS"
-                      placeholder="Selecione"
-                      :span="3"
-                      v-model="form.bancoEscrow"
-                    />
-                    <FormField label="Conta Escrow" placeholder="—" :span="3" v-model="form.contaEscrow" />
-                    <FormField label="Agência Escrow" placeholder="—" :span="3" v-model="form.agenciaEscrow" />
-                    <FormField label="Titular" placeholder="—" :span="3" v-model="form.titularEscrow" />
-                  </StepGrid>
-                </BentoBox>
-              </template>
+              <BentoBox title="Informações bancárias">
+                <StepGrid>
+                  <SelectField
+                    label="Banco"
+                    :options="BANCO_OPTS"
+                    placeholder="Selecione"
+                    :span="3"
+                    v-model="form.bancoEscrow"
+                  />
+                  <FormField label="Conta Escrow" placeholder="—" :span="3" v-model="form.contaEscrow" />
+                  <FormField label="Agência Escrow" placeholder="—" :span="3" v-model="form.agenciaEscrow" />
+                  <FormField label="Titular" placeholder="—" :span="3" v-model="form.titularEscrow" />
+                </StepGrid>
+              </BentoBox>
             </template>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-end" style="gap: 12px; padding: 16px 32px; border-top: 1px solid var(--border-default)">
-          <button
-            style="height: 44px; padding: 0 20px; background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
-            @click="showNova = false"
-          >
-            Cancelar
-          </button>
-          <button
-            class="flex items-center"
-            :style="{
-              height: '44px',
-              padding: '0 24px',
-              border: 'none',
-              borderRadius: 'var(--radius-lg)',
-              cursor: canCadastrar ? 'pointer' : 'not-allowed',
-              fontWeight: 'var(--weight-bold)',
-              fontSize: 'var(--text-xs)',
-              letterSpacing: '0.08em',
-              background: canCadastrar ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
-              color: canCadastrar ? '#fff' : 'var(--text-disabled)',
-            }"
-            :disabled="!canCadastrar"
-            @click="cadastrar"
-          >
-            {{ editingIndex != null ? 'SALVAR' : 'CADASTRAR' }}
-          </button>
+          </template>
         </div>
       </div>
-    </div>
+
+      <template #footer>
+        <AdminButton variant="ghost" size="large" @click="showNova = false">Cancelar</AdminButton>
+        <AdminButton variant="primary" size="large" :disabled="!canCadastrar" @click="cadastrar">{{ editingIndex != null ? 'Salvar' : 'Cadastrar' }}</AdminButton>
+      </template>
+    </AdminModal>
 
     <ConfigurarConstituicaoGarantiaModal
       :open="showConstituicao"

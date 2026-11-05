@@ -16,7 +16,8 @@ import { X } from 'lucide-vue-next';
  * - Rodapé: slot `footer`. Cancelar SEMPRE à esquerda e a ação (Salvar/Aprovar/Avançar) à direita,
  *   para o usuário não clicar numa achando que é a outra.
  * - Clicar fora NÃO fecha. Fecha pelo X, pelo Cancelar ou pelo Esc (Esc desligado com `persistent`).
- * - Altura máxima 85vh; só o corpo rola.
+ * - Slot `subheader`: faixa fixa entre o header e o corpo (ex.: stepper de wizard).
+ * - Altura máxima 85vh (`tall` fixa em 85vh); só o corpo rola.
  */
 const props = withDefaults(
   defineProps<{
@@ -34,6 +35,8 @@ const props = withDefaults(
     headless?: boolean;
     /** Remove o padding do corpo (tabelas e layouts próprios). */
     flush?: boolean;
+    /** Altura fixa de 85vh (wizards e modais de trabalho); o corpo rola. */
+    tall?: boolean;
     /** Rodapé com uma ação só (ex.: "Fechar") alinhada à direita. */
     footerAlign?: 'between' | 'end';
   }>(),
@@ -47,6 +50,7 @@ const props = withDefaults(
     hideClose: false,
     headless: false,
     flush: false,
+    tall: false,
     footerAlign: 'between',
   },
 );
@@ -88,6 +92,7 @@ onBeforeUnmount(() => {
         role="dialog"
         aria-modal="true"
         :aria-label="title || undefined"
+        :class="{ 'admin-modal--tall': tall }"
         :style="{ maxWidth }"
         @click.stop
       >
@@ -111,6 +116,10 @@ onBeforeUnmount(() => {
             <X :size="18" />
           </button>
         </header>
+
+        <div v-if="slots.subheader" class="admin-modal__subheader">
+          <slot name="subheader" />
+        </div>
 
         <div
           class="admin-modal__body"
@@ -154,6 +163,12 @@ onBeforeUnmount(() => {
   background: var(--surface-card);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
+}
+.admin-modal--tall {
+  height: 85vh;
+}
+.admin-modal__subheader {
+  flex-shrink: 0;
 }
 .admin-modal__header {
   display: flex;
