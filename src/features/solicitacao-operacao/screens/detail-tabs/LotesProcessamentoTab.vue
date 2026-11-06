@@ -14,6 +14,7 @@ import { Section, EmptyState, GhostButton } from './shared';
 import VerArquivosLoteModal from '../../components/modals/VerArquivosLoteModal.vue';
 import VerErrosLoteModal from '../../components/modals/VerErrosLoteModal.vue';
 import InserirXmlsModal from '../../components/modals/InserirXmlsModal.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const lotes = ref(seedLotesProcessamento());
 const hoveredId = ref<string | null>(null);
@@ -227,53 +228,8 @@ function openErros(lote: LoteProcessamento) {
         </div>
 
         <div class="flex items-center" style="gap: 8px; margin-top: auto">
-          <button
-            type="button"
-            class="flex items-center"
-            style="
-              flex: 1;
-              gap: 6px;
-              height: 36px;
-              justify-content: center;
-              padding: 0 12px;
-              border-radius: var(--radius-md);
-              border: 1px solid var(--border-default);
-              background: var(--surface-card);
-              cursor: pointer;
-              font-size: var(--text-xs);
-              font-weight: var(--weight-bold);
-            "
-            :style="{
-              color: lote.falhas > 0 ? 'var(--action-danger-text-only)' : 'var(--text-muted)',
-              opacity: lote.falhas > 0 ? 1 : 0.55,
-              cursor: lote.falhas > 0 ? 'pointer' : 'not-allowed',
-            }"
-            :disabled="lote.falhas === 0"
-            @click="openErros(lote)"
-          >
-            <AlertTriangle :size="13" /> Ver Erros
-          </button>
-          <button
-            type="button"
-            class="flex items-center"
-            style="
-              flex: 1;
-              gap: 6px;
-              height: 36px;
-              justify-content: center;
-              padding: 0 12px;
-              border-radius: var(--radius-md);
-              border: 1px solid var(--border-default);
-              background: var(--surface-card);
-              cursor: pointer;
-              font-size: var(--text-xs);
-              font-weight: var(--weight-bold);
-              color: var(--text-strong);
-            "
-            @click="openArquivos(lote)"
-          >
-            <Files :size="13" /> Ver Arquivos
-          </button>
+          <AdminButton variant="secondary" size="compact" :icon="AlertTriangle" type="button" :disabled="lote.falhas === 0" @click="openErros(lote)" style="flex: 1">Ver Erros</AdminButton>
+          <AdminButton variant="secondary" size="compact" :icon="Files" type="button" @click="openArquivos(lote)" style="flex: 1">Ver Arquivos</AdminButton>
         </div>
       </div>
     </div>

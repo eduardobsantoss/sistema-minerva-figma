@@ -7,6 +7,7 @@ import IncluirLimiteModal from '../../components/modals/IncluirLimiteModal.vue';
 import EditarLimiteModal from '../../components/modals/EditarLimiteModal.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 interface Props {
   data: ParametrizacaoLimite;
@@ -88,13 +89,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
 
     <TabCard title="Limites por Agrupamento" :icon="Layers">
       <div class="flex justify-end" style="margin-bottom: 14px">
-        <button
-          class="flex items-center"
-          style="gap: 6px; height: 36px; padding: 0 16px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.06em"
-          @click="modalOpen = true"
-        >
-          <Plus :size="14" /> INCLUIR LIMITE
-        </button>
+        <AdminButton size="compact" :icon="Plus" @click="modalOpen = true">Incluir limite</AdminButton>
       </div>
 
       <div v-if="form.limites.length === 0" style="padding: 32px; text-align: center; color: var(--text-muted); font-size: var(--text-sm); border: 1px dashed var(--border-default); border-radius: var(--radius-lg)">

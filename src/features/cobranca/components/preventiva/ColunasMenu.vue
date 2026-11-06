@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { SlidersHorizontal } from 'lucide-vue-next';
 import Checkbox from '@/components/ui/Checkbox.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 defineProps<{ cols: { key: string; label: string }[]; visible: Set<string> }>();
 const emit = defineEmits<{ toggle: [key: string] }>();
@@ -11,9 +12,7 @@ const open = ref(false);
 
 <template>
   <div style="position: relative">
-    <button type="button" class="cm-btn" @click="open = !open">
-      <SlidersHorizontal :size="14" /> Colunas
-    </button>
+    <AdminButton variant="secondary" :icon="SlidersHorizontal" type="button" @click="open = !open">Colunas</AdminButton>
     <template v-if="open">
       <div style="position: fixed; inset: 0; z-index: 30" @click="open = false" />
       <div
@@ -31,20 +30,6 @@ const open = ref(false);
 </template>
 
 <style scoped>
-.cm-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 40px;
-  padding: 0 14px;
-  background: var(--surface-card);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-}
 .cm-item {
   display: flex;
   align-items: center;

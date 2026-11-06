@@ -112,25 +112,7 @@ function inserir() {
       </div>
 
       <div v-if="items.length" class="flex justify-end">
-        <button
-          type="button"
-          :disabled="!canExtract"
-          :style="{
-            height: '44px',
-            padding: '0 20px',
-            border: 'none',
-            borderRadius: 'var(--radius-lg)',
-            cursor: canExtract ? 'pointer' : 'not-allowed',
-            fontWeight: 'var(--weight-bold)',
-            fontSize: 'var(--text-xs)',
-            letterSpacing: '0.08em',
-            background: canExtract ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
-            color: canExtract ? '#fff' : 'var(--text-disabled)',
-          }"
-          @click="extrair"
-        >
-          EXTRAIR DADOS
-        </button>
+        <AdminButton size="large" type="button" :disabled="!canExtract" @click="extrair">Extrair dados</AdminButton>
       </div>
 
       <div

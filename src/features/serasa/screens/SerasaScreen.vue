@@ -33,6 +33,7 @@ import HistoryTab from './tabs/HistoryTab.vue';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import { EmptyState } from '@/features/risco/screens/detail-tabs/shared';
 import ConsultaLotePanel from '../components/ConsultaLotePanel.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 type Tab = 'cadastro' | 'restricoes' | 'processos' | 'trabalho-escravo' | 'ibama' | 'historico';
 
@@ -252,14 +253,7 @@ async function loadDemoScenario(scenario: MockScenario) {
           Ocorreu um erro ao processar a consulta no Serasa. Tente novamente em alguns instantes.
         </p>
       </div>
-      <button
-        class="flex items-center"
-        style="gap: 8px; height: 40px; padding: 0 20px; border: none; border-radius: var(--radius-lg); background: var(--action-primary-bg); color: #fff; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em"
-        @click="handleRetry"
-      >
-        <RefreshCw :size="16" />
-        TENTAR NOVAMENTE
-      </button>
+      <AdminButton :icon="RefreshCw" @click="handleRetry">Tentar novamente</AdminButton>
     </div>
 
     <SerasaProcessingPanel

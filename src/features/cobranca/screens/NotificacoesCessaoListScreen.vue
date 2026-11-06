@@ -44,6 +44,7 @@ import { usePartesNotificacao, type ParteNotificacao } from '../composables/useP
 import { useTablePagination } from '@/composables/useTablePagination';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ itens: NotificacaoCessao[] }>();
 const emit = defineEmits<{
@@ -496,52 +497,15 @@ function pillStyle(color: string) {
                 </div>
               </div>
               <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
-                <button
-                  type="button"
-                  style="
-                    height: 40px;
-                    padding: 0 16px;
-                    background: none;
-                    border: 1px solid var(--border-default);
-                    border-radius: var(--radius-lg);
-                    cursor: pointer;
-                    color: var(--text-muted);
-                    font-weight: var(--weight-semibold);
-                    font-size: var(--text-sm);
-                  "
-                  @click="handleClear"
-                >
-                  Limpar
-                </button>
-                <button
-                  type="button"
-                  class="flex items-center"
-                  style="
-                    gap: 6px;
-                    height: 40px;
-                    padding: 0 18px;
-                    background: var(--action-primary-bg);
-                    color: #fff;
-                    border: none;
-                    border-radius: var(--radius-lg);
-                    cursor: pointer;
-                    font-weight: var(--weight-bold);
-                    font-size: var(--text-xs);
-                    letter-spacing: 0.06em;
-                  "
-                  @click="handleFilter"
-                >
-                  <Filter :size="13" /> FILTRAR
-                </button>
+                <AdminButton variant="secondary" type="button" @click="handleClear">Limpar</AdminButton>
+                <AdminButton :icon="Filter" type="button" @click="handleFilter">Filtrar</AdminButton>
               </div>
             </div>
           </template>
         </div>
 
         <div v-if="viewMode === 'table'" style="position: relative">
-          <button type="button" class="nc-toolbar-btn" style="padding: 0 14px; gap: 6px" @click="colsMenuOpen = !colsMenuOpen">
-            <SlidersHorizontal :size="14" /> Colunas
-          </button>
+          <AdminButton variant="secondary" :icon="SlidersHorizontal" type="button" @click="colsMenuOpen = !colsMenuOpen">Colunas</AdminButton>
           <template v-if="colsMenuOpen">
             <div style="position: fixed; inset: 0; z-index: 30" @click="colsMenuOpen = false" />
             <div
@@ -628,14 +592,7 @@ function pillStyle(color: string) {
               <div class="nc-parte-meta">{{ n.cedenteCnpj }}</div>
             </div>
             <div class="nc-parte-actions">
-              <button
-                type="button"
-                class="nc-action"
-                :aria-label="`Gerenciar notificações do cedente ${n.cedente}`"
-                @click="abrirParte('cedente', n)"
-              >
-                <BellRing :size="14" aria-hidden="true" /> Notificações
-              </button>
+              <AdminButton variant="secondary" size="compact" :icon="BellRing" type="button" :aria-label="`Gerenciar notificações do cedente ${n.cedente}`" @click="abrirParte('cedente', n)">Notificações</AdminButton>
             </div>
           </div>
 
@@ -646,22 +603,8 @@ function pillStyle(color: string) {
               <div class="nc-parte-meta">{{ n.sacadoCnpj }}</div>
             </div>
             <div class="nc-parte-actions">
-              <button
-                type="button"
-                class="nc-action"
-                :aria-label="`Gerenciar notificações do sacado ${n.sacado}`"
-                @click="abrirParte('sacado', n)"
-              >
-                <BellRing :size="14" aria-hidden="true" /> Notificações
-              </button>
-              <button
-                type="button"
-                class="nc-action"
-                :aria-label="`Gerenciar contatos do sacado ${n.sacado}`"
-                @click="abrirParte('sacado', n, 'contatos')"
-              >
-                <Contact :size="14" aria-hidden="true" /> Contatos
-              </button>
+              <AdminButton variant="secondary" size="compact" :icon="BellRing" type="button" :aria-label="`Gerenciar notificações do sacado ${n.sacado}`" @click="abrirParte('sacado', n)">Notificações</AdminButton>
+              <AdminButton variant="secondary" size="compact" :icon="Contact" type="button" :aria-label="`Gerenciar contatos do sacado ${n.sacado}`" @click="abrirParte('sacado', n, 'contatos')">Contatos</AdminButton>
             </div>
           </div>
         </div>
@@ -677,22 +620,9 @@ function pillStyle(color: string) {
         </div>
 
         <div class="nc-card-actions">
-          <button type="button" class="nc-action" @click="emit('open', n.id, 'historico')">
-            <History :size="14" /> Histórico
-          </button>
-          <button type="button" class="nc-action" @click="emit('verTitulos', n.id)">
-            <ListChecks :size="14" /> Ver títulos
-          </button>
-          <button
-            type="button"
-            class="nc-action nc-action-primary"
-            :disabled="envioDesabilitado(n)"
-            :title="envioDesabilitadoMotivo(n)"
-            @click="emit('reenviar', n.id)"
-          >
-            <Send :size="14" />
-            {{ n.status === 'FALHOU' ? 'Reenviar' : 'Enviar' }}
-          </button>
+          <AdminButton variant="secondary" size="compact" :icon="History" type="button" @click="emit('open', n.id, 'historico')">Histórico</AdminButton>
+          <AdminButton variant="secondary" size="compact" :icon="ListChecks" type="button" @click="emit('verTitulos', n.id)">Ver títulos</AdminButton>
+          <AdminButton variant="secondary" size="compact" :icon="Send" type="button" :disabled="envioDesabilitado(n)" :title="envioDesabilitadoMotivo(n)" @click="emit('reenviar', n.id)">{{ n.status === 'FALHOU' ? 'Reenviar' : 'Enviar' }}</AdminButton>
         </div>
       </article>
 
@@ -1059,37 +989,6 @@ function pillStyle(color: string) {
   margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid var(--border-default);
-}
-.nc-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 12px;
-  background: var(--surface-card);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  color: var(--text-strong);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-bold);
-}
-.nc-action:hover:not(:disabled) {
-  background: var(--surface-sunken);
-}
-.nc-action:disabled {
-  cursor: not-allowed;
-  color: var(--text-disabled);
-  background: var(--surface-sunken);
-}
-.nc-action-primary {
-  margin-left: auto;
-  background: var(--gci-base);
-  color: #fff;
-  border-color: transparent;
-}
-.nc-action-primary:hover:not(:disabled) {
-  background: var(--gci-hover);
 }
 .nc-pager {
   grid-column: 1 / -1;

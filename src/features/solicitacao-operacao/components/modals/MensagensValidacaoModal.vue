@@ -151,11 +151,10 @@ function postar() {
                 cursor: canPost ? 'pointer' : 'not-allowed',
                 fontWeight: 'var(--weight-bold)',
                 fontSize: 'var(--text-xs)',
-                letterSpacing: '0.08em',
-              }"
+                }"
               @click="postar"
             >
-              POSTAR
+              Postar
             </button>
           </div>
         </div>

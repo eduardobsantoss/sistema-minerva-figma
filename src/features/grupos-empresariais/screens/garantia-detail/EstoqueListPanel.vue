@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, reactive, ref } from 'vue';
 import { MoreVertical, Pencil, Trash2, X } from 'lucide-vue-next';
 import FormField from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/FormField.vue';
 import type { EstoqueItem } from '@/features/solicitacao-operacao/data/minutaData';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ items: EstoqueItem[] }>();
 const emit = defineEmits<{ update: [items: EstoqueItem[]] }>();
@@ -152,20 +153,8 @@ function remove(i: number) {
         <FormField v-model="draft.proprietario" label="Proprietário" placeholder="—" />
       </div>
       <div class="flex items-center justify-end" style="gap: 10px; padding: 16px 22px; border-top: 1px solid var(--border-default)">
-        <button
-          type="button"
-          style="height: 40px; padding: 0 18px; background: var(--surface-card); color: var(--text-strong); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
-          @click="closeEdit"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          style="height: 40px; padding: 0 18px; background: var(--gci-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
-          @click="saveEdit"
-        >
-          Salvar
-        </button>
+        <AdminButton variant="secondary" type="button" @click="closeEdit">Cancelar</AdminButton>
+        <AdminButton type="button" @click="saveEdit">Salvar</AdminButton>
       </div>
     </div>
   </div>

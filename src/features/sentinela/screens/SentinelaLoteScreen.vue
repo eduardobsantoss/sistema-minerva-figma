@@ -18,6 +18,7 @@ import {
   type LoteConsulta,
   type StatusLote,
 } from '../data/sentinelaData';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const tabs = ['Digitar CNPJ', 'Subir lista'];
 const tab = ref(tabs[0]);
@@ -183,15 +184,7 @@ function consultar() {
           </p>
           </div>
         </div>
-        <button
-          type="button"
-          class="sn-focus btn-animated btn-primary"
-          :disabled="prontos.length === 0"
-          style="height: 40px; padding: 0 16px; background: var(--action-primary-bg); color: var(--action-primary-text); border: none; border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-bold)"
-          @click="consultar"
-        >
-          Consultar
-        </button>
+        <AdminButton type="button" :disabled="prontos.length === 0" @click="consultar">Consultar</AdminButton>
       </div>
 
       <UnderlineSubTabs :tabs="tabs" :model-value="tab" @update:model-value="tab = $event" />
@@ -208,9 +201,7 @@ function consultar() {
             @input="onCnpjInput"
             @keydown.enter.prevent="adicionarCnpj"
           />
-          <button type="button" class="sn-focus" style="height: 40px; padding: 0 14px; background: var(--action-secondary-bg); color: var(--action-secondary-text); border: 1px solid var(--action-secondary-border); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold)" @click="adicionarCnpj">
-            Adicionar
-          </button>
+          <AdminButton variant="secondary" type="button" @click="adicionarCnpj">Adicionar</AdminButton>
         </div>
         <Alert v-if="digitacaoErro" type="error" title="CNPJ não adicionado" :message="digitacaoErro" style="margin-top: 12px" @dismiss="digitacaoErro = ''" />
         <div v-if="chips.length > 0" class="flex items-center" style="gap: 8px; flex-wrap: wrap; margin-top: 14px">
@@ -231,10 +222,7 @@ function consultar() {
       <section v-else class="flex flex-col" style="gap: 14px">
         <div class="flex items-center justify-between" style="gap: 10px; flex-wrap: wrap">
           <div style="font-size: var(--text-sm); color: var(--text-muted)">Escolha um arquivo para ver uma pré-visualização ilustrativa.</div>
-          <button type="button" class="sn-focus flex items-center" style="gap: 6px; height: 36px; padding: 0 12px; background: var(--action-secondary-bg); color: var(--action-secondary-text); border: 1px solid var(--action-secondary-border); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold)" @click="baixarModelo">
-            <Download :size="14" />
-            Baixar modelo
-          </button>
+          <AdminButton variant="secondary" size="compact" :icon="Download" type="button" @click="baixarModelo">Baixar modelo</AdminButton>
         </div>
         <button
           type="button"

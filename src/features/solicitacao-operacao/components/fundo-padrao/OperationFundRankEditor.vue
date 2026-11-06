@@ -9,6 +9,7 @@ import {
   type RankItemAtivo,
   type RankEditorItem,
 } from '../../data/fundoPadraoData';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ activeRank: RankItemAtivo[] }>();
 const emit = defineEmits<{ save: [items: RankItemAtivo[]] }>();
@@ -119,25 +120,7 @@ function handleSave() {
       <h2 style="font-size: var(--text-base); font-weight: var(--weight-bold); color: var(--text-strong); margin: 0">
         Edição do rank
       </h2>
-      <button
-        v-if="activeRank.length > 0"
-        type="button"
-        class="btn-animated"
-        style="
-          height: 36px;
-          padding: 0 14px;
-          font-size: var(--text-xs);
-          font-weight: var(--weight-semibold);
-          color: var(--gci-base);
-          background: var(--surface-card);
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-lg);
-          cursor: pointer;
-        "
-        @click="loadCurrentRank"
-      >
-        Carregar rank atual
-      </button>
+      <AdminButton variant="secondary" size="compact" v-if="activeRank.length > 0" type="button" @click="loadCurrentRank">Carregar rank atual</AdminButton>
     </div>
 
     <div
@@ -289,50 +272,8 @@ function handleSave() {
     </div>
 
     <div class="flex flex-wrap items-center" style="gap: 10px">
-      <button
-        type="button"
-        class="flex items-center btn-animated"
-        style="
-          gap: 8px;
-          height: 40px;
-          padding: 0 16px;
-          font-size: var(--text-xs);
-          font-weight: var(--weight-bold);
-          letter-spacing: 0.06em;
-          color: var(--gci-base);
-          background: var(--surface-card);
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-lg);
-          cursor: pointer;
-        "
-        @click="addItem"
-      >
-        <Plus :size="14" />
-        Adicionar item
-      </button>
-      <button
-        type="button"
-        class="btn-animated"
-        :disabled="!canSave"
-        :title="saveDisabledReason ?? undefined"
-        style="
-          height: 40px;
-          padding: 0 20px;
-          font-size: var(--text-xs);
-          font-weight: var(--weight-bold);
-          letter-spacing: 0.08em;
-          color: #fff;
-          background: var(--action-primary-bg);
-          border: none;
-          border-radius: var(--radius-lg);
-          cursor: pointer;
-          opacity: 1;
-        "
-        :style="!canSave ? { opacity: 0.5, cursor: 'not-allowed' } : {}"
-        @click="handleSave"
-      >
-        Salvar rank
-      </button>
+      <AdminButton variant="secondary" :icon="Plus" type="button" @click="addItem">Adicionar item</AdminButton>
+      <AdminButton type="button" :disabled="!canSave" :title="saveDisabledReason ?? undefined" @click="handleSave">Salvar rank</AdminButton>
     </div>
   </div>
 </template>

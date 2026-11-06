@@ -8,6 +8,7 @@ import EditarStatusOperacaoModal from '../components/modals/EditarStatusOperacao
 import GerarLinkAutoCadastroModal from '../components/modals/GerarLinkAutoCadastroModal.vue';
 import ImportarGruposCsvModal from '../components/modals/ImportarGruposCsvModal.vue';
 import type { GrupoCadastro, GrupoCsvLinha, StatusOperacao } from '../data/gruposCadastroData';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ grupos: GrupoCadastro[] }>();
 const emit = defineEmits<{
@@ -133,60 +134,9 @@ function confirmImport(linhas: GrupoCsvLinha[]) {
       </div>
 
       <div class="flex items-center" style="gap: 10px; flex-wrap: wrap">
-        <button
-          type="button"
-          class="flex items-center"
-          style="
-            gap: 8px;
-            height: 48px;
-            padding: 0 18px;
-            background: var(--surface-card);
-            color: var(--text-strong);
-            border-radius: var(--radius-xl);
-            border: 1px solid var(--border-default);
-            cursor: pointer;
-            font-weight: var(--weight-bold);
-            font-size: var(--text-xs);
-            letter-spacing: 0.10em;
-          "
-          @click="importOpen = true"
-        >
-          <Upload :size="16" />
-          IMPORTAR CSV
-        </button>
+        <AdminButton variant="secondary" size="xl" :icon="Upload" type="button" @click="importOpen = true">Importar CSV</AdminButton>
 
-        <button
-          type="button"
-          class="flex items-center btn-animated btn-agro"
-          style="
-            gap: 8px;
-            height: 48px;
-            padding: 0 20px;
-            background: var(--agro-base);
-            color: #fff;
-            border-radius: var(--radius-xl);
-            border: none;
-            cursor: pointer;
-            font-weight: var(--weight-bold);
-            font-size: var(--text-xs);
-            letter-spacing: 0.10em;
-            box-shadow: 0 10px 24px -8px rgba(242, 125, 38, 0.4);
-          "
-          @click="emit('create')"
-        >
-          <span
-            class="flex items-center justify-center"
-            style="
-              width: 22px;
-              height: 22px;
-              border-radius: 9999px;
-              background: rgba(255, 255, 255, 0.2);
-            "
-          >
-            <Plus :size="14" />
-          </span>
-          NOVO GRUPO
-        </button>
+        <AdminButton variant="agro" size="xl" :icon="Plus" type="button" @click="emit('create')">Novo grupo</AdminButton>
       </div>
     </div>
 

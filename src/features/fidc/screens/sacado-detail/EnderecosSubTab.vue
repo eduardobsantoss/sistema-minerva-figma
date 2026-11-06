@@ -4,6 +4,7 @@ import { Plus } from 'lucide-vue-next';
 import type { Sacado, SacadoEndereco } from '../../data/fidcsData';
 import FormField from '../../components/create-class/FormField.vue';
 import StepGrid from '../../components/create-class/StepGrid.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ sacado: Sacado }>();
 const emit = defineEmits<{ update: [Sacado] }>();
@@ -50,14 +51,7 @@ function removeEndereco(id: string) {
       <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
         {{ sacado.enderecos.length }} endereço(s)
       </div>
-      <button
-        type="button"
-        class="flex items-center"
-        style="gap: 6px; padding: 8px 14px; background: var(--gci-base); color: #fff; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: var(--text-xs); font-weight: var(--weight-bold)"
-        @click="showForm = !showForm"
-      >
-        <Plus :size="14" /> Adicionar
-      </button>
+      <AdminButton :icon="Plus" type="button" @click="showForm = !showForm">Adicionar</AdminButton>
     </div>
 
     <div
@@ -73,13 +67,7 @@ function removeEndereco(id: string) {
         <FormField v-model="uf" label="UF" :span="2" />
         <FormField v-model="pais" label="País" :span="2" />
       </StepGrid>
-      <button
-        type="button"
-        style="margin-top: 12px; padding: 10px 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
-        @click="addEndereco"
-      >
-        Salvar endereço
-      </button>
+      <AdminButton variant="agro" type="button" @click="addEndereco" style="margin-top: 12px">Salvar endereço</AdminButton>
     </div>
 
     <div v-if="!sacado.enderecos.length" style="padding: 32px; text-align: center; color: var(--text-muted); font-size: var(--text-sm)">

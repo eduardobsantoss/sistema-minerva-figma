@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { MessageSquare, Paperclip, Send, User } from 'lucide-vue-next';
 import type { ContratoAtivo } from '../../../../data/operacaoData';
 import { EmptyState } from '../../shared';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 defineProps<{ ativo: ContratoAtivo }>();
 
@@ -23,12 +24,10 @@ const mensagem = ref('');
           style="width: 100%; padding: 14px; background: var(--surface-sunken); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; resize: vertical; font-size: var(--text-sm); color: var(--text-strong); font-family: inherit"
         />
         <div class="flex items-center justify-between" style="margin-top: 12px">
-          <button class="flex items-center" style="gap: 8px; background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: var(--text-xs); font-weight: var(--weight-bold); letter-spacing: 0.06em">
-            <Paperclip :size="15" /> ANEXAR
+          <button class="flex items-center" style="gap: 8px; background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: var(--text-xs); font-weight: var(--weight-bold); ">
+            <Paperclip :size="15" /> Anexar
           </button>
-          <button class="flex items-center" style="gap: 8px; height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: var(--action-primary-text); border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.06em">
-            <Send :size="14" /> Postar
-          </button>
+          <AdminButton :icon="Send">Postar</AdminButton>
         </div>
       </div>
     </div>

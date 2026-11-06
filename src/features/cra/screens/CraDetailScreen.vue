@@ -21,6 +21,7 @@ import CessaoFormModal from '../components/modals/CessaoFormModal.vue';
 import SubirContratoMaeModal from '../components/modals/SubirContratoMaeModal.vue';
 import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
 import type { TituloSelecionado } from '@/components/titulos/types';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ cra: Cra }>();
 const emit = defineEmits<{
@@ -297,13 +298,7 @@ function handleSetupUpdate(setup: CraSetup) {
           </div>
         </div>
 
-        <button
-          class="flex items-center btn-animated btn-agro"
-          style="gap: 8px; padding: 10px 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
-          @click="emit('createOperacao')"
-        >
-          <Plus :size="14" /> NOVA OPERAÇÃO
-        </button>
+        <AdminButton variant="agro" :icon="Plus" @click="emit('createOperacao')">Nova operação</AdminButton>
 
         <div class="flex" style="padding: 4px; background: var(--surface-sunken); border-radius: var(--radius-lg)">
           <TabBtn :active="viewTab === 'operacoes'" @click="viewTab = 'operacoes'">VISUALIZAR OPERAÇÕES</TabBtn>

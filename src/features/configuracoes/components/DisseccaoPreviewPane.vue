@@ -6,6 +6,7 @@ import {
   isModalPath,
   resolvePreview,
 } from '../data/previewResolve';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{
   feature: string;
@@ -148,25 +149,7 @@ const showLivePreview = computed(
         <div style="flex: 1; min-width: 0">
           Falha ao montar o preview. O exemplo mínimo e o MD copiado continuam válidos.
           <div style="margin-top: 4px; opacity: 0.85">{{ runtimeError }}</div>
-          <button
-            type="button"
-            class="btn-animated"
-            style="
-              margin-top: 10px;
-              height: 32px;
-              padding: 0 12px;
-              border-radius: var(--radius-md);
-              border: 1px solid var(--border-default);
-              background: var(--surface-card);
-              color: var(--text-strong);
-              font-size: var(--text-xs);
-              font-weight: var(--weight-bold);
-              cursor: pointer;
-            "
-            @click="load"
-          >
-            Tentar novamente
-          </button>
+          <AdminButton variant="secondary" size="compact" type="button" @click="load" style="margin-top: 10px">Tentar novamente</AdminButton>
         </div>
       </div>
 
@@ -177,24 +160,7 @@ const showLivePreview = computed(
             <p style="font-size: var(--text-sm); color: var(--text-muted); margin-bottom: 14px">
               Overlay fechado no preview.
             </p>
-            <button
-              type="button"
-              class="btn-animated"
-              style="
-                height: 40px;
-                padding: 0 16px;
-                border-radius: var(--radius-lg);
-                border: 1px solid var(--border-default);
-                background: var(--surface-card);
-                color: var(--text-strong);
-                font-size: var(--text-sm);
-                font-weight: var(--weight-bold);
-                cursor: pointer;
-              "
-              @click="reopenOverlay"
-            >
-              Mostrar visual
-            </button>
+            <AdminButton variant="secondary" type="button" @click="reopenOverlay">Mostrar visual</AdminButton>
           </div>
           <div
             v-else

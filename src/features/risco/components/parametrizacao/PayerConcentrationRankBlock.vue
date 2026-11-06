@@ -11,6 +11,7 @@ import {
 } from '../../utils/concentracaoSacado';
 import { EmptyState } from '../../screens/detail-tabs/shared';
 import { useActionMenuTeleport } from '../../composables/useActionMenuTeleport';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const faixas = defineModel<FaixaConcentracaoSacado[]>('faixas', { required: true });
 
@@ -92,10 +93,7 @@ defineExpose({
         </p>
       </div>
       <div class="rank-block__toolbar">
-        <button type="button" class="rank-block__btn rank-block__btn--add" @click="addRank">
-          <ListPlus :size="16" />
-          Adicionar faixa
-        </button>
+        <AdminButton variant="secondary" size="compact" :icon="ListPlus" type="button" @click="addRank">Adicionar faixa</AdminButton>
         <div v-if="sortedFaixas.length" class="rank-block__actions">
           <button
             type="button"
@@ -255,13 +253,6 @@ defineExpose({
   color: var(--text-default);
 }
 
-.rank-block__btn--add {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--surface-card);
-  color: var(--text-strong);
-}
 
 .rank-block__btn--icon {
   width: 32px;

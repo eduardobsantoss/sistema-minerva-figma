@@ -26,6 +26,7 @@ import ProrrogarTitulosModal from './ProrrogarTitulosModal.vue';
 import RegistrarConfirmacaoModal from './RegistrarConfirmacaoModal.vue';
 import TitulosMotivoModal from './TitulosMotivoModal.vue';
 import type { TituloSelecionado } from './types';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -283,10 +284,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick));
         </template>
       </div>
 
-      <button type="button" class="lote-acoes" @click="menuOpen = !menuOpen">
-        Ações
-        <ChevronUp :size="16" :style="{ transform: menuOpen ? 'none' : 'rotate(180deg)', transition: 'transform var(--duration-fast)' }" />
-      </button>
+      <AdminButton :trailing-icon="ChevronUp" type="button" @click="menuOpen = !menuOpen">Ações</AdminButton>
     </div>
   </div>
 
@@ -382,23 +380,6 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick));
 </template>
 
 <style scoped>
-.lote-acoes {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 0 16px;
-  background: var(--action-primary-bg);
-  color: var(--action-primary-text);
-  border: none;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  font-weight: var(--weight-bold);
-  font-size: var(--text-sm);
-}
-.lote-acoes:hover {
-  background: var(--action-primary-bg-hover);
-}
 .lote-menu-item {
   display: flex;
   align-items: center;

@@ -17,6 +17,7 @@ import { Section, EmptyState, GhostButton } from "./shared";
 import SegmentedToggle from "@/components/ui/SegmentedToggle.vue";
 import CadastrarGarantiaModal from "../../components/modals/CadastrarGarantiaModal.vue";
 import ExcluirGarantiaModal from "../../components/modals/ExcluirGarantiaModal.vue";
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ det: ReturnType<typeof detalheSolicitacao> }>();
 
@@ -268,42 +269,8 @@ function onSave(g: GarantiaOperacao) {
         </div>
         <div style="flex: 1" />
         <div class="flex items-center justify-between" style="gap: 8px">
-          <button
-            class="flex items-center"
-            style="
-              gap: 6px;
-              height: 32px;
-              padding: 0 12px;
-              border-radius: var(--radius-md);
-              border: 1px solid var(--border-default);
-              background: var(--surface-card);
-              cursor: pointer;
-              font-size: var(--text-xs);
-              font-weight: var(--weight-bold);
-              color: var(--action-danger-text-only);
-            "
-            @click="askRemove(g)"
-          >
-            <Trash2 :size="13" /> Excluir
-          </button>
-          <button
-            class="flex items-center"
-            style="
-              gap: 6px;
-              height: 32px;
-              padding: 0 12px;
-              border-radius: var(--radius-md);
-              border: 1px solid var(--border-default);
-              background: var(--surface-card);
-              cursor: pointer;
-              font-size: var(--text-xs);
-              font-weight: var(--weight-bold);
-              color: var(--text-strong);
-            "
-            @click="openEdit(g)"
-          >
-            <Pencil :size="13" /> Editar
-          </button>
+          <AdminButton variant="secondary" size="compact" :icon="Trash2" @click="askRemove(g)">Excluir</AdminButton>
+          <AdminButton variant="secondary" size="compact" :icon="Pencil" @click="openEdit(g)">Editar</AdminButton>
         </div>
       </div>
     </div>

@@ -98,18 +98,7 @@ function enviar() {
   <AdminModal size="sm" eyebrow="Configurações" :title="step === 1 ? 'Como está a usabilidade do sistema?' : (faixa?.pergunta ?? '')" subtitle="Em uma escala de 0 a 10, como você avalia a facilidade de uso do Minerva no seu dia a dia de trabalho?" @close="emit('close')">
     <div v-if="step === 1" style="padding: 24px 28px; overflow-y: auto">
       <div class="notas" role="radiogroup" aria-label="Nota de 0 a 10">
-        <button
-          v-for="valor in NOTAS"
-          :key="valor"
-          type="button"
-          role="radio"
-          :aria-checked="nota === valor"
-          class="nota"
-          :style="notaVars(valor)"
-          @click="selecionar(valor)"
-        >
-          {{ valor }}
-        </button>
+        <AdminButton variant="secondary" size="large" v-for="valor in NOTAS" :key="valor" type="button" @click="selecionar(valor)">{{ valor }}</AdminButton>
       </div>
       <div class="flex items-center justify-between" style="margin-top: 10px">
         <span class="hint">0 · Muito difícil de usar</span>

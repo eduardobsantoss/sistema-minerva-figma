@@ -35,6 +35,7 @@ import { useTablePagination } from '@/composables/useTablePagination';
 import { useBackgroundReport } from '@/composables/useBackgroundReport';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const REPORT_ICONS: Record<PortfolioReportKey, Component> = {
   ger001: Wallet,
@@ -394,28 +395,7 @@ const inputStyle = {
       </div>
 
       <div class="flex items-center justify-end">
-        <button
-          type="button"
-          class="flex items-center"
-          :disabled="selectedIds.length === 0"
-          :style="{
-            gap: '8px',
-            height: '40px',
-            padding: '0 20px',
-            background: 'var(--action-primary-bg)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 'var(--radius-lg)',
-            cursor: selectedIds.length === 0 ? 'not-allowed' : 'pointer',
-            opacity: selectedIds.length === 0 ? 0.5 : 1,
-            fontWeight: 'var(--weight-bold)',
-            fontSize: 'var(--text-xs)',
-            letterSpacing: '0.08em',
-          }"
-          @click="handleVer"
-        >
-          <FileSpreadsheet :size="15" /> {{ verLabel }}
-        </button>
+        <AdminButton :icon="FileSpreadsheet" type="button" :disabled="selectedIds.length === 0" @click="handleVer">{{ verLabel }}</AdminButton>
       </div>
     </div>
 
@@ -424,26 +404,7 @@ const inputStyle = {
         <span style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
           {{ previewTotal }} {{ previewTotal === 1 ? 'resultado' : 'resultados' }}
         </span>
-        <button
-          type="button"
-          :disabled="previewTotal === 0"
-          class="flex items-center"
-          :style="{
-            gap: '6px',
-            height: '32px',
-            padding: '0 14px',
-            background: 'none',
-            border: '1px solid var(--border-default)',
-            borderRadius: 'var(--radius-lg)',
-            cursor: previewTotal === 0 ? 'not-allowed' : 'pointer',
-            color: previewTotal === 0 ? 'var(--text-disabled)' : 'var(--text-default)',
-            fontSize: 'var(--text-xs)',
-            fontWeight: 'var(--weight-bold)',
-          }"
-          @click="handleExportCsv"
-        >
-          <Download :size="13" /> EXPORTAR CSV
-        </button>
+        <AdminButton variant="secondary" size="compact" :icon="Download" type="button" :disabled="previewTotal === 0" @click="handleExportCsv">Exportar CSV</AdminButton>
       </div>
 
       <div class="grid" :style="{ gridTemplateColumns: notificacoesMode ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: '12px', padding: '16px 20px', borderBottom: '1px solid var(--border-default)' }">

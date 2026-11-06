@@ -512,12 +512,7 @@ function toggleGerarMinuta() {
 
       <!-- Footer -->
       <div class="flex items-center justify-end" style="gap: 12px; padding: 16px 32px; border-top: 1px solid var(--border-default); background: var(--surface-card)">
-        <button
-          style="height: 44px; padding: 0 20px; background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
-          @click="emit('close')"
-        >
-          Cancelar
-        </button>
+        <AdminButton variant="ghost" size="large" @click="emit('close')">Cancelar</AdminButton>
         <button
           :disabled="!canSubmit"
           class="flex items-center btn-animated"
@@ -531,13 +526,12 @@ function toggleGerarMinuta() {
             cursor: canSubmit ? 'pointer' : 'not-allowed',
             fontWeight: 'var(--weight-bold)',
             fontSize: 'var(--text-xs)',
-            letterSpacing: '0.08em',
             background: canSubmit ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
             color: canSubmit ? '#fff' : 'var(--text-disabled)',
           }"
           @click="handleSubmit"
         >
-          <FileText :size="15" /> GERAR TÍTULO
+          <FileText :size="15" /> Gerar título
         </button>
       </div>
     </template>

@@ -109,10 +109,9 @@ const kpis = computed(() => {
             cursor: pointer;
             font-weight: var(--weight-bold);
             font-size: var(--text-xs);
-            letter-spacing: 0.10em;
-          "
+            "
         >
-          PESQUISAR
+          Pesquisar
         </button>
       </div>
     </div>

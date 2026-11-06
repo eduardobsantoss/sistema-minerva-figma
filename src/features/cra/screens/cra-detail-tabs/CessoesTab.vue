@@ -13,6 +13,7 @@ import {
 } from '../../data/craData';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ cessoes: Cessao[] }>();
 const emit = defineEmits<{
@@ -101,14 +102,7 @@ function onDelete(id: string) {
           {{ cessoes.length }} cessões cadastradas
         </div>
       </div>
-      <button
-        type="button"
-        class="flex items-center btn-animated btn-agro"
-        style="gap: 8px; padding: 10px 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
-        @click="emit('create')"
-      >
-        <Plus :size="14" /> NOVA CESSÃO
-      </button>
+      <AdminButton variant="agro" :icon="Plus" type="button" @click="emit('create')">Nova cessão</AdminButton>
     </div>
 
     <div class="grid" style="grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border-default); background: var(--surface-sunken)">

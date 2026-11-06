@@ -44,6 +44,7 @@ import SubirContratoMaeModal from '../components/modals/SubirContratoMaeModal.vu
 import EditarParametrosGrupoModal from '../components/modals/EditarParametrosGrupoModal.vue';
 import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
 import type { TituloSelecionado } from '@/components/titulos/types';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ fidc: Fidc }>();
 const emit = defineEmits<{
@@ -330,14 +331,7 @@ function handleSetupUpdate(setup: FidcSetup) {
             {{ viewTab === 'classes' ? `${fidc.classes.length} unidades cadastradas` : `${allTitles.length} títulos na carteira` }}
           </div>
         </div>
-        <button
-          v-if="isMulticlasse && viewTab === 'classes'"
-          class="flex items-center btn-animated btn-agro"
-          style="gap: 8px; padding: 10px 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
-          @click="emit('createClass')"
-        >
-          <Plus :size="14" /> NOVA CLASSE
-        </button>
+        <AdminButton variant="agro" :icon="Plus" v-if="isMulticlasse && viewTab === 'classes'" @click="emit('createClass')">Nova classe</AdminButton>
         <div class="flex" style="padding: 4px; background: var(--surface-sunken); border-radius: var(--radius-lg)">
           <TabBtn :active="viewTab === 'classes'" @click="viewTab = 'classes'">VISUALIZAR CLASSES</TabBtn>
           <TabBtn :active="viewTab === 'titulos'" @click="viewTab = 'titulos'">VISUALIZAR TÍTULOS</TabBtn>

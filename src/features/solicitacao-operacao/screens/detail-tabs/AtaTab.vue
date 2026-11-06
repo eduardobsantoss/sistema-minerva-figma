@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { MessageSquare, Paperclip, Send, User } from 'lucide-vue-next';
 import { Section, EmptyState } from './shared';
+import AdminButton from '@/components/ui/AdminButton.vue';
 </script>
 
 <template>
@@ -48,29 +49,11 @@ import { Section, EmptyState } from './shared';
               color: var(--text-muted);
               font-size: var(--text-xs);
               font-weight: var(--weight-bold);
-              letter-spacing: 0.06em;
-            "
+              "
           >
-            <Paperclip :size="15" /> ANEXAR
+            <Paperclip :size="15" /> Anexar
           </button>
-          <button
-            class="flex items-center"
-            style="
-              gap: 8px;
-              height: 40px;
-              padding: 0 18px;
-              background: var(--action-primary-bg);
-              color: var(--action-primary-text);
-              border: none;
-              border-radius: var(--radius-lg);
-              cursor: pointer;
-              font-weight: var(--weight-bold);
-              font-size: var(--text-xs);
-              letter-spacing: 0.06em;
-            "
-          >
-            <Send :size="14" /> Postar
-          </button>
+          <AdminButton :icon="Send">Postar</AdminButton>
         </div>
       </div>
     </div>

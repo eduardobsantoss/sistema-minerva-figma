@@ -5,6 +5,7 @@ import { brl, cras, type Cra } from '../data/craData';
 import { MOCK_CONFINA_SIMULATIONS, type SavedSimulation } from '../data/simuladorData';
 import CraCard from '../components/CraCard.vue';
 import ConfinaPromissoryModal from '@/features/fidc/components/modals/ConfinaPromissoryModal.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const selected = ref<Cra | null>(null);
 const q = ref('');
@@ -69,9 +70,9 @@ function handleCreated() {
         />
         <button
           type="button"
-          style="position: absolute; right: 8px; top: 8px; bottom: 8px; padding: 0 24px; background: var(--action-primary-bg); color: var(--action-primary-text); border-radius: var(--radius-lg); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em"
+          style="position: absolute; right: 8px; top: 8px; bottom: 8px; padding: 0 24px; background: var(--action-primary-bg); color: var(--action-primary-text); border-radius: var(--radius-lg); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); "
         >
-          PESQUISAR
+          Pesquisar
         </button>
       </div>
     </div>
@@ -119,14 +120,7 @@ function handleCreated() {
             Simule valor de compra vs. valor nominal a partir da cotação da arroba, peso do lote, juros e prazo.
           </div>
         </div>
-        <button
-          type="button"
-          class="flex items-center btn-animated btn-agro"
-          style="gap: 8px; height: 40px; padding: 0 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; flex-shrink: 0; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
-          @click="modalOpen = true"
-        >
-          <Plus :size="15" /> GERAR TÍTULO
-        </button>
+        <AdminButton variant="agro" :icon="Plus" type="button" @click="modalOpen = true" style="flex-shrink: 0">Gerar título</AdminButton>
       </div>
 
       <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">

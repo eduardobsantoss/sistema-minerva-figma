@@ -5,6 +5,7 @@ import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { RATINGS_SEED, fmtPct, type Rating } from '../data/riscoData';
 import CreateRatingModal from '../components/modals/CreateRatingModal.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const COLS = '1fr 1fr 1fr auto';
 
@@ -47,16 +48,7 @@ function handleEdit(data: { nome: string; taxa: number }) {
           {{ ratings.length }} {{ ratings.length === 1 ? 'rating cadastrado' : 'ratings cadastrados' }}
         </p>
       </div>
-      <button
-        class="flex items-center btn-animated btn-agro"
-        style="gap: 8px; height: 48px; padding: 0 22px; background: var(--agro-base); color: #fff; border-radius: var(--radius-lg); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -8px rgba(242,125,38,0.40)"
-        @click="creating = true"
-      >
-        <span class="flex items-center justify-center" style="width: 22px; height: 22px; border-radius: 9999px; background: rgba(255,255,255,0.20)">
-          <Plus :size="14" />
-        </span>
-        NOVO RATING
-      </button>
+      <AdminButton variant="agro" size="xl" :icon="Plus" @click="creating = true">Novo rating</AdminButton>
     </div>
 
     <!-- Tabela -->

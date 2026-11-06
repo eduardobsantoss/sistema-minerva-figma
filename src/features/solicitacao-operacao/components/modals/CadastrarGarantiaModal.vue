@@ -134,25 +134,7 @@ function salvar() {
         </StepGrid>
 
         <div v-if="!showAnexos" class="flex justify-end">
-          <button
-            type="button"
-            :disabled="!dadosOk"
-            :style="{
-              height: '40px',
-              padding: '0 20px',
-              background: dadosOk ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
-              color: dadosOk ? '#fff' : 'var(--text-disabled)',
-              border: 'none',
-              borderRadius: 'var(--radius-lg)',
-              cursor: dadosOk ? 'pointer' : 'not-allowed',
-              fontWeight: 'var(--weight-bold)',
-              fontSize: 'var(--text-xs)',
-              letterSpacing: '0.08em',
-            }"
-            @click="continuar"
-          >
-            CONTINUAR
-          </button>
+          <AdminButton type="button" :disabled="!dadosOk" @click="continuar">Continuar</AdminButton>
         </div>
 
         <DocGroup

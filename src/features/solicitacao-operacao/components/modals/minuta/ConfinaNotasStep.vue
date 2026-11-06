@@ -10,6 +10,7 @@ import {
   type ConfinaGta,
 } from '../../../data/minutaData';
 import ConfinaPreviaSimulacao from './ConfinaPreviaSimulacao.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const notas = defineModel<ConfinaNotaFiscal[]>('notas', { default: () => [] });
 defineProps<{ operacao: ConfinaOperacaoForm }>();
@@ -114,28 +115,7 @@ function importarExcel() {
           <p style="margin: 0; font-size: var(--text-sm); color: var(--text-muted)">
             Preencha a nota e as GTAs do rascunho; a GTA ainda nos campos é incluída ao adicionar a nota.
           </p>
-          <button
-            type="button"
-            class="flex items-center"
-            style="
-              gap: 8px;
-              height: 40px;
-              padding: 0 16px;
-              background: var(--surface-card);
-              border: 1px solid var(--border-default);
-              border-radius: var(--radius-lg);
-              cursor: pointer;
-              font-weight: var(--weight-bold);
-              font-size: var(--text-xs);
-              letter-spacing: 0.04em;
-              color: var(--gci-base);
-              white-space: nowrap;
-            "
-            @click="importarExcel"
-          >
-            <FileSpreadsheet :size="14" />
-            Importar Excel
-          </button>
+          <AdminButton variant="secondary" :icon="FileSpreadsheet" type="button" @click="importarExcel">Importar Excel</AdminButton>
         </div>
         <p
           v-if="importMsg"

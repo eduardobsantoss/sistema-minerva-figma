@@ -27,6 +27,7 @@ import {
 } from '../data/historicoNotificacoesData';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 type ColKey =
   | 'lastro'
@@ -418,18 +419,14 @@ function cellText(n: HistoricoNotificacao, key: ColKey): string {
               </div>
               <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
                 <button type="button" class="filter-secondary" @click="handleClear">Limpar</button>
-                <button type="button" class="flex items-center filter-primary" @click="handleFilter">
-                  <Filter :size="13" /> Filtrar
-                </button>
+                <AdminButton :icon="Filter" type="button" @click="handleFilter">Filtrar</AdminButton>
               </div>
             </div>
           </template>
         </div>
 
         <div style="position: relative">
-          <button type="button" class="tool-btn" @click="colsMenuOpen = !colsMenuOpen">
-            <SlidersHorizontal :size="14" /> Colunas
-          </button>
+          <AdminButton variant="secondary" :icon="SlidersHorizontal" type="button" @click="colsMenuOpen = !colsMenuOpen">Colunas</AdminButton>
           <template v-if="colsMenuOpen">
             <div style="position: fixed; inset: 0; z-index: 30" @click="colsMenuOpen = false" />
             <div class="cols-menu">
@@ -449,9 +446,7 @@ function cellText(n: HistoricoNotificacao, key: ColKey): string {
           </template>
         </div>
 
-        <button type="button" class="tool-btn" @click="exportarCsv">
-          <Download :size="14" /> Exportar CSV
-        </button>
+        <AdminButton variant="secondary" :icon="Download" type="button" @click="exportarCsv">Exportar CSV</AdminButton>
       </div>
     </div>
 
@@ -558,8 +553,7 @@ function cellText(n: HistoricoNotificacao, key: ColKey): string {
   color: var(--text-strong);
 }
 .filter-secondary,
-.filter-primary,
-.tool-btn {
+.filter-primary {
   height: 40px;
   padding: 0 16px;
   border-radius: var(--radius-lg);
@@ -578,14 +572,6 @@ function cellText(n: HistoricoNotificacao, key: ColKey): string {
   color: var(--action-primary-text);
   border: none;
   font-weight: var(--weight-bold);
-}
-.tool-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--surface-card);
-  border: 1px solid var(--border-default);
-  color: var(--text-muted);
 }
 .cols-menu {
   position: absolute;

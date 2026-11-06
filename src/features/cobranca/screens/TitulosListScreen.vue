@@ -31,6 +31,7 @@ import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
 import RegistrarConfirmacaoModal from '@/components/titulos/RegistrarConfirmacaoModal.vue';
 import type { TituloSelecionado } from '@/components/titulos/types';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ titulos: Titulo[] }>();
 const emit = defineEmits<{
@@ -465,65 +466,15 @@ function menuActions(t: Titulo) {
                 </div>
               </div>
               <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
-                <button
-                  style="
-                    height: 40px;
-                    padding: 0 16px;
-                    background: none;
-                    border: 1px solid var(--border-default);
-                    border-radius: var(--radius-lg);
-                    cursor: pointer;
-                    color: var(--text-muted);
-                    font-weight: var(--weight-semibold);
-                    font-size: var(--text-sm);
-                  "
-                  @click="handleClear"
-                >
-                  Limpar
-                </button>
-                <button
-                  class="flex items-center"
-                  style="
-                    gap: 6px;
-                    height: 40px;
-                    padding: 0 18px;
-                    background: var(--action-primary-bg);
-                    color: #fff;
-                    border: none;
-                    border-radius: var(--radius-lg);
-                    cursor: pointer;
-                    font-weight: var(--weight-bold);
-                    font-size: var(--text-xs);
-                    letter-spacing: 0.06em;
-                  "
-                  @click="handleFilter"
-                >
-                  <Filter :size="13" /> FILTRAR
-                </button>
+                <AdminButton variant="secondary" @click="handleClear">Limpar</AdminButton>
+                <AdminButton :icon="Filter" @click="handleFilter">Filtrar</AdminButton>
               </div>
             </div>
           </template>
         </div>
 
         <div style="position: relative">
-          <button
-            class="flex items-center"
-            style="
-              gap: 6px;
-              height: 40px;
-              padding: 0 14px;
-              background: var(--surface-card);
-              border: 1px solid var(--border-default);
-              border-radius: var(--radius-lg);
-              cursor: pointer;
-              color: var(--text-muted);
-              font-size: var(--text-sm);
-              font-weight: var(--weight-semibold);
-            "
-            @click="colsMenuOpen = !colsMenuOpen"
-          >
-            <SlidersHorizontal :size="14" /> Colunas
-          </button>
+          <AdminButton variant="secondary" :icon="SlidersHorizontal" @click="colsMenuOpen = !colsMenuOpen">Colunas</AdminButton>
           <template v-if="colsMenuOpen">
             <div style="position: fixed; inset: 0; z-index: 30" @click="colsMenuOpen = false" />
             <div

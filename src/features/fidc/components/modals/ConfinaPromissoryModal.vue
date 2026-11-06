@@ -233,14 +233,7 @@ function handleNext() {
               <FormField v-model="info.idade" label="Idade" :span="4" />
               <FormField v-model="info.qtd" label="Qtd" type="number" :span="3" />
               <div style="grid-column: span 1; display: flex; align-items: flex-end">
-                <button
-                  type="button"
-                  :disabled="form.infos.length <= 1"
-                  style="height: 40px; width: 100%; background: transparent; border: 1px solid var(--border-default); border-radius: var(--radius-md); cursor: pointer; color: var(--text-muted)"
-                  @click="removeInfo(i)"
-                >
-                  ×
-                </button>
+                <AdminButton variant="secondary" type="button" :disabled="form.infos.length <= 1" @click="removeInfo(i)" block>×</AdminButton>
               </div>
             </StepGrid>
           </div>
@@ -259,14 +252,7 @@ function handleNext() {
             <FormField v-model="n.nf" label="Nota fiscal" :span="5" />
             <FormField v-model="n.gta" label="GTA" placeholder="Opcional" :span="6" />
             <div style="grid-column: span 1; display: flex; align-items: flex-end">
-              <button
-                type="button"
-                :disabled="form.notas.length <= 1"
-                style="height: 40px; width: 100%; background: transparent; border: 1px solid var(--border-default); border-radius: var(--radius-md); cursor: pointer; color: var(--text-muted)"
-                @click="removeNota(i)"
-              >
-                ×
-              </button>
+              <AdminButton variant="secondary" type="button" :disabled="form.notas.length <= 1" @click="removeNota(i)" block>×</AdminButton>
             </div>
           </StepGrid>
         </div>

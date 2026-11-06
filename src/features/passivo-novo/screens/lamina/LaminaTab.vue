@@ -18,6 +18,7 @@ import CarteiraSubTab from './sub-tabs/CarteiraSubTab.vue';
 import UploadLaminaModal from './UploadLaminaModal.vue';
 import CaixasModal from './CaixasModal.vue';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ veiculo: Veiculo }>();
 const { success, error } = useToast();
@@ -92,14 +93,8 @@ watch(
     </div>
 
     <div class="flex items-center justify-end" style="gap: 8px; flex-wrap: wrap">
-      <button type="button" class="ghost-btn flex items-center" style="gap: 8px" @click="showUpload = true">
-        <Upload :size="14" />
-        Subir arquivo
-      </button>
-      <button type="button" class="ghost-btn flex items-center" style="gap: 8px" @click="showCaixas = true">
-        <Wallet :size="14" />
-        Editar caixas
-      </button>
+      <AdminButton variant="secondary" :icon="Upload" type="button" @click="showUpload = true">Subir arquivo</AdminButton>
+      <AdminButton variant="secondary" :icon="Wallet" type="button" @click="showCaixas = true">Editar caixas</AdminButton>
     </div>
 
     <UnderlineSubTabs v-model="activeTab" :tabs="[...LAMINA_TABS]" />
@@ -135,18 +130,5 @@ watch(
 }
 .date-input--hero:focus {
   border-color: #fff;
-}
-.ghost-btn {
-  height: 40px;
-  padding: 0 16px;
-  background: var(--surface-card);
-  color: var(--text-strong);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 </style>

@@ -117,26 +117,7 @@ function adicionar() {
           >
             Cancelar
           </button>
-          <button
-            type="button"
-            class="btn-animated btn-primary"
-            :disabled="!novoVeiculo"
-            :style="{
-              height: '40px',
-              padding: '0 16px',
-              background: novoVeiculo ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
-              color: novoVeiculo ? 'var(--action-primary-text)' : 'var(--text-disabled)',
-              border: 'none',
-              borderRadius: 'var(--radius-lg)',
-              cursor: novoVeiculo ? 'pointer' : 'not-allowed',
-              fontWeight: 'var(--weight-bold)',
-              fontSize: 'var(--text-xs)',
-              letterSpacing: '0.06em',
-            }"
-            @click="adicionar"
-          >
-            Adicionar
-          </button>
+          <AdminButton type="button" :disabled="!novoVeiculo" @click="adicionar">Adicionar</AdminButton>
         </div>
       </div>
 

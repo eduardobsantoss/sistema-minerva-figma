@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { X } from 'lucide-vue-next';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 defineProps<{
   title?: string;
@@ -42,12 +43,7 @@ const emit = defineEmits<{ close: [] }>();
       >{{ JSON.stringify(data, null, 2) }}</pre>
 
       <div class="flex items-center justify-end" style="padding: 14px 24px; border-top: 1px solid var(--border-default); flex-shrink: 0">
-        <button
-          style="height: 40px; padding: 0 18px; border-radius: var(--radius-lg); border: 1px solid var(--border-default); background: var(--surface-card); cursor: pointer; font-weight: var(--weight-semibold); font-size: var(--text-sm); color: var(--text-default)"
-          @click="emit('close')"
-        >
-          Fechar
-        </button>
+        <AdminButton variant="secondary" @click="emit('close')">Fechar</AdminButton>
       </div>
     </div>
   </div>

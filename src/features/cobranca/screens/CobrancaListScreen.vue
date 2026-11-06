@@ -22,6 +22,7 @@ import CobrancaCard from '../components/CobrancaCard.vue';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ notificacoes: Notificacao[] }>();
 const emit = defineEmits<{
@@ -192,10 +193,9 @@ function handleDelete(id: string) {
             cursor: pointer;
             font-weight: var(--weight-bold);
             font-size: var(--text-xs);
-            letter-spacing: 0.10em;
-          "
+            "
         >
-          PESQUISAR
+          Pesquisar
         </button>
       </div>
 
@@ -207,30 +207,7 @@ function handleDelete(id: string) {
         @update:model-value="viewMode = $event as ViewMode"
       />
 
-      <button
-        class="flex items-center btn-animated btn-agro"
-        style="
-          gap: 8px;
-          height: 56px;
-          padding: 0 24px;
-          background: var(--agro-base);
-          color: #fff;
-          border-radius: var(--radius-xl);
-          border: none;
-          cursor: pointer;
-          font-weight: var(--weight-bold);
-          font-size: var(--text-xs);
-          letter-spacing: 0.10em;
-          box-shadow: 0 10px 24px -8px rgba(242, 125, 38, 0.4);
-          white-space: nowrap;
-        "
-        @click="emit('new')"
-      >
-        <span class="flex items-center justify-center" style="width: 22px; height: 22px; border-radius: 9999px; background: rgba(255,255,255,0.20)">
-          <Plus :size="14" />
-        </span>
-        NOVA NOTIFICAÇÃO
-      </button>
+      <AdminButton variant="agro" size="xl" :icon="Plus" @click="emit('new')">Nova notificação</AdminButton>
     </div>
 
     <!-- KPIs -->

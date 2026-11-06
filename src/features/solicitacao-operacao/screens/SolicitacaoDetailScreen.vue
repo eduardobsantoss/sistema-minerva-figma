@@ -46,6 +46,7 @@ import { ActionMenu, RejectModal } from './solicitacao-detail';
 import { ParteRelacionadaDetailView } from './detail-tabs/parte-relacionada';
 import { AtivoDetailView } from './detail-tabs/ativo';
 import { deveIncluirConjugeAnuenteNoTermo, partesRelacionadasDoGrupo } from '@/features/risco/data/riscoData';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ solicitacao: Solicitacao }>();
 const emit = defineEmits<{ back: [] }>();
@@ -378,13 +379,7 @@ function onProrrogarVencimento(data: { novoVencimento: string; motivo: string })
 
       <!-- Ação primária + menu overflow -->
       <div class="flex items-center" style="gap: 10px; flex-shrink: 0">
-        <button
-          class="flex items-center btn-animated btn-primary"
-          style="gap: 8px; height: 44px; padding: 0 20px; background: var(--action-primary-bg); color: var(--action-primary-text); border-radius: var(--radius-lg); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; box-shadow: 0 10px 24px -10px rgba(8, 60, 74, 0.45)"
-        >
-          ANÁLISE OPERAÇÕES
-          <ChevronRight :size="16" />
-        </button>
+        <AdminButton size="large" :trailing-icon="ChevronRight">Análise operações</AdminButton>
         <ActionMenu
           :tipo-contrato="solicitacao.tipoContrato"
           @reject="confirmReject = true"

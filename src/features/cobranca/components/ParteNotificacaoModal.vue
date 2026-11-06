@@ -203,12 +203,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
               </div>
             </div>
             <div class="flex items-center" style="gap: 8px; flex-wrap: wrap">
-              <button v-if="!c.principal" type="button" class="pn-btn" @click="definirPrincipal(c)">
-                <Star :size="14" aria-hidden="true" /> Definir como principal
-              </button>
-              <button type="button" class="pn-btn pn-btn-danger" @click="removendo = c">
-                <Trash2 :size="14" aria-hidden="true" /> Remover
-              </button>
+              <AdminButton variant="secondary" size="compact" :icon="Star" v-if="!c.principal" type="button" @click="definirPrincipal(c)">Definir como principal</AdminButton>
+              <AdminButton variant="secondary" size="compact" :icon="Trash2" type="button" @click="removendo = c">Remover</AdminButton>
             </div>
           </li>
           <li v-if="!contatos.length" class="pn-empty">
@@ -240,7 +236,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
           </div>
           <div v-if="tentouAdicionar && erros.contato" class="pn-error" style="margin-top: 8px">{{ erros.contato }}</div>
           <div class="flex justify-end" style="margin-top: 14px">
-            <button type="submit" class="pn-primary"><Plus :size="16" aria-hidden="true" /> Adicionar contato</button>
+            <AdminButton :icon="Plus" type="submit">Adicionar contato</AdminButton>
           </div>
         </form>
       </template>
@@ -391,26 +387,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
   background: color-mix(in srgb, var(--success-base) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--success-base) 28%, transparent);
 }
-.pn-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 12px;
-  background: var(--surface-card);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  color: var(--text-strong);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-bold);
-}
-.pn-btn:hover {
-  background: var(--surface-sunken);
-}
-.pn-btn-danger {
-  color: var(--danger-base);
-}
 .pn-form {
   margin-top: 20px;
   padding: 16px;
@@ -467,8 +443,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
   padding: 14px 28px 20px;
   border-top: 1px solid var(--border-default);
 }
-.pn-secondary,
-.pn-primary {
+.pn-secondary {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -483,14 +458,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
   background: var(--surface-card);
   color: var(--text-strong);
   border: 1px solid var(--border-default);
-}
-.pn-primary {
-  background: var(--action-primary-bg);
-  color: var(--action-primary-text);
-  border: none;
-}
-.pn-primary:hover {
-  background: var(--action-primary-bg-hover);
 }
 input:focus-visible,
 select:focus-visible,

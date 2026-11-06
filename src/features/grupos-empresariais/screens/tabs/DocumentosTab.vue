@@ -5,6 +5,7 @@ import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
 import FormField from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/FormField.vue';
 import SelectField from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/SelectField.vue';
 import { DOCUMENTO_TIPO_OPTS, type DocumentoGrupo } from '../../data/gruposCadastroData';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ documentos: DocumentoGrupo[] }>();
 const emit = defineEmits<{
@@ -46,25 +47,7 @@ function confirmExcluir() {
 <template>
   <div class="flex flex-col" style="gap: 18px">
     <div class="flex items-center justify-end">
-      <button
-        type="button"
-        class="flex items-center"
-        :disabled="documentos.length === 0"
-        :style="{
-          gap: '8px',
-          height: '40px',
-          padding: '0 14px',
-          background: 'var(--surface-card)',
-          border: '1px solid var(--border-default)',
-          borderRadius: 'var(--radius-lg)',
-          cursor: documentos.length === 0 ? 'not-allowed' : 'pointer',
-          fontSize: 'var(--text-sm)',
-          fontWeight: 'var(--weight-bold)',
-          color: documentos.length === 0 ? 'var(--text-disabled)' : 'var(--text-strong)',
-        }"
-      >
-        <Download :size="14" /> Baixar todos
-      </button>
+      <AdminButton variant="secondary" :icon="Download" type="button" :disabled="documentos.length === 0">Baixar todos</AdminButton>
     </div>
 
     <div class="flex items-end" style="gap: 12px; width: 100%">
@@ -112,28 +95,7 @@ function confirmExcluir() {
       <div style="width: 160px; flex-shrink: 0">
         <FormField v-model="validoAte" label="Válido até" placeholder="AAAA-MM-DD" />
       </div>
-      <button
-        type="button"
-        class="flex items-center"
-        :disabled="!arquivoNome"
-        :style="{
-          gap: '8px',
-          height: '40px',
-          padding: '0 18px',
-          background: arquivoNome ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
-          color: arquivoNome ? 'var(--action-primary-text)' : 'var(--text-disabled)',
-          border: 'none',
-          borderRadius: 'var(--radius-lg)',
-          cursor: arquivoNome ? 'pointer' : 'not-allowed',
-          fontWeight: 'var(--weight-bold)',
-          fontSize: 'var(--text-xs)',
-          letterSpacing: '0.06em',
-          flexShrink: 0,
-        }"
-        @click="inserir"
-      >
-        <Plus :size="15" /> Inserir
-      </button>
+      <AdminButton :icon="Plus" type="button" :disabled="!arquivoNome" @click="inserir">Inserir</AdminButton>
     </div>
 
     <div

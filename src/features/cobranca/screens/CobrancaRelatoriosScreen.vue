@@ -42,6 +42,7 @@ import type { TituloSelecionado } from '@/components/titulos/types';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { useBackgroundReport } from '@/composables/useBackgroundReport';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 type ReportKey = 'inadimplencia' | 'efetividade' | 'boletagem' | 'cessao';
 
@@ -556,25 +557,7 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
         </div>
       </div>
       <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
-        <button
-          class="flex items-center"
-          style="
-            gap: 8px;
-            height: 40px;
-            padding: 0 20px;
-            background: var(--action-primary-bg);
-            color: #fff;
-            border: none;
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            font-weight: var(--weight-bold);
-            font-size: var(--text-xs);
-            letter-spacing: 0.08em;
-          "
-          @click="handleGerar"
-        >
-          <FileSpreadsheet :size="15" /> {{ verLabel }}
-        </button>
+        <AdminButton :icon="FileSpreadsheet" @click="handleGerar">{{ verLabel }}</AdminButton>
       </div>
     </div>
 
@@ -595,25 +578,7 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
           {{ totalResultados }}
           {{ totalResultados === 1 ? 'resultado' : 'resultados' }}
         </span>
-        <button
-          class="flex items-center"
-:disabled="totalResultados === 0"
-          :style="{
-            gap: '6px',
-            height: '32px',
-            padding: '0 14px',
-            background: 'none',
-            border: '1px solid var(--border-default)',
-            borderRadius: 'var(--radius-lg)',
-            cursor: totalResultados === 0 ? 'not-allowed' : 'pointer',
-            color: totalResultados === 0 ? 'var(--text-disabled)' : 'var(--text-default)',
-            fontSize: 'var(--text-xs)',
-            fontWeight: 'var(--weight-bold)',
-          }"
-          @click="handleExportCsv"
-        >
-          <Download :size="13" /> EXPORTAR CSV
-        </button>
+        <AdminButton variant="secondary" size="compact" :icon="Download" :disabled="totalResultados === 0" @click="handleExportCsv">Exportar CSV</AdminButton>
       </div>
 
       <template v-if="selected === 'efetividade'">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Component } from 'vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 defineProps<{ title: string; icon?: Component; hasSave?: boolean; saveDisabled?: boolean }>();
 const emit = defineEmits<{ save: [] }>();
@@ -18,24 +19,7 @@ const emit = defineEmits<{ save: [] }>();
       <slot />
     </div>
     <div v-if="hasSave" class="flex items-center justify-end" style="padding: 14px 22px; border-top: 1px solid var(--border-default); border-radius: 0 0 var(--radius-xl) var(--radius-xl)">
-      <button
-        :disabled="saveDisabled"
-        :style="{
-          height: '40px',
-          padding: '0 20px',
-          border: 'none',
-          borderRadius: 'var(--radius-lg)',
-          cursor: saveDisabled ? 'not-allowed' : 'pointer',
-          fontWeight: 'var(--weight-bold)',
-          fontSize: 'var(--text-xs)',
-          letterSpacing: '0.08em',
-          background: saveDisabled ? 'var(--neutral-200)' : 'var(--action-primary-bg)',
-          color: saveDisabled ? 'var(--text-disabled)' : '#fff',
-        }"
-        @click="emit('save')"
-      >
-        SALVAR
-      </button>
+      <AdminButton :disabled="saveDisabled" @click="emit('save')">Salvar</AdminButton>
     </div>
   </div>
 </template>

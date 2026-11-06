@@ -5,6 +5,7 @@ import Section from './Section.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ titulo: TituloAtivoGlobal }>();
 
@@ -88,25 +89,7 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
           <input v-model="form.multa" type="number" placeholder="0,00" class="field-input" />
         </div>
         <div class="flex items-end">
-          <button
-            :disabled="!canSalvar"
-            :style="{
-              height: '40px',
-              padding: '0 18px',
-              borderRadius: 'var(--radius-lg)',
-              border: 'none',
-              cursor: canSalvar ? 'pointer' : 'not-allowed',
-              background: canSalvar ? 'var(--action-primary-bg)' : 'var(--surface-sunken)',
-              color: canSalvar ? '#fff' : 'var(--text-muted)',
-              fontWeight: 'var(--weight-bold)',
-              fontSize: 'var(--text-xs)',
-              letterSpacing: '0.06em',
-              opacity: canSalvar ? 1 : 0.7,
-            }"
-            @click="handleSalvar"
-          >
-            SALVAR PAGAMENTO
-          </button>
+          <AdminButton :disabled="!canSalvar" @click="handleSalvar">Salvar pagamento</AdminButton>
         </div>
       </div>
     </Section>

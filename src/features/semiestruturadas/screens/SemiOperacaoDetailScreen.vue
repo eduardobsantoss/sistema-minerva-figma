@@ -23,6 +23,7 @@ import GarantiasTab from './operacao-tabs/GarantiasTab.vue';
 import TabBtn from './operacao-tabs/TabBtn.vue';
 import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
 import type { TituloSelecionado } from '@/components/titulos/types';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ operacao: SemiOperacao }>();
 const emit = defineEmits<{
@@ -287,16 +288,7 @@ const filteredGarantias = computed(() => {
               style="width: 100%; height: 44px; padding-left: 44px; padding-right: 16px; background: transparent; border: none; outline: none; font-size: var(--text-sm); color: var(--text-strong)"
             />
           </div>
-          <button
-            v-if="tab === 'cotas'"
-            type="button"
-            class="flex items-center btn-animated btn-agro"
-            style="gap: 8px; height: 44px; padding: 0 22px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
-            @click="distribuindoTodas = true"
-          >
-            <Split :size="14" />
-            Distribuir cotas
-          </button>
+          <AdminButton variant="agro" size="large" :icon="Split" v-if="tab === 'cotas'" type="button" @click="distribuindoTodas = true" style="flex-shrink: 0">Distribuir cotas</AdminButton>
         </div>
       </div>
 

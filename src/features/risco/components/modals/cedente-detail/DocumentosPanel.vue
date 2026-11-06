@@ -6,6 +6,7 @@ import { TIPO_ARQUIVO_OPTS } from '../../../data/riscoData';
 import { FormField, SelectField, EmptyState, AddButton } from '../../../screens/detail-tabs/shared';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ cedente: Cedente }>();
 const emit = defineEmits<{ update: [cedente: Cedente] }>();
@@ -56,18 +57,7 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
       <div style="min-width: 180px">
         <SelectField label="Tipo" :options="TIPO_ARQUIVO_OPTS" placeholder="Todos" :value="filtroTipo" @change="filtroTipo = ($event.target as HTMLSelectElement).value" />
       </div>
-      <button
-        :disabled="cedente.documentos.length === 0"
-        class="flex items-center"
-        :style="{
-          gap: '8px', height: '40px', padding: '0 16px', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)',
-          background: 'var(--surface-card)', cursor: cedente.documentos.length === 0 ? 'not-allowed' : 'pointer',
-          color: cedente.documentos.length === 0 ? 'var(--text-disabled)' : 'var(--text-strong)',
-          fontWeight: 'var(--weight-bold)', fontSize: 'var(--text-xs)', letterSpacing: '0.06em', whiteSpace: 'nowrap',
-        }"
-      >
-        <Download :size="14" /> BAIXAR TODOS
-      </button>
+      <AdminButton variant="secondary" :icon="Download" :disabled="cedente.documentos.length === 0">Baixar todos</AdminButton>
     </div>
 
     <EmptyState v-if="documentosFiltrados.length === 0" :icon="FileText" title="Nenhum documento encontrado" hint="Use o formulário acima para anexar um documento deste cedente." />

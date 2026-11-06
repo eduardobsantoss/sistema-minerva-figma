@@ -191,15 +191,7 @@ function salvar() {
           <span style="font-size: 11px; font-weight: var(--weight-bold); letter-spacing: 0.18em; color: var(--agro-base); text-transform: uppercase">
             Cota total
           </span>
-          <button
-            type="button"
-            class="flex items-center btn-animated btn-agro"
-            style="gap: 8px; height: 36px; padding: 0 14px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; text-transform: uppercase"
-            @click="adicionarNova"
-          >
-            <Plus :size="14" />
-            Adicionar nova cota
-          </button>
+          <AdminButton variant="agro" size="compact" :icon="Plus" type="button" @click="adicionarNova">Adicionar nova cota</AdminButton>
         </div>
         <div class="flex items-end justify-between" style="gap: 12px; margin-top: 10px; position: relative; z-index: 1">
           <span style="font-size: 32px; font-weight: var(--weight-bold); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1">

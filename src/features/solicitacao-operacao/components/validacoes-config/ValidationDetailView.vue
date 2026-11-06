@@ -29,6 +29,7 @@ import {
   type ValidationItem,
 } from '../../data/validacoesConfigData';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ item: ValidationItem }>();
 const emit = defineEmits<{
@@ -701,23 +702,7 @@ function handleAtualizar() {
             <span style="font-size: var(--text-sm); color: var(--text-muted)">
               {{ linkedInTabCount }} de {{ itemsInTabCount }} selecionados
             </span>
-            <button
-              type="button"
-              style="
-                height: 36px;
-                padding: 0 14px;
-                background: var(--surface-card);
-                border: 1px solid var(--border-default);
-                border-radius: var(--radius-lg);
-                cursor: pointer;
-                font-size: var(--text-xs);
-                font-weight: var(--weight-bold);
-                color: var(--text-strong);
-              "
-              @click="linkAllInTab"
-            >
-              Vincular todos da aba
-            </button>
+            <AdminButton variant="secondary" size="compact" type="button" @click="linkAllInTab">Vincular todos da aba</AdminButton>
           </div>
 
           <div
@@ -817,25 +802,7 @@ function handleAtualizar() {
       >
         Validação atualizada com sucesso.
       </span>
-      <button
-        type="button"
-        class="flex items-center"
-        style="
-          height: 44px;
-          padding: 0 22px;
-          background: var(--action-primary-bg);
-          color: var(--action-primary-text);
-          border: none;
-          border-radius: var(--radius-lg);
-          cursor: pointer;
-          font-weight: var(--weight-bold);
-          font-size: var(--text-sm);
-          flex-shrink: 0;
-        "
-        @click="handleAtualizar"
-      >
-        Atualizar
-      </button>
+      <AdminButton size="large" type="button" @click="handleAtualizar" style="flex-shrink: 0">Atualizar</AdminButton>
     </div>
   </div>
 </template>

@@ -184,27 +184,7 @@ function cancelSaveTab() {
           Parametrize taxas por tipo de veículo. Clique em um veículo para abrir o detalhe.
         </p>
       </div>
-      <button
-        type="button"
-        class="btn-animated btn-agro"
-        style="
-          height: 48px;
-          padding: 0 28px;
-          background: var(--agro-base);
-          color: #fff;
-          border-radius: var(--radius-lg);
-          border: none;
-          cursor: pointer;
-          font-weight: var(--weight-bold);
-          font-size: var(--text-xs);
-          letter-spacing: 0.1em;
-          box-shadow: 0 10px 24px -8px rgba(242, 125, 38, 0.4);
-          flex-shrink: 0;
-        "
-        @click="requestSaveTab"
-      >
-        SALVAR
-      </button>
+      <AdminButton variant="agro" size="xl" type="button" @click="requestSaveTab" style="flex-shrink: 0">Salvar</AdminButton>
     </div>
 
     <SegmentedToggle

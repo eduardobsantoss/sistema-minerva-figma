@@ -5,6 +5,7 @@ import type { ParteTipo, ParteRelacionada } from '@/features/solicitacao-operaca
 import { PARTE_TIPO_LABEL, TIPOS_PARTE_OPTS } from '@/features/solicitacao-operacao/data/parteRelacionadaFields';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ partes: ParteRelacionada[] }>();
 const emit = defineEmits<{
@@ -76,15 +77,7 @@ function confirmRemove() {
           <AdminSelect v-model="filtroTipo" :options="[{ value: '', label: 'Todos' }, ...TIPOS_PARTE_OPTS.map((t) => ({ value: t.codigo, label: `${t.codigo} — ${t.label}` }))]" />
         </div>
       </div>
-      <button
-        type="button"
-        class="flex items-center"
-        style="gap: 8px; height: 40px; padding: 0 14px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); flex-shrink: 0"
-        @click="emit('add')"
-      >
-        <Plus :size="14" />
-        Cadastrar
-      </button>
+      <AdminButton variant="secondary" :icon="Plus" type="button" @click="emit('add')" style="flex-shrink: 0">Cadastrar</AdminButton>
     </div>
 
     <div style="font-size: var(--text-sm); color: var(--text-muted)">

@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle2, RefreshCw } from 'lucide-vue-next';
 import { detalheSolicitacao, type ItemValidacao } from '../../../data/operacaoData';
 import { Section, GhostButton } from '../shared';
 import ValidacaoRow from './ValidacaoRow.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{
   det: ReturnType<typeof detalheSolicitacao>;
@@ -35,25 +36,7 @@ const aprovadas = computed(() =>
         As validações só rodam quando a operação tiver título e veículo vinculado.
       </div>
       <div class="flex items-center" style="gap: 8px">
-        <button
-          class="flex items-center"
-          style="
-            gap: 6px;
-            height: 40px;
-            padding: 0 14px;
-            background: none;
-            border: 1px solid var(--border-default);
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            font-weight: var(--weight-bold);
-            font-size: var(--text-xs);
-            letter-spacing: 0.04em;
-            color: var(--text-strong);
-          "
-          @click="emit('openFullView')"
-        >
-          <CheckCircle2 :size="14" /> Ver tela de validações
-        </button>
+        <AdminButton variant="secondary" :icon="CheckCircle2" @click="emit('openFullView')">Ver tela de validações</AdminButton>
         <GhostButton :icon="RefreshCw">Revalidar</GhostButton>
       </div>
     </div>

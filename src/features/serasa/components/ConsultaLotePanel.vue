@@ -4,6 +4,7 @@ import { ArrowLeft, Download, FileSpreadsheet, Upload } from 'lucide-vue-next';
 import Alert from '@/components/feedback/Alert.vue';
 import { useToast } from '@/composables/useToast';
 import { formatDocument, onlyDigits } from '../utils/serasaFormatters';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 type StatusLote = 'pendente' | 'processando' | 'concluido' | 'com-erros';
 
@@ -190,30 +191,8 @@ function consultar() {
       <div class="flex items-center justify-between" style="gap: 12px; flex-wrap: wrap">
         <p style="font-size: var(--text-sm); color: var(--text-muted)">Escolha um arquivo para ver uma pré-visualização ilustrativa.</p>
         <div class="flex items-center" style="gap: 8px">
-          <button type="button" class="lote-focus flex items-center" style="gap: 6px; height: 40px; padding: 0 14px; background: var(--action-secondary-bg); color: var(--action-secondary-text); border: 1px solid var(--action-secondary-border); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-xs); font-weight: var(--weight-bold); letter-spacing: 0.06em" @click="baixarModelo">
-            <Download :size="14" />
-            BAIXAR MODELO
-          </button>
-          <button
-            type="button"
-            class="lote-focus"
-            :disabled="validos.length === 0"
-            :style="{
-              height: '40px',
-              padding: '0 20px',
-              border: 'none',
-              borderRadius: 'var(--radius-lg)',
-              cursor: validos.length > 0 ? 'pointer' : 'not-allowed',
-              fontWeight: 'var(--weight-bold)',
-              fontSize: 'var(--text-xs)',
-              letterSpacing: '0.08em',
-              background: validos.length > 0 ? 'var(--action-primary-bg)' : 'var(--surface-sunken)',
-              color: validos.length > 0 ? '#fff' : 'var(--text-muted)',
-            }"
-            @click="consultar"
-          >
-            CONSULTAR
-          </button>
+          <AdminButton variant="secondary" :icon="Download" type="button" @click="baixarModelo">Baixar modelo</AdminButton>
+          <AdminButton type="button" :disabled="validos.length === 0" @click="consultar">Consultar</AdminButton>
         </div>
       </div>
 

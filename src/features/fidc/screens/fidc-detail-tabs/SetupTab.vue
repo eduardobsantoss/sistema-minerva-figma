@@ -9,6 +9,7 @@ import FormField from '../../components/create-class/FormField.vue';
 import SelectField from '../../components/create-class/SelectField.vue';
 import ToggleRow from '../../components/modals/ToggleRow.vue';
 import ParametrizacoesAdicionaisTab from '@/features/risco/screens/detail-tabs/ParametrizacoesAdicionaisTab.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ setup: FidcSetup }>();
 const emit = defineEmits<{ update: [FidcSetup] }>();
@@ -189,14 +190,7 @@ function toggleParamAdicional(id: string) {
       </SectionGroup>
 
       <div class="flex items-center" style="gap: 12px; margin-top: 20px">
-        <button
-          type="button"
-          class="flex items-center btn-animated btn-agro"
-          style="gap: 8px; padding: 10px 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
-          @click="save"
-        >
-          <Save :size="14" /> SALVAR
-        </button>
+        <AdminButton variant="agro" :icon="Save" type="button" @click="save">Salvar</AdminButton>
         <span v-if="saved" style="font-size: var(--text-sm); color: var(--success-base); font-weight: var(--weight-semibold)">Alterações salvas</span>
       </div>
     </div>

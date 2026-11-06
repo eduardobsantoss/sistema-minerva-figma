@@ -8,6 +8,7 @@ import {
   type RegistroTentativa,
   type SacadoPreventivo,
 } from '../../data/cobrancaPreventivaData';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ registro: RegistroTentativa; sacado: SacadoPreventivo }>();
 const emit = defineEmits<{ back: [] }>();
@@ -31,7 +32,7 @@ function baixar() {
           {{ sacado.nome }} · {{ fmtData(registro.dataContato) }} · {{ registro.registradoPor }}
         </p>
       </div>
-      <button type="button" class="outline" @click="baixar"><Download :size="15" /> Baixar</button>
+      <AdminButton variant="secondary" size="large" :icon="Download" type="button" @click="baixar">Baixar</AdminButton>
     </div>
 
     <div class="viewer">
@@ -112,23 +113,6 @@ h2 {
   color: var(--text-strong);
   letter-spacing: -0.01em;
   line-height: 1.2;
-}
-.outline {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 44px;
-  padding: 0 16px;
-  background: var(--surface-card);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  font-weight: var(--weight-semibold);
-  font-size: var(--text-sm);
-  color: var(--text-strong);
-}
-.outline:hover {
-  background: var(--surface-sunken);
 }
 .viewer {
   background: var(--surface-sunken);

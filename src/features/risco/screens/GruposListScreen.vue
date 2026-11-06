@@ -21,6 +21,7 @@ import Checkbox from '@/components/ui/Checkbox.vue';
 import Tooltip from '@/components/ui/Tooltip.vue';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const emit = defineEmits<{
   open: [id: string];
@@ -188,38 +189,7 @@ function menuActions(g: GrupoEmpresarial) {
           {{ filtered.length }} {{ filtered.length === 1 ? 'grupo encontrado' : 'grupos encontrados' }}
         </p>
       </div>
-      <button
-        type="button"
-        class="flex items-center btn-animated btn-agro"
-        style="
-          gap: 8px;
-          height: 48px;
-          padding: 0 20px;
-          background: var(--agro-base);
-          color: #fff;
-          border-radius: var(--radius-xl);
-          border: none;
-          cursor: pointer;
-          font-weight: var(--weight-bold);
-          font-size: var(--text-xs);
-          letter-spacing: 0.10em;
-          box-shadow: 0 10px 24px -8px rgba(242, 125, 38, 0.4);
-        "
-        @click="emit('create')"
-      >
-        <span
-          class="flex items-center justify-center"
-          style="
-            width: 22px;
-            height: 22px;
-            border-radius: 9999px;
-            background: rgba(255, 255, 255, 0.2);
-          "
-        >
-          <Plus :size="14" />
-        </span>
-        NOVO GRUPO
-      </button>
+      <AdminButton variant="agro" size="xl" :icon="Plus" type="button" @click="emit('create')">Novo grupo</AdminButton>
     </div>
 
     <!-- Toolbar -->
@@ -314,21 +284,15 @@ function menuActions(g: GrupoEmpresarial) {
                 </div>
               </div>
               <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
-                <button style="height: 40px; padding: 0 16px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)" @click="handleClear">
-                  Limpar
-                </button>
-                <button class="flex items-center" style="gap: 6px; height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.06em" @click="handleFilter">
-                  <Filter :size="13" /> FILTRAR
-                </button>
+                <AdminButton variant="secondary" @click="handleClear">Limpar</AdminButton>
+                <AdminButton :icon="Filter" @click="handleFilter">Filtrar</AdminButton>
               </div>
             </div>
           </template>
         </div>
 
         <div style="position: relative">
-          <button class="flex items-center" style="gap: 6px; height: 40px; padding: 0 14px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--weight-semibold)" @click="colsMenuOpen = !colsMenuOpen">
-            <SlidersHorizontal :size="14" /> Colunas
-          </button>
+          <AdminButton variant="secondary" :icon="SlidersHorizontal" @click="colsMenuOpen = !colsMenuOpen">Colunas</AdminButton>
           <template v-if="colsMenuOpen">
             <div style="position: fixed; inset: 0; z-index: 30" @click="colsMenuOpen = false" />
             <div style="position: absolute; top: calc(100% + 8px); right: 0; z-index: 31; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); min-width: 220px; padding: 8px">

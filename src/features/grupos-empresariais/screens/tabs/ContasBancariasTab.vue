@@ -6,6 +6,7 @@ import SelectField from '@/features/solicitacao-operacao/components/modals/adici
 import StepGrid from '@/features/solicitacao-operacao/components/modals/adicionar-contrato/StepGrid.vue';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
 import { BANCO_GRUPO_OPTS, type ContaBancariaGrupo } from '../../data/gruposCadastroData';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ contas: ContaBancariaGrupo[] }>();
 const emit = defineEmits<{
@@ -58,13 +59,7 @@ function confirmExcluir() {
         <FormField v-model="draft.titular" label="Titularidade da conta bancária" :span="3" />
       </StepGrid>
       <div class="flex justify-end" style="margin-top: 14px">
-        <button
-          type="button"
-          style="height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em"
-          @click="cadastrar"
-        >
-          CADASTRAR
-        </button>
+        <AdminButton type="button" @click="cadastrar">Cadastrar</AdminButton>
       </div>
     </div>
 

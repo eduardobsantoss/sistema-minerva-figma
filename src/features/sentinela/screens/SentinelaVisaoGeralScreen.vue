@@ -26,6 +26,7 @@ import {
   type LinhaMonitorada,
   type PainelSentinela,
 } from '../data/sentinelaData';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const emit = defineEmits<{ navigate: [view: string] }>();
 
@@ -246,15 +247,7 @@ const modulos = computed(() => [
         </div>
 
         <div class="flex justify-end">
-          <button
-            type="button"
-            class="sn-focus btn-animated flex items-center"
-            style="gap: 6px; height: 40px; padding: 0 14px; background: var(--action-secondary-bg); color: var(--action-secondary-text); border: 1px solid var(--action-secondary-border); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold)"
-            @click="emit('navigate', card.key)"
-          >
-            Abrir
-            <ArrowUpRight :size="15" />
-          </button>
+          <AdminButton variant="secondary" :trailing-icon="ArrowUpRight" type="button" @click="emit('navigate', card.key)">Abrir</AdminButton>
         </div>
       </article>
 

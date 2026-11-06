@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { AlertTriangle } from 'lucide-vue-next';
 import { brl, type PagamentoTitulo } from '../../data/fidcsData';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ pagamento: PagamentoTitulo }>();
 const emit = defineEmits<{ close: []; confirm: [justificativa: string] }>();
@@ -51,29 +52,8 @@ function handleConfirm() {
       </div>
 
       <div class="flex items-center justify-end" style="gap: 10px">
-        <button
-          style="height: 40px; padding: 0 18px; background: var(--surface-card); color: var(--text-strong); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
-          @click="emit('close')"
-        >
-          Cancelar
-        </button>
-        <button
-          :disabled="!canConfirm"
-          :style="{
-            height: '40px',
-            padding: '0 18px',
-            border: 'none',
-            borderRadius: 'var(--radius-lg)',
-            cursor: canConfirm ? 'pointer' : 'not-allowed',
-            fontWeight: 'var(--weight-bold)',
-            fontSize: 'var(--text-sm)',
-            background: canConfirm ? 'var(--action-danger-bg)' : 'var(--neutral-200)',
-            color: canConfirm ? 'var(--action-danger-text)' : 'var(--text-disabled)',
-          }"
-          @click="handleConfirm"
-        >
-          Confirmar estorno
-        </button>
+        <AdminButton variant="secondary" @click="emit('close')">Cancelar</AdminButton>
+        <AdminButton variant="danger" :disabled="!canConfirm" @click="handleConfirm">Confirmar estorno</AdminButton>
       </div>
     </div>
   </div>

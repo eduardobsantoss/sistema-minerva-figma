@@ -19,6 +19,7 @@ import {
   type Veiculo,
 } from '../../data/passivoNovoData';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ veiculo: Veiculo }>();
 const { success } = useToast();
@@ -237,14 +238,14 @@ const TABLE_COLS =
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Data geral</span>
           <AdminDateField v-model="globalDate" />
         </label>
-        <button type="button" class="ghost-btn" @click="applyGlobalDate">Aplicar data a todas</button>
+        <AdminButton variant="secondary" type="button" @click="applyGlobalDate">Aplicar data a todas</AdminButton>
         <label class="flex flex-col" style="gap: 6px; flex: 1; min-width: 180px">
           <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Filtrar</span>
           <input v-model="filter" type="search" class="field-input" placeholder="Série ou IF" />
         </label>
-        <button type="button" class="ghost-btn" @click="selectVisible">Selecionar visíveis</button>
-        <button type="button" class="ghost-btn" @click="suggestCash">Sugerir caixa</button>
-        <button type="button" class="ghost-btn" @click="clearSelection">Limpar</button>
+        <AdminButton variant="secondary" type="button" @click="selectVisible">Selecionar visíveis</AdminButton>
+        <AdminButton variant="secondary" type="button" @click="suggestCash">Sugerir caixa</AdminButton>
+        <AdminButton variant="secondary" type="button" @click="clearSelection">Limpar</AdminButton>
       </div>
     </section>
 
@@ -365,28 +366,7 @@ const TABLE_COLS =
             Componentes por evento
           </h3>
         </div>
-        <button
-          type="button"
-          class="flex items-center"
-          style="
-            gap: 8px;
-            height: 40px;
-            padding: 0 16px;
-            background: var(--action-primary-bg);
-            color: var(--action-primary-text);
-            border: none;
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            font-size: 10px;
-            font-weight: var(--weight-bold);
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-          "
-          @click="success('Excel AF gerado (protótipo).')"
-        >
-          <FileSpreadsheet :size="16" />
-          Gerar Excel AF
-        </button>
+        <AdminButton :icon="FileSpreadsheet" type="button" @click="success('Excel AF gerado (protótipo).')">Gerar Excel AF</AdminButton>
       </div>
 
       <p v-if="!selectedSims.length" style="font-size: var(--text-sm); color: var(--text-muted)">
@@ -423,20 +403,6 @@ const TABLE_COLS =
 </template>
 
 <style scoped>
-.ghost-btn {
-  height: 40px;
-  padding: 0 14px;
-  background: var(--surface-card);
-  color: var(--text-strong);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
 .field-input,
 .cell-input {
   height: 36px;

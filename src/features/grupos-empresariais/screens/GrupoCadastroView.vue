@@ -47,6 +47,7 @@ import DocumentosTab from './tabs/DocumentosTab.vue';
 import FaturamentoTab from './tabs/FaturamentoTab.vue';
 import GarantiasTab from './tabs/GarantiasTab.vue';
 import NotificacoesTab from './tabs/NotificacoesTab.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{
   grupo: GrupoCadastro;
@@ -512,24 +513,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
         >
           Cancelar
         </button>
-        <button
-          type="button"
-          style="
-            height: 44px;
-            padding: 0 22px;
-            background: var(--action-primary-bg);
-            color: var(--action-primary-text);
-            border: none;
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            font-weight: var(--weight-bold);
-            font-size: var(--text-sm);
-            flex-shrink: 0;
-          "
-          @click="handleSalvar"
-        >
-          {{ isCreate ? 'Salvar' : 'Atualizar' }}
-        </button>
+        <AdminButton size="large" type="button" @click="handleSalvar" style="flex-shrink: 0">{{ isCreate ? 'Salvar' : 'Atualizar' }}</AdminButton>
       </div>
     </div>
 

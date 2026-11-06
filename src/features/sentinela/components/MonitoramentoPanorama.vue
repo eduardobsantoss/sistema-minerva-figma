@@ -45,6 +45,7 @@ import {
   type Severidade,
   type TipoAlerta,
 } from '../data/sentinelaData';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ modulo: ModuloSentinela }>();
 const emit = defineEmits<{ back: [] }>();
@@ -284,15 +285,7 @@ function encaminhar() {
         </p>
         </div>
       </div>
-      <button
-        v-if="modo === 'gerencial'"
-        type="button"
-        class="sn-focus btn-animated btn-primary"
-        style="height: 44px; padding: 0 16px; background: var(--action-primary-bg); color: var(--action-primary-text); border: none; border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-bold)"
-        @click="encaminhar"
-      >
-        Encaminhar ao time operacional
-      </button>
+      <AdminButton size="large" v-if="modo === 'gerencial'" type="button" @click="encaminhar">Encaminhar ao time operacional</AdminButton>
     </div>
 
     <SegmentedToggle variant="brand" :options="modoTabs" :model-value="modo" @update:model-value="setModo" />
@@ -427,12 +420,8 @@ function encaminhar() {
         {{ selected.length }} selecionada{{ selected.length === 1 ? '' : 's' }}
       </span>
       <div class="flex items-center" style="gap: 8px">
-        <button type="button" class="sn-focus" style="height: 36px; padding: 0 12px; background: var(--action-secondary-bg); color: var(--action-secondary-text); border: 1px solid var(--action-secondary-border); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm)" @click="selected = []">
-          Limpar seleção
-        </button>
-        <button type="button" class="sn-focus btn-animated btn-primary" style="height: 36px; padding: 0 14px; background: var(--action-primary-bg); color: var(--action-primary-text); border: none; border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-bold)" @click="abrir(selected)">
-          Registrar tratativa
-        </button>
+        <AdminButton variant="secondary" size="compact" type="button" @click="selected = []">Limpar seleção</AdminButton>
+        <AdminButton size="compact" type="button" @click="abrir(selected)">Registrar tratativa</AdminButton>
       </div>
     </div>
 

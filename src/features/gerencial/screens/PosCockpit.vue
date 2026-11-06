@@ -28,6 +28,7 @@ import {
 } from '../data/gerencialData';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const emit = defineEmits<{ open: [payload: { grupoId: string; recorte: RecortePos }] }>();
 const { warn } = useToast();
@@ -253,10 +254,8 @@ function abrir(grupoId: string) {
               </label>
             </div>
             <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
-              <button type="button" class="fp-clear" @click="limpar">Limpar</button>
-              <button type="button" class="flex items-center fp-apply" @click="filtrar">
-                <Filter :size="13" /> FILTRAR
-              </button>
+              <AdminButton variant="secondary" type="button" @click="limpar">Limpar</AdminButton>
+              <AdminButton :icon="Filter" type="button" @click="filtrar">Filtrar</AdminButton>
             </div>
           </div>
         </template>
@@ -457,18 +456,5 @@ function abrir(grupoId: string) {
   color: var(--text-muted);
   font-weight: var(--weight-semibold);
   font-size: var(--text-sm);
-}
-.fp-apply {
-  gap: 6px;
-  height: 40px;
-  padding: 0 18px;
-  background: var(--action-primary-bg);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  font-weight: var(--weight-bold);
-  font-size: var(--text-xs);
-  letter-spacing: 0.06em;
 }
 </style>

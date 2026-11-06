@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { AlertTriangle } from 'lucide-vue-next';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const emit = defineEmits<{ confirm: []; cancel: [] }>();
 </script>
@@ -22,18 +23,8 @@ const emit = defineEmits<{ confirm: []; cancel: [] }>();
         Uma nova consulta será realizada no Serasa, gerando custo no provedor. Os dados atuais serão substituídos quando a consulta concluir.
       </p>
       <div class="flex items-center justify-end" style="gap: 10px">
-        <button
-          style="height: 40px; padding: 0 18px; border-radius: var(--radius-lg); border: 1px solid var(--border-default); background: var(--surface-card); cursor: pointer; font-weight: var(--weight-semibold); font-size: var(--text-sm); color: var(--text-default)"
-          @click="emit('cancel')"
-        >
-          Cancelar
-        </button>
-        <button
-          style="height: 40px; padding: 0 18px; border-radius: var(--radius-lg); border: none; background: var(--action-primary-bg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; color: #fff"
-          @click="emit('confirm')"
-        >
-          CONFIRMAR ATUALIZAÇÃO
-        </button>
+        <AdminButton variant="secondary" @click="emit('cancel')">Cancelar</AdminButton>
+        <AdminButton @click="emit('confirm')">Confirmar atualização</AdminButton>
       </div>
     </div>
   </div>

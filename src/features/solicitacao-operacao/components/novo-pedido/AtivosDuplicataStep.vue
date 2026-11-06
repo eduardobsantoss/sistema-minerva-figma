@@ -12,6 +12,7 @@ import {
   type XmlUploadItem,
 } from '../../data/novoPedidoDuplicataData';
 import IconAction from './IconAction.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{
   phase: 'upload' | 'extracted';
@@ -39,26 +40,7 @@ const hasVinculados = computed(() => props.ativosVinculados.length > 0);
 <template>
   <div class="flex flex-col" style="gap: 20px">
     <div class="flex items-center justify-end">
-      <button
-        type="button"
-        class="flex items-center"
-        style="
-          gap: 8px;
-          height: 40px;
-          padding: 0 16px;
-          background: var(--action-primary-bg);
-          color: var(--action-primary-text);
-          border: none;
-          border-radius: var(--radius-lg);
-          cursor: pointer;
-          font-weight: var(--weight-bold);
-          font-size: var(--text-xs);
-          letter-spacing: 0.06em;
-        "
-        @click="emit('openVincular')"
-      >
-        <Link2 :size="15" /> Vincular ativos
-      </button>
+      <AdminButton :icon="Link2" type="button" @click="emit('openVincular')">Vincular ativos</AdminButton>
     </div>
 
     <!-- Fase upload: dropzone + arquivos -->

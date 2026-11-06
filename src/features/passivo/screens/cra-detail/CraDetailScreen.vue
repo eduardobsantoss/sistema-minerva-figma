@@ -16,6 +16,7 @@ import Section from '../shared/Section.vue';
 import Field from '../shared/Field.vue';
 import ValidarPuModal from './ValidarPuModal.vue';
 import PagamentoExtraordinarioModal from './PagamentoExtraordinarioModal.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 defineProps<{ cra: CraComposicao; cotaNome?: string }>();
 const emit = defineEmits<{ back: [] }>();
@@ -321,48 +322,8 @@ function pct(n: number): string {
 
       <Section title="Gestão de Pagamento">
         <div class="flex" style="gap: 12px">
-          <button
-            type="button"
-            class="flex items-center justify-center btn-animated btn-primary"
-            style="
-              height: 44px;
-              padding: 0 24px;
-              gap: 8px;
-              background: var(--action-primary-bg);
-              color: var(--action-primary-text);
-              border: none;
-              border-radius: var(--radius-lg);
-              cursor: pointer;
-              font-weight: var(--weight-bold);
-              font-size: var(--text-xs);
-              letter-spacing: 0.08em;
-            "
-            @click="showValidarPu = true"
-          >
-            <CheckCircle2 :size="16" />
-            VALIDAR PU PROGRAMADO
-          </button>
-          <button
-            type="button"
-            class="flex items-center justify-center"
-            style="
-              height: 44px;
-              padding: 0 24px;
-              gap: 8px;
-              background: var(--action-secondary-bg);
-              color: var(--action-secondary-text);
-              border: 1px solid var(--action-secondary-border);
-              border-radius: var(--radius-lg);
-              cursor: pointer;
-              font-weight: var(--weight-bold);
-              font-size: var(--text-xs);
-              letter-spacing: 0.08em;
-            "
-            @click="showExtraordinario = true"
-          >
-            <Plus :size="16" style="color: var(--warning-base)" />
-            PAGAMENTO EXTRAORDINÁRIO
-          </button>
+          <AdminButton size="large" :icon="CheckCircle2" type="button" @click="showValidarPu = true">Validar PU programado</AdminButton>
+          <AdminButton variant="secondary" size="large" :icon="Plus" type="button" @click="showExtraordinario = true">Pagamento extraordinário</AdminButton>
         </div>
       </Section>
     </div>

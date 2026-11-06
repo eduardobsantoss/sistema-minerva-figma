@@ -20,6 +20,7 @@ import FormField from '../components/create-class/FormField.vue';
 import SelectField from '../components/create-class/SelectField.vue';
 import SectionGroup from '../components/create-class/SectionGroup.vue';
 import SummaryItem from '../components/create-class/SummaryItem.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 type SubTab = 'cprf' | 'loan' | 'confina';
 
@@ -178,9 +179,9 @@ function handleConfinaCreated() {
         />
         <button
           type="button"
-          style="position: absolute; right: 8px; top: 8px; bottom: 8px; padding: 0 24px; background: var(--action-primary-bg); color: var(--action-primary-text); border-radius: var(--radius-lg); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em"
+          style="position: absolute; right: 8px; top: 8px; bottom: 8px; padding: 0 24px; background: var(--action-primary-bg); color: var(--action-primary-text); border-radius: var(--radius-lg); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); "
         >
-          PESQUISAR
+          Pesquisar
         </button>
       </div>
     </div>
@@ -245,21 +246,8 @@ function handleConfinaCreated() {
         <FormField v-model="cprf.docCedente" label="Doc. cedente" placeholder="CPF/CNPJ" :span="4" />
       </StepGrid>
       <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
-        <button
-          type="button"
-          style="height: 40px; padding: 0 18px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; color: var(--text-default)"
-          @click="handleCprfSimulate"
-        >
-          SIMULAR
-        </button>
-        <button
-          type="button"
-          class="flex items-center"
-          style="height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em"
-          @click="handleCprfSave"
-        >
-          SALVAR SIMULAÇÃO
-        </button>
+        <AdminButton variant="secondary" type="button" @click="handleCprfSimulate">Simular</AdminButton>
+        <AdminButton type="button" @click="handleCprfSave">Salvar simulação</AdminButton>
       </div>
       <div v-if="cprfPreview" class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px">
         <SummaryItem label="Valor nominal" :value="brl(cprfPreview.valorNominal)" />
@@ -289,20 +277,8 @@ function handleConfinaCreated() {
         <SelectField v-model="loan.grupo" label="Grupo / cedente" :options="grupoOpts" :span="4" />
       </StepGrid>
       <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
-        <button
-          type="button"
-          style="height: 40px; padding: 0 18px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; color: var(--text-default)"
-          @click="handleLoanSimulate"
-        >
-          SIMULAR
-        </button>
-        <button
-          type="button"
-          style="height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em"
-          @click="handleLoanSave"
-        >
-          SALVAR SIMULAÇÃO
-        </button>
+        <AdminButton variant="secondary" type="button" @click="handleLoanSimulate">Simular</AdminButton>
+        <AdminButton type="button" @click="handleLoanSave">Salvar simulação</AdminButton>
       </div>
       <div v-if="loanPreview" class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px">
         <SummaryItem label="Solicitado" :value="brl(loanPreview.valorSolicitado)" />
@@ -317,14 +293,7 @@ function handleConfinaCreated() {
         <p style="font-size: var(--text-xs); color: var(--text-muted); margin: 0; max-width: 560px; line-height: 1.5">
           Wizard de 5 etapas no padrão de Nova Classe: operação, promissória, animais, notas fiscais e parceiro.
         </p>
-        <button
-          type="button"
-          class="flex items-center btn-animated btn-agro"
-          style="gap: 8px; height: 40px; padding: 0 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; flex-shrink: 0; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
-          @click="modalOpen = true"
-        >
-          <Plus :size="15" /> GERAR TÍTULO
-        </button>
+        <AdminButton variant="agro" :icon="Plus" type="button" @click="modalOpen = true" style="flex-shrink: 0">Gerar título</AdminButton>
       </div>
     </SectionGroup>
 

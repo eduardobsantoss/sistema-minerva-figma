@@ -7,6 +7,7 @@ import { parseCurrencyInput } from '@/features/solicitacao-operacao/utils/curren
 import { brl } from '@/features/risco/data/riscoData';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
 import type { FaturamentoGrupo } from '../../data/gruposCadastroData';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 defineProps<{ faturamentos: FaturamentoGrupo[] }>();
 const emit = defineEmits<{
@@ -45,13 +46,7 @@ function confirmExcluir() {
         <FormField v-model="valorMasked" label="Faturamento" currency :span="5" />
         <FormField v-model="anoFiscal" label="Ano fiscal" placeholder="2026" :span="3" />
         <div style="grid-column: span 4; display: flex; align-items: flex-end">
-          <button
-            type="button"
-            style="height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em"
-            @click="cadastrar"
-          >
-            CADASTRAR
-          </button>
+          <AdminButton type="button" @click="cadastrar">Cadastrar</AdminButton>
         </div>
       </StepGrid>
     </div>

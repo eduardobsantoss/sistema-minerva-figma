@@ -75,15 +75,7 @@ function baixarModelo() {
 
     <div>
       <div class="flex items-center justify-end" style="margin-bottom: 12px">
-        <button
-          type="button"
-          class="flex items-center"
-          style="gap: 6px; height: 32px; padding: 0 12px; background: var(--surface-card); color: var(--text-default); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold)"
-          @click="baixarModelo"
-        >
-          <Download :size="14" />
-          Baixar modelo
-        </button>
+        <AdminButton variant="secondary" size="compact" :icon="Download" type="button" @click="baixarModelo">Baixar modelo</AdminButton>
       </div>
 
       <button

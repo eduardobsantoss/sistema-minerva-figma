@@ -16,6 +16,7 @@ import {
 } from '../data/ativosData';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{
   modelValue: AtivosFilters;
@@ -231,21 +232,8 @@ function handleClear() {
   </div>
 
   <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
-    <button
-      type="button"
-      style="height: 40px; padding: 0 16px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
-      @click="handleClear"
-    >
-      Limpar
-    </button>
-    <button
-      type="button"
-      class="flex items-center"
-      style="gap: 6px; height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.06em"
-      @click="handleApply"
-    >
-      <Filter :size="13" /> FILTRAR
-    </button>
+    <AdminButton variant="secondary" type="button" @click="handleClear">Limpar</AdminButton>
+    <AdminButton :icon="Filter" type="button" @click="handleApply">Filtrar</AdminButton>
   </div>
 
   <Teleport to="body">

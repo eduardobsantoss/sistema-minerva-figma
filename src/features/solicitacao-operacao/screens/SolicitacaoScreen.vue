@@ -24,6 +24,7 @@ import type { NewPedidoData } from '../components/novo-pedido';
 import SolicitacaoDetailScreen from './SolicitacaoDetailScreen.vue';
 import { SolicitacaoFiltersPanel, type SolicitacaoFilters } from './solicitacao-screen';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const EMPTY_FILTERS: SolicitacaoFilters = {
   idPedido: '',
@@ -174,29 +175,7 @@ const selected = computed(() => (selectedId.value ? lista.find((s) => s.id === s
           Solicitação de Operação
         </h1>
       </div>
-      <button
-        class="flex items-center btn-animated btn-agro"
-        style="
-          gap: 8px;
-          height: 48px;
-          padding: 0 22px;
-          background: var(--agro-base);
-          color: #fff;
-          border-radius: var(--radius-lg);
-          border: none;
-          cursor: pointer;
-          font-weight: var(--weight-bold);
-          font-size: var(--text-xs);
-          letter-spacing: 0.10em;
-          box-shadow: 0 10px 24px -8px rgba(242, 125, 38, 0.4);
-        "
-        @click="creating = true"
-      >
-        <span class="flex items-center justify-center" style="width: 22px; height: 22px; border-radius: 9999px; background: rgba(255, 255, 255, 0.2)">
-          <Plus :size="14" />
-        </span>
-        NOVA SOLICITAÇÃO
-      </button>
+      <AdminButton variant="agro" size="xl" :icon="Plus" @click="creating = true">Nova solicitação</AdminButton>
     </div>
 
     <!-- Tabs de esteira -->

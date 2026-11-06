@@ -14,6 +14,7 @@ import ValidarPuTab from './pu/ValidarPuTab.vue';
 import SimularEventoTab from './eventos/SimularEventoTab.vue';
 import PuActionMenu from './pu/PuActionMenu.vue';
 import CreatePuEventModal from './pu/CreatePuEventModal.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ veiculo: Veiculo }>();
 const emit = defineEmits<{ back: [] }>();
@@ -128,29 +129,7 @@ function confirmEvent(input: CreatePuEventInput) {
       </div>
 
       <div class="flex items-center" style="gap: 10px; flex-shrink: 0">
-        <button
-          v-if="tab === 'lamina'"
-          type="button"
-          class="flex items-center btn-animated btn-primary"
-          style="
-            gap: 8px;
-            height: 44px;
-            padding: 0 20px;
-            background: var(--action-primary-bg);
-            color: var(--action-primary-text);
-            border-radius: var(--radius-lg);
-            border: none;
-            cursor: pointer;
-            font-weight: var(--weight-bold);
-            font-size: var(--text-xs);
-            letter-spacing: 0.08em;
-            box-shadow: 0 10px 24px -10px rgba(8, 60, 74, 0.45);
-          "
-          @click="success('PDF da lâmina gerado (protótipo).')"
-        >
-          <FileDown :size="16" />
-          GERAR PDF
-        </button>
+        <AdminButton size="large" :icon="FileDown" v-if="tab === 'lamina'" type="button" @click="success('PDF da lâmina gerado (protótipo).')">Gerar PDF</AdminButton>
         <PuActionMenu v-if="tab === 'pu'" @select="eventType = $event" />
       </div>
     </div>

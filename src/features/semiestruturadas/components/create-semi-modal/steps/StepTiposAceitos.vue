@@ -93,13 +93,12 @@ function optionsFor(id: number) {
         cursor: pointer;
         font-size: var(--text-xs);
         font-weight: var(--weight-bold);
-        letter-spacing: 0.08em;
         color: var(--gci-base);
       "
       @click="addRow"
     >
       <Plus :size="14" />
-      ADICIONAR TIPO
+      Adicionar tipo
     </button>
   </div>
 </template>

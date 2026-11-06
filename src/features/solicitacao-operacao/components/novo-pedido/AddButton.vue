@@ -19,10 +19,9 @@ const emit = defineEmits<{ click: [] }>();
       cursor: pointer;
       font-size: var(--text-xs);
       font-weight: var(--weight-bold);
-      letter-spacing: 0.08em;
-    "
+      "
     @click="emit('click')"
   >
-    <Plus :size="14" /> ADICIONAR
+    <Plus :size="14" /> Adicionar
   </button>
 </template>

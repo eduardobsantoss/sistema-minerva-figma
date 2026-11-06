@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { ChevronDown, Filter } from 'lucide-vue-next';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 defineProps<{ activeCount: number; columns?: number }>();
 const emit = defineEmits<{ apply: []; clear: [] }>();
@@ -67,10 +68,8 @@ function clear() {
           <slot />
         </div>
         <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
-          <button type="button" class="fp-clear" @click="clear">Limpar</button>
-          <button type="button" class="flex items-center fp-apply" @click="apply">
-            <Filter :size="13" /> FILTRAR
-          </button>
+          <AdminButton variant="secondary" type="button" @click="clear">Limpar</AdminButton>
+          <AdminButton :icon="Filter" type="button" @click="apply">Filtrar</AdminButton>
         </div>
       </div>
     </template>
@@ -102,22 +101,6 @@ function clear() {
   color: var(--text-muted);
   font-weight: var(--weight-semibold);
   font-size: var(--text-sm);
-}
-.fp-apply {
-  gap: 6px;
-  height: 40px;
-  padding: 0 18px;
-  background: var(--action-primary-bg);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  font-weight: var(--weight-bold);
-  font-size: var(--text-xs);
-  letter-spacing: 0.06em;
-}
-.fp-apply:hover {
-  background: var(--action-primary-bg-hover);
 }
 button:focus-visible {
   box-shadow: var(--focus-ring);

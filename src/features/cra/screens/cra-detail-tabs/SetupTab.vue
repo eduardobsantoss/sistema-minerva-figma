@@ -11,6 +11,7 @@ import SectionGroup from '../../components/create-cra-operacao-modal/SectionGrou
 import StepGrid from '../../components/create-cra-operacao-modal/StepGrid.vue';
 import type { CraSetup } from '../../data/craData';
 import ParametrizacoesAdicionaisTab from '@/features/risco/screens/detail-tabs/ParametrizacoesAdicionaisTab.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ setup: CraSetup }>();
 const emit = defineEmits<{ update: [CraSetup] }>();
@@ -218,14 +219,7 @@ function toggleParamAdicional(id: string) {
 
       <div class="flex items-center justify-end" style="gap: 12px; margin-top: 4px">
         <span v-if="saved" style="font-size: var(--text-sm); color: var(--success-base); font-weight: var(--weight-semibold)">Alterações salvas</span>
-        <button
-          type="button"
-          class="flex items-center btn-animated btn-agro"
-          style="gap: 8px; padding: 10px 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
-          @click="save"
-        >
-          <Save :size="14" /> SALVAR
-        </button>
+        <AdminButton variant="agro" :icon="Save" type="button" @click="save">Salvar</AdminButton>
       </div>
     </div>
   </div>

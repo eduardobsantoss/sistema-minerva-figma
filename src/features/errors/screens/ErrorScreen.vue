@@ -4,6 +4,7 @@ import { ChevronRight, Home } from 'lucide-vue-next';
 import ImageWithFallback from '@/components/figma/ImageWithFallback.vue';
 import logoSrc from '@/assets/logo-azul-sem-bg.png';
 import { resolveErrorPreset } from '../data/errorPresets';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 /** Ilustração estática (handoff). Em produção pode ser substituída pela API de GIFs. */
 const PUPPY_IMG =
@@ -129,48 +130,8 @@ const resolved = computed(() => {
       </div>
 
       <div class="flex items-center" style="gap: 12px">
-        <button
-          type="button"
-          class="btn-animated btn-primary flex items-center justify-center"
-          style="
-            flex: 1;
-            height: 44px;
-            padding: 0 16px;
-            border: none;
-            border-radius: var(--radius-xl);
-            background: var(--action-primary-bg);
-            color: var(--action-primary-text);
-            font-weight: var(--weight-bold);
-            font-size: var(--text-sm);
-            cursor: pointer;
-            gap: 6px;
-            box-shadow: 0 10px 24px -8px rgba(8, 60, 74, 0.18);
-          "
-          @click="emit('primary')"
-        >
-          {{ resolved.primaryLabel }}
-          <ChevronRight :size="16" />
-        </button>
-        <button
-          type="button"
-          class="btn-animated flex items-center justify-center"
-          style="
-            height: 44px;
-            padding: 0 14px;
-            border: 1px solid var(--border-strong);
-            border-radius: var(--radius-xl);
-            background: var(--surface-card);
-            color: var(--text-default);
-            font-weight: var(--weight-bold);
-            font-size: var(--text-sm);
-            cursor: pointer;
-            gap: 8px;
-          "
-          @click="emit('home')"
-        >
-          <Home :size="16" />
-          Início
-        </button>
+        <AdminButton size="large" :trailing-icon="ChevronRight" type="button" @click="emit('primary')" style="flex: 1">{{ resolved.primaryLabel }}</AdminButton>
+        <AdminButton variant="secondary" size="large" :icon="Home" type="button" @click="emit('home')">Início</AdminButton>
       </div>
     </div>
   </div>

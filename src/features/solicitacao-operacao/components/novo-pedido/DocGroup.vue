@@ -2,6 +2,7 @@
 import { CheckCircle2, Download, FileText, Paperclip, Trash2, Upload } from 'lucide-vue-next';
 import IconAction from './IconAction.vue';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -115,24 +116,7 @@ function validadeOf(id: string) {
             <IconAction :icon="Download" label="Baixar" />
             <IconAction :icon="Trash2" label="Excluir" danger @click="emit('toggleDoc', doc.id)" />
           </template>
-          <button
-            v-else
-            class="flex items-center"
-            style="
-              gap: 6px;
-              padding: 8px 14px;
-              border-radius: var(--radius-md);
-              cursor: pointer;
-              border: 1px solid var(--border-default);
-              background: var(--surface-card);
-              color: var(--text-strong);
-              font-size: var(--text-xs);
-              font-weight: var(--weight-bold);
-            "
-            @click="emit('toggleDoc', doc.id)"
-          >
-            <Upload :size="14" /> Enviar
-          </button>
+          <AdminButton variant="secondary" :icon="Upload" v-else @click="emit('toggleDoc', doc.id)">Enviar</AdminButton>
         </div>
       </div>
     </div>

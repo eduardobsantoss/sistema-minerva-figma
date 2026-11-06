@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ShowcaseSection from './ShowcaseSection.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const baseBtn = {
   height: '40px',
@@ -156,19 +157,7 @@ const baseBtn = {
       >
         <div class="flex flex-col" style="gap: 6px; align-items: flex-start">
           <span>Compact 32px</span>
-          <button
-            class="btn-animated btn-primary"
-            :style="{
-              ...baseBtn,
-              height: '32px',
-              padding: '0 12px',
-              fontSize: 'var(--text-xs)',
-              background: 'var(--action-primary-bg)',
-              color: 'var(--action-primary-text)',
-            }"
-          >
-            Compact
-          </button>
+          <AdminButton size="compact">Compact</AdminButton>
         </div>
         <div class="flex flex-col" style="gap: 6px; align-items: flex-start">
           <span>Default 38px</span>
@@ -185,18 +174,7 @@ const baseBtn = {
         </div>
         <div class="flex flex-col" style="gap: 6px; align-items: flex-start">
           <span>Large 44px</span>
-          <button
-            class="btn-animated btn-primary"
-            :style="{
-              ...baseBtn,
-              height: '44px',
-              padding: '0 20px',
-              background: 'var(--action-primary-bg)',
-              color: 'var(--action-primary-text)',
-            }"
-          >
-            Large
-          </button>
+          <AdminButton size="large">Large</AdminButton>
         </div>
       </div>
     </ShowcaseSection>

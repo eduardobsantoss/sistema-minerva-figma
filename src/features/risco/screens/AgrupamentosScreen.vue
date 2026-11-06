@@ -10,6 +10,7 @@ import {
 import CreateAgrupamentoModal from '../components/modals/CreateAgrupamentoModal.vue';
 import DeleteAgrupamentoModal from '../components/modals/DeleteAgrupamentoModal.vue';
 import VincularAgrupamentoModal from '../components/modals/VincularAgrupamentoModal.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const COLS = '2fr 0.8fr 0.8fr 0.8fr 1fr auto';
 
@@ -61,16 +62,7 @@ function handleDelete() {
           {{ agrupamentos.length }} {{ agrupamentos.length === 1 ? 'agrupamento cadastrado' : 'agrupamentos cadastrados' }}
         </p>
       </div>
-      <button
-        class="flex items-center btn-animated btn-agro"
-        style="gap: 8px; height: 48px; padding: 0 22px; background: var(--agro-base); color: #fff; border-radius: var(--radius-lg); border: none; cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; box-shadow: 0 10px 24px -8px rgba(242,125,38,0.40)"
-        @click="creating = true"
-      >
-        <span class="flex items-center justify-center" style="width: 22px; height: 22px; border-radius: 9999px; background: rgba(255,255,255,0.20)">
-          <Plus :size="14" />
-        </span>
-        NOVO AGRUPAMENTO
-      </button>
+      <AdminButton variant="agro" size="xl" :icon="Plus" @click="creating = true">Novo agrupamento</AdminButton>
     </div>
 
     <!-- Tabela -->

@@ -5,6 +5,7 @@ import type { CreditQueryLatest } from '../data/serasaTypes';
 import { queryStatusTone } from '../data/serasaConstants';
 import { formatDocument, formatDateTimeUtc, maskDocumentInput, onlyDigits } from '../utils/serasaFormatters';
 import { CopyButton } from '@/features/risco/screens/detail-tabs/shared';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{
   documentInput: string;
@@ -69,27 +70,7 @@ const statusTone = computed(() =>
           @keyup.enter="canConsult && emit('consult')"
         />
       </div>
-      <button
-        :disabled="!canConsult || loading"
-        class="flex items-center"
-        :style="{
-          gap: '8px',
-          height: '40px',
-          padding: '0 20px',
-          border: 'none',
-          borderRadius: 'var(--radius-lg)',
-          cursor: canConsult && !loading ? 'pointer' : 'not-allowed',
-          fontWeight: 'var(--weight-bold)',
-          fontSize: 'var(--text-xs)',
-          letterSpacing: '0.08em',
-          background: canConsult && !loading ? 'var(--action-primary-bg)' : 'var(--surface-sunken)',
-          color: canConsult && !loading ? '#fff' : 'var(--text-muted)',
-        }"
-        @click="emit('consult')"
-      >
-        <Search :size="16" />
-        CONSULTAR
-      </button>
+      <AdminButton :icon="Search" :disabled="!canConsult || loading" @click="emit('consult')">Consultar</AdminButton>
     </div>
 
     <template v-if="latest">
@@ -145,15 +126,7 @@ const statusTone = computed(() =>
             <span>Válido até {{ formatDateTimeUtc(latest.validUntil) }}</span>
           </p>
         </div>
-        <button
-          v-if="!latest.isExpired"
-          class="flex items-center"
-          style="gap: 6px; height: 36px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-card); cursor: pointer; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--text-default)"
-          @click="emit('refresh')"
-        >
-          <RefreshCw :size="14" />
-          Atualizar consulta
-        </button>
+        <AdminButton variant="secondary" size="compact" :icon="RefreshCw" v-if="!latest.isExpired" @click="emit('refresh')">Atualizar consulta</AdminButton>
       </div>
 
       <div class="flex flex-wrap items-center" style="gap: 16px; padding: 0 4px; font-size: var(--text-xs); color: var(--text-muted)">

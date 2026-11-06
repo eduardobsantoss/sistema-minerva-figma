@@ -19,6 +19,7 @@ import {
   type ValidacaoStatus,
   type ItemValidacao,
 } from '../../../data/operacaoData';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ v: ItemValidacao }>();
 const emit = defineEmits<{
@@ -178,28 +179,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleDocClick));
       </div>
 
       <div ref="rootRef" style="position: relative; flex-shrink: 0">
-        <button
-          type="button"
-          aria-label="Ações"
-          class="flex items-center"
-          style="
-            gap: 8px;
-            height: 40px;
-            padding: 0 14px;
-            background: var(--surface-card);
-            color: var(--text-strong);
-            border: 1px solid var(--border-default);
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            font-weight: var(--weight-bold);
-            font-size: var(--text-xs);
-            letter-spacing: 0.06em;
-          "
-          @click="open = !open"
-        >
-          <MoreVertical :size="15" />
-          Ações
-        </button>
+        <AdminButton variant="secondary" :icon="MoreVertical" type="button" aria-label="Ações" @click="open = !open">Ações</AdminButton>
         <div
           v-if="open"
           class="flex flex-col"

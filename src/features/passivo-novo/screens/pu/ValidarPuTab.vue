@@ -25,6 +25,7 @@ import {
 } from '../../data/passivoNovoData';
 import type { ValidarDateOption } from './ConfirmPuModal.vue';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ veiculo: Veiculo }>();
 const serieId = defineModel<string>('serieId', { default: '' });
@@ -224,28 +225,8 @@ const fields = computed(() => [
         <AdminDateField v-model="dateIso" />
       </label>
       <div class="flex" style="gap: 8px">
-        <button type="button" class="ghost-btn" @click="modalMode = 'atualizar'">
-          Atualizar PU
-        </button>
-        <button
-          type="button"
-          style="
-            height: 40px;
-            padding: 0 16px;
-            background: var(--action-primary-bg);
-            color: var(--action-primary-text);
-            border: none;
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            font-size: 10px;
-            font-weight: var(--weight-bold);
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-          "
-          @click="modalMode = 'validar'"
-        >
-          Validar PU
-        </button>
+        <AdminButton variant="secondary" type="button" @click="modalMode = 'atualizar'">Atualizar PU</AdminButton>
+        <AdminButton type="button" @click="modalMode = 'validar'">Validar PU</AdminButton>
       </div>
     </div>
 
@@ -257,29 +238,7 @@ const fields = computed(() => [
       <div style="flex: 1; min-width: 0">
         <UnderlineSubTabs v-model="activeSerieTab" :tabs="serieTabs" />
       </div>
-      <button
-        type="button"
-        class="flex items-center"
-        style="
-          gap: 8px;
-          height: 40px;
-          padding: 0 16px;
-          background: var(--surface-card);
-          color: var(--text-strong);
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-lg);
-          cursor: pointer;
-          font-size: 10px;
-          font-weight: var(--weight-bold);
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          flex-shrink: 0;
-        "
-        @click="showNovaCota = true"
-      >
-        <Plus :size="14" />
-        Nova Cota
-      </button>
+      <AdminButton variant="secondary" :icon="Plus" type="button" @click="showNovaCota = true" style="flex-shrink: 0">Nova Cota</AdminButton>
     </div>
 
     <div
@@ -470,19 +429,6 @@ const fields = computed(() => [
 }
 .date-input:focus {
   border-color: var(--gci-base);
-}
-.ghost-btn {
-  height: 40px;
-  padding: 0 16px;
-  background: var(--surface-card);
-  color: var(--text-strong);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 .band-tab {
   padding: 8px 14px;

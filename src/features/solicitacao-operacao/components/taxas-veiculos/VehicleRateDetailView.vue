@@ -12,6 +12,7 @@ import {
 } from '../../data/taxasVeiculosData';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const props = defineProps<{ vehicle: VehicleSetting; tabLabel: string }>();
 const emit = defineEmits<{ back: []; save: [vehicle: VehicleSetting] }>();
@@ -288,23 +289,7 @@ function handleSaveRate() {
       </p>
 
       <div class="flex items-center justify-end" style="margin-top: 20px">
-        <button
-          type="button"
-          style="
-            height: 44px;
-            padding: 0 22px;
-            background: var(--action-primary-bg);
-            color: var(--action-primary-text);
-            border-radius: var(--radius-lg);
-            border: none;
-            cursor: pointer;
-            font-weight: var(--weight-bold);
-            font-size: var(--text-sm);
-          "
-          @click="handleSaveRate"
-        >
-          {{ primaryActionLabel }}
-        </button>
+        <AdminButton size="large" type="button" @click="handleSaveRate">{{ primaryActionLabel }}</AdminButton>
       </div>
     </div>
 

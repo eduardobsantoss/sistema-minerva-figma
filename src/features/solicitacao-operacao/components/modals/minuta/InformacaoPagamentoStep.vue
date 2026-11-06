@@ -10,6 +10,7 @@ import {
   emptyContaBancariaDraft,
   type ContaBancaria,
 } from '../../../data/minutaData';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 const contaBancariaId = defineModel<string>('contaBancariaId', { default: '' });
 const contasExtras = defineModel<ContaBancaria[]>('contasExtras', { default: () => [] });
@@ -93,22 +94,7 @@ function adicionarConta() {
             <FormField label="Titular" placeholder="—" :span="5" v-model="draft.titular" />
           </StepGrid>
           <div class="flex justify-end" style="gap: 8px">
-            <button
-              type="button"
-              style="
-                height: 40px;
-                padding: 0 16px;
-                background: none;
-                border: none;
-                cursor: pointer;
-                color: var(--text-muted);
-                font-weight: var(--weight-semibold);
-                font-size: var(--text-sm);
-              "
-              @click="showNova = false; resetDraft()"
-            >
-              Cancelar
-            </button>
+            <AdminButton variant="ghost" type="button" @click="showNova = false; resetDraft()">Cancelar</AdminButton>
             <AddButton @click="adicionarConta">Adicionar conta bancária</AddButton>
           </div>
         </template>

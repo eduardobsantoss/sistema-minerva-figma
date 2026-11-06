@@ -34,6 +34,7 @@ import ColunasMenu from './ColunasMenu.vue';
 import BoletoMenu from './BoletoMenu.vue';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 export type SacadoTab = 'titulos' | 'contatos' | 'registros';
 
@@ -428,15 +429,7 @@ function numerosDos(r: RegistroTentativa): string[] {
       </div>
 
       <div class="flex justify-end">
-        <button
-          type="button"
-          class="primary"
-          :disabled="selected.length === 0"
-          :title="selected.length === 0 ? 'Selecione ao menos um título' : undefined"
-          @click="tentativaAberta = true"
-        >
-          Registrar tentativa
-        </button>
+        <AdminButton size="xl" type="button" :disabled="selected.length === 0" :title="selected.length === 0 ? 'Selecione ao menos um título' : undefined" @click="tentativaAberta = true">Registrar tentativa</AdminButton>
       </div>
     </template>
 
@@ -647,25 +640,6 @@ h2 {
   outline: none;
   font-size: var(--text-sm);
   color: var(--text-strong);
-}
-.primary {
-  height: 48px;
-  padding: 0 18px;
-  border-radius: var(--radius-lg);
-  font-weight: var(--weight-bold);
-  font-size: var(--text-sm);
-  background: var(--action-primary-bg);
-  color: var(--action-primary-text);
-  border: none;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.primary:hover:not(:disabled) {
-  background: var(--action-primary-bg-hover);
-}
-.primary:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 button:focus-visible {
   box-shadow: var(--focus-ring);

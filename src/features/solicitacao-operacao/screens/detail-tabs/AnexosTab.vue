@@ -2,6 +2,7 @@
 import { Download, FileText, Paperclip, Plus, Trash2 } from 'lucide-vue-next';
 import { detalheSolicitacao } from '../../data/operacaoData';
 import { Section, GhostButton } from './shared';
+import AdminButton from '@/components/ui/AdminButton.vue';
 
 defineProps<{ det: ReturnType<typeof detalheSolicitacao> }>();
 </script>
@@ -47,24 +48,7 @@ defineProps<{ det: ReturnType<typeof detalheSolicitacao> }>();
       >
         Tipo
       </div>
-      <button
-        class="flex items-center"
-        style="
-          gap: 8px;
-          height: 40px;
-          padding: 0 18px;
-          background: var(--action-primary-bg);
-          color: var(--action-primary-text);
-          border: none;
-          border-radius: var(--radius-lg);
-          cursor: pointer;
-          font-weight: var(--weight-bold);
-          font-size: var(--text-xs);
-          letter-spacing: 0.06em;
-        "
-      >
-        <Plus :size="15" /> Inserir
-      </button>
+      <AdminButton :icon="Plus">Inserir</AdminButton>
     </div>
 
     <div class="flex flex-col" style="gap: 10px">
