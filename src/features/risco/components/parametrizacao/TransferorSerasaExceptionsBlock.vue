@@ -101,7 +101,7 @@ function toggleDraftAceita() {
           v-model="draftValor"
           :disabled="!draftAceita"
           placeholder="R$ 0,00"
-          style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)"
+          style="width: 100%; height: 40px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)"
           :style="{ opacity: draftAceita ? 1 : 0.55 }"
         />
       </div>
@@ -138,7 +138,7 @@ function toggleDraftAceita() {
             v-if="row.aceitaRestritivo"
             type="text"
             :value="row.valorRestritivoAceito.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })"
-            style="width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--border-default); border-radius: var(--radius-md); outline: none; font-size: var(--text-xs)"
+            style="width: 100%; height: 32px; padding: 0 10px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); outline: none; font-size: var(--text-xs)"
             @input="onValorInput(row, ($event.target as HTMLInputElement).value)"
           />
           <span v-else style="color: var(--text-muted); font-size: var(--text-xs)">—</span>

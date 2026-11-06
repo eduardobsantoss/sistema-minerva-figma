@@ -261,8 +261,8 @@ const meta = computed(() => [
   transition: box-shadow var(--duration-base), border-color var(--duration-base);
 }
 .card:hover {
-  border-color: rgba(8, 60, 74, 0.25);
-  box-shadow: 0 12px 28px -14px rgba(8, 60, 74, 0.18);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
 }
 .badge-tipo {
   font-size: 9px;

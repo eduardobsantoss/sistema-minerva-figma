@@ -242,15 +242,15 @@ function handleSavePartes() {
         <div class="geral-exc-form grid items-end" :style="{ gridTemplateColumns: EXCECOES_FORM_COLS }">
           <div>
             <FieldLabel>* CPF/CNPJ do sacado</FieldLabel>
-            <input v-model="excSacadoDoc" placeholder="—" style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)" />
+            <input v-model="excSacadoDoc" placeholder="—" style="width: 100%; height: 40px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)" />
           </div>
           <div>
             <FieldLabel>Nome do sacado</FieldLabel>
-            <input v-model="excSacadoNome" placeholder="—" style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)" />
+            <input v-model="excSacadoNome" placeholder="—" style="width: 100%; height: 40px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)" />
           </div>
           <div>
             <FieldLabel>* Percentual de concentração</FieldLabel>
-            <input v-model="excPct" placeholder="0,00%" style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)" />
+            <input v-model="excPct" placeholder="0,00%" style="width: 100%; height: 40px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)" />
           </div>
           <div class="geral-exc-restritivo-col flex flex-col items-center" style="gap: 6px; padding-bottom: 8px">
             <FieldLabel class="geral-field-nowrap">Aceita restritivo</FieldLabel>
@@ -262,7 +262,7 @@ function handleSavePartes() {
               v-model="excValorRestritivo"
               :disabled="!excAceitaRestritivo"
               placeholder="R$ 0,00"
-              style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)"
+              style="width: 100%; height: 40px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)"
               :style="{ opacity: excAceitaRestritivo ? 1 : 0.55 }"
             />
           </div>
@@ -295,7 +295,7 @@ function handleSavePartes() {
                 v-if="e.aceitaRestritivo"
                 type="text"
                 :value="e.valorRestritivoAceito.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })"
-                style="width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--border-default); border-radius: var(--radius-md); outline: none; font-size: var(--text-xs)"
+                style="width: 100%; height: 32px; padding: 0 10px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); outline: none; font-size: var(--text-xs)"
                 @input="onExcRowValor(e, ($event.target as HTMLInputElement).value)"
               />
               <span v-else style="color: var(--text-muted); font-size: var(--text-xs)">—</span>
@@ -363,7 +363,7 @@ function handleSavePartes() {
               v-if="p.aceitaRestritivo"
               type="text"
               :value="p.valorRestritivoAceito.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })"
-              style="width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--border-default); border-radius: var(--radius-md); outline: none; font-size: var(--text-xs)"
+              style="width: 100%; height: 32px; padding: 0 10px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); outline: none; font-size: var(--text-xs)"
               @input="handleRestritivoInput(p.id, $event)"
             />
             <span v-else style="color: var(--text-muted); font-size: var(--text-xs)">—</span>

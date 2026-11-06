@@ -244,7 +244,7 @@ defineExpose({
 }
 
 .rank-block__btn {
-  height: 34px;
+  height: 32px;
   padding: 0 12px;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
@@ -341,7 +341,7 @@ defineExpose({
 }
 
 .rank-table__row--demais {
-  background: color-mix(in srgb, var(--accent) 4%, var(--surface-card));
+  background: var(--surface-accent-subtle);
 }
 
 .rank-table__pos-badge {
@@ -354,7 +354,7 @@ defineExpose({
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
   font-variant-numeric: tabular-nums;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  background: var(--accent-bg);
   color: var(--accent);
 }
 
@@ -418,20 +418,12 @@ defineExpose({
 .rank-table__bar-fill {
   height: 100%;
   border-radius: 9999px;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--accent) 85%, #fff),
-    var(--accent)
-  );
+  background: var(--accent);
   transition: width 0.2s ease;
 }
 
 .rank-table__row--demais .rank-table__bar-fill {
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--text-muted) 50%, transparent),
-    color-mix(in srgb, var(--text-muted) 75%, transparent)
-  );
+  background: var(--neutral-400);
 }
 
 .rank-table__bar-label {

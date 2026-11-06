@@ -73,9 +73,9 @@ const cell = computed(() => props.size / GRID);
     :viewBox="`0 0 ${size} ${size}`"
     role="img"
     aria-label="QR Code do autenticador"
-    style="display: block; background: #fff"
+    style="display: block; background: var(--surface-card)"
   >
-    <rect :width="size" :height="size" fill="#fff" />
+    <rect :width="size" :height="size" style="fill: var(--surface-card)" />
     <template v-for="(row, y) in cells" :key="`r-${y}`">
       <rect
         v-for="(on, x) in row"
@@ -85,7 +85,7 @@ const cell = computed(() => props.size / GRID);
         :y="y * cell"
         :width="cell"
         :height="cell"
-        fill="#083C4A"
+        style="fill: var(--gci-base)"
       />
     </template>
   </svg>

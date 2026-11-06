@@ -5,7 +5,7 @@ defineProps<{ items: ConfirmacaoHistoricoItem[] }>();
 
 const toneMap: Record<string, { bg: string; fg: string }> = {
   CONFIRMADO: { bg: 'var(--success-light)', fg: 'var(--success-dark)' },
-  PENDENTE: { bg: 'var(--warning-light)', fg: 'var(--warning-base)' },
+  PENDENTE: { bg: 'var(--status-warning-bg)', fg: 'var(--status-warning-text)' },
   REJEITADO: { bg: 'var(--danger-light)', fg: 'var(--danger-dark)' },
 };
 
@@ -151,8 +151,8 @@ function baixarEvidencia() {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(8, 60, 74, 0.55);
-  backdrop-filter: blur(8px);
+  background: var(--overlay-backdrop);
+  backdrop-filter: blur(var(--overlay-blur));
 }
 .conf-ev-dialog {
   width: 100%;

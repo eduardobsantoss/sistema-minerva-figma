@@ -190,7 +190,7 @@ function onEncarteirar(payload: EncarteirarPayload) {
           border: '1px solid',
           borderColor: filtro === f.key ? 'var(--gci-base)' : 'var(--border-default)',
           background: filtro === f.key ? 'var(--gci-base)' : 'var(--surface-card)',
-          color: filtro === f.key ? '#fff' : 'var(--text-muted)',
+          color: filtro === f.key ? 'var(--text-on-brand)' : 'var(--text-muted)',
           transition: 'all var(--duration-fast)',
         }"
         @click="filtro = f.key"
@@ -206,8 +206,8 @@ function onEncarteirar(payload: EncarteirarPayload) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: filtro === f.key ? 'rgba(255,255,255,0.2)' : 'var(--surface-sunken)',
-            color: filtro === f.key ? '#fff' : 'var(--text-muted)',
+            background: filtro === f.key ? 'var(--surface-card)' : 'var(--surface-sunken)',
+            color: filtro === f.key ? 'var(--gci-base)' : 'var(--text-muted)',
           }"
         >
           {{ contagens[f.key] }}
@@ -235,7 +235,7 @@ function onEncarteirar(payload: EncarteirarPayload) {
         :disabled="filtrados.length === 0"
         :style="{
           gap: '8px',
-          height: '42px',
+          height: '40px',
           padding: '0 16px',
           cursor: filtrados.length === 0 ? 'not-allowed' : 'pointer',
           opacity: filtrados.length === 0 ? 0.5 : 1,
@@ -324,7 +324,7 @@ function onEncarteirar(payload: EncarteirarPayload) {
 }
 .search-field input {
   width: 100%;
-  height: 42px;
+  height: 40px;
   padding: 0 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);

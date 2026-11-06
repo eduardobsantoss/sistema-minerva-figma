@@ -118,7 +118,7 @@ function aoClicar(etapa: EtapaDesembolso, index: number) {
 .step[data-state='done'] .dot {
   border-color: var(--stepper-done);
   background: var(--stepper-done);
-  color: #fff;
+  color: var(--text-on-brand);
 }
 .step[data-state='done'] .dot:disabled {
   cursor: default;
@@ -126,11 +126,11 @@ function aoClicar(etapa: EtapaDesembolso, index: number) {
 .step[data-state='current'] .dot {
   border-color: var(--stepper-current);
   color: var(--stepper-current);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--stepper-current) 14%, transparent);
+  box-shadow: 0 0 0 4px var(--gci-light);
 }
 .step[data-state='current'] .dot:hover {
   background: var(--stepper-current);
-  color: #fff;
+  color: var(--text-on-brand);
 }
 .step[data-state='locked'] .dot {
   cursor: not-allowed;

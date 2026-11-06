@@ -143,7 +143,7 @@ function handleVerify() {
             borderWidth: 1,
             borderStyle: 'solid',
             borderColor: focusedIndex === index ? 'var(--gci-base)' : 'var(--border-default)',
-            boxShadow: focusedIndex === index ? '0 0 0 4px rgba(8,60,74,0.06)' : 'none',
+            boxShadow: focusedIndex === index ? 'var(--focus-ring)' : 'none',
             borderRadius: 'var(--radius-xl)',
             outline: 'none',
             transition: 'box-shadow var(--duration-base), border-color var(--duration-base)',
