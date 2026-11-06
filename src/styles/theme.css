@@ -76,7 +76,7 @@
 
   --accent:              var(--agro-base);
   --accent-bg:           var(--agro-light);
-  --surface-accent-subtle: var(--agro-light);
+  --surface-accent-subtle: #FEF5EE;
 
   --status-neutral-bg:   var(--neutral-100);
   --status-neutral-text: var(--neutral-600);
