@@ -77,9 +77,7 @@ function removeTipo(i: number) {
           <FormField label="Quantidade" placeholder="0" :span="4" v-model="draft.quantidade" />
         </StepGrid>
         <div class="flex justify-end">
-          <AddButton :disabled="!draft.tipo || !draft.quantidade" @click="addTipo">
-            Adicionar tipo
-          </AddButton>
+          <AddButton :disabled="!draft.tipo || !draft.quantidade" @click="addTipo">Adicionar tipo</AddButton>
         </div>
 
         <EmptyState

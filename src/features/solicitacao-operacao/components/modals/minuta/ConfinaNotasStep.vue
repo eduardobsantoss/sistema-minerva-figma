@@ -144,9 +144,7 @@ function importarExcel() {
               full-width
               :disabled="!pendingGta"
               @click="addGta"
-            >
-              Adicionar GTA
-            </AddButton>
+            >Adicionar GTA</AddButton>
           </div>
         </StepGrid>
 

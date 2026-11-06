@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 import { FileText, Paperclip, Download, Trash2, CheckCircle2, AlertTriangle } from 'lucide-vue-next';
 import { StepGrid, FormField, SelectField, AddButton, EmptyState } from '../adicionar-contrato';
 import {
@@ -102,7 +103,7 @@ function removeDocumento(id: string) {
     </StepGrid>
 
     <div class="flex justify-end">
-      <AddButton :disabled="!canAdd" @click="addDocumento">Salvar documentos</AddButton>
+      <AdminButton :disabled="!canAdd" @click="addDocumento">Salvar documentos</AdminButton>
     </div>
 
     <EmptyState

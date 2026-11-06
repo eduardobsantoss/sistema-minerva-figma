@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 import { Tag, CalendarClock, Trash2, Handshake } from 'lucide-vue-next';
 import { brl, UF_OPTIONS, PAISES_DDI, type ParcelaAtivo } from '../../../data/operacaoData';
 import {
@@ -301,7 +302,7 @@ function gerarPagamentosAutomaticos() {
         <div v-if="form.cronogramaAutomatico" class="grid items-end" style="grid-template-columns: 1fr 1fr auto; gap: 12px">
           <SelectField label="Fluxo de Amortização" :options="FLUXO_OPTS" placeholder="Selecione" v-model="form.fluxoAmortizacao" />
           <SelectField label="Fluxo de pagamento de juros" :options="FLUXO_OPTS" placeholder="Selecione" v-model="form.fluxoJuros" />
-          <AddButton @click="gerarPagamentosAutomaticos">Gerar pagamentos</AddButton>
+          <AdminButton @click="gerarPagamentosAutomaticos">Gerar pagamentos</AdminButton>
         </div>
         <div v-else class="grid items-end" style="grid-template-columns: 1fr 1fr auto auto auto; gap: 12px">
           <FormField label="Amortização" placeholder="R$ 0,00" currency v-model="pagamentoForm.amortizacao" />

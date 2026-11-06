@@ -4,7 +4,7 @@ import type { GarantiaItem } from './types';
 import { formatCurrencyInput } from '../../utils/currencyMask';
 import FieldLabel from './FieldLabel.vue';
 import SelectField from './SelectField.vue';
-import AddButton from './AddButton.vue';
+import AddButton from '@/components/ui/AddButton.vue';
 import DataTable from './DataTable.vue';
 import Switch from './Switch.vue';
 import SectionGroup from './SectionGroup.vue';

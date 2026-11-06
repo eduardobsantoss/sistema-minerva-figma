@@ -4,7 +4,7 @@ import SectionGroup from './SectionGroup.vue';
 import FieldLabel from './FieldLabel.vue';
 import Input from './Input.vue';
 import SelectField from './SelectField.vue';
-import AddButton from './AddButton.vue';
+import AddButton from '@/components/ui/AddButton.vue';
 import DataTable from './DataTable.vue';
 
 type RowData = {

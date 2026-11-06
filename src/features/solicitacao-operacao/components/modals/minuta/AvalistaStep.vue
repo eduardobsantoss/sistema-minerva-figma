@@ -33,9 +33,7 @@ function globalIndex(pageIdx: number) {
       <div style="flex: 1; min-width: 240px">
         <ToggleRow label="Possui avalistas" :on="possuiAvalistas" @toggle="emit('togglePossui')" />
       </div>
-      <AddButton v-if="possuiAvalistas" @click="emit('addAvalista')">
-        <Plus :size="14" /> Adicionar novo avalista
-      </AddButton>
+      <AddButton v-if="possuiAvalistas" @click="emit('addAvalista')">Adicionar novo avalista</AddButton>
     </div>
 
     <template v-if="possuiAvalistas">

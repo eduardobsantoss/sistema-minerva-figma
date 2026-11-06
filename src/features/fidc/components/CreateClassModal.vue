@@ -14,7 +14,7 @@ import SectionHelp from './create-class/SectionHelp.vue';
 import ToggleRow from './modals/ToggleRow.vue';
 import ParticipantBlock from './create-class/ParticipantBlock.vue';
 import SectionGroup from './create-class/SectionGroup.vue';
-import AddButton from './create-class/AddButton.vue';
+import AddButton from '@/components/ui/AddButton.vue';
 import DataTable from './create-class/DataTable.vue';
 import DynamicConcentration from './create-class/DynamicConcentration.vue';
 import SummaryItem from './create-class/SummaryItem.vue';

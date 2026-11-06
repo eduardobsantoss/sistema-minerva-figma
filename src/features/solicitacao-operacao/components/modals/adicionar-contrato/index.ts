@@ -5,5 +5,5 @@ export { default as FormField } from './FormField.vue';
 export { default as SelectField } from './SelectField.vue';
 export { default as EmptyState } from './EmptyState.vue';
 export { default as ToggleRow } from './ToggleRow.vue';
-export { default as AddButton } from './AddButton.vue';
+export { default as AddButton } from '@/components/ui/AddButton.vue';
 export { default as StepGrid } from './StepGrid.vue';

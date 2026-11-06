@@ -7,5 +7,5 @@ export { default as PctInput } from './PctInput.vue';
 export { default as DiasInput } from './DiasInput.vue';
 export { default as ToggleRow } from './ToggleRow.vue';
 export { default as EmptyState } from './EmptyState.vue';
-export { default as AddButton } from './AddButton.vue';
+export { default as AddButton } from '@/components/ui/AddButton.vue';
 export { default as CopyButton } from './CopyButton.vue';

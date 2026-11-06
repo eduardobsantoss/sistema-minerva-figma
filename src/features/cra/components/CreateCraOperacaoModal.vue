@@ -12,7 +12,7 @@ import SectionHelp from './create-cra-operacao-modal/SectionHelp.vue';
 import ToggleRow from './create-cra-operacao-modal/ToggleRow.vue';
 import SectionGroup from './create-cra-operacao-modal/SectionGroup.vue';
 import SectionTitle from './create-cra-operacao-modal/SectionTitle.vue';
-import AddButton from './create-cra-operacao-modal/AddButton.vue';
+import AddButton from '@/components/ui/AddButton.vue';
 import DataTable from './create-cra-operacao-modal/DataTable.vue';
 import LimiteRow from './create-cra-operacao-modal/LimiteRow.vue';
 import SummaryItem from './create-cra-operacao-modal/SummaryItem.vue';

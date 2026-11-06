@@ -76,9 +76,7 @@ function adicionarConta() {
             v-model="contaSelecionada"
           />
           <div style="grid-column: span 2; align-self: end; width: 100%">
-            <AddButton full-width :disabled="temContaSelecionada" @click="toggleNovaConta">
-              <Plus :size="14" /> Conta
-            </AddButton>
+            <AddButton full-width :disabled="temContaSelecionada" @click="toggleNovaConta">Conta</AddButton>
           </div>
         </StepGrid>
 

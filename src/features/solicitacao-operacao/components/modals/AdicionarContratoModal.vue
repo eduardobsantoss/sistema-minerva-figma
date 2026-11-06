@@ -351,7 +351,7 @@ function toggleGerarMinuta() {
 
               <div v-if="form.gerarParcelas" class="grid items-end" style="grid-template-columns: 1fr auto; gap: 12px">
                 <SelectField label="Fluxo de parcelas" :options="FLUXO_OPTS" placeholder="Selecione" v-model="form.fluxoParcelas" />
-                <AddButton @click="gerarParcelasAutomaticas">Gerar pagamentos</AddButton>
+                <AdminButton @click="gerarParcelasAutomaticas">Gerar pagamentos</AdminButton>
               </div>
               <div v-else class="grid items-end" style="grid-template-columns: 1fr 1fr 1fr auto; gap: 12px">
                 <FormField label="Parcela" :model-value="`${parcelas.length + 1}ª Parcela`" disabled />

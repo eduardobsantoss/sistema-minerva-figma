@@ -15,7 +15,7 @@ import FormField from '../create-class/FormField.vue';
 import SelectField from '../create-class/SelectField.vue';
 import SectionGroup from '../create-class/SectionGroup.vue';
 import SummaryItem from '../create-class/SummaryItem.vue';
-import AddButton from '../create-class/AddButton.vue';
+import AddButton from '@/components/ui/AddButton.vue';
 import Checkbox from '@/components/ui/Checkbox.vue';
 import AdminButton from '@/components/ui/AdminButton.vue';
 import AdminModal from '@/components/ui/AdminModal.vue';

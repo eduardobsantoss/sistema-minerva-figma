@@ -6,7 +6,7 @@ export { default as SelectField } from './SelectField.vue';
 export { default as Switch } from './Switch.vue';
 export { default as ToggleRow } from './ToggleRow.vue';
 export { default as SectionGroup } from './SectionGroup.vue';
-export { default as AddButton } from './AddButton.vue';
+export { default as AddButton } from '@/components/ui/AddButton.vue';
 export { default as IconAction } from './IconAction.vue';
 export { default as DataTable } from './DataTable.vue';
 export { default as DocGroup } from './DocGroup.vue';
