@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
-import { Zap, MoreVertical, Percent, X } from 'lucide-vue-next';
+import { Zap, MoreVertical, Percent } from 'lucide-vue-next';
 import {
   type ParametrizacaoAutoatendimento,
   type VeiculoOperacao,
@@ -9,6 +9,8 @@ import { rememberVeiculosMeta } from '../../data/vinculosStore';
 import { TabCard, FieldLabel, EmptyState } from './shared';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 interface Props {
   data: ParametrizacaoAutoatendimento;
@@ -224,56 +226,21 @@ const emptyHint = computed(() =>
     </div>
   </TabCard>
 
-  <div
-    v-if="editandoTaxa"
-    style="
-      position: fixed; inset: 0; z-index: 450;
-      background: rgba(8,60,74,0.45); backdrop-filter: blur(6px);
-      display: flex; align-items: center; justify-content: center; padding: 24px;
-    "
-    @click.self="editandoTaxa = null"
-  >
-    <div
-      style="
-        width: 100%; max-width: 420px;
-        background: var(--surface-card); border-radius: var(--radius-xl);
-        border: 1px solid var(--border-default); box-shadow: var(--shadow-lg); overflow: hidden;
-      "
-      @click.stop
-    >
-      <div class="flex items-center justify-between" style="padding: 18px 20px; border-bottom: 1px solid var(--border-default)">
-        <div>
-          <h3 style="font-size: var(--text-base); font-weight: var(--weight-bold); color: var(--text-strong)">Alterar Taxa de Cessão</h3>
-          <p style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px">{{ editandoTaxa.veiculo }}</p>
-        </div>
-        <button aria-label="Fechar" style="background: none; border: none; cursor: pointer; color: var(--text-muted)" @click="editandoTaxa = null">
-          <X :size="18" />
-        </button>
-      </div>
-      <div style="padding: 20px">
-        <FieldLabel>Taxa de cessão padrão</FieldLabel>
-        <input
-          v-model="taxaDraft"
-          placeholder="0,00%"
-          style="width: 100%; height: 40px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
-        />
-      </div>
-      <div class="flex justify-end" style="gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border-default)">
-        <button
-          style="height: 40px; padding: 0 16px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
-          @click="editandoTaxa = null"
-        >
-          Cancelar
-        </button>
-        <button
-          style="height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: var(--action-primary-text); border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
-          @click="confirmarTaxa"
-        >
-          Confirmar
-        </button>
-      </div>
+  <AdminModal v-if="editandoTaxa" :width="440" eyebrow="Risco" title="Alterar Taxa de Cessão" :subtitle="editandoTaxa.veiculo" @close="editandoTaxa = null">
+    <div>
+      <FieldLabel>Taxa de cessão padrão</FieldLabel>
+      <input
+        v-model="taxaDraft"
+        placeholder="0,00%"
+        style="width: 100%; height: 40px; padding: 0 14px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
+      />
     </div>
-  </div>
+
+    <template #footer>
+      <AdminButton variant="secondary" size="large" @click="editandoTaxa = null">Cancelar</AdminButton>
+      <AdminButton variant="primary" size="large" @click="confirmarTaxa">Confirmar</AdminButton>
+    </template>
+  </AdminModal>
 </template>
 
 <style scoped>

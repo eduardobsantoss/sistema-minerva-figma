@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { ArrowLeft, X } from 'lucide-vue-next';
+import { ArrowLeft } from 'lucide-vue-next';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 export interface NpsSubmitPayload {
   nota: number;
@@ -93,97 +95,65 @@ function enviar() {
 </script>
 
 <template>
-  <div
-    class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 600; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 32px"
-    @click.self="emit('close')"
-  >
-    <div
-      class="flex flex-col"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="nps-title"
-      style="width: 100%; max-width: 560px; max-height: 90vh; background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden"
-      @click.stop
-    >
-      <!-- Header -->
-      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
-        <div>
-          <div class="eyebrow">Pesquisa interna · Usabilidade · Etapa {{ step }} de 2</div>
-          <h2 id="nps-title" style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong); margin-top: 6px">
-            {{ step === 1 ? 'Como está a usabilidade do sistema?' : (faixa?.pergunta ?? '') }}
-          </h2>
-          <p v-if="step === 1" style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Em uma escala de 0 a 10, como você avalia a facilidade de uso do Minerva no seu dia a dia de trabalho?
-          </p>
-        </div>
-        <button type="button" aria-label="Fechar" class="icon-btn" @click="emit('close')">
-          <X :size="18" />
+  <AdminModal size="sm" eyebrow="Configurações" :title="step === 1 ? 'Como está a usabilidade do sistema?' : (faixa?.pergunta ?? '')" subtitle="Em uma escala de 0 a 10, como você avalia a facilidade de uso do Minerva no seu dia a dia de trabalho?" @close="emit('close')">
+    <div v-if="step === 1" style="padding: 24px 28px; overflow-y: auto">
+      <div class="notas" role="radiogroup" aria-label="Nota de 0 a 10">
+        <button
+          v-for="valor in NOTAS"
+          :key="valor"
+          type="button"
+          role="radio"
+          :aria-checked="nota === valor"
+          class="nota"
+          :style="notaVars(valor)"
+          @click="selecionar(valor)"
+        >
+          {{ valor }}
         </button>
       </div>
-
-      <!-- Etapa 1: nota -->
-      <div v-if="step === 1" style="padding: 24px 28px; overflow-y: auto">
-        <div class="notas" role="radiogroup" aria-label="Nota de 0 a 10">
-          <button
-            v-for="valor in NOTAS"
-            :key="valor"
-            type="button"
-            role="radio"
-            :aria-checked="nota === valor"
-            class="nota"
-            :style="notaVars(valor)"
-            @click="selecionar(valor)"
-          >
-            {{ valor }}
-          </button>
-        </div>
-        <div class="flex items-center justify-between" style="margin-top: 10px">
-          <span class="hint">0 · Muito difícil de usar</span>
-          <span class="hint">10 · Muito fácil de usar</span>
-        </div>
-      </div>
-
-      <!-- Etapa 2: justificativa -->
-      <div v-else style="padding: 24px 28px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px">
-        <div class="flex items-center" style="gap: 10px">
-          <span class="hint">Nota atribuída: <strong style="color: var(--text-strong)">{{ nota }}</strong></span>
-          <button type="button" class="link" @click="voltar">
-            <ArrowLeft :size="14" /> Alterar nota
-          </button>
-        </div>
-
-        <label class="field">
-          <span class="label">Justifique a nota atribuída</span>
-          <textarea
-            v-model="justificativa"
-            class="input"
-            rows="5"
-            :maxlength="MAX_JUSTIFICATIVA"
-            :placeholder="faixa?.placeholder"
-            :aria-invalid="mostrarErro"
-            :style="mostrarErro ? { borderColor: 'var(--danger-base)' } : undefined"
-          />
-          <div class="flex items-center justify-between">
-            <span v-if="mostrarErro" style="font-size: var(--text-xs); color: var(--danger-base)">
-              A justificativa é obrigatória.
-            </span>
-            <span v-else />
-            <span class="hint">{{ justificativa.length }}/{{ MAX_JUSTIFICATIVA }}</span>
-          </div>
-        </label>
-      </div>
-
-      <!-- Footer -->
-      <div class="flex items-center justify-end" style="gap: 10px; padding: 16px 28px; border-top: 1px solid var(--border-default)">
-        <button type="button" class="secondary" @click="emit('close')">Cancelar</button>
-        <button v-if="step === 1" type="button" class="primary" :disabled="nota === null" @click="continuar">
-          Continuar
-        </button>
-        <button v-else type="button" class="primary" @click="enviar">Enviar avaliação</button>
+      <div class="flex items-center justify-between" style="margin-top: 10px">
+        <span class="hint">0 · Muito difícil de usar</span>
+        <span class="hint">10 · Muito fácil de usar</span>
       </div>
     </div>
-  </div>
+    <div v-else style="padding: 24px 28px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px">
+      <div class="flex items-center" style="gap: 10px">
+        <span class="hint">Nota atribuída: <strong style="color: var(--text-strong)">{{ nota }}</strong></span>
+        <button type="button" class="link" @click="voltar">
+          <ArrowLeft :size="14" /> Alterar nota
+        </button>
+      </div>
+
+      <label class="field">
+        <span class="label">Justifique a nota atribuída</span>
+        <textarea
+          v-model="justificativa"
+          class="input"
+          rows="5"
+          :maxlength="MAX_JUSTIFICATIVA"
+          :placeholder="faixa?.placeholder"
+          :aria-invalid="mostrarErro"
+          :style="mostrarErro ? { borderColor: 'var(--danger-base)' } : undefined"
+        />
+        <div class="flex items-center justify-between">
+          <span v-if="mostrarErro" style="font-size: var(--text-xs); color: var(--danger-base)">
+            A justificativa é obrigatória.
+          </span>
+          <span v-else />
+          <span class="hint">{{ justificativa.length }}/{{ MAX_JUSTIFICATIVA }}</span>
+        </div>
+      </label>
+    </div>
+
+    <template #footer>
+      <AdminButton variant="ghost" size="large" @click="emit('close')" type="button">Cancelar</AdminButton>
+      <div class="flex items-center" style="gap: 12px">
+        <AdminButton variant="primary" size="large" v-if="step === 1" :disabled="nota === null" @click="continuar" type="button">Continuar</AdminButton>
+        <AdminButton variant="primary" size="large" v-else @click="enviar" type="button">Enviar avaliação</AdminButton>
+
+      </div>
+    </template>
+  </AdminModal>
 </template>
 
 <style scoped>
@@ -263,7 +233,7 @@ function enviar() {
 .label {
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   color: var(--text-muted);
   text-transform: uppercase;
 }

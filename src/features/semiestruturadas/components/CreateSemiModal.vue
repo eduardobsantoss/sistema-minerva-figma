@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, type Component } from 'vue';
-import { X, Info, Building2, Percent, ShieldCheck, Layers, Check, ChevronRight } from 'lucide-vue-next';
+import { Info, Building2, Percent, ShieldCheck, Layers, Check, ChevronRight, ChevronLeft } from 'lucide-vue-next';
 import { GRUPOS_SEED } from '@/features/risco/data/riscoData';
 import { defaultSemiNome, slugGrupo } from '../data/semiestruturadasData';
 import type { NewSemiData } from './create-semi-modal/types';
@@ -9,6 +9,8 @@ import StepGrupos from './create-semi-modal/steps/StepGrupos.vue';
 import StepJurosMulta from './create-semi-modal/steps/StepJurosMulta.vue';
 import StepTiposAceitos from './create-semi-modal/steps/StepTiposAceitos.vue';
 import StepExigidas from './create-semi-modal/steps/StepExigidas.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 export type { NewSemiData };
 
@@ -158,53 +160,8 @@ function goTo(i: number) {
 </script>
 
 <template>
-  <div
-    style="
-      position: fixed;
-      inset: 0;
-      background: rgba(8, 60, 74, 0.55);
-      backdrop-filter: blur(8px);
-      z-index: 400;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 32px;
-      animation: fadeIn 0.2s ease-out;
-    "
-  >
-    <div
-      style="
-        background: var(--surface-card);
-        border-radius: var(--radius-xl);
-        width: 100%;
-        max-width: 900px;
-        max-height: calc(100vh - 64px);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        box-shadow: var(--shadow-lg);
-      "
-      @click.stop
-    >
-      <div class="flex items-start justify-between" style="padding: 24px 32px; border-bottom: 1px solid var(--border-default)">
-        <div>
-          <h2 style="font-size: var(--text-2xl); font-weight: 900; color: var(--text-strong); letter-spacing: -0.025em; line-height: 1.2; margin-bottom: 4px">
-            Nova Semiestruturada
-          </h2>
-          <p style="font-size: var(--text-sm); color: var(--text-muted)">
-            {{ step.hint }} · Etapa {{ stepIdx + 1 }} de {{ steps.length }}
-          </p>
-        </div>
-        <button
-          aria-label="Fechar"
-          class="flex items-center justify-center"
-          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
-          @click="emit('close')"
-        >
-          <X :size="18" />
-        </button>
-      </div>
-
+  <AdminModal size="lg" eyebrow="Semiestruturadas" title="Nova Semiestruturada" :subtitle="`${step.hint} · Etapa ${stepIdx + 1} de ${steps.length}`" @close="emit('close')">
+    <template #subheader>
       <div class="flex" style="background: var(--surface-sunken); border-bottom: 1px solid var(--border-default)">
         <button
           v-for="(s, i) in steps"
@@ -219,7 +176,7 @@ function goTo(i: number) {
             border: 'none',
             borderBottom: i === stepIdx ? '3px solid var(--agro-base)' : '3px solid transparent',
             cursor: 'pointer',
-            color: i === stepIdx ? 'var(--agro-base)' : i < stepIdx ? 'var(--gci-base)' : 'var(--text-muted)',
+            color: i === stepIdx ? 'var(--agro-base)' : i < stepIdx ? 'var(--stepper-done)' : 'var(--text-muted)',
             transition: 'color var(--duration-base), opacity var(--duration-base), border-color var(--duration-base)',
           }"
           @click="goTo(i)"
@@ -230,55 +187,24 @@ function goTo(i: number) {
           </span>
         </button>
       </div>
+    </template>
 
-      <div style="flex: 1; overflow-y: auto; padding: 32px 40px">
-        <StepDadosGerais v-if="step.key === 'dados'" v-model="form" />
-        <StepGrupos v-else-if="step.key === 'grupos'" v-model="form" />
-        <StepJurosMulta v-else-if="step.key === 'juros'" v-model="form" />
-        <StepTiposAceitos v-else-if="step.key === 'tipos'" v-model="form" />
-        <StepExigidas v-else v-model="form" />
-      </div>
-
-      <div class="flex items-center justify-between" style="padding: 16px 32px; border-top: 1px solid var(--border-default); background: var(--surface-card)">
-        <button
-          style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: 600; font-size: var(--text-sm); padding: 10px 4px"
-          @click="isFirst ? emit('close') : stepIdx--"
-        >
-          {{ isFirst ? 'Cancelar' : '← Voltar' }}
-        </button>
-        <span style="font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums">
-          {{ stepIdx + 1 }} / {{ steps.length }}
-        </span>
-        <button
-          class="flex items-center"
-          :disabled="!canAdvance"
-          :style="{
-            gap: '8px',
-            padding: '12px 28px',
-            background: !canAdvance ? 'var(--neutral-400)' : isLast ? 'var(--success-base)' : 'var(--action-primary-bg)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 'var(--radius-lg)',
-            cursor: canAdvance ? 'pointer' : 'not-allowed',
-            fontWeight: 700,
-            fontSize: 'var(--text-sm)',
-            letterSpacing: '0.04em',
-            opacity: canAdvance ? 1 : 0.7,
-            boxShadow: !canAdvance
-              ? 'none'
-              : isLast
-                ? '0 8px 20px -8px rgba(5,150,105,0.40)'
-                : '0 8px 20px -8px rgba(8,60,74,0.30)',
-          }"
-          @click="next"
-        >
-          {{ isLast ? 'Finalizar Cadastro' : 'Próxima Etapa' }}
-          <Check v-if="isLast" :size="15" />
-          <ChevronRight v-else :size="15" />
-        </button>
-      </div>
+    <div>
+      <StepDadosGerais v-if="step.key === 'dados'" v-model="form" />
+      <StepGrupos v-else-if="step.key === 'grupos'" v-model="form" />
+      <StepJurosMulta v-else-if="step.key === 'juros'" v-model="form" />
+      <StepTiposAceitos v-else-if="step.key === 'tipos'" v-model="form" />
+      <StepExigidas v-else v-model="form" />
     </div>
-  </div>
+
+    <template #footer>
+      <AdminButton variant="ghost" size="large" :icon="isFirst ? undefined : ChevronLeft" @click="isFirst ? emit('close') : stepIdx--">{{ isFirst ? 'Cancelar' : 'Voltar' }}</AdminButton>
+      <span style="font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums">
+        {{ stepIdx + 1 }} / {{ steps.length }}
+      </span>
+      <AdminButton variant="primary" size="large" :trailing-icon="isLast ? Check : ChevronRight" :disabled="!canAdvance" @click="next">{{ isLast ? 'Finalizar cadastro' : 'Próxima etapa' }}</AdminButton>
+    </template>
+  </AdminModal>
 </template>
 
 <style scoped>

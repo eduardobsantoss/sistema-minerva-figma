@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { Building2, Plus, Split, Trash2, X } from 'lucide-vue-next';
+import { Building2, Plus, Trash2 } from 'lucide-vue-next';
 import { brl, pct, type SemiCota, type SemiOperacao } from '../data/semiestruturadasData';
 import {
   PCT_EPSILON,
@@ -13,6 +13,8 @@ import {
   valorPorPct,
 } from '../data/distribuicaoCotas';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const props = defineProps<{ operacao: SemiOperacao }>();
 const emit = defineEmits<{ close: []; save: [cotas: SemiCota[]] }>();
@@ -175,224 +177,181 @@ function salvar() {
 </script>
 
 <template>
-  <div
-    class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 500; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 32px; animation: fadeIn 0.2s ease-out"
-  >
-    <div
-      class="flex flex-col"
-      style="width: 100%; max-width: 820px; max-height: calc(100vh - 64px); background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden"
-      @click.stop
-    >
-      <!-- Cabeçalho -->
-      <div class="flex items-start justify-between" style="gap: 16px; padding: 24px 32px; border-bottom: 1px solid var(--border-default); flex-shrink: 0">
-        <div class="flex items-center" style="gap: 16px; min-width: 0">
-          <div
-            class="flex items-center justify-center"
-            style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: var(--agro-light); color: var(--agro-base); flex-shrink: 0"
+  <AdminModal size="lg" eyebrow="Semiestruturadas · Cotas" title="Distribuir cotas" :subtitle="`${operacao.nome} · altere as porcentagens ou adicione uma nova cota`" @close="emit('close')">
+
+    <div class="dist-body" style="display: flex; flex-direction: column; gap: 20px;">
+      <!-- Cota total -->
+      <section
+        class="relative overflow-hidden"
+        style="background: var(--gci-base); border-radius: var(--radius-xl); padding: 22px 26px; color: #fff; box-shadow: 0 20px 40px -20px rgba(8, 60, 74, 0.40)"
+      >
+        <div style="position: absolute; top: -70px; right: -60px; width: 220px; height: 220px; border-radius: 9999px; background: rgba(255,255,255,0.04)" />
+        <div style="position: absolute; bottom: -100px; right: 120px; width: 200px; height: 200px; border-radius: 9999px; background: rgba(242,125,38,0.05)" />
+        <div class="flex items-center justify-between" style="gap: 12px; position: relative; z-index: 1">
+          <span style="font-size: 11px; font-weight: var(--weight-bold); letter-spacing: 0.18em; color: var(--agro-base); text-transform: uppercase">
+            Cota total
+          </span>
+          <button
+            type="button"
+            class="flex items-center btn-animated btn-agro"
+            style="gap: 8px; height: 36px; padding: 0 14px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; text-transform: uppercase"
+            @click="adicionarNova"
           >
-            <Split :size="22" />
+            <Plus :size="14" />
+            Adicionar nova cota
+          </button>
+        </div>
+        <div class="flex items-end justify-between" style="gap: 12px; margin-top: 10px; position: relative; z-index: 1">
+          <span style="font-size: 32px; font-weight: var(--weight-bold); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1">
+            {{ brl(total) }}
+          </span>
+          <span style="font-size: var(--text-2xl); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; color: rgba(255,255,255,0.85); line-height: 1.2">
+            100%
+          </span>
+        </div>
+      </section>
+
+      <!-- Lista de cotas -->
+      <section>
+        <div class="flex items-center justify-between" style="margin-bottom: 10px">
+          <span class="dist-section">Cotas da operação</span>
+          <span class="dist-section" style="letter-spacing: 0.10em">
+            {{ existentes.length + novas.length }} cotas
+          </span>
+        </div>
+        <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); overflow: hidden">
+          <div class="dist-row dist-head">
+            <div>Veículo adquirente</div>
+            <div>Porcentagem</div>
+            <div style="text-align: right">Valor</div>
+            <div />
           </div>
-          <div style="min-width: 0">
-            <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.18em; color: var(--agro-base); text-transform: uppercase; margin-bottom: 4px">
-              Semiestruturadas · Cotas
+
+          <div class="dist-scroll">
+          <div v-for="e in existentes" :key="e.id" class="dist-row">
+            <div class="flex items-center" style="gap: 12px; min-width: 0">
+              <div class="dist-tile" style="background: var(--gci-light); color: var(--gci-base)">
+                <Building2 :size="16" />
+              </div>
+              <div style="min-width: 0; flex: 1">
+                <div style="font-weight: var(--weight-semibold); color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">
+                  {{ e.veiculo }}
+                </div>
+                <div class="dist-bar">
+                  <div class="dist-bar-fill" :style="{ width: larguraBarra(numeroOuNaN(e.texto)), background: 'var(--gci-base)' }" />
+                </div>
+              </div>
             </div>
-            <h2 style="font-size: var(--text-2xl); font-weight: 900; color: var(--text-strong); letter-spacing: -0.025em; line-height: 1.2">
-              Distribuir cotas
-            </h2>
-            <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-              {{ operacao.nome }} · altere as porcentagens ou adicione uma nova cota
-            </p>
+            <div class="dist-affix-wrap">
+              <input
+                v-model="e.texto"
+                type="text"
+                inputmode="decimal"
+                class="dist-input dist-input-affixed"
+                :aria-label="`Porcentagem de ${e.veiculo}`"
+                :data-invalid="invalidoExistente(e) || acima"
+              />
+              <span class="dist-affix">%</span>
+            </div>
+            <div class="dist-valor">{{ valorDe(numeroOuNaN(e.texto)) }}</div>
+            <div />
+          </div>
+
+          <div v-for="(n, i) in novas" :key="n.key" class="dist-row dist-row-nova">
+            <div class="flex items-center" style="gap: 12px; min-width: 0">
+              <div class="dist-tile" style="background: var(--gci-light); color: var(--gci-base)">
+                <Plus :size="16" />
+              </div>
+              <div style="min-width: 0; flex: 1">
+                <AdminSelect v-model="n.veiculo" placeholder="Veículo que adquire" :options="[...veiculosParaLinha(n.veiculo).map((v) => ({ value: v, label: v }))]" aria-label="Veículo que adquire" />
+              </div>
+            </div>
+
+            <div v-if="i === indiceUltima" class="dist-auto" :data-invalid="(pctUltima ?? 0) <= PCT_EPSILON">
+              <span style="font-variant-numeric: tabular-nums">{{ pct(pctUltima ?? 0) }}</span>
+              <span class="dist-auto-tag">automático</span>
+            </div>
+            <div v-else class="dist-affix-wrap">
+              <input
+                v-model="n.texto"
+                type="text"
+                inputmode="decimal"
+                placeholder="0,00"
+                class="dist-input dist-input-affixed"
+                aria-label="Porcentagem da nova cota"
+                :data-invalid="Number.isNaN(numeroOuNaN(n.texto)) || acima"
+              />
+              <span class="dist-affix">%</span>
+            </div>
+
+            <div class="dist-valor">{{ valorDe(pctDaNova(i)) }}</div>
+
+            <div class="flex items-center justify-end">
+              <button
+                v-if="i === indiceUltima"
+                type="button"
+                aria-label="Remover nova cota"
+                class="dist-icon-btn"
+                @click="removerUltima"
+              >
+                <Trash2 :size="16" />
+              </button>
+            </div>
+          </div>
           </div>
         </div>
-        <button
-          type="button"
-          aria-label="Fechar"
-          class="flex items-center justify-center"
-          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
-          @click="emit('close')"
-        >
-          <X :size="18" />
-        </button>
-      </div>
+      </section>
 
-      <div class="dist-body" style="flex: 1; overflow: auto; padding: 24px 32px; display: flex; flex-direction: column; gap: 20px; min-height: 0">
-        <!-- Cota total -->
-        <section
-          class="relative overflow-hidden"
-          style="background: var(--gci-base); border-radius: var(--radius-xl); padding: 22px 26px; color: #fff; box-shadow: 0 20px 40px -20px rgba(8, 60, 74, 0.40)"
-        >
-          <div style="position: absolute; top: -70px; right: -60px; width: 220px; height: 220px; border-radius: 9999px; background: rgba(255,255,255,0.04)" />
-          <div style="position: absolute; bottom: -100px; right: 120px; width: 200px; height: 200px; border-radius: 9999px; background: rgba(242,125,38,0.05)" />
-          <div class="flex items-center justify-between" style="gap: 12px; position: relative; z-index: 1">
-            <span style="font-size: 11px; font-weight: var(--weight-bold); letter-spacing: 0.18em; color: var(--agro-base); text-transform: uppercase">
-              Cota total
-            </span>
-            <button
-              type="button"
-              class="flex items-center btn-animated btn-agro"
-              style="gap: 8px; height: 36px; padding: 0 14px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.10em; text-transform: uppercase"
-              @click="adicionarNova"
-            >
-              <Plus :size="14" />
-              Adicionar nova cota
-            </button>
+      <!-- Resumo -->
+      <section
+        role="status"
+        :style="{
+          padding: '14px 18px',
+          borderRadius: 'var(--radius-xl)',
+          background: resumoCores[resumo.tom].bg,
+          color: resumoCores[resumo.tom].fg,
+        }"
+      >
+        <div class="flex items-center justify-between" style="gap: 12px">
+          <div style="min-width: 0">
+            <div style="font-size: var(--text-sm); font-weight: var(--weight-bold)">{{ resumo.titulo }}</div>
+            <div style="font-size: var(--text-xs); margin-top: 2px; opacity: 0.85">{{ resumo.texto }}</div>
           </div>
-          <div class="flex items-end justify-between" style="gap: 12px; margin-top: 10px; position: relative; z-index: 1">
-            <span style="font-size: 32px; font-weight: var(--weight-bold); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1">
-              {{ brl(total) }}
-            </span>
-            <span style="font-size: var(--text-2xl); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; color: rgba(255,255,255,0.85); line-height: 1.2">
-              100%
-            </span>
-          </div>
-        </section>
-
-        <!-- Lista de cotas -->
-        <section>
-          <div class="flex items-center justify-between" style="margin-bottom: 10px">
-            <span class="dist-section">Cotas da operação</span>
-            <span class="dist-section" style="letter-spacing: 0.10em">
-              {{ existentes.length + novas.length }} cotas
-            </span>
-          </div>
-          <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); overflow: hidden">
-            <div class="dist-row dist-head">
-              <div>Veículo adquirente</div>
-              <div>Porcentagem</div>
-              <div style="text-align: right">Valor</div>
-              <div />
+          <div style="text-align: right; flex-shrink: 0">
+            <div style="font-size: var(--text-lg); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums">
+              {{ pct(somaDistribuida) }}
             </div>
-
-            <div class="dist-scroll">
-            <div v-for="e in existentes" :key="e.id" class="dist-row">
-              <div class="flex items-center" style="gap: 12px; min-width: 0">
-                <div class="dist-tile" style="background: var(--gci-light); color: var(--gci-base)">
-                  <Building2 :size="16" />
-                </div>
-                <div style="min-width: 0; flex: 1">
-                  <div style="font-weight: var(--weight-semibold); color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">
-                    {{ e.veiculo }}
-                  </div>
-                  <div class="dist-bar">
-                    <div class="dist-bar-fill" :style="{ width: larguraBarra(numeroOuNaN(e.texto)), background: 'var(--gci-base)' }" />
-                  </div>
-                </div>
-              </div>
-              <div class="dist-affix-wrap">
-                <input
-                  v-model="e.texto"
-                  type="text"
-                  inputmode="decimal"
-                  class="dist-input dist-input-affixed"
-                  :aria-label="`Porcentagem de ${e.veiculo}`"
-                  :data-invalid="invalidoExistente(e) || acima"
-                />
-                <span class="dist-affix">%</span>
-              </div>
-              <div class="dist-valor">{{ valorDe(numeroOuNaN(e.texto)) }}</div>
-              <div />
-            </div>
-
-            <div v-for="(n, i) in novas" :key="n.key" class="dist-row dist-row-nova">
-              <div class="flex items-center" style="gap: 12px; min-width: 0">
-                <div class="dist-tile" style="background: var(--gci-light); color: var(--gci-base)">
-                  <Plus :size="16" />
-                </div>
-                <div style="min-width: 0; flex: 1">
-                  <AdminSelect v-model="n.veiculo" placeholder="Veículo que adquire" :options="[...veiculosParaLinha(n.veiculo).map((v) => ({ value: v, label: v }))]" aria-label="Veículo que adquire" />
-                </div>
-              </div>
-
-              <div v-if="i === indiceUltima" class="dist-auto" :data-invalid="(pctUltima ?? 0) <= PCT_EPSILON">
-                <span style="font-variant-numeric: tabular-nums">{{ pct(pctUltima ?? 0) }}</span>
-                <span class="dist-auto-tag">automático</span>
-              </div>
-              <div v-else class="dist-affix-wrap">
-                <input
-                  v-model="n.texto"
-                  type="text"
-                  inputmode="decimal"
-                  placeholder="0,00"
-                  class="dist-input dist-input-affixed"
-                  aria-label="Porcentagem da nova cota"
-                  :data-invalid="Number.isNaN(numeroOuNaN(n.texto)) || acima"
-                />
-                <span class="dist-affix">%</span>
-              </div>
-
-              <div class="dist-valor">{{ valorDe(pctDaNova(i)) }}</div>
-
-              <div class="flex items-center justify-end">
-                <button
-                  v-if="i === indiceUltima"
-                  type="button"
-                  aria-label="Remover nova cota"
-                  class="dist-icon-btn"
-                  @click="removerUltima"
-                >
-                  <Trash2 :size="16" />
-                </button>
-              </div>
-            </div>
+            <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.8">
+              de 100%
             </div>
           </div>
-        </section>
-
-        <!-- Resumo -->
-        <section
-          role="status"
-          :style="{
-            padding: '14px 18px',
-            borderRadius: 'var(--radius-xl)',
-            background: resumoCores[resumo.tom].bg,
-            color: resumoCores[resumo.tom].fg,
-          }"
-        >
-          <div class="flex items-center justify-between" style="gap: 12px">
-            <div style="min-width: 0">
-              <div style="font-size: var(--text-sm); font-weight: var(--weight-bold)">{{ resumo.titulo }}</div>
-              <div style="font-size: var(--text-xs); margin-top: 2px; opacity: 0.85">{{ resumo.texto }}</div>
-            </div>
-            <div style="text-align: right; flex-shrink: 0">
-              <div style="font-size: var(--text-lg); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums">
-                {{ pct(somaDistribuida) }}
-              </div>
-              <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.8">
-                de 100%
-              </div>
-            </div>
-          </div>
-          <div style="margin-top: 10px; height: 6px; border-radius: 9999px; background: rgba(255,255,255,0.7); overflow: hidden">
-            <div
-              :style="{
-                height: '100%',
-                width: larguraBarra(somaDistribuida),
-                borderRadius: '9999px',
-                background: resumoCores[resumo.tom].bar,
-                transition: 'width var(--duration-base) var(--ease-standard)',
-              }"
-            />
-          </div>
-        </section>
-      </div>
-
-      <!-- Rodapé -->
-      <div class="flex items-center justify-between" style="gap: 10px; padding: 16px 32px; border-top: 1px solid var(--border-default); background: var(--surface-card); flex-shrink: 0">
-        <button type="button" class="dist-secondary" @click="emit('close')">Cancelar</button>
-        <button type="button" class="dist-primary" :disabled="!podeSalvar" @click="salvar">
-          Salvar distribuição
-        </button>
-      </div>
+        </div>
+        <div style="margin-top: 10px; height: 6px; border-radius: 9999px; background: rgba(255,255,255,0.7); overflow: hidden">
+          <div
+            :style="{
+              height: '100%',
+              width: larguraBarra(somaDistribuida),
+              borderRadius: '9999px',
+              background: resumoCores[resumo.tom].bar,
+              transition: 'width var(--duration-base) var(--ease-standard)',
+            }"
+          />
+        </div>
+      </section>
     </div>
-  </div>
+
+    <template #footer>
+      <AdminButton variant="ghost" size="large" @click="emit('close')" type="button">Cancelar</AdminButton>
+      <AdminButton variant="primary" size="large" :disabled="!podeSalvar" @click="salvar" type="button">Salvar distribuição</AdminButton>
+    </template>
+  </AdminModal>
 </template>
 
 <style scoped>
 .dist-section {
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   color: var(--text-muted);
   text-transform: uppercase;
 }
@@ -413,7 +372,7 @@ function salvar() {
   padding-bottom: 12px;
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-muted);
 }

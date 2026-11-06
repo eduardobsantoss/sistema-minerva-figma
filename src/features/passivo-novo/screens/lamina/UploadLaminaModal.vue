@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { X } from 'lucide-vue-next';
+
 import XmlDropzone from '@/features/solicitacao-operacao/components/modals/XmlDropzone.vue';
 import { LAMINA_UPLOAD_KINDS, type LaminaUploadKind } from '../../data/passivoNovoData';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const emit = defineEmits<{
   close: [];
@@ -30,90 +32,37 @@ const fieldStyle =
 
 <template>
   <Teleport to="body">
-  <div
-    class="minerva-modal-overlay"
-    style="
-      background: rgba(8, 60, 74, 0.55);
-      backdrop-filter: blur(8px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    "
-    @click.self="emit('close')"
-  >
-    <div
-      style="
-        width: 100%;
-        max-width: 480px;
-        background: var(--surface-card);
-        border-radius: var(--radius-xl);
-        border: 1px solid var(--border-default);
-        box-shadow: var(--shadow-lg);
-      "
-      @click.stop
-    >
-      <div class="flex items-center justify-between" style="padding: 20px 24px; border-bottom: 1px solid var(--border-default)">
-        <h3 style="font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.01em">
-          Subir arquivo
-        </h3>
-        <button type="button" aria-label="Fechar" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px" @click="emit('close')">
-          <X :size="20" />
-        </button>
-      </div>
-
-      <div class="flex flex-col" style="padding: 24px; gap: 16px">
-        <label class="flex flex-col" style="gap: 6px">
-          <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Tipo do arquivo</span>
-          <AdminSelect v-model="kind" :options="[...LAMINA_UPLOAD_KINDS.map((k) => ({ value: k.id, label: k.label }))]" />
-        </label>
-        <div class="flex flex-col" style="gap: 6px">
-          <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Arquivo</span>
-          <XmlDropzone
-            :multiple="false"
-            :extensions="['*']"
-            heading="Solte o arquivo aqui"
-            hint="Planilha da cota ou da caixa"
-            @files="onFiles"
-          />
-          <div
-            v-if="fileName"
-            style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
-          >
-            {{ fileName }}
-          </div>
-        </div>
-        <p style="font-size: var(--text-xs); color: var(--text-muted)">
-          O tipo descreve o conteúdo (cota ou caixa), não a extensão. Protótipo: preenche os dados sem ler a planilha.
-        </p>
-      </div>
-
-      <div class="flex items-center justify-end" style="gap: 12px; padding: 16px 24px; border-top: 1px solid var(--border-default)">
-        <button type="button" style="height: 44px; padding: 0 20px; background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)" @click="emit('close')">
-          Cancelar
-        </button>
-        <button
-          type="button"
-          :disabled="!canSave"
-          :style="{
-            height: '44px',
-            padding: '0 24px',
-            background: canSave ? 'var(--action-primary-bg)' : 'var(--surface-sunken)',
-            color: canSave ? 'var(--action-primary-text)' : 'var(--text-muted)',
-            border: 'none',
-            borderRadius: 'var(--radius-lg)',
-            cursor: canSave ? 'pointer' : 'not-allowed',
-            fontWeight: 'var(--weight-bold)',
-            fontSize: 'var(--text-xs)',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-          }"
-          @click="submit"
+  <AdminModal size="sm" eyebrow="Passivo" title="Subir arquivo" @close="emit('close')">
+    <div class="flex flex-col" style="gap: 16px">
+      <label class="flex flex-col" style="gap: 6px">
+        <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Tipo do arquivo</span>
+        <AdminSelect v-model="kind" :options="[...LAMINA_UPLOAD_KINDS.map((k) => ({ value: k.id, label: k.label }))]" />
+      </label>
+      <div class="flex flex-col" style="gap: 6px">
+        <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted)">Arquivo</span>
+        <XmlDropzone
+          :multiple="false"
+          :extensions="['*']"
+          heading="Solte o arquivo aqui"
+          hint="Planilha da cota ou da caixa"
+          @files="onFiles"
+        />
+        <div
+          v-if="fileName"
+          style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
         >
-          Preencher dados
-        </button>
+          {{ fileName }}
+        </div>
       </div>
+      <p style="font-size: var(--text-xs); color: var(--text-muted)">
+        O tipo descreve o conteúdo (cota ou caixa), não a extensão. Protótipo: preenche os dados sem ler a planilha.
+      </p>
     </div>
-  </div>
+
+    <template #footer>
+      <AdminButton variant="ghost" size="large" @click="emit('close')" type="button">Cancelar</AdminButton>
+      <AdminButton variant="primary" size="large" :disabled="!canSave" @click="submit" type="button">Preencher dados</AdminButton>
+    </template>
+  </AdminModal>
   </Teleport>
 </template>

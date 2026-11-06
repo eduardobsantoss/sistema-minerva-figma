@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { X } from 'lucide-vue-next';
+
 import { brl, pct, type SemiCota, type SemiOperacao } from '../data/semiestruturadasData';
 import {
   PCT_EPSILON,
@@ -12,6 +12,8 @@ import {
   valorPorPct,
 } from '../data/distribuicaoCotas';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const props = defineProps<{ operacao: SemiOperacao; cotaId: string }>();
 const emit = defineEmits<{ close: []; save: [cotas: SemiCota[]] }>();
@@ -75,103 +77,69 @@ function salvar() {
 </script>
 
 <template>
-  <div
-    class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 500; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 32px"
-  >
-    <div
-      class="flex flex-col"
-      style="width: 100%; max-width: 640px; max-height: 85vh; background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden"
-      @click.stop
-    >
-      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default); flex-shrink: 0">
-        <div>
-          <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.18em; color: var(--agro-base); text-transform: uppercase; margin-bottom: 4px">
-            Semiestruturadas · Cota
-          </div>
-          <h2 style="font-size: var(--text-2xl); font-weight: 900; color: var(--text-strong); letter-spacing: -0.025em; line-height: 1.2">
-            Distribuir cotas
-          </h2>
-          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Repasse parte desta cota para outro veículo
-          </p>
+  <AdminModal size="md" eyebrow="Semiestruturadas" title="Distribuir cotas" subtitle="Repasse parte desta cota para outro veículo" @close="emit('close')">
+    <div style="display: flex; flex-direction: column; gap: 20px">
+      <div class="dist-grid">
+        <div class="dist-field">
+          <div class="dist-label">Cota distribuída</div>
+          <div class="dist-readonly dist-readonly-strong">{{ cota.veiculoAdquirente }}</div>
         </div>
-        <button
-          type="button"
-          aria-label="Fechar"
-          class="flex items-center justify-center"
-          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
-          @click="emit('close')"
-        >
-          <X :size="18" />
-        </button>
+        <div class="dist-field">
+          <div class="dist-label">Porcentagem da cota</div>
+          <div class="dist-readonly dist-readonly-strong">{{ pct(cota.percentualAdquirido) }}</div>
+        </div>
       </div>
 
-      <div style="flex: 1; overflow: auto; padding: 24px 28px; display: flex; flex-direction: column; gap: 20px">
-        <div class="dist-grid">
-          <div class="dist-field">
-            <div class="dist-label">Cota distribuída</div>
-            <div class="dist-readonly dist-readonly-strong">{{ cota.veiculoAdquirente }}</div>
+      <div class="dist-grid">
+        <label class="dist-field">
+          <span class="dist-label">Veículo que adquire</span>
+          <AdminSelect v-model="veiculo" placeholder="Selecione" :options="[...veiculosDisponiveis.map((v) => ({ value: v, label: v }))]" />
+        </label>
+        <label class="dist-field">
+          <span class="dist-label">Porcentagem da nova cota</span>
+          <div class="dist-affix-wrap">
+            <input
+              v-model="pctNovaTexto"
+              type="text"
+              inputmode="decimal"
+              placeholder="0,00"
+              class="dist-input dist-input-affixed"
+              :data-invalid="erro !== ''"
+            />
+            <span class="dist-affix">%</span>
           </div>
-          <div class="dist-field">
-            <div class="dist-label">Porcentagem da cota</div>
-            <div class="dist-readonly dist-readonly-strong">{{ pct(cota.percentualAdquirido) }}</div>
-          </div>
-        </div>
-
-        <div class="dist-grid">
-          <label class="dist-field">
-            <span class="dist-label">Veículo que adquire</span>
-            <AdminSelect v-model="veiculo" placeholder="Selecione" :options="[...veiculosDisponiveis.map((v) => ({ value: v, label: v }))]" />
-          </label>
-          <label class="dist-field">
-            <span class="dist-label">Porcentagem da nova cota</span>
-            <div class="dist-affix-wrap">
-              <input
-                v-model="pctNovaTexto"
-                type="text"
-                inputmode="decimal"
-                placeholder="0,00"
-                class="dist-input dist-input-affixed"
-                :data-invalid="erro !== ''"
-              />
-              <span class="dist-affix">%</span>
-            </div>
-          </label>
-        </div>
-
-        <p v-if="erro" style="font-size: var(--text-xs); color: var(--danger-base); margin-top: -8px">{{ erro }}</p>
-
-        <div class="dist-grid">
-          <div class="dist-field">
-            <div class="dist-label">Valor da cota antiga</div>
-            <div class="dist-readonly dist-readonly-strong">
-              {{ valorAntiga === null ? '—' : brl(valorAntiga) }}
-            </div>
-            <div v-if="pctAntigaRestante !== null" class="dist-hint">{{ pct(pctAntigaRestante) }} da cota total</div>
-          </div>
-          <div class="dist-field">
-            <div class="dist-label">Valor da cota nova</div>
-            <div class="dist-readonly dist-readonly-strong">
-              {{ valorNova === null ? '—' : brl(valorNova) }}
-            </div>
-            <div v-if="pctNovaValida" class="dist-hint">{{ pct(pctNova) }} da cota total</div>
-          </div>
-        </div>
-
-        <p style="font-size: var(--text-xs); color: var(--text-muted)">
-          Valores pela regra de três sobre a cota total de {{ brl(total) }}.
-        </p>
+        </label>
       </div>
 
-      <div class="dist-footer">
-        <button type="button" class="dist-secondary" @click="emit('close')">Cancelar</button>
-        <button type="button" class="dist-primary" :disabled="!podeSalvar" @click="salvar">
-          Salvar distribuição
-        </button>
+      <p v-if="erro" style="font-size: var(--text-xs); color: var(--danger-base); margin-top: -8px">{{ erro }}</p>
+
+      <div class="dist-grid">
+        <div class="dist-field">
+          <div class="dist-label">Valor da cota antiga</div>
+          <div class="dist-readonly dist-readonly-strong">
+            {{ valorAntiga === null ? '—' : brl(valorAntiga) }}
+          </div>
+          <div v-if="pctAntigaRestante !== null" class="dist-hint">{{ pct(pctAntigaRestante) }} da cota total</div>
+        </div>
+        <div class="dist-field">
+          <div class="dist-label">Valor da cota nova</div>
+          <div class="dist-readonly dist-readonly-strong">
+            {{ valorNova === null ? '—' : brl(valorNova) }}
+          </div>
+          <div v-if="pctNovaValida" class="dist-hint">{{ pct(pctNova) }} da cota total</div>
+        </div>
       </div>
+
+      <p style="font-size: var(--text-xs); color: var(--text-muted)">
+        Valores pela regra de três sobre a cota total de {{ brl(total) }}.
+      </p>
     </div>
-  </div>
+
+    <template #footer>
+      <AdminButton variant="ghost" size="large" @click="emit('close')" type="button">Cancelar</AdminButton>
+      <AdminButton variant="primary" size="large" :disabled="!podeSalvar" @click="salvar" type="button">Salvar distribuição</AdminButton>
+    </template>
+  </AdminModal>
 </template>
 
 <style scoped>
