@@ -53,7 +53,7 @@ const isDisabled = computed(() => props.disabled || props.loading);
   <button
     :type="type"
     class="admin-btn"
-    :class="[`admin-btn--${variant}`, `admin-btn--${size}`, { 'admin-btn--block': block }]"
+    :class="[`admin-btn--${variant}`, `admin-btn--${size}`, { 'admin-btn--block': block, 'admin-btn--cta': iconBadge }]"
     :disabled="isDisabled"
     :aria-busy="loading || undefined"
     @click="$emit('click', $event)"
@@ -124,6 +124,10 @@ const isDisabled = computed(() => props.disabled || props.loading);
   flex-shrink: 0;
 }
 .admin-btn--primary { --admin-btn-badge-bg: var(--gci-hover); }
+
+/* CTA do Page Header (icon-badge): sombra colorida da variante */
+.admin-btn--cta.admin-btn--agro { box-shadow: var(--shadow-agro); }
+.admin-btn--cta.admin-btn--agro:focus-visible { box-shadow: var(--shadow-agro), var(--focus-ring); }
 
 /* ===== Variantes ===== */
 .admin-btn--primary {

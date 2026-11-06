@@ -140,6 +140,7 @@
   --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
   --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.10);
   --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.16);
+  --shadow-agro: 0 10px 24px -8px rgba(242, 125, 38, 0.4); /* CTA agro do Page Header */
   --focus-ring: 0 0 0 3px rgba(8, 60, 74, 0.25);
 
   --duration-fast: 120ms;
