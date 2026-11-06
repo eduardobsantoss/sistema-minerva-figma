@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { X } from 'lucide-vue-next';
+
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const props = withDefaults(defineProps<{ quantidade?: number }>(), { quantidade: 1 });
 const emit = defineEmits<{ close: [] }>();
@@ -73,92 +75,40 @@ function voltar() {
 </script>
 
 <template>
-  <div
-    class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 500; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 32px"
-  >
-    <div
-      style="width: 100%; max-width: 480px; background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden"
-      @click.stop
-    >
-      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
-        <div>
-          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
-            {{ titulo }}
-          </h2>
-          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            {{ subtitulo }}
-          </p>
-        </div>
-        <button
-          type="button"
-          aria-label="Fechar"
-          class="flex items-center justify-center"
-          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
-          @click="emit('close')"
-        >
-          <X :size="18" />
-        </button>
-      </div>
-
-      <template v-if="!alvo">
-        <div class="flex flex-col" style="gap: 8px; padding: 24px 28px 20px">
-          <button
-            v-for="opcao in opcoes"
-            :key="opcao.key"
-            type="button"
-            class="lote-choice"
-            @click="escolher(opcao.key)"
-          >
-            {{ opcao.label }}
-          </button>
-        </div>
-
-        <div class="lote-footer lote-footer--single">
-          <button type="button" class="lote-secondary" @click="emit('close')">Cancelar</button>
-        </div>
-      </template>
-
-      <template v-else>
-        <div style="padding: 20px 22px">
-          <label class="lote-field">
-            <span class="lote-label">Nova situação</span>
-            <AdminSelect v-model="situacao" placeholder="Selecione nova situação" :options="[...lista.map((item) => ({ value: item, label: item }))]" />
-          </label>
-        </div>
-
-        <div class="lote-footer">
-          <button type="button" class="lote-secondary" @click="voltar">Cancelar</button>
-          <button type="button" class="lote-primary" :disabled="!situacao" @click="situacao && emit('close')">
-            {{ rotuloConfirmar }}
-          </button>
-        </div>
-      </template>
+  <AdminModal size="sm" eyebrow="Títulos" :title="titulo" :subtitle="subtitulo" :footer-align="alvo ? 'between' : 'end'" @close="emit('close')">
+    <div v-if="!alvo" class="flex flex-col" style="gap: 8px">
+      <button
+        v-for="opcao in opcoes"
+        :key="opcao.key"
+        type="button"
+        class="lote-choice"
+        @click="escolher(opcao.key)"
+      >
+        {{ opcao.label }}
+      </button>
     </div>
-  </div>
+    <label v-else class="lote-field">
+      <span class="lote-label">Nova situação</span>
+      <AdminSelect v-model="situacao" placeholder="Selecione nova situação" :options="[...lista.map((item) => ({ value: item, label: item }))]" />
+    </label>
+
+    <template #footer>
+      <AdminButton v-if="!alvo" variant="secondary" size="large" @click="emit('close')">Cancelar</AdminButton>
+      <template v-else>
+        <AdminButton variant="ghost" size="large" @click="voltar">Cancelar</AdminButton>
+        <AdminButton size="large" :disabled="!situacao" @click="situacao && emit('close')">{{ rotuloConfirmar }}</AdminButton>
+      </template>
+    </template>
+  </AdminModal>
 </template>
 
 <style scoped>
-.lote-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  padding: 0 22px 20px;
-}
-.lote-footer--single {
-  justify-content: flex-start;
-}
-.lote-choice,
-.lote-secondary {
+.lote-choice {
   height: 40px;
   border-radius: var(--radius-lg);
   font-weight: var(--weight-bold);
   font-size: var(--text-sm);
   cursor: pointer;
-}
-.lote-choice {
   width: 100%;
   padding: 0 14px;
   background: var(--action-secondary-bg);
@@ -169,31 +119,6 @@ function voltar() {
 .lote-choice:hover {
   background: var(--action-secondary-bg-hover);
 }
-.lote-secondary {
-  padding: 0 18px;
-  background: var(--surface-card);
-  color: var(--text-strong);
-  border: 1px solid var(--border-default);
-}
-.lote-primary {
-  height: 40px;
-  padding: 0 18px;
-  border: none;
-  border-radius: var(--radius-lg);
-  background: var(--action-primary-bg);
-  color: var(--action-primary-text);
-  font-weight: var(--weight-bold);
-  font-size: var(--text-sm);
-  cursor: pointer;
-}
-.lote-primary:disabled {
-  background: var(--neutral-200);
-  color: var(--text-disabled);
-  cursor: not-allowed;
-}
-.lote-primary:not(:disabled):hover {
-  background: var(--action-primary-bg-hover);
-}
 .lote-field {
   display: flex;
   flex-direction: column;
@@ -202,22 +127,9 @@ function voltar() {
 .lote-label {
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   color: var(--text-muted);
   text-transform: uppercase;
-}
-.lote-input {
-  width: 100%;
-  height: 40px;
-  padding: 0 14px;
-  background: var(--surface-card);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  font-size: var(--text-sm);
-  color: var(--text-strong);
-}
-.lote-input[data-empty='true'] {
-  color: var(--text-muted);
 }
 button:focus-visible,
 select:focus-visible {

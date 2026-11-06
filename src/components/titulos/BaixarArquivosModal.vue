@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { X } from 'lucide-vue-next';
+
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const emit = defineEmits<{ close: [] }>();
 
@@ -13,65 +15,37 @@ const mensagem = ref('');
 </script>
 
 <template>
-  <div
-    class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 500; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 32px"
-  >
-    <div
-      style="width: 100%; max-width: 520px; background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden"
-      @click.stop
-    >
-      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
-        <div>
-          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
-            Baixar arquivos
-          </h2>
-          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Tipo de arquivo e envio para o sacado
-          </p>
-        </div>
-        <button
-          type="button"
-          aria-label="Fechar"
-          class="flex items-center justify-center"
-          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
-          @click="emit('close')"
-        >
-          <X :size="18" />
-        </button>
-      </div>
+  <AdminModal size="sm" eyebrow="Títulos" title="Baixar arquivos" subtitle="Tipo de arquivo e envio para o sacado" @close="emit('close')">
+    <div class="flex flex-col" style="gap: 16px;">
+      <label class="lote-field">
+        <span class="lote-label">Tipo de arquivo</span>
+        <AdminSelect v-model="tipoArquivo" placeholder="Selecione" :options="[...tiposArquivo.map((tipo) => ({ value: tipo, label: tipo }))]" />
+      </label>
 
-      <div class="flex flex-col" style="gap: 16px; padding: 20px 22px">
-        <label class="lote-field">
-          <span class="lote-label">Tipo de arquivo</span>
-          <AdminSelect v-model="tipoArquivo" placeholder="Selecione" :options="[...tiposArquivo.map((tipo) => ({ value: tipo, label: tipo }))]" />
-        </label>
+      <button type="button" class="lote-switch" @click="enviarSacado = !enviarSacado">
+        <span>Enviar para o sacado</span>
+        <span class="lote-switch-track" :data-on="enviarSacado">
+          <span class="lote-switch-knob" />
+        </span>
+      </button>
 
-        <button type="button" class="lote-switch" @click="enviarSacado = !enviarSacado">
-          <span>Enviar para o sacado</span>
-          <span class="lote-switch-track" :data-on="enviarSacado">
-            <span class="lote-switch-knob" />
-          </span>
-        </button>
-
-        <label class="lote-field">
-          <span class="lote-label">Mensagem personalizada</span>
-          <textarea
-            v-model="mensagem"
-            rows="4"
-            placeholder="Opcional. Essa mensagem vai no corpo do e-mail."
-            class="lote-input"
-            style="height: auto; padding: 12px 14px; resize: vertical; font-family: inherit"
-          />
-        </label>
-      </div>
-
-      <div class="lote-footer">
-        <button type="button" class="lote-secondary" @click="emit('close')">Cancelar</button>
-        <button type="button" class="lote-primary" @click="emit('close')">Baixar arquivos</button>
-      </div>
+      <label class="lote-field">
+        <span class="lote-label">Mensagem personalizada</span>
+        <textarea
+          v-model="mensagem"
+          rows="4"
+          placeholder="Opcional. Essa mensagem vai no corpo do e-mail."
+          class="lote-input"
+          style="height: auto; padding: 12px 14px; resize: vertical; font-family: inherit"
+        />
+      </label>
     </div>
-  </div>
+
+    <template #footer>
+      <AdminButton variant="ghost" size="large" @click="emit('close')" type="button">Cancelar</AdminButton>
+      <AdminButton variant="primary" size="large" @click="emit('close')" type="button">Baixar arquivos</AdminButton>
+    </template>
+  </AdminModal>
 </template>
 
 <style scoped>
@@ -83,7 +57,7 @@ const mensagem = ref('');
 .lote-label {
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   color: var(--text-muted);
   text-transform: uppercase;
 }
@@ -132,42 +106,12 @@ const mensagem = ref('');
   width: 18px;
   height: 18px;
   border-radius: 9999px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
   transition: left var(--duration-base);
 }
 .lote-switch-track[data-on='true'] .lote-switch-knob {
   left: 23px;
-}
-.lote-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  padding: 0 22px 20px;
-}
-.lote-secondary,
-.lote-primary {
-  height: 40px;
-  padding: 0 18px;
-  border-radius: var(--radius-lg);
-  font-weight: var(--weight-bold);
-  font-size: var(--text-sm);
-  cursor: pointer;
-}
-.lote-secondary {
-  background: var(--surface-card);
-  color: var(--text-strong);
-  border: 1px solid var(--border-default);
-}
-.lote-primary {
-  background: var(--action-primary-bg);
-  color: var(--action-primary-text);
-  border: none;
-}
-.lote-primary:hover {
-  background: var(--action-primary-bg-hover);
 }
 button:focus-visible,
 select:focus-visible,

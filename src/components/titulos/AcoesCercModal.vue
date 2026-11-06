@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, type Component } from 'vue';
-import { FileDown, FilePlus, FileX, RefreshCw, X } from 'lucide-vue-next';
+import { FileDown, FilePlus, FileX, RefreshCw } from 'lucide-vue-next';
 import Alert from '@/components/feedback/Alert.vue';
 import type { TituloSelecionado } from './types';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const props = defineProps<{ titulos: TituloSelecionado[] }>();
 
@@ -93,71 +95,31 @@ function escolher(acao: AcaoCerc) {
 </script>
 
 <template>
-  <div
-    class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 500; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 32px"
-  >
-    <div
-      style="width: 100%; max-width: 560px; background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden"
-      @click.stop
-    >
-      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
-        <div>
-          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
-            Ações CERC
-          </h2>
-          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Selecione a ação de registro na CERC
-          </p>
-        </div>
-        <button
-          type="button"
-          aria-label="Fechar"
-          class="flex items-center justify-center"
-          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
-          @click="emit('close')"
-        >
-          <X :size="18" />
+  <AdminModal size="sm" eyebrow="Títulos" title="Ações CERC" subtitle="Selecione a ação de registro na CERC" footer-align="end" @close="emit('close')">
+    <div class="flex flex-col" style="gap: 12px">
+      <div v-for="opcao in opcoes" :key="opcao.key" class="flex flex-col" style="gap: 8px">
+        <button type="button" class="lote-choice" @click="escolher(opcao.key)">
+          <component :is="opcao.icon" :size="16" />
+          {{ opcao.label }}
         </button>
-      </div>
-
-      <div class="flex flex-col" style="gap: 12px; padding: 24px 28px">
-        <div v-for="opcao in opcoes" :key="opcao.key" class="flex flex-col" style="gap: 8px">
-          <button type="button" class="lote-choice" @click="escolher(opcao.key)">
-            <component :is="opcao.icon" :size="16" />
-            {{ opcao.label }}
-          </button>
-          <Alert
-            v-if="bloqueada === opcao.key"
-            type="error"
-            title="Nenhum título elegível"
-            :message="mensagem(opcao.key)"
-            :dismissible="false"
-          />
-        </div>
-      </div>
-
-      <div class="lote-footer lote-footer--single">
-        <button type="button" class="lote-secondary" @click="emit('close')">Cancelar</button>
+        <Alert
+          v-if="bloqueada === opcao.key"
+          type="error"
+          title="Nenhum título elegível"
+          :message="mensagem(opcao.key)"
+          :dismissible="false"
+        />
       </div>
     </div>
-  </div>
+
+    <template #footer>
+      <AdminButton variant="secondary" size="large" @click="emit('close')" type="button">Cancelar</AdminButton>
+    </template>
+  </AdminModal>
 </template>
 
 <style scoped>
-.lote-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  padding: 0 28px 24px;
-}
-.lote-footer--single {
-  justify-content: flex-start;
-}
-.lote-choice,
-.lote-secondary {
+.lote-choice {
   height: 40px;
   border-radius: var(--radius-lg);
   font-weight: var(--weight-bold);
@@ -177,12 +139,6 @@ function escolher(acao: AcaoCerc) {
 }
 .lote-choice:hover {
   background: var(--action-secondary-bg-hover);
-}
-.lote-secondary {
-  padding: 0 18px;
-  background: var(--surface-card);
-  color: var(--text-strong);
-  border: 1px solid var(--border-default);
 }
 button:focus-visible {
   box-shadow: var(--focus-ring);

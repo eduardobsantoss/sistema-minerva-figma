@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { X } from 'lucide-vue-next';
+
 import Alert from '@/components/feedback/Alert.vue';
 import type { TituloSelecionado } from './types';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 defineProps<{
   title: string;
@@ -25,66 +27,35 @@ function brl(n: number) {
 </script>
 
 <template>
-  <div
-    class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 500; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 32px"
-  >
-    <div
-      class="flex flex-col"
-      style="width: 100%; max-width: 760px; max-height: min(85vh, 720px); background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden"
-      @click.stop
-    >
-      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default); flex-shrink: 0">
-        <div>
-          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
-            {{ title }}
-          </h2>
-          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            {{ subtitle }}
-          </p>
+  <AdminModal size="md" eyebrow="Títulos" :title="title" :subtitle="subtitle" @close="emit('close')">
+    <div style="display: flex; flex-direction: column; gap: 20px">
+      <Alert v-if="aviso" type="warning" title="Parte da seleção fica de fora" :message="aviso" :dismissible="false" />
+      <label class="lote-field">
+        <span class="lote-label">{{ motivoLabel }}</span>
+        <AdminSelect v-model="motivo" placeholder="Selecione" :options="[...motivos.map((item) => ({ value: item, label: item }))]" />
+      </label>
+
+      <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+        <div class="lote-table-row lote-table-head">
+          <div>Lastro</div>
+          <div>Número</div>
+          <div>Valor</div>
+          <div>Vencimento</div>
         </div>
-        <button
-          type="button"
-          aria-label="Fechar"
-          class="flex items-center justify-center"
-          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
-          @click="emit('close')"
-        >
-          <X :size="18" />
-        </button>
-      </div>
-
-      <div style="flex: 1; overflow: auto; padding: 24px 28px; display: flex; flex-direction: column; gap: 20px">
-        <Alert v-if="aviso" type="warning" title="Parte da seleção fica de fora" :message="aviso" :dismissible="false" />
-        <label class="lote-field">
-          <span class="lote-label">{{ motivoLabel }}</span>
-          <AdminSelect v-model="motivo" placeholder="Selecione" :options="[...motivos.map((item) => ({ value: item, label: item }))]" />
-        </label>
-
-        <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
-          <div class="lote-table-row lote-table-head">
-            <div>Lastro</div>
-            <div>Número</div>
-            <div>Valor</div>
-            <div>Vencimento</div>
-          </div>
-          <div v-for="t in titulos" :key="t.id" class="lote-table-row">
-            <div>{{ t.lastro || '—' }}</div>
-            <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ t.numero }}</div>
-            <div class="lote-valor">{{ brl(t.valor) }}</div>
-            <div class="lote-vencimento">{{ t.vencimento }}</div>
-          </div>
+        <div v-for="t in titulos" :key="t.id" class="lote-table-row">
+          <div>{{ t.lastro || '—' }}</div>
+          <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ t.numero }}</div>
+          <div class="lote-valor">{{ brl(t.valor) }}</div>
+          <div class="lote-vencimento">{{ t.vencimento }}</div>
         </div>
-      </div>
-
-      <div class="lote-footer">
-        <button type="button" class="lote-secondary" @click="emit('close')">Cancelar</button>
-        <button type="button" class="lote-primary" :disabled="!motivo" @click="motivo && emit('close')">
-          {{ confirmLabel }}
-        </button>
       </div>
     </div>
-  </div>
+
+    <template #footer>
+      <AdminButton variant="ghost" size="large" @click="emit('close')" type="button">Cancelar</AdminButton>
+      <AdminButton variant="primary" size="large" :disabled="!motivo" @click="emit('close')" type="button">{{ confirmLabel }}</AdminButton>
+    </template>
+  </AdminModal>
 </template>
 
 <style scoped>
@@ -96,23 +67,9 @@ function brl(n: number) {
 .lote-label {
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   color: var(--text-muted);
   text-transform: uppercase;
-}
-.lote-input {
-  width: 100%;
-  max-width: 360px;
-  height: 40px;
-  padding: 0 14px;
-  background: var(--surface-card);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  color: var(--text-strong);
-}
-.lote-input[data-empty='true'] {
-  color: var(--text-muted);
 }
 .lote-table-row {
   display: grid;
@@ -140,44 +97,6 @@ function brl(n: number) {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
-}
-.lote-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  padding: 16px 22px;
-  border-top: 1px solid var(--border-default);
-  flex-shrink: 0;
-}
-.lote-secondary,
-.lote-primary {
-  height: 40px;
-  padding: 0 18px;
-  border-radius: var(--radius-lg);
-  font-weight: var(--weight-bold);
-  font-size: var(--text-sm);
-}
-.lote-secondary {
-  background: var(--surface-card);
-  color: var(--text-strong);
-  border: 1px solid var(--border-default);
-  cursor: pointer;
-}
-.lote-primary {
-  border: none;
-  background: var(--action-primary-bg);
-  color: var(--action-primary-text);
-  cursor: pointer;
-}
-.lote-primary:disabled {
-  background: var(--neutral-200);
-  color: var(--text-disabled);
-  cursor: not-allowed;
-}
-.lote-primary:not(:disabled):hover {
-  background: var(--action-primary-bg-hover);
 }
 button:focus-visible,
 select:focus-visible {

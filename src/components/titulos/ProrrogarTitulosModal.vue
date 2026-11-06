@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { X } from 'lucide-vue-next';
+
 import type { TituloSelecionado } from './types';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const props = defineProps<{ titulos: TituloSelecionado[] }>();
 const emit = defineEmits<{ close: [] }>();
@@ -64,186 +66,155 @@ function diasAtrasoLabel(vencimento: string): string {
 </script>
 
 <template>
-  <div
-    class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 500; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 32px"
-  >
-    <div
-      class="flex flex-col"
-      style="width: 100%; max-width: 960px; height: min(85vh, 820px); background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden"
-      @click.stop
-    >
-      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default); flex-shrink: 0">
-        <div>
-          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
-            Prorrogação de título(s)
-          </h2>
-          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Dados da prorrogação dos títulos selecionados
-          </p>
-        </div>
+  <AdminModal size="lg" eyebrow="Títulos" title="Prorrogação de título(s)" subtitle="Dados da prorrogação dos títulos selecionados" @close="emit('close')">
+    <div style="display: flex; flex-direction: column; gap: 20px">
+      <section class="flex flex-col" style="gap: 16px">
+        <div class="lote-section" style="margin-bottom: 0">Dados da prorrogação</div>
+
         <button
           type="button"
-          aria-label="Fechar"
-          class="flex items-center justify-center"
-          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
-          @click="emit('close')"
+          class="lote-toggle-row"
+          :data-on="comFinanceiro"
+          @click="comFinanceiro = !comFinanceiro"
         >
-          <X :size="18" />
+          <div style="min-width: 0; text-align: left">
+            <div class="lote-toggle-label">{{ rotuloFinanceiro }}</div>
+            <div class="lote-toggle-hint">{{ hintFinanceiro }}</div>
+          </div>
+          <span class="lote-switch-track" :data-on="comFinanceiro">
+            <span class="lote-switch-knob" />
+          </span>
         </button>
-      </div>
 
-      <div style="flex: 1; overflow: auto; padding: 24px 28px; display: flex; flex-direction: column; gap: 20px">
-        <section class="flex flex-col" style="gap: 16px">
-          <div class="lote-section" style="margin-bottom: 0">Dados da prorrogação</div>
+        <div class="lote-grid">
+          <label class="lote-field span-12">
+            <span class="lote-label">Motivo da prorrogação</span>
+            <AdminSelect v-model="motivoProrrogacao" placeholder="Selecione" :options="[]" />
+          </label>
 
-          <button
-            type="button"
-            class="lote-toggle-row"
-            :data-on="comFinanceiro"
-            @click="comFinanceiro = !comFinanceiro"
-          >
-            <div style="min-width: 0; text-align: left">
-              <div class="lote-toggle-label">{{ rotuloFinanceiro }}</div>
-              <div class="lote-toggle-hint">{{ hintFinanceiro }}</div>
+          <label class="lote-field span-12">
+            <span class="lote-label">Descrição (observação)</span>
+            <div class="lote-textarea-wrap">
+              <textarea
+                v-model="observacao"
+                class="lote-textarea"
+                rows="4"
+                :maxlength="observacaoMax"
+                placeholder="Descreva a prorrogação, se necessário"
+              />
+              <span class="lote-char-count">{{ observacao.length }}/{{ observacaoMax }}</span>
             </div>
-            <span class="lote-switch-track" :data-on="comFinanceiro">
-              <span class="lote-switch-knob" />
-            </span>
-          </button>
+          </label>
 
-          <div class="lote-grid">
-            <label class="lote-field span-12">
-              <span class="lote-label">Motivo da prorrogação</span>
-              <AdminSelect v-model="motivoProrrogacao" placeholder="Selecione" :options="[]" />
-            </label>
-
-            <label class="lote-field span-12">
-              <span class="lote-label">Descrição (observação)</span>
-              <div class="lote-textarea-wrap">
-                <textarea
-                  v-model="observacao"
-                  class="lote-textarea"
-                  rows="4"
-                  :maxlength="observacaoMax"
-                  placeholder="Descreva a prorrogação, se necessário"
-                />
-                <span class="lote-char-count">{{ observacao.length }}/{{ observacaoMax }}</span>
+          <template v-if="comFinanceiro">
+            <label class="lote-field span-4">
+              <span class="lote-label">Taxa de multa</span>
+              <div class="lote-input-affix">
+                <input v-model="taxaMulta" type="text" inputmode="decimal" class="lote-input lote-input-affixed" />
+                <span class="lote-affix">%</span>
               </div>
             </label>
-
-            <template v-if="comFinanceiro">
-              <label class="lote-field span-4">
-                <span class="lote-label">Taxa de multa</span>
-                <div class="lote-input-affix">
-                  <input v-model="taxaMulta" type="text" inputmode="decimal" class="lote-input lote-input-affixed" />
-                  <span class="lote-affix">%</span>
-                </div>
-              </label>
-              <label class="lote-field span-4">
-                <span class="lote-label">Nova data de vencimento</span>
-                <AdminDateField v-model="novaDataVencimento" />
-              </label>
-              <label class="lote-field span-4">
-                <span class="lote-label">Data de pagamento</span>
-                <AdminDateField v-model="dataPagamento" />
-              </label>
-            </template>
-
-            <label v-else class="lote-field span-6">
+            <label class="lote-field span-4">
               <span class="lote-label">Nova data de vencimento</span>
               <AdminDateField v-model="novaDataVencimento" />
             </label>
-          </div>
+            <label class="lote-field span-4">
+              <span class="lote-label">Data de pagamento</span>
+              <AdminDateField v-model="dataPagamento" />
+            </label>
+          </template>
 
-          <div class="flex flex-col" style="gap: 12px">
-            <button
-              type="button"
-              class="lote-toggle-row"
-              :data-on="removerMultaMoratoria"
-              @click="removerMultaMoratoria = !removerMultaMoratoria"
-            >
-              <div style="min-width: 0; text-align: left">
-                <div class="lote-toggle-label">Remover multa moratória</div>
-                <div class="lote-toggle-hint">
-                  Se marcado, zera a multa moratória no vínculo ativo antes de recalcular a prorrogação.
-                </div>
+          <label v-else class="lote-field span-6">
+            <span class="lote-label">Nova data de vencimento</span>
+            <AdminDateField v-model="novaDataVencimento" />
+          </label>
+        </div>
+
+        <div class="flex flex-col" style="gap: 12px">
+          <button
+            type="button"
+            class="lote-toggle-row"
+            :data-on="removerMultaMoratoria"
+            @click="removerMultaMoratoria = !removerMultaMoratoria"
+          >
+            <div style="min-width: 0; text-align: left">
+              <div class="lote-toggle-label">Remover multa moratória</div>
+              <div class="lote-toggle-hint">
+                Se marcado, zera a multa moratória no vínculo ativo antes de recalcular a prorrogação.
               </div>
-              <span class="lote-switch-track" :data-on="removerMultaMoratoria">
-                <span class="lote-switch-knob" />
-              </span>
-            </button>
-            <button
-              type="button"
-              class="lote-toggle-row"
-              :data-on="removerJurosMoratorios"
-              @click="removerJurosMoratorios = !removerJurosMoratorios"
-            >
-              <div style="min-width: 0; text-align: left">
-                <div class="lote-toggle-label">Remover juros moratórios</div>
-                <div class="lote-toggle-hint">
-                  Se marcado, zera os juros moratórios no vínculo ativo antes de recalcular a prorrogação.
-                </div>
+            </div>
+            <span class="lote-switch-track" :data-on="removerMultaMoratoria">
+              <span class="lote-switch-knob" />
+            </span>
+          </button>
+          <button
+            type="button"
+            class="lote-toggle-row"
+            :data-on="removerJurosMoratorios"
+            @click="removerJurosMoratorios = !removerJurosMoratorios"
+          >
+            <div style="min-width: 0; text-align: left">
+              <div class="lote-toggle-label">Remover juros moratórios</div>
+              <div class="lote-toggle-hint">
+                Se marcado, zera os juros moratórios no vínculo ativo antes de recalcular a prorrogação.
               </div>
-              <span class="lote-switch-track" :data-on="removerJurosMoratorios">
-                <span class="lote-switch-knob" />
-              </span>
-            </button>
+            </div>
+            <span class="lote-switch-track" :data-on="removerJurosMoratorios">
+              <span class="lote-switch-knob" />
+            </span>
+          </button>
+        </div>
+
+        <p v-if="comFinanceiro" style="font-size: var(--text-sm); color: var(--text-muted)">
+          Taxa de juros do CRA: <span style="font-variant-numeric: tabular-nums">1,000000%</span>
+        </p>
+      </section>
+
+      <section>
+        <div class="lote-section">Títulos selecionados</div>
+        <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+          <div
+            class="lote-table-row lote-table-head"
+            style="grid-template-columns: 1.1fr 1fr 1fr 0.9fr 1fr"
+          >
+            <div>Número</div>
+            <div style="text-align: right">Valor</div>
+            <div>Vencimento</div>
+            <div>Dias de atraso</div>
+            <div style="text-align: right">Multa paga</div>
           </div>
-
-          <p v-if="comFinanceiro" style="font-size: var(--text-sm); color: var(--text-muted)">
-            Taxa de juros do CRA: <span style="font-variant-numeric: tabular-nums">1,000000%</span>
-          </p>
-        </section>
-
-        <section>
-          <div class="lote-section">Títulos selecionados</div>
-          <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
-            <div
-              class="lote-table-row lote-table-head"
-              style="grid-template-columns: 1.1fr 1fr 1fr 0.9fr 1fr"
-            >
-              <div>Número</div>
-              <div style="text-align: right">Valor</div>
-              <div>Vencimento</div>
-              <div>Dias de atraso</div>
-              <div style="text-align: right">Multa paga</div>
-            </div>
-            <div
-              v-for="t in titulos"
-              :key="t.id"
-              class="lote-table-row"
-              style="grid-template-columns: 1.1fr 1fr 1fr 0.9fr 1fr"
-            >
-              <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ t.numero }}</div>
-              <div style="text-align: right; font-variant-numeric: tabular-nums">{{ brl(t.valor) }}</div>
-              <div style="font-variant-numeric: tabular-nums">{{ t.vencimento }}</div>
-              <div style="font-variant-numeric: tabular-nums">{{ diasAtrasoLabel(t.vencimento) }}</div>
-              <div style="text-align: right; font-variant-numeric: tabular-nums">{{ brl(0) }}</div>
-            </div>
+          <div
+            v-for="t in titulos"
+            :key="t.id"
+            class="lote-table-row"
+            style="grid-template-columns: 1.1fr 1fr 1fr 0.9fr 1fr"
+          >
+            <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ t.numero }}</div>
+            <div style="text-align: right; font-variant-numeric: tabular-nums">{{ brl(t.valor) }}</div>
+            <div style="font-variant-numeric: tabular-nums">{{ t.vencimento }}</div>
+            <div style="font-variant-numeric: tabular-nums">{{ diasAtrasoLabel(t.vencimento) }}</div>
+            <div style="text-align: right; font-variant-numeric: tabular-nums">{{ brl(0) }}</div>
           </div>
+        </div>
 
-          <div class="lote-grid" style="margin-top: 16px">
-            <div class="span-6">
-              <div class="lote-label">Valor total</div>
-              <div class="lote-readonly lote-readonly-strong">{{ brl(totalValor) }}</div>
-            </div>
-            <div class="span-6">
-              <div class="lote-label">Total de multa paga</div>
-              <div class="lote-readonly lote-readonly-strong">{{ brl(totalMultaPaga) }}</div>
-            </div>
+        <div class="lote-grid" style="margin-top: 16px">
+          <div class="span-6">
+            <div class="lote-label">Valor total</div>
+            <div class="lote-readonly lote-readonly-strong">{{ brl(totalValor) }}</div>
           </div>
-        </section>
-      </div>
-
-      <div class="lote-footer">
-        <button type="button" class="lote-secondary" @click="emit('close')">Cancelar</button>
-        <button type="button" class="lote-primary" :disabled="!podeProrrogar" @click="podeProrrogar && emit('close')">
-          {{ rotuloConfirmar }}
-        </button>
-      </div>
+          <div class="span-6">
+            <div class="lote-label">Total de multa paga</div>
+            <div class="lote-readonly lote-readonly-strong">{{ brl(totalMultaPaga) }}</div>
+          </div>
+        </div>
+      </section>
     </div>
-  </div>
+
+    <template #footer>
+      <AdminButton variant="ghost" size="large" @click="emit('close')" type="button">Cancelar</AdminButton>
+      <AdminButton variant="primary" size="large" :disabled="!podeProrrogar" @click="emit('close')" type="button">{{ rotuloConfirmar }}</AdminButton>
+    </template>
+  </AdminModal>
 </template>
 
 <style scoped>
@@ -375,8 +346,8 @@ function diasAtrasoLabel(vencimento: string): string {
   width: 18px;
   height: 18px;
   border-radius: 9999px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
   transition: left var(--duration-base);
 }
 .lote-switch-track[data-on='true'] .lote-switch-knob {
@@ -400,7 +371,7 @@ function diasAtrasoLabel(vencimento: string): string {
 .lote-section {
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   color: var(--text-muted);
   text-transform: uppercase;
   margin-bottom: 8px;
@@ -422,47 +393,6 @@ function diasAtrasoLabel(vencimento: string): string {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
-}
-.lote-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  padding: 16px 22px;
-  border-top: 1px solid var(--border-default);
-  flex-shrink: 0;
-}
-.lote-secondary,
-.lote-primary {
-  height: 40px;
-  padding: 0 18px;
-  border-radius: var(--radius-lg);
-  font-weight: var(--weight-bold);
-  font-size: var(--text-sm);
-}
-.lote-secondary {
-  background: var(--action-secondary-bg);
-  color: var(--action-secondary-text);
-  border: 1px solid var(--action-secondary-border);
-  cursor: pointer;
-}
-.lote-secondary:hover {
-  background: var(--action-secondary-bg-hover);
-}
-.lote-primary {
-  border: none;
-  background: var(--action-primary-bg);
-  color: var(--action-primary-text);
-  cursor: pointer;
-}
-.lote-primary:disabled {
-  background: var(--neutral-200);
-  color: var(--text-disabled);
-  cursor: not-allowed;
-}
-.lote-primary:not(:disabled):hover {
-  background: var(--action-primary-bg-hover);
 }
 button:focus-visible,
 input:focus-visible,

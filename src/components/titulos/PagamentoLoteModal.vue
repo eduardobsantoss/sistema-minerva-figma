@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { Calculator, Receipt, Wallet, X } from 'lucide-vue-next';
+import { Calculator, Receipt, Wallet } from 'lucide-vue-next';
 import ValorPresenteInfo from '@/components/ui/ValorPresenteInfo.vue';
 import type { TituloSelecionado } from './types';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const props = defineProps<{ titulos: TituloSelecionado[] }>();
 const emit = defineEmits<{ close: [] }>();
@@ -43,186 +45,157 @@ function brl(n: number) {
 </script>
 
 <template>
-  <div
-    class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 500; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 32px"
-  >
-    <div
-      class="flex flex-col"
-      style="width: 100%; max-width: 960px; height: min(85vh, 820px); background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden"
-      @click.stop
-    >
-      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default); flex-shrink: 0">
-        <div>
-          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
-            Pagamento em lote
-          </h2>
-          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            Dados do pagamento dos títulos selecionados
-          </p>
+  <AdminModal size="lg" eyebrow="Títulos" title="Pagamento em lote" subtitle="Dados do pagamento dos títulos selecionados" @close="emit('close')">
+    <div class="lote-body">
+      <section class="lote-card">
+        <div class="lote-section">
+          <span class="lote-section-icon"><Wallet :size="13" :stroke-width="2" /></span>
+          Dados do pagamento
         </div>
-        <button
-          type="button"
-          aria-label="Fechar"
-          class="flex items-center justify-center"
-          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0"
-          @click="emit('close')"
-        >
-          <X :size="18" />
-        </button>
-      </div>
+        <div class="lote-grid">
+          <label class="lote-field span-8">
+            <span class="lote-label">Motivo da baixa</span>
+            <AdminSelect v-model="motivoBaixa" placeholder="Selecione" :options="[...motivosBaixa.map((motivo) => ({ value: motivo, label: motivo }))]" />
+          </label>
+          <label class="lote-field span-4">
+            <span class="lote-label">Data de pagamento</span>
+            <AdminDateField v-model="dataPagamento" />
+          </label>
+          <label class="lote-field span-3">
+            <span class="lote-label">Valor do pagamento</span>
+            <input v-model="valorPagamento" type="text" inputmode="decimal" placeholder="R$ 0,00" class="lote-input" />
+          </label>
+          <label class="lote-field span-3">
+            <span class="lote-label">Taxa de desconto</span>
+            <input v-model="taxaDesconto" type="text" inputmode="decimal" placeholder="%" class="lote-input" />
+          </label>
+          <label class="lote-field span-3">
+            <span class="lote-label">Taxa de juros</span>
+            <input v-model="taxaJuros" type="text" inputmode="decimal" placeholder="%" class="lote-input" />
+          </label>
+          <label class="lote-field span-3">
+            <span class="lote-label">Taxa de multa</span>
+            <input v-model="taxaMulta" type="text" inputmode="decimal" placeholder="%" class="lote-input" />
+          </label>
+          <div class="lote-field span-6">
+            <div class="lote-label">Taxa de juros do FIDC</div>
+            <div class="lote-readonly">—</div>
+          </div>
+          <div class="lote-field span-6">
+            <div class="lote-label">Taxa de multa do FIDC</div>
+            <div class="lote-readonly">—</div>
+          </div>
+        </div>
 
-      <div class="lote-body">
-        <section class="lote-card">
-          <div class="lote-section">
-            <span class="lote-section-icon"><Wallet :size="13" :stroke-width="2" /></span>
-            Dados do pagamento
-          </div>
-          <div class="lote-grid">
-            <label class="lote-field span-8">
-              <span class="lote-label">Motivo da baixa</span>
-              <AdminSelect v-model="motivoBaixa" placeholder="Selecione" :options="[...motivosBaixa.map((motivo) => ({ value: motivo, label: motivo }))]" />
-            </label>
-            <label class="lote-field span-4">
-              <span class="lote-label">Data de pagamento</span>
-              <AdminDateField v-model="dataPagamento" />
-            </label>
-            <label class="lote-field span-3">
-              <span class="lote-label">Valor do pagamento</span>
-              <input v-model="valorPagamento" type="text" inputmode="decimal" placeholder="R$ 0,00" class="lote-input" />
-            </label>
-            <label class="lote-field span-3">
-              <span class="lote-label">Taxa de desconto</span>
-              <input v-model="taxaDesconto" type="text" inputmode="decimal" placeholder="%" class="lote-input" />
-            </label>
-            <label class="lote-field span-3">
-              <span class="lote-label">Taxa de juros</span>
-              <input v-model="taxaJuros" type="text" inputmode="decimal" placeholder="%" class="lote-input" />
-            </label>
-            <label class="lote-field span-3">
-              <span class="lote-label">Taxa de multa</span>
-              <input v-model="taxaMulta" type="text" inputmode="decimal" placeholder="%" class="lote-input" />
-            </label>
-            <div class="lote-field span-6">
-              <div class="lote-label">Taxa de juros do FIDC</div>
-              <div class="lote-readonly">—</div>
-            </div>
-            <div class="lote-field span-6">
-              <div class="lote-label">Taxa de multa do FIDC</div>
-              <div class="lote-readonly">—</div>
-            </div>
-          </div>
+        <div class="flex flex-col" style="gap: 12px">
+          <button type="button" class="lote-toggle" :data-on="pagamentoParcial" @click="pagamentoParcial = !pagamentoParcial">
+            <span>Pagamento parcial</span>
+            <span class="lote-switch-track" :data-on="pagamentoParcial">
+              <span class="lote-switch-knob" />
+            </span>
+          </button>
+          <button type="button" class="lote-toggle" :data-on="baixaValorPresente" @click="baixaValorPresente = !baixaValorPresente">
+            <span>Baixa por valor presente</span>
+            <span class="lote-switch-track" :data-on="baixaValorPresente">
+              <span class="lote-switch-knob" />
+            </span>
+          </button>
+        </div>
 
-          <div class="flex flex-col" style="gap: 12px">
-            <button type="button" class="lote-toggle" :data-on="pagamentoParcial" @click="pagamentoParcial = !pagamentoParcial">
-              <span>Pagamento parcial</span>
-              <span class="lote-switch-track" :data-on="pagamentoParcial">
-                <span class="lote-switch-knob" />
-              </span>
-            </button>
-            <button type="button" class="lote-toggle" :data-on="baixaValorPresente" @click="baixaValorPresente = !baixaValorPresente">
-              <span>Baixa por valor presente</span>
-              <span class="lote-switch-track" :data-on="baixaValorPresente">
-                <span class="lote-switch-knob" />
-              </span>
-            </button>
-          </div>
+        <div class="flex justify-end">
+          <AdminButton variant="secondary">Simular</AdminButton>
+        </div>
+      </section>
 
-          <div class="flex justify-end">
-            <button type="button" class="lote-secondary">Simular</button>
+      <section class="lote-card">
+        <div class="lote-section">
+          <span class="lote-section-icon"><Receipt :size="13" :stroke-width="2" /></span>
+          Títulos selecionados
+        </div>
+        <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
+          <div class="lote-table-row lote-table-head" style="grid-template-columns: 1.2fr 1fr 1fr 1fr">
+            <div>Número</div>
+            <div style="text-align: right">Valor</div>
+            <div class="flex items-center justify-end" style="gap: 6px">Valor presente<ValorPresenteInfo :size="12" /></div>
+            <div>Vencimento</div>
           </div>
-        </section>
+          <div
+            v-for="t in titulos"
+            :key="t.id"
+            class="lote-table-row"
+            style="grid-template-columns: 1.2fr 1fr 1fr 1fr"
+          >
+            <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ t.numero }}</div>
+            <div style="text-align: right; font-variant-numeric: tabular-nums">{{ brl(t.valor) }}</div>
+            <div style="text-align: right; font-variant-numeric: tabular-nums">
+              {{ t.valorAberto == null ? '—' : brl(t.valorAberto) }}
+            </div>
+            <div style="font-variant-numeric: tabular-nums">{{ t.vencimento }}</div>
+          </div>
+        </div>
+        <div class="lote-grid">
+          <div class="lote-field span-6">
+            <div class="lote-label">Valor total dos títulos</div>
+            <div class="lote-readonly lote-readonly-strong">{{ brl(totalValor) }}</div>
+          </div>
+          <div class="lote-field span-6">
+            <div class="lote-label flex items-center" style="gap: 6px">Valor total presente dos títulos<ValorPresenteInfo :size="12" /></div>
+            <div class="lote-readonly lote-readonly-strong">{{ totalAberto == null ? '—' : brl(totalAberto) }}</div>
+          </div>
+        </div>
+      </section>
 
-        <section class="lote-card">
-          <div class="lote-section">
-            <span class="lote-section-icon"><Receipt :size="13" :stroke-width="2" /></span>
-            Títulos selecionados
+      <section class="lote-card">
+        <div class="lote-section">
+          <span class="lote-section-icon"><Calculator :size="13" :stroke-width="2" /></span>
+          Valores simulados
+        </div>
+        <div class="lote-scroll">
+          <div class="lote-table-row lote-table-head lote-sim-row">
+            <div>Número</div>
+            <div>Valor pago</div>
+            <div class="flex items-center" style="gap: 6px; white-space: nowrap">Valor presente<ValorPresenteInfo :size="12" /></div>
+            <div>Vencimento</div>
+            <div>Dias de atraso</div>
+            <div>Juros pago</div>
+            <div>Multa paga</div>
+            <div>Desconto concedido</div>
+            <div>Pagamento considerado</div>
           </div>
-          <div style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden">
-            <div class="lote-table-row lote-table-head" style="grid-template-columns: 1.2fr 1fr 1fr 1fr">
-              <div>Número</div>
-              <div style="text-align: right">Valor</div>
-              <div class="flex items-center justify-end" style="gap: 6px">Valor presente<ValorPresenteInfo :size="12" /></div>
-              <div>Vencimento</div>
-            </div>
-            <div
-              v-for="t in titulos"
-              :key="t.id"
-              class="lote-table-row"
-              style="grid-template-columns: 1.2fr 1fr 1fr 1fr"
-            >
-              <div style="font-weight: var(--weight-semibold); color: var(--text-strong)">{{ t.numero }}</div>
-              <div style="text-align: right; font-variant-numeric: tabular-nums">{{ brl(t.valor) }}</div>
-              <div style="text-align: right; font-variant-numeric: tabular-nums">
-                {{ t.valorAberto == null ? '—' : brl(t.valorAberto) }}
-              </div>
-              <div style="font-variant-numeric: tabular-nums">{{ t.vencimento }}</div>
-            </div>
+          <div class="lote-empty">
+            Não foi encontrado nenhum resultado.
           </div>
-          <div class="lote-grid">
-            <div class="lote-field span-6">
-              <div class="lote-label">Valor total dos títulos</div>
-              <div class="lote-readonly lote-readonly-strong">{{ brl(totalValor) }}</div>
-            </div>
-            <div class="lote-field span-6">
-              <div class="lote-label flex items-center" style="gap: 6px">Valor total presente dos títulos<ValorPresenteInfo :size="12" /></div>
-              <div class="lote-readonly lote-readonly-strong">{{ totalAberto == null ? '—' : brl(totalAberto) }}</div>
-            </div>
+        </div>
+        <div class="lote-grid">
+          <div class="lote-field span-4">
+            <div class="lote-label">Valor total de juros</div>
+            <div class="lote-readonly">{{ brl(0) }}</div>
           </div>
-        </section>
-
-        <section class="lote-card">
-          <div class="lote-section">
-            <span class="lote-section-icon"><Calculator :size="13" :stroke-width="2" /></span>
-            Valores simulados
+          <div class="lote-field span-4">
+            <div class="lote-label">Valor total de multa</div>
+            <div class="lote-readonly">{{ brl(0) }}</div>
           </div>
-          <div class="lote-scroll">
-            <div class="lote-table-row lote-table-head lote-sim-row">
-              <div>Número</div>
-              <div>Valor pago</div>
-              <div class="flex items-center" style="gap: 6px; white-space: nowrap">Valor presente<ValorPresenteInfo :size="12" /></div>
-              <div>Vencimento</div>
-              <div>Dias de atraso</div>
-              <div>Juros pago</div>
-              <div>Multa paga</div>
-              <div>Desconto concedido</div>
-              <div>Pagamento considerado</div>
-            </div>
-            <div class="lote-empty">
-              Não foi encontrado nenhum resultado.
-            </div>
+          <div class="lote-field span-4">
+            <div class="lote-label">Valor total pago</div>
+            <div class="lote-readonly">{{ brl(0) }}</div>
           </div>
-          <div class="lote-grid">
-            <div class="lote-field span-4">
-              <div class="lote-label">Valor total de juros</div>
-              <div class="lote-readonly">{{ brl(0) }}</div>
-            </div>
-            <div class="lote-field span-4">
-              <div class="lote-label">Valor total de multa</div>
-              <div class="lote-readonly">{{ brl(0) }}</div>
-            </div>
-            <div class="lote-field span-4">
-              <div class="lote-label">Valor total pago</div>
-              <div class="lote-readonly">{{ brl(0) }}</div>
-            </div>
-            <div class="lote-field span-6">
-              <div class="lote-label">Valor total de desconto</div>
-              <div class="lote-readonly">{{ brl(0) }}</div>
-            </div>
-            <div class="lote-field span-6">
-              <div class="lote-label">Valor total considerado</div>
-              <div class="lote-readonly">{{ brl(0) }}</div>
-            </div>
+          <div class="lote-field span-6">
+            <div class="lote-label">Valor total de desconto</div>
+            <div class="lote-readonly">{{ brl(0) }}</div>
           </div>
-        </section>
-      </div>
-
-      <div class="lote-footer">
-        <button type="button" class="lote-secondary" @click="emit('close')">Cancelar</button>
-        <button type="button" class="lote-primary" disabled>{{ rotuloConfirmar }}</button>
-      </div>
+          <div class="lote-field span-6">
+            <div class="lote-label">Valor total considerado</div>
+            <div class="lote-readonly">{{ brl(0) }}</div>
+          </div>
+        </div>
+      </section>
     </div>
-  </div>
+
+    <template #footer>
+      <AdminButton variant="ghost" size="large" @click="emit('close')" type="button">Cancelar</AdminButton>
+      <AdminButton variant="primary" size="large" disabled type="button">{{ rotuloConfirmar }}</AdminButton>
+    </template>
+  </AdminModal>
 </template>
 
 <style scoped>
@@ -255,7 +228,7 @@ function brl(n: number) {
   padding: 0 14px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   font-size: var(--text-sm);
   color: var(--text-strong);
   font-variant-numeric: tabular-nums;
@@ -311,21 +284,17 @@ function brl(n: number) {
   width: 18px;
   height: 18px;
   border-radius: 9999px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
   transition: left var(--duration-base);
 }
 .lote-switch-track[data-on='true'] .lote-switch-knob {
   left: 23px;
 }
 .lote-body {
-  flex: 1;
-  overflow: auto;
-  padding: 24px 28px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background: var(--surface-page);
 }
 .lote-card {
   display: flex;
@@ -394,39 +363,6 @@ function brl(n: number) {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
-}
-.lote-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  padding: 16px 22px;
-  border-top: 1px solid var(--border-default);
-  flex-shrink: 0;
-}
-.lote-secondary,
-.lote-primary {
-  height: 40px;
-  padding: 0 18px;
-  border-radius: var(--radius-lg);
-  font-weight: var(--weight-bold);
-  font-size: var(--text-sm);
-}
-.lote-secondary {
-  background: var(--action-secondary-bg);
-  color: var(--action-secondary-text);
-  border: 1px solid var(--action-secondary-border);
-  cursor: pointer;
-}
-.lote-secondary:hover {
-  background: var(--action-secondary-bg-hover);
-}
-.lote-primary {
-  background: var(--neutral-200);
-  color: var(--text-disabled);
-  border: none;
-  cursor: not-allowed;
 }
 button:focus-visible,
 input:focus-visible,
