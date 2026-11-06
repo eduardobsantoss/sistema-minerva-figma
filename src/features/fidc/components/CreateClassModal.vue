@@ -1,29 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import type { Component } from 'vue';
-import {
-  X,
-  Info,
-  Mail,
-  FileText,
-  Users,
-  Network,
-  Banknote,
-  ClipboardList,
-  AlertTriangle,
-  ClipboardCheck,
-  Check,
-  ChevronRight,
-  Plus,
-  Search,
-  MapPin,
-  Phone,
-  Wallet,
-  UserCheck,
-  Percent,
-  Users2,
-  Crown,
-} from 'lucide-vue-next';
+import { Info, Mail, FileText, Users, Network, Banknote, ClipboardList, AlertTriangle, ClipboardCheck, Check, ChevronLeft, ChevronRight, Plus, Search, MapPin, Phone, Wallet, UserCheck, Percent, Users2, Crown } from 'lucide-vue-next';
 import { gruposEmpresariais } from '@/features/cra/data/craData';
 import StepGrid from './create-class/StepGrid.vue';
 import SectionTitle from './create-class/SectionTitle.vue';
@@ -40,6 +18,8 @@ import AddButton from './create-class/AddButton.vue';
 import DataTable from './create-class/DataTable.vue';
 import DynamicConcentration from './create-class/DynamicConcentration.vue';
 import SummaryItem from './create-class/SummaryItem.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 export interface NewClassData {
   cnpjVeiculo: string;
@@ -338,7 +318,7 @@ function toggleAtivo(k: string) {
 function stepColor(i: number) {
   const done = i < stepIdx.value;
   const current = i === stepIdx.value;
-  return current ? 'var(--agro-base)' : done ? 'var(--gci-base)' : 'var(--text-muted)';
+  return current ? 'var(--agro-base)' : done ? 'var(--stepper-done)' : 'var(--text-muted)';
 }
 function stepDimmed(i: number) {
   const done = i < stepIdx.value;
@@ -362,54 +342,8 @@ function handleNext() {
 </script>
 
 <template>
-  <div
-    :style="
-      naked
-        ? { width: '100%', maxWidth: '1280px', animation: 'fadeIn 0.2s ease-out' }
-        : {
-            position: 'fixed',
-            inset: '0',
-            background: 'rgba(8, 60, 74, 0.55)',
-            backdropFilter: 'blur(8px)',
-            zIndex: 400,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '32px',
-            animation: 'fadeIn 0.2s ease-out',
-          }
-    "
-  >
-    <div
-      style="
-        background: var(--surface-card);
-        border-radius: var(--radius-xl);
-        width: 100%;
-        max-width: 1280px;
-        max-height: calc(100vh - 64px);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        box-shadow: var(--shadow-lg);
-      "
-      @click.stop
-    >
-      <!-- Header -->
-      <div class="flex items-start justify-between" style="padding: 24px 32px; border-bottom: 1px solid var(--border-default)">
-        <div>
-          <h2 style="font-size: var(--text-2xl); font-weight: 900; color: var(--text-strong); letter-spacing: -0.025em; line-height: 1.2; margin-bottom: 4px">
-            {{ title }}
-          </h2>
-          <p style="font-size: var(--text-sm); color: var(--text-muted)">
-            {{ step.hint }} · Etapa {{ stepIdx + 1 }} de {{ steps.length }}
-          </p>
-        </div>
-        <button aria-label="Fechar" class="flex items-center justify-center" style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--surface-sunken); border: none; cursor: pointer; color: var(--text-muted); flex-shrink: 0" @click="emit('close')">
-          <X :size="18" />
-        </button>
-      </div>
-
-      <!-- Stepper -->
+  <AdminModal size="xl" tall eyebrow="FIDC" :title="title" :subtitle="`${step.hint} · Etapa ${stepIdx + 1} de ${steps.length}`" @close="emit('close')">
+    <template #subheader>
       <div class="flex" style="background: var(--surface-sunken); border-bottom: 1px solid var(--border-default)">
         <button
           v-for="(s, i) in steps"
@@ -437,666 +371,643 @@ function handleNext() {
           </span>
         </button>
       </div>
+    </template>
 
-      <!-- Body -->
-      <div style="flex: 1; overflow-y: auto; padding: 40px">
-        <StepGrid v-if="step.key === 'info'">
-          <FormField label="CNPJ do Veículo (Classe)" placeholder="00.000.000/0000-00" :span="4" v-model="form.cnpjVeiculo" />
-          <FormField label="Identificação do Veículo" placeholder="Ex: CLASSE TECH A" :span="5" v-model="form.identificacaoVeiculo" />
-          <SelectField label="Tipo de Empresa" :options="['Matriz', 'Filial']" :span="3" v-model="form.tipoEmpresa" />
+    <div>
+      <StepGrid v-if="step.key === 'info'">
+        <FormField label="CNPJ do Veículo (Classe)" placeholder="00.000.000/0000-00" :span="4" v-model="form.cnpjVeiculo" />
+        <FormField label="Identificação do Veículo" placeholder="Ex: CLASSE TECH A" :span="5" v-model="form.identificacaoVeiculo" />
+        <SelectField label="Tipo de Empresa" :options="['Matriz', 'Filial']" :span="3" v-model="form.tipoEmpresa" />
 
-          <FormField label="Razão Social" placeholder="Razão social completa" :span="8" v-model="form.razaoSocial" />
-          <FormField label="Nome Fantasia / Classe" placeholder="Ex: Sênior Classe A" :span="4" v-model="form.nomeFantasia" />
+        <FormField label="Razão Social" placeholder="Razão social completa" :span="8" v-model="form.razaoSocial" />
+        <FormField label="Nome Fantasia / Classe" placeholder="Ex: Sênior Classe A" :span="4" v-model="form.nomeFantasia" />
 
-          <FormField label="Natureza Legal" placeholder="Fundo" :span="4" v-model="form.naturezaLegal" />
-          <FormField label="Atividade Principal" placeholder="Direitos Creditórios" :span="5" v-model="form.atividadePrincipal" />
-          <FormField label="Código Singulare (CNAB 444)" placeholder="000" :span="3" v-model="form.codigoSingulare" />
+        <FormField label="Natureza Legal" placeholder="Fundo" :span="4" v-model="form.naturezaLegal" />
+        <FormField label="Atividade Principal" placeholder="Direitos Creditórios" :span="5" v-model="form.atividadePrincipal" />
+        <FormField label="Código Singulare (CNAB 444)" placeholder="000" :span="3" v-model="form.codigoSingulare" />
 
-          <SelectField
-            label="Indicativo de Prazo"
-            :options="['Prazo Determinado', 'Prazo Indeterminado']"
-            @change="(v) => (prazo = v === 'Prazo Determinado' ? 'determinado' : 'indeterminado')"
-            :span="prazo === 'determinado' ? 4 : 6"
-          />
-          <FormField
-            label="Data de Constituição"
-            placeholder="dd/mm/aaaa"
-            type="date"
-            :span="prazo === 'determinado' ? 4 : 6"
-            v-model="form.dataConstituicao"
-          />
-          <FormField v-if="prazo === 'determinado'" label="Data Fim do Prazo" placeholder="dd/mm/aaaa" type="date" :span="4" v-model="form.dataFimPrazo" />
+        <SelectField
+          label="Indicativo de Prazo"
+          :options="['Prazo Determinado', 'Prazo Indeterminado']"
+          @change="(v) => (prazo = v === 'Prazo Determinado' ? 'determinado' : 'indeterminado')"
+          :span="prazo === 'determinado' ? 4 : 6"
+        />
+        <FormField
+          label="Data de Constituição"
+          placeholder="dd/mm/aaaa"
+          type="date"
+          :span="prazo === 'determinado' ? 4 : 6"
+          v-model="form.dataConstituicao"
+        />
+        <FormField v-if="prazo === 'determinado'" label="Data Fim do Prazo" placeholder="dd/mm/aaaa" type="date" :span="4" v-model="form.dataFimPrazo" />
 
-          <FormField label="Categoria CVM" placeholder="FIDC" disabled default-value="FIDC" :span="12" />
-        </StepGrid>
+        <FormField label="Categoria CVM" placeholder="FIDC" disabled default-value="FIDC" :span="12" />
+      </StepGrid>
 
-        <div v-else-if="step.key === 'contato'" class="flex flex-col" style="gap: 20px">
-          <div>
-            <SectionTitle :icon="Phone">Contato</SectionTitle>
-            <StepGrid>
-              <FormField label="Email do Veículo" placeholder="contato@classe.com.br" type="email" :span="6" v-model="form.email" />
-              <FormField label="DDI" placeholder="+55" :span="2" v-model="form.ddi" />
-              <FormField label="DDD" placeholder="11" :span="1" v-model="form.ddd" />
-              <FormField label="Telefone" placeholder="0000-0000" :span="3" v-model="form.telefone" />
-            </StepGrid>
-          </div>
-          <div>
-            <SectionTitle :icon="MapPin">Endereço</SectionTitle>
-            <StepGrid>
-              <FormField label="CEP" placeholder="00000-000" :span="3" v-model="form.cep" />
-              <FormField label="Endereço" placeholder="Av. ..." :span="7" v-model="form.endereco" />
-              <FormField label="Número" placeholder="—" :span="2" v-model="form.numero" />
-              <FormField label="Complemento" placeholder="Sala 101" :span="4" v-model="form.complemento" />
-              <FormField label="Bairro" placeholder="—" :span="4" v-model="form.bairro" />
-              <FormField label="Cidade" placeholder="—" :span="4" v-model="form.cidade" />
-              <FormField label="Estado" placeholder="SP" :span="2" v-model="form.estado" />
-              <FormField label="País" placeholder="Brasil" default-value="Brasil" :span="4" v-model="form.pais" />
-            </StepGrid>
-          </div>
+      <div v-else-if="step.key === 'contato'" class="flex flex-col" style="gap: 20px">
+        <div>
+          <SectionTitle :icon="Phone">Contato</SectionTitle>
+          <StepGrid>
+            <FormField label="Email do Veículo" placeholder="contato@classe.com.br" type="email" :span="6" v-model="form.email" />
+            <FormField label="DDI" placeholder="+55" :span="2" v-model="form.ddi" />
+            <FormField label="DDD" placeholder="11" :span="1" v-model="form.ddd" />
+            <FormField label="Telefone" placeholder="0000-0000" :span="3" v-model="form.telefone" />
+          </StepGrid>
         </div>
+        <div>
+          <SectionTitle :icon="MapPin">Endereço</SectionTitle>
+          <StepGrid>
+            <FormField label="CEP" placeholder="00000-000" :span="3" v-model="form.cep" />
+            <FormField label="Endereço" placeholder="Av. ..." :span="7" v-model="form.endereco" />
+            <FormField label="Número" placeholder="—" :span="2" v-model="form.numero" />
+            <FormField label="Complemento" placeholder="Sala 101" :span="4" v-model="form.complemento" />
+            <FormField label="Bairro" placeholder="—" :span="4" v-model="form.bairro" />
+            <FormField label="Cidade" placeholder="—" :span="4" v-model="form.cidade" />
+            <FormField label="Estado" placeholder="SP" :span="2" v-model="form.estado" />
+            <FormField label="País" placeholder="Brasil" default-value="Brasil" :span="4" v-model="form.pais" />
+          </StepGrid>
+        </div>
+      </div>
 
-        <!--
-        Step — Tipo de Ativos Aceitos
-        Temporariamente oculta desta etapa (ver comentário em `steps`). Visual mantido
-        comentado aqui para ser reaproveitado futuramente.
+      <!--
+      Step — Tipo de Ativos Aceitos
+      Temporariamente oculta desta etapa (ver comentário em `steps`). Visual mantido
+      comentado aqui para ser reaproveitado futuramente.
 
-        <div v-else-if="step.key === 'ativos'">
-          <SectionHelp>
-            Selecione os tipos de direitos creditórios aceitos por esta classe.
-          </SectionHelp>
-          <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 12px">
-            <button
-              v-for="o in lastroOpts"
-              :key="o.key"
+      <div v-else-if="step.key === 'ativos'">
+        <SectionHelp>
+          Selecione os tipos de direitos creditórios aceitos por esta classe.
+        </SectionHelp>
+        <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 12px">
+          <button
+            v-for="o in lastroOpts"
+            :key="o.key"
+            :style="{
+              padding: '16px',
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: ativos.includes(o.key) ? 'var(--agro-base)' : 'var(--border-default)',
+              borderRadius: 'var(--radius-lg)',
+              background: ativos.includes(o.key) ? 'var(--agro-light)' : 'var(--surface-card)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all var(--duration-base)',
+            }"
+            @click="toggleAtivo(o.key)"
+          >
+            <div
               :style="{
-                padding: '16px',
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor: ativos.includes(o.key) ? 'var(--agro-base)' : 'var(--border-default)',
-                borderRadius: 'var(--radius-lg)',
-                background: ativos.includes(o.key) ? 'var(--agro-light)' : 'var(--surface-card)',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all var(--duration-base)',
-              }"
-              @click="toggleAtivo(o.key)"
-            >
-              <div
-                :style="{
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: 'var(--weight-bold)',
-                  letterSpacing: '0.12em',
-                  color: ativos.includes(o.key) ? 'var(--agro-base)' : 'var(--text-muted)',
-                  marginBottom: '6px',
-                }"
-              >
-                {{ o.key.replace('_', '-') }}
-              </div>
-              <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">
-                {{ o.label }}
-              </div>
-            </button>
-          </div>
-        </div>
-        -->
-
-        <div v-else-if="step.key === 'partic'" class="flex flex-col" style="gap: 16px">
-          <SectionHelp>
-            Cadastre os prestadores de serviço da classe. Administradora e Gestor são
-            obrigatórios; os demais participantes podem ser ativados conforme a estrutura
-            operacional do fundo.
-          </SectionHelp>
-
-          <ParticipantBlock
-            title="Identificação de Administradora"
-            name-label="Administradora"
-            doc-label="Documento"
-            date-label="Administradora do fundo desde"
-            required
-          />
-
-          <ParticipantBlock
-            title="Identificação de Gestor"
-            name-label="Gestor"
-            doc-label="Documento"
-            date-label="Gestor do fundo desde"
-            required
-          />
-
-          <ParticipantBlock
-            v-for="p in partOpcionais"
-            :key="p.key"
-            :title="`Identificação de ${p.label}`"
-            :name-label="p.label"
-            doc-label="Documento"
-            :date-label="`${p.label} do fundo desde`"
-            :toggle-label="p.toggleLabel"
-            :toggle-enabled="partToggles[p.key]"
-            @toggle="togglePart(p.key)"
-          />
-        </div>
-
-        <div v-else-if="step.key === 'limites'" class="flex flex-col" style="gap: 20px">
-          <SectionHelp>
-            Configure os limites de concentração da carteira e os totalizadores por tipo de ativo e TOP.
-          </SectionHelp>
-          <!-- Tab bar -->
-          <div class="flex" style="gap: 4px; padding: 4px; background: var(--surface-sunken); border-radius: var(--radius-lg); align-self: flex-start; flex-wrap: wrap">
-            <button
-              v-for="[k, label] in limitTabs"
-              :key="k"
-              :style="{
-                padding: '8px 16px',
                 fontSize: 'var(--text-xs)',
                 fontWeight: 'var(--weight-bold)',
-                letterSpacing: '0.08em',
-                border: 'none',
-                cursor: 'pointer',
-                borderRadius: 'var(--radius-md)',
-                background: limitTab === k ? 'var(--surface-card)' : 'transparent',
-                color: limitTab === k ? 'var(--text-strong)' : 'var(--text-muted)',
-                boxShadow: limitTab === k ? 'var(--shadow-xs)' : 'none',
-                transition: 'all var(--duration-base)',
+                letterSpacing: '0.12em',
+                color: ativos.includes(o.key) ? 'var(--agro-base)' : 'var(--text-muted)',
+                marginBottom: '6px',
               }"
-              @click="limitTab = k"
             >
-              {{ label }}
-            </button>
-          </div>
-
-          <!-- Tab 1 — Concentração (diversificação do pool) -->
-          <SectionGroup v-if="limitTab === 'concentracao'" :icon="Users2" title="Diversificação do Pool">
-            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px">
-              <div>
-                <FieldLabel>Tipo de Cedente</FieldLabel>
-                <div class="flex" style="gap: 8px; margin-top: 8px">
-                  <RadioPill :active="cedTipo === 'mono'" @click="cedTipo = 'mono'">Monocedente</RadioPill>
-                  <RadioPill :active="cedTipo === 'multi'" @click="cedTipo = 'multi'">Multicedente</RadioPill>
-                </div>
-              </div>
-              <div>
-                <FieldLabel>Tipo de Sacado</FieldLabel>
-                <div class="flex" style="gap: 8px; margin-top: 8px">
-                  <RadioPill :active="sacTipo === 'mono'" @click="sacTipo = 'mono'">Monosacado</RadioPill>
-                  <RadioPill :active="sacTipo === 'multi'" @click="sacTipo = 'multi'">Multissacado</RadioPill>
-                </div>
-              </div>
+              {{ o.key.replace('_', '-') }}
             </div>
-            <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px">
-              <div>
-                <FieldLabel>Conc. Sacados Novos (%)</FieldLabel>
-                <Input placeholder="5,00" v-model="concentracaoPool.sacadosNovos" />
-              </div>
-              <div>
-                <FieldLabel>Conc. Sacados Elegíveis (%)</FieldLabel>
-                <Input placeholder="20,00" v-model="concentracaoPool.sacadosElegiveis" />
-              </div>
-              <div>
-                <FieldLabel>Conc. Total Novos (%)</FieldLabel>
-                <Input placeholder="3,00" v-model="concentracaoPool.totalNovos" />
-              </div>
-              <div>
-                <FieldLabel>Conc. Total Elegíveis (%)</FieldLabel>
-                <Input placeholder="100,00" v-model="concentracaoPool.totalElegiveis" />
-              </div>
+            <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-strong)">
+              {{ o.label }}
             </div>
-          </SectionGroup>
+          </button>
+        </div>
+      </div>
+      -->
 
-          <!-- Tab 2 — Totalizadores de ativos -->
-          <DynamicConcentration
-            v-else-if="limitTab === 'totalizadores'"
-            :icon="Percent"
-            title="% Concentração por Tipo de Ativo"
-            qtd-label="Tipo de Ativo"
-            qtd-placeholder="Selecione"
-            :qtd-options="ativos.length ? ativos : lastroOpts.map((o) => o.key)"
-            limite-placeholder="0,00"
-            :rows="ativoRows"
-            :form="ativoForm"
-            @update:form="ativoForm = $event"
-            @add="addAtivoLimite"
-            @remove="(i) => (ativoLimites = ativoLimites.filter((_, idx) => idx !== i))"
-          />
+      <div v-else-if="step.key === 'partic'" class="flex flex-col" style="gap: 16px">
+        <SectionHelp>
+          Cadastre os prestadores de serviço da classe. Administradora e Gestor são
+          obrigatórios; os demais participantes podem ser ativados conforme a estrutura
+          operacional do fundo.
+        </SectionHelp>
 
-          <!-- Tab 3 — TOP Cedente -->
-          <DynamicConcentration
-            v-else-if="limitTab === 'topCedente'"
-            :icon="Crown"
-            title="Concentração de TOP's Cedentes"
-            qtd-label="Quantidade"
-            qtd-placeholder="Ex: 5"
-            qtd-numeric
-            limite-placeholder="0,00"
-            :rows="topCedRows"
-            :form="{ tipo: topCedForm.qtd, limite: topCedForm.limite }"
-            @update:form="(v) => (topCedForm = { qtd: v.tipo, limite: v.limite })"
-            @add="addTopCed"
-            @remove="(i) => (topCed = topCed.filter((_, idx) => idx !== i))"
-          />
+        <ParticipantBlock
+          title="Identificação de Administradora"
+          name-label="Administradora"
+          doc-label="Documento"
+          date-label="Administradora do fundo desde"
+          required
+        />
 
-          <!-- Tab 4 — TOP Sacado -->
-          <DynamicConcentration
-            v-else-if="limitTab === 'topSacado'"
-            :icon="Crown"
-            title="Concentração de TOP's Sacados"
-            qtd-label="Quantidade"
-            qtd-placeholder="Ex: 10"
-            qtd-numeric
-            limite-placeholder="0,00"
-            :rows="topSacRows"
-            :form="{ tipo: topSacForm.qtd, limite: topSacForm.limite }"
-            @update:form="(v) => (topSacForm = { qtd: v.tipo, limite: v.limite })"
-            @add="addTopSac"
-            @remove="(i) => (topSac = topSac.filter((_, idx) => idx !== i))"
-          />
+        <ParticipantBlock
+          title="Identificação de Gestor"
+          name-label="Gestor"
+          doc-label="Documento"
+          date-label="Gestor do fundo desde"
+          required
+        />
+
+        <ParticipantBlock
+          v-for="p in partOpcionais"
+          :key="p.key"
+          :title="`Identificação de ${p.label}`"
+          :name-label="p.label"
+          doc-label="Documento"
+          :date-label="`${p.label} do fundo desde`"
+          :toggle-label="p.toggleLabel"
+          :toggle-enabled="partToggles[p.key]"
+          @toggle="togglePart(p.key)"
+        />
+      </div>
+
+      <div v-else-if="step.key === 'limites'" class="flex flex-col" style="gap: 20px">
+        <SectionHelp>
+          Configure os limites de concentração da carteira e os totalizadores por tipo de ativo e TOP.
+        </SectionHelp>
+        <!-- Tab bar -->
+        <div class="flex" style="gap: 4px; padding: 4px; background: var(--surface-sunken); border-radius: var(--radius-lg); align-self: flex-start; flex-wrap: wrap">
+          <button
+            v-for="[k, label] in limitTabs"
+            :key="k"
+            :style="{
+              padding: '8px 16px',
+              fontSize: 'var(--text-xs)',
+              fontWeight: 'var(--weight-bold)',
+              letterSpacing: '0.08em',
+              border: 'none',
+              cursor: 'pointer',
+              borderRadius: 'var(--radius-md)',
+              background: limitTab === k ? 'var(--surface-card)' : 'transparent',
+              color: limitTab === k ? 'var(--text-strong)' : 'var(--text-muted)',
+              boxShadow: limitTab === k ? 'var(--shadow-xs)' : 'none',
+              transition: 'all var(--duration-base)',
+            }"
+            @click="limitTab = k"
+          >
+            {{ label }}
+          </button>
         </div>
 
-        <div v-else-if="step.key === 'grupos'">
-          <SectionHelp>
-            Selecione quais grupos econômicos estão aptos a operar nesta classe.
-          </SectionHelp>
-          <div class="relative" style="background: var(--surface-sunken); border-radius: var(--radius-lg); margin-bottom: 16px">
-            <Search :size="16" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--neutral-400)" />
-            <input
-              v-model="grupoQ"
-              placeholder="Pesquisar grupos empresariais..."
-              style="width: 100%; height: 44px; padding-left: 40px; padding-right: 14px; background: transparent; border: none; outline: none; font-size: var(--text-sm); color: var(--text-strong)"
-            />
+        <!-- Tab 1 — Concentração (diversificação do pool) -->
+        <SectionGroup v-if="limitTab === 'concentracao'" :icon="Users2" title="Diversificação do Pool">
+          <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px">
+            <div>
+              <FieldLabel>Tipo de Cedente</FieldLabel>
+              <div class="flex" style="gap: 8px; margin-top: 8px">
+                <RadioPill :active="cedTipo === 'mono'" @click="cedTipo = 'mono'">Monocedente</RadioPill>
+                <RadioPill :active="cedTipo === 'multi'" @click="cedTipo = 'multi'">Multicedente</RadioPill>
+              </div>
+            </div>
+            <div>
+              <FieldLabel>Tipo de Sacado</FieldLabel>
+              <div class="flex" style="gap: 8px; margin-top: 8px">
+                <RadioPill :active="sacTipo === 'mono'" @click="sacTipo = 'mono'">Monosacado</RadioPill>
+                <RadioPill :active="sacTipo === 'multi'" @click="sacTipo = 'multi'">Multissacado</RadioPill>
+              </div>
+            </div>
           </div>
-          <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 10px">
-            <button
-              v-for="g in filteredGrupos"
-              :key="g.nome"
-              class="flex items-center"
+          <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px">
+            <div>
+              <FieldLabel>Conc. Sacados Novos (%)</FieldLabel>
+              <Input placeholder="5,00" v-model="concentracaoPool.sacadosNovos" />
+            </div>
+            <div>
+              <FieldLabel>Conc. Sacados Elegíveis (%)</FieldLabel>
+              <Input placeholder="20,00" v-model="concentracaoPool.sacadosElegiveis" />
+            </div>
+            <div>
+              <FieldLabel>Conc. Total Novos (%)</FieldLabel>
+              <Input placeholder="3,00" v-model="concentracaoPool.totalNovos" />
+            </div>
+            <div>
+              <FieldLabel>Conc. Total Elegíveis (%)</FieldLabel>
+              <Input placeholder="100,00" v-model="concentracaoPool.totalElegiveis" />
+            </div>
+          </div>
+        </SectionGroup>
+
+        <!-- Tab 2 — Totalizadores de ativos -->
+        <DynamicConcentration
+          v-else-if="limitTab === 'totalizadores'"
+          :icon="Percent"
+          title="% Concentração por Tipo de Ativo"
+          qtd-label="Tipo de Ativo"
+          qtd-placeholder="Selecione"
+          :qtd-options="ativos.length ? ativos : lastroOpts.map((o) => o.key)"
+          limite-placeholder="0,00"
+          :rows="ativoRows"
+          :form="ativoForm"
+          @update:form="ativoForm = $event"
+          @add="addAtivoLimite"
+          @remove="(i) => (ativoLimites = ativoLimites.filter((_, idx) => idx !== i))"
+        />
+
+        <!-- Tab 3 — TOP Cedente -->
+        <DynamicConcentration
+          v-else-if="limitTab === 'topCedente'"
+          :icon="Crown"
+          title="Concentração de TOP's Cedentes"
+          qtd-label="Quantidade"
+          qtd-placeholder="Ex: 5"
+          qtd-numeric
+          limite-placeholder="0,00"
+          :rows="topCedRows"
+          :form="{ tipo: topCedForm.qtd, limite: topCedForm.limite }"
+          @update:form="(v) => (topCedForm = { qtd: v.tipo, limite: v.limite })"
+          @add="addTopCed"
+          @remove="(i) => (topCed = topCed.filter((_, idx) => idx !== i))"
+        />
+
+        <!-- Tab 4 — TOP Sacado -->
+        <DynamicConcentration
+          v-else-if="limitTab === 'topSacado'"
+          :icon="Crown"
+          title="Concentração de TOP's Sacados"
+          qtd-label="Quantidade"
+          qtd-placeholder="Ex: 10"
+          qtd-numeric
+          limite-placeholder="0,00"
+          :rows="topSacRows"
+          :form="{ tipo: topSacForm.qtd, limite: topSacForm.limite }"
+          @update:form="(v) => (topSacForm = { qtd: v.tipo, limite: v.limite })"
+          @add="addTopSac"
+          @remove="(i) => (topSac = topSac.filter((_, idx) => idx !== i))"
+        />
+      </div>
+
+      <div v-else-if="step.key === 'grupos'">
+        <SectionHelp>
+          Selecione quais grupos econômicos estão aptos a operar nesta classe.
+        </SectionHelp>
+        <div class="relative" style="background: var(--surface-sunken); border-radius: var(--radius-lg); margin-bottom: 16px">
+          <Search :size="16" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--neutral-400)" />
+          <input
+            v-model="grupoQ"
+            placeholder="Pesquisar grupos empresariais..."
+            style="width: 100%; height: 44px; padding-left: 40px; padding-right: 14px; background: transparent; border: none; outline: none; font-size: var(--text-sm); color: var(--text-strong)"
+          />
+        </div>
+        <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 10px">
+          <button
+            v-for="g in filteredGrupos"
+            :key="g.nome"
+            class="flex items-center"
+            :style="{
+              gap: '10px',
+              padding: '12px 14px',
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: gruposSelecionados.includes(g.nome) ? 'var(--gci-base)' : 'var(--border-default)',
+              borderRadius: 'var(--radius-lg)',
+              background: gruposSelecionados.includes(g.nome) ? 'var(--gci-light)' : 'var(--surface-card)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all var(--duration-base)',
+            }"
+            @click="toggleGrupo(g.nome)"
+          >
+            <span
+              class="flex items-center justify-center"
               :style="{
-                gap: '10px',
-                padding: '12px 14px',
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor: gruposSelecionados.includes(g.nome) ? 'var(--gci-base)' : 'var(--border-default)',
-                borderRadius: 'var(--radius-lg)',
-                background: gruposSelecionados.includes(g.nome) ? 'var(--gci-light)' : 'var(--surface-card)',
-                cursor: 'pointer',
-                textAlign: 'left',
+                width: '20px',
+                height: '20px',
+                borderRadius: '9999px',
+                flexShrink: 0,
+                background: gruposSelecionados.includes(g.nome) ? 'var(--gci-base)' : 'var(--surface-sunken)',
+                color: gruposSelecionados.includes(g.nome) ? '#fff' : 'var(--text-muted)',
                 transition: 'all var(--duration-base)',
               }"
-              @click="toggleGrupo(g.nome)"
             >
-              <span
-                class="flex items-center justify-center"
+              <Check v-if="gruposSelecionados.includes(g.nome)" :size="11" />
+            </span>
+            <div style="flex: 1; min-width: 0">
+              <div
                 :style="{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '9999px',
-                  flexShrink: 0,
-                  background: gruposSelecionados.includes(g.nome) ? 'var(--gci-base)' : 'var(--surface-sunken)',
-                  color: gruposSelecionados.includes(g.nome) ? '#fff' : 'var(--text-muted)',
-                  transition: 'all var(--duration-base)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: gruposSelecionados.includes(g.nome) ? 'var(--weight-semibold)' : 'var(--weight-medium)',
+                  color: gruposSelecionados.includes(g.nome) ? 'var(--gci-base)' : 'var(--text-default)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                 }"
               >
-                <Check v-if="gruposSelecionados.includes(g.nome)" :size="11" />
-              </span>
-              <div style="flex: 1; min-width: 0">
-                <div
-                  :style="{
-                    fontSize: 'var(--text-sm)',
-                    fontWeight: gruposSelecionados.includes(g.nome) ? 'var(--weight-semibold)' : 'var(--weight-medium)',
-                    color: gruposSelecionados.includes(g.nome) ? 'var(--gci-base)' : 'var(--text-default)',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }"
-                >
-                  {{ g.nome }}
-                </div>
-                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px">{{ g.cnpj }}</div>
+                {{ g.nome }}
               </div>
-            </button>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px">{{ g.cnpj }}</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div v-else-if="step.key === 'banco'" class="flex flex-col" style="gap: 20px">
+        <div>
+          <SectionTitle :icon="Wallet">Dados da Carteira</SectionTitle>
+          <StepGrid>
+            <FormField label="Nome da Carteira" placeholder="Ex: Agrovita FIDC - Santander" :span="6" v-model="form.nomeCarteira" />
+            <SelectField
+              label="Selecione o Banco"
+              :options="['033 - Santander', '237 - Bradesco', '341 - Itaú', '001 - Banco do Brasil', '104 - Caixa']"
+              placeholder="Selecione"
+              :span="6"
+              v-model="form.banco"
+            />
+            <SelectField label="Selecione a Carteira" :options="['Carteira 1', 'Carteira 2', 'Carteira 3']" placeholder="Selecione" :span="4" v-model="form.carteiraSelecionada" />
+            <SelectField label="Selecione o CNAB" :options="['CNAB 240', 'CNAB 400']" placeholder="Selecione" :span="4" v-model="form.cnab" />
+            <FormField label="Código da Empresa" placeholder="—" :span="4" v-model="form.codigoEmpresa" />
+            <FormField label="Número da Conta" placeholder="000000-0" :span="4" v-model="form.numeroConta" />
+            <FormField label="Número da Agência" placeholder="0000-0" :span="4" v-model="form.numeroAgencia" />
+            <FormField label="Campo Extra 1" placeholder="—" :span="4" v-model="form.campoExtra1" />
+            <FormField label="Configuração de dados padrões para Boleto" placeholder="Texto de instrução para impressão" :span="12" v-model="form.boletoInstrucoes" />
+          </StepGrid>
+          <div style="margin-top: 16px">
+            <ToggleRow
+              label="Permite vencimento em finais de semana e feriado"
+              hint="Se ativo, parcelas podem ser liquidadas sem prorrogação para o próximo dia útil."
+              :on="form.permiteFimDeSemana"
+              @toggle="form.permiteFimDeSemana = !form.permiteFimDeSemana"
+            />
           </div>
         </div>
 
-        <div v-else-if="step.key === 'banco'" class="flex flex-col" style="gap: 20px">
-          <div>
-            <SectionTitle :icon="Wallet">Dados da Carteira</SectionTitle>
-            <StepGrid>
-              <FormField label="Nome da Carteira" placeholder="Ex: Agrovita FIDC - Santander" :span="6" v-model="form.nomeCarteira" />
+        <div>
+          <SectionTitle :icon="UserCheck">Identificação de Beneficiário Final</SectionTitle>
+          <div class="flex flex-col" style="gap: 16px">
+            <ToggleRow
+              label="Cadastrar novo beneficiário final"
+              hint="Se ativo, preencha o formulário de cadastro. Se inativo, selecione um beneficiário já existente."
+              :on="form.cadastrarNovoBeneficiario"
+              @toggle="form.cadastrarNovoBeneficiario = !form.cadastrarNovoBeneficiario"
+            />
+            <StepGrid v-if="!form.cadastrarNovoBeneficiario">
               <SelectField
-                label="Selecione o Banco"
-                :options="['033 - Santander', '237 - Bradesco', '341 - Itaú', '001 - Banco do Brasil', '104 - Caixa']"
+                label="Beneficiário final"
+                :options="BENEFICIARIO_OPTS"
                 placeholder="Selecione"
-                :span="6"
-                v-model="form.banco"
-              />
-              <SelectField label="Selecione a Carteira" :options="['Carteira 1', 'Carteira 2', 'Carteira 3']" placeholder="Selecione" :span="4" v-model="form.carteiraSelecionada" />
-              <SelectField label="Selecione o CNAB" :options="['CNAB 240', 'CNAB 400']" placeholder="Selecione" :span="4" v-model="form.cnab" />
-              <FormField label="Código da Empresa" placeholder="—" :span="4" v-model="form.codigoEmpresa" />
-              <FormField label="Número da Conta" placeholder="000000-0" :span="4" v-model="form.numeroConta" />
-              <FormField label="Número da Agência" placeholder="0000-0" :span="4" v-model="form.numeroAgencia" />
-              <FormField label="Campo Extra 1" placeholder="—" :span="4" v-model="form.campoExtra1" />
-              <FormField label="Configuração de dados padrões para Boleto" placeholder="Texto de instrução para impressão" :span="12" v-model="form.boletoInstrucoes" />
-            </StepGrid>
-            <div style="margin-top: 16px">
-              <ToggleRow
-                label="Permite vencimento em finais de semana e feriado"
-                hint="Se ativo, parcelas podem ser liquidadas sem prorrogação para o próximo dia útil."
-                :on="form.permiteFimDeSemana"
-                @toggle="form.permiteFimDeSemana = !form.permiteFimDeSemana"
-              />
-            </div>
-          </div>
-
-          <div>
-            <SectionTitle :icon="UserCheck">Identificação de Beneficiário Final</SectionTitle>
-            <div class="flex flex-col" style="gap: 16px">
-              <ToggleRow
-                label="Cadastrar novo beneficiário final"
-                hint="Se ativo, preencha o formulário de cadastro. Se inativo, selecione um beneficiário já existente."
-                :on="form.cadastrarNovoBeneficiario"
-                @toggle="form.cadastrarNovoBeneficiario = !form.cadastrarNovoBeneficiario"
-              />
-              <StepGrid v-if="!form.cadastrarNovoBeneficiario">
-                <SelectField
-                  label="Beneficiário final"
-                  :options="BENEFICIARIO_OPTS"
-                  placeholder="Selecione"
-                  :span="8"
-                  v-model="form.benefSelecionado"
-                />
-                <FormField
-                  label="Beneficiário Final do fundo desde"
-                  placeholder="dd/mm/aaaa"
-                  :span="4"
-                  v-model="form.benefDesde"
-                />
-              </StepGrid>
-              <StepGrid v-else>
-                <FormField label="CNPJ" placeholder="00.000.000/0000-00" :span="4" v-model="form.benefCnpj" />
-                <FormField label="Nome" placeholder="Razão social do beneficiário" :span="5" v-model="form.benefNome" />
-                <FormField
-                  label="Beneficiário Final do fundo desde"
-                  placeholder="dd/mm/aaaa"
-                  :span="3"
-                  v-model="form.benefDesde"
-                />
-                <FormField label="CEP" placeholder="00000-000" :span="3" v-model="form.benefCep" />
-                <FormField label="Endereço" placeholder="Rua / Avenida" :span="7" v-model="form.benefEndereco" />
-                <FormField label="Número" placeholder="—" :span="2" v-model="form.benefNumero" />
-                <FormField label="Complemento" placeholder="Sala / Andar" :span="3" v-model="form.benefComplemento" />
-                <FormField label="Bairro" placeholder="—" :span="3" v-model="form.benefBairro" />
-                <FormField label="Cidade" placeholder="—" :span="4" v-model="form.benefCidade" />
-                <SelectField
-                  label="Estado"
-                  :options="['SP', 'RJ', 'MG', 'RS', 'PR', 'SC', 'BA', 'GO', 'MT', 'MS', 'DF']"
-                  placeholder="UF"
-                  :span="2"
-                  v-model="form.benefEstado"
-                />
-              </StepGrid>
-            </div>
-          </div>
-
-          <div>
-            <SectionTitle :icon="Banknote">Configurações de Cobrança</SectionTitle>
-            <div
-              class="flex items-start"
-              style="
-                gap: 10px;
-                padding: 12px 14px;
-                margin-bottom: 16px;
-                background: var(--info-bg, #e8f4f8);
-                border: 1px solid var(--info-border, #b7d7e8);
-                border-radius: var(--radius-lg);
-                color: var(--gci-base);
-              "
-            >
-              <Info :size="16" :stroke-width="2.25" style="flex-shrink: 0; margin-top: 1px" />
-              <p style="margin: 0; font-size: var(--text-sm); line-height: 1.45; color: var(--text-default)">
-                {{ cobrancaBanner }}
-              </p>
-            </div>
-            <div class="flex flex-col" style="gap: 12px">
-              <ToggleRow
-                label="Boletagem imediata"
-                :hint="boletagemImediataHint"
-                :on="form.boletagemImediata"
-                :disabled="form.boletagemAutomatica"
-                @toggle="toggleBoletagemImediata"
-              />
-              <ToggleRow
-                label="Boletagem automática"
-                :hint="boletagemAutomaticaHint"
-                :on="form.boletagemAutomatica"
-                :disabled="form.boletagemImediata"
-                @toggle="toggleBoletagemAutomatica"
-              />
-              <ToggleRow
-                label="Notificar cessão sem boleto"
-                :hint="notificarCessaoSemBoletoHint"
-                :on="form.notificarCessaoSemBoleto"
-                @toggle="form.notificarCessaoSemBoleto = !form.notificarCessaoSemBoleto"
+                :span="8"
+                v-model="form.benefSelecionado"
               />
               <FormField
-                label="Dias para boletar"
-                placeholder="—"
-                type="number"
-                :span="12"
-                :disabled="form.boletagemImediata"
-                v-model="form.diasParaBoletar"
+                label="Beneficiário Final do fundo desde"
+                placeholder="dd/mm/aaaa"
+                :span="4"
+                v-model="form.benefDesde"
               />
-            </div>
+            </StepGrid>
+            <StepGrid v-else>
+              <FormField label="CNPJ" placeholder="00.000.000/0000-00" :span="4" v-model="form.benefCnpj" />
+              <FormField label="Nome" placeholder="Razão social do beneficiário" :span="5" v-model="form.benefNome" />
+              <FormField
+                label="Beneficiário Final do fundo desde"
+                placeholder="dd/mm/aaaa"
+                :span="3"
+                v-model="form.benefDesde"
+              />
+              <FormField label="CEP" placeholder="00000-000" :span="3" v-model="form.benefCep" />
+              <FormField label="Endereço" placeholder="Rua / Avenida" :span="7" v-model="form.benefEndereco" />
+              <FormField label="Número" placeholder="—" :span="2" v-model="form.benefNumero" />
+              <FormField label="Complemento" placeholder="Sala / Andar" :span="3" v-model="form.benefComplemento" />
+              <FormField label="Bairro" placeholder="—" :span="3" v-model="form.benefBairro" />
+              <FormField label="Cidade" placeholder="—" :span="4" v-model="form.benefCidade" />
+              <SelectField
+                label="Estado"
+                :options="['SP', 'RJ', 'MG', 'RS', 'PR', 'SC', 'BA', 'GO', 'MT', 'MS', 'DF']"
+                placeholder="UF"
+                :span="2"
+                v-model="form.benefEstado"
+              />
+            </StepGrid>
           </div>
         </div>
 
-        <div v-else-if="step.key === 'registro'" class="flex flex-col" style="gap: 16px">
-          <SectionHelp>
-            Cadastre as registradoras homologadas e suas credenciais de acesso.
-          </SectionHelp>
-
-          <SectionGroup :icon="ClipboardList" title="Configuração de Registradoras">
-            <div class="grid items-end" style="grid-template-columns: 1.1fr 1.4fr 1.4fr 1.4fr auto; gap: 12px; margin-bottom: 16px">
-              <div>
-                <FieldLabel>Registradora</FieldLabel>
-                <SelectField :options="['B3', 'CERC', 'TAG', 'CIP']" @change="(v) => (regForm.registradora = v)" />
-              </div>
-              <div>
-                <FieldLabel>ID Carteira</FieldLabel>
-                <Input placeholder="Identificador" v-model="regForm.idCarteira" />
-              </div>
-              <div>
-                <FieldLabel>Usuário</FieldLabel>
-                <Input placeholder="Usuário API/SFTP" v-model="regForm.usuario" />
-              </div>
-              <div>
-                <FieldLabel>Senha</FieldLabel>
-                <Input type="password" placeholder="••••••••" v-model="regForm.senha" />
-              </div>
-              <AddButton @click="addReg" />
-            </div>
-
-            <DataTable
-              :cols="[
-                { key: 'registradora', label: 'Registradora', width: '1fr' },
-                { key: 'idCarteira', label: 'ID Carteira', width: '1.4fr' },
-                { key: 'usuario', label: 'Usuário', width: '1.4fr' },
-              ]"
-              :rows="regList"
-              empty="Nenhuma registradora cadastrada."
-              @remove="(i) => (regList = regList.filter((_, idx) => idx !== i))"
+        <div>
+          <SectionTitle :icon="Banknote">Configurações de Cobrança</SectionTitle>
+          <div
+            class="flex items-start"
+            style="
+              gap: 10px;
+              padding: 12px 14px;
+              margin-bottom: 16px;
+              background: var(--info-bg, #e8f4f8);
+              border: 1px solid var(--info-border, #b7d7e8);
+              border-radius: var(--radius-lg);
+              color: var(--gci-base);
+            "
+          >
+            <Info :size="16" :stroke-width="2.25" style="flex-shrink: 0; margin-top: 1px" />
+            <p style="margin: 0; font-size: var(--text-sm); line-height: 1.45; color: var(--text-default)">
+              {{ cobrancaBanner }}
+            </p>
+          </div>
+          <div class="flex flex-col" style="gap: 12px">
+            <ToggleRow
+              label="Boletagem imediata"
+              :hint="boletagemImediataHint"
+              :on="form.boletagemImediata"
+              :disabled="form.boletagemAutomatica"
+              @toggle="toggleBoletagemImediata"
             />
-          </SectionGroup>
-        </div>
-
-        <div v-else-if="step.key === 'pdd'" class="flex flex-col" style="gap: 16px">
-          <SectionHelp>
-            Defina as faixas de aging e o percentual de provisão para cada classificação de risco.
-          </SectionHelp>
-
-          <SectionGroup :icon="AlertTriangle" title="Provisão para Devedores Duvidosos">
-            <div class="grid items-end" style="grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 12px; margin-bottom: 16px">
-              <div>
-                <FieldLabel>Dias Mín.</FieldLabel>
-                <Input type="number" placeholder="0" v-model="pddForm.de" />
-              </div>
-              <div>
-                <FieldLabel>Dias Máx.</FieldLabel>
-                <Input type="number" placeholder="30" v-model="pddForm.ate" />
-              </div>
-              <div>
-                <FieldLabel>% de PDD</FieldLabel>
-                <Input placeholder="0,50" v-model="pddForm.pct" />
-              </div>
-              <div>
-                <FieldLabel>Classificação</FieldLabel>
-                <SelectField :options="['A', 'B', 'C', 'D', 'E', 'F']" @change="(v) => (pddForm.rating = v)" />
-              </div>
-              <AddButton @click="addPdd" />
-            </div>
-
-            <DataTable
-              :cols="[
-                { key: 'de', label: 'Dias Mín.', width: '1fr' },
-                { key: 'ate', label: 'Dias Máx.', width: '1fr' },
-                { key: 'rating', label: 'Classificação', width: '1fr' },
-                { key: 'pct', label: '% Provisão', width: '1fr', format: (v: string) => `${v}%` },
-              ]"
-              :rows="pddFaixas"
-              empty="Nenhuma faixa cadastrada."
-              @remove="(i) => (pddFaixas = pddFaixas.filter((_, idx) => idx !== i))"
+            <ToggleRow
+              label="Boletagem automática"
+              :hint="boletagemAutomaticaHint"
+              :on="form.boletagemAutomatica"
+              :disabled="form.boletagemImediata"
+              @toggle="toggleBoletagemAutomatica"
             />
-          </SectionGroup>
-        </div>
-
-        <!-- Step — Resumo dos dados cadastrados -->
-        <div v-else-if="step.key === 'resumo'" class="flex flex-col" style="gap: 16px">
-          <SectionHelp>
-            Revise as informações cadastradas em todas as etapas antes de finalizar o cadastro da classe.
-          </SectionHelp>
-
-          <SectionGroup :icon="Info" title="Dados Cadastrais">
-            <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
-              <SummaryItem label="CNPJ do Veículo" :value="form.cnpjVeiculo" />
-              <SummaryItem label="Identificação do Veículo" :value="form.identificacaoVeiculo" />
-              <SummaryItem label="Tipo de Empresa" :value="form.tipoEmpresa" />
-              <SummaryItem label="Razão Social" :value="form.razaoSocial" />
-              <SummaryItem label="Nome Fantasia / Classe" :value="form.nomeFantasia" />
-              <SummaryItem label="Natureza Legal" :value="form.naturezaLegal" />
-              <SummaryItem label="Atividade Principal" :value="form.atividadePrincipal" />
-              <SummaryItem label="Código Singulare" :value="form.codigoSingulare" />
-              <SummaryItem label="Indicativo de Prazo" :value="prazo === 'determinado' ? 'Prazo Determinado' : 'Prazo Indeterminado'" />
-              <SummaryItem label="Data de Constituição" :value="form.dataConstituicao" />
-              <SummaryItem v-if="prazo === 'determinado'" label="Data Fim do Prazo" :value="form.dataFimPrazo" />
-              <SummaryItem label="Categoria CVM" value="FIDC" />
-            </div>
-          </SectionGroup>
-
-          <SectionGroup :icon="Phone" title="Contato e Endereço">
-            <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
-              <SummaryItem label="Email do Veículo" :value="form.email" />
-              <SummaryItem label="Telefone" :value="form.ddd || form.telefone ? `(${form.ddi || '+55'}) ${form.ddd} ${form.telefone}` : ''" />
-              <SummaryItem label="CEP" :value="form.cep" />
-              <SummaryItem label="Endereço" :value="form.endereco ? `${form.endereco}, ${form.numero || 's/n'}` : ''" />
-              <SummaryItem label="Bairro" :value="form.bairro" />
-              <SummaryItem label="Cidade / Estado" :value="form.cidade ? `${form.cidade} / ${form.estado}` : ''" />
-              <SummaryItem label="País" :value="form.pais" />
-            </div>
-          </SectionGroup>
-
-          <SectionGroup :icon="Users" title="Participantes">
-            <div v-if="activePartLabels.length" class="flex flex-wrap" style="gap: 8px">
-              <span class="summary-tag">Administradora</span>
-              <span class="summary-tag">Gestor</span>
-              <span v-for="p in activePartLabels" :key="p" class="summary-tag">{{ p }}</span>
-            </div>
-            <div v-else class="flex flex-wrap" style="gap: 8px">
-              <span class="summary-tag">Administradora</span>
-              <span class="summary-tag">Gestor</span>
-            </div>
-          </SectionGroup>
-
-          <SectionGroup :icon="Percent" title="Limites">
-            <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
-              <SummaryItem label="Tipo de Cedente / Sacado" :value="`${cedTipo === 'mono' ? 'Monocedente' : 'Multicedente'} · ${sacTipo === 'mono' ? 'Monosacado' : 'Multissacado'}`" />
-              <SummaryItem label="Totalizadores de Ativos" :value="`${ativoLimites.length} cadastrados`" />
-              <SummaryItem label="TOP Cedente" :value="`${topCed.length} cadastrados`" />
-              <SummaryItem label="TOP Sacado" :value="`${topSac.length} cadastrados`" />
-            </div>
-          </SectionGroup>
-
-          <SectionGroup :icon="Network" title="Grupos Econômicos">
-            <div v-if="gruposSelecionados.length" class="flex flex-wrap" style="gap: 8px">
-              <span v-for="g in gruposSelecionados" :key="g" class="summary-tag">{{ g }}</span>
-            </div>
-            <div v-else style="font-size: var(--text-sm); color: var(--text-muted)">Nenhum grupo selecionado.</div>
-          </SectionGroup>
-
-          <SectionGroup :icon="Wallet" title="Cobrança e Beneficiário">
-            <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
-              <SummaryItem label="Nome da Carteira" :value="form.nomeCarteira" />
-              <SummaryItem label="Banco" :value="form.banco" />
-              <SummaryItem label="Carteira" :value="form.carteiraSelecionada" />
-              <SummaryItem label="CNAB" :value="form.cnab" />
-              <SummaryItem label="Fim de Semana" :value="form.permiteFimDeSemana ? 'Permitido' : 'Não permitido'" />
-              <SummaryItem
-                label="Beneficiário"
-                :value="form.cadastrarNovoBeneficiario ? form.benefNome : form.benefSelecionado"
-              />
-              <SummaryItem
-                label="CNPJ do Beneficiário"
-                :value="form.cadastrarNovoBeneficiario ? form.benefCnpj : '—'"
-              />
-              <SummaryItem label="Beneficiário desde" :value="form.benefDesde" />
-              <SummaryItem label="Boletagem imediata" :value="form.boletagemImediata ? 'Sim' : 'Não'" />
-              <SummaryItem label="Boletagem automática" :value="form.boletagemAutomatica ? 'Sim' : 'Não'" />
-              <SummaryItem label="Notificar cessão sem boleto" :value="form.notificarCessaoSemBoleto ? 'Sim' : 'Não'" />
-              <SummaryItem label="Dias para boletar" :value="form.diasParaBoletar || '—'" />
-            </div>
-          </SectionGroup>
-
-          <SectionGroup :icon="ClipboardList" title="Registro">
-            <SummaryItem label="Registradoras Cadastradas" :value="`${regList.length} cadastradas`" />
-          </SectionGroup>
-
-          <SectionGroup :icon="AlertTriangle" title="Parametrização de PDD">
-            <SummaryItem label="Faixas de Aging Cadastradas" :value="`${pddFaixas.length} faixas`" />
-          </SectionGroup>
+            <ToggleRow
+              label="Notificar cessão sem boleto"
+              :hint="notificarCessaoSemBoletoHint"
+              :on="form.notificarCessaoSemBoleto"
+              @toggle="form.notificarCessaoSemBoleto = !form.notificarCessaoSemBoleto"
+            />
+            <FormField
+              label="Dias para boletar"
+              placeholder="—"
+              type="number"
+              :span="12"
+              :disabled="form.boletagemImediata"
+              v-model="form.diasParaBoletar"
+            />
+          </div>
         </div>
       </div>
 
-      <!-- Footer -->
-      <div class="flex items-center justify-between" style="padding: 16px 32px; border-top: 1px solid var(--border-default); background: var(--surface-card)">
-        <button
-          style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-weight: 600; font-size: var(--text-sm); padding: 10px 4px"
-          @click="handleBack"
-        >
-          {{ stepIdx === 0 ? (naked ? '← Voltar ao fundo' : 'Cancelar') : '← Voltar' }}
-        </button>
-        <span style="font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums">
-          {{ stepIdx + 1 }} / {{ steps.length }}
-        </span>
-        <button
-          class="flex items-center"
-          :style="{
-            gap: '8px',
-            padding: '12px 28px',
-            background: isLast ? 'var(--success-base)' : 'var(--action-primary-bg)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 'var(--radius-lg)',
-            cursor: 'pointer',
-            fontWeight: 700,
-            fontSize: 'var(--text-sm)',
-            letterSpacing: '0.04em',
-            boxShadow: isLast ? '0 8px 20px -8px rgba(5,150,105,0.40)' : '0 8px 20px -8px rgba(8,60,74,0.30)',
-          }"
-          @click="handleNext"
-        >
-          {{ isLast ? 'Finalizar Cadastro' : 'Próxima Etapa' }}
-          <Check v-if="isLast" :size="15" />
-          <ChevronRight v-else :size="15" />
-        </button>
+      <div v-else-if="step.key === 'registro'" class="flex flex-col" style="gap: 16px">
+        <SectionHelp>
+          Cadastre as registradoras homologadas e suas credenciais de acesso.
+        </SectionHelp>
+
+        <SectionGroup :icon="ClipboardList" title="Configuração de Registradoras">
+          <div class="grid items-end" style="grid-template-columns: 1.1fr 1.4fr 1.4fr 1.4fr auto; gap: 12px; margin-bottom: 16px">
+            <div>
+              <FieldLabel>Registradora</FieldLabel>
+              <SelectField :options="['B3', 'CERC', 'TAG', 'CIP']" @change="(v) => (regForm.registradora = v)" />
+            </div>
+            <div>
+              <FieldLabel>ID Carteira</FieldLabel>
+              <Input placeholder="Identificador" v-model="regForm.idCarteira" />
+            </div>
+            <div>
+              <FieldLabel>Usuário</FieldLabel>
+              <Input placeholder="Usuário API/SFTP" v-model="regForm.usuario" />
+            </div>
+            <div>
+              <FieldLabel>Senha</FieldLabel>
+              <Input type="password" placeholder="••••••••" v-model="regForm.senha" />
+            </div>
+            <AddButton @click="addReg" />
+          </div>
+
+          <DataTable
+            :cols="[
+              { key: 'registradora', label: 'Registradora', width: '1fr' },
+              { key: 'idCarteira', label: 'ID Carteira', width: '1.4fr' },
+              { key: 'usuario', label: 'Usuário', width: '1.4fr' },
+            ]"
+            :rows="regList"
+            empty="Nenhuma registradora cadastrada."
+            @remove="(i) => (regList = regList.filter((_, idx) => idx !== i))"
+          />
+        </SectionGroup>
+      </div>
+
+      <div v-else-if="step.key === 'pdd'" class="flex flex-col" style="gap: 16px">
+        <SectionHelp>
+          Defina as faixas de aging e o percentual de provisão para cada classificação de risco.
+        </SectionHelp>
+
+        <SectionGroup :icon="AlertTriangle" title="Provisão para Devedores Duvidosos">
+          <div class="grid items-end" style="grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 12px; margin-bottom: 16px">
+            <div>
+              <FieldLabel>Dias Mín.</FieldLabel>
+              <Input type="number" placeholder="0" v-model="pddForm.de" />
+            </div>
+            <div>
+              <FieldLabel>Dias Máx.</FieldLabel>
+              <Input type="number" placeholder="30" v-model="pddForm.ate" />
+            </div>
+            <div>
+              <FieldLabel>% de PDD</FieldLabel>
+              <Input placeholder="0,50" v-model="pddForm.pct" />
+            </div>
+            <div>
+              <FieldLabel>Classificação</FieldLabel>
+              <SelectField :options="['A', 'B', 'C', 'D', 'E', 'F']" @change="(v) => (pddForm.rating = v)" />
+            </div>
+            <AddButton @click="addPdd" />
+          </div>
+
+          <DataTable
+            :cols="[
+              { key: 'de', label: 'Dias Mín.', width: '1fr' },
+              { key: 'ate', label: 'Dias Máx.', width: '1fr' },
+              { key: 'rating', label: 'Classificação', width: '1fr' },
+              { key: 'pct', label: '% Provisão', width: '1fr', format: (v: string) => `${v}%` },
+            ]"
+            :rows="pddFaixas"
+            empty="Nenhuma faixa cadastrada."
+            @remove="(i) => (pddFaixas = pddFaixas.filter((_, idx) => idx !== i))"
+          />
+        </SectionGroup>
+      </div>
+
+      <!-- Step — Resumo dos dados cadastrados -->
+      <div v-else-if="step.key === 'resumo'" class="flex flex-col" style="gap: 16px">
+        <SectionHelp>
+          Revise as informações cadastradas em todas as etapas antes de finalizar o cadastro da classe.
+        </SectionHelp>
+
+        <SectionGroup :icon="Info" title="Dados Cadastrais">
+          <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
+            <SummaryItem label="CNPJ do Veículo" :value="form.cnpjVeiculo" />
+            <SummaryItem label="Identificação do Veículo" :value="form.identificacaoVeiculo" />
+            <SummaryItem label="Tipo de Empresa" :value="form.tipoEmpresa" />
+            <SummaryItem label="Razão Social" :value="form.razaoSocial" />
+            <SummaryItem label="Nome Fantasia / Classe" :value="form.nomeFantasia" />
+            <SummaryItem label="Natureza Legal" :value="form.naturezaLegal" />
+            <SummaryItem label="Atividade Principal" :value="form.atividadePrincipal" />
+            <SummaryItem label="Código Singulare" :value="form.codigoSingulare" />
+            <SummaryItem label="Indicativo de Prazo" :value="prazo === 'determinado' ? 'Prazo Determinado' : 'Prazo Indeterminado'" />
+            <SummaryItem label="Data de Constituição" :value="form.dataConstituicao" />
+            <SummaryItem v-if="prazo === 'determinado'" label="Data Fim do Prazo" :value="form.dataFimPrazo" />
+            <SummaryItem label="Categoria CVM" value="FIDC" />
+          </div>
+        </SectionGroup>
+
+        <SectionGroup :icon="Phone" title="Contato e Endereço">
+          <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
+            <SummaryItem label="Email do Veículo" :value="form.email" />
+            <SummaryItem label="Telefone" :value="form.ddd || form.telefone ? `(${form.ddi || '+55'}) ${form.ddd} ${form.telefone}` : ''" />
+            <SummaryItem label="CEP" :value="form.cep" />
+            <SummaryItem label="Endereço" :value="form.endereco ? `${form.endereco}, ${form.numero || 's/n'}` : ''" />
+            <SummaryItem label="Bairro" :value="form.bairro" />
+            <SummaryItem label="Cidade / Estado" :value="form.cidade ? `${form.cidade} / ${form.estado}` : ''" />
+            <SummaryItem label="País" :value="form.pais" />
+          </div>
+        </SectionGroup>
+
+        <SectionGroup :icon="Users" title="Participantes">
+          <div v-if="activePartLabels.length" class="flex flex-wrap" style="gap: 8px">
+            <span class="summary-tag">Administradora</span>
+            <span class="summary-tag">Gestor</span>
+            <span v-for="p in activePartLabels" :key="p" class="summary-tag">{{ p }}</span>
+          </div>
+          <div v-else class="flex flex-wrap" style="gap: 8px">
+            <span class="summary-tag">Administradora</span>
+            <span class="summary-tag">Gestor</span>
+          </div>
+        </SectionGroup>
+
+        <SectionGroup :icon="Percent" title="Limites">
+          <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
+            <SummaryItem label="Tipo de Cedente / Sacado" :value="`${cedTipo === 'mono' ? 'Monocedente' : 'Multicedente'} · ${sacTipo === 'mono' ? 'Monosacado' : 'Multissacado'}`" />
+            <SummaryItem label="Totalizadores de Ativos" :value="`${ativoLimites.length} cadastrados`" />
+            <SummaryItem label="TOP Cedente" :value="`${topCed.length} cadastrados`" />
+            <SummaryItem label="TOP Sacado" :value="`${topSac.length} cadastrados`" />
+          </div>
+        </SectionGroup>
+
+        <SectionGroup :icon="Network" title="Grupos Econômicos">
+          <div v-if="gruposSelecionados.length" class="flex flex-wrap" style="gap: 8px">
+            <span v-for="g in gruposSelecionados" :key="g" class="summary-tag">{{ g }}</span>
+          </div>
+          <div v-else style="font-size: var(--text-sm); color: var(--text-muted)">Nenhum grupo selecionado.</div>
+        </SectionGroup>
+
+        <SectionGroup :icon="Wallet" title="Cobrança e Beneficiário">
+          <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">
+            <SummaryItem label="Nome da Carteira" :value="form.nomeCarteira" />
+            <SummaryItem label="Banco" :value="form.banco" />
+            <SummaryItem label="Carteira" :value="form.carteiraSelecionada" />
+            <SummaryItem label="CNAB" :value="form.cnab" />
+            <SummaryItem label="Fim de Semana" :value="form.permiteFimDeSemana ? 'Permitido' : 'Não permitido'" />
+            <SummaryItem
+              label="Beneficiário"
+              :value="form.cadastrarNovoBeneficiario ? form.benefNome : form.benefSelecionado"
+            />
+            <SummaryItem
+              label="CNPJ do Beneficiário"
+              :value="form.cadastrarNovoBeneficiario ? form.benefCnpj : '—'"
+            />
+            <SummaryItem label="Beneficiário desde" :value="form.benefDesde" />
+            <SummaryItem label="Boletagem imediata" :value="form.boletagemImediata ? 'Sim' : 'Não'" />
+            <SummaryItem label="Boletagem automática" :value="form.boletagemAutomatica ? 'Sim' : 'Não'" />
+            <SummaryItem label="Notificar cessão sem boleto" :value="form.notificarCessaoSemBoleto ? 'Sim' : 'Não'" />
+            <SummaryItem label="Dias para boletar" :value="form.diasParaBoletar || '—'" />
+          </div>
+        </SectionGroup>
+
+        <SectionGroup :icon="ClipboardList" title="Registro">
+          <SummaryItem label="Registradoras Cadastradas" :value="`${regList.length} cadastradas`" />
+        </SectionGroup>
+
+        <SectionGroup :icon="AlertTriangle" title="Parametrização de PDD">
+          <SummaryItem label="Faixas de Aging Cadastradas" :value="`${pddFaixas.length} faixas`" />
+        </SectionGroup>
       </div>
     </div>
-  </div>
+
+    <template #footer>
+      <AdminButton variant="ghost" size="large" :icon="stepIdx === 0 && !naked ? undefined : ChevronLeft" @click="handleBack">
+        {{ stepIdx === 0 ? (naked ? 'Voltar ao fundo' : 'Cancelar') : 'Voltar' }}
+      </AdminButton>
+      <span style="font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums">
+        {{ stepIdx + 1 }} / {{ steps.length }}
+      </span>
+      <AdminButton variant="primary" size="large" :trailing-icon="isLast ? Check : ChevronRight" @click="handleNext">
+        {{ isLast ? 'Finalizar cadastro' : 'Próxima etapa' }}
+      </AdminButton>
+    </template>
+  </AdminModal>
 </template>
 
 <style>
