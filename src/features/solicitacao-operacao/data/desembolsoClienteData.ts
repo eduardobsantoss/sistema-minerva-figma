@@ -9,32 +9,46 @@ export type EtapaDesembolsoKey =
   | 'SUBIR_BMP'
   | 'APROVACAO_BMP_1'
   | 'APROVACAO_BMP_2'
-  | 'ENCARTEIRAR';
+  | 'ENCARTEIRAR'
+  | 'FINANCEIRO';
 
 export interface EtapaDesembolso {
   key: EtapaDesembolsoKey;
   label: string;
-  /** Some da esteira quando o pedido não passa pelo BMP. */
-  bmp: boolean;
+  /** Etapas opcionais: BMP some quando o pedido não passa pelo banco; Financeiro só existe em alguns casos. */
+  grupo?: 'BMP' | 'FINANCEIRO';
 }
 
 export const ETAPAS_DESEMBOLSO: EtapaDesembolso[] = [
-  { key: 'SUBIR_ITAU', label: 'Subir no Itaú', bmp: false },
-  { key: 'APROVACAO_ITAU_1', label: '1ª aprovação Itaú', bmp: false },
-  { key: 'APROVACAO_ITAU_2', label: '2ª aprovação Itaú', bmp: false },
-  { key: 'SUBIR_BMP', label: 'Subir BMP', bmp: true },
-  { key: 'APROVACAO_BMP_1', label: '1ª aprovação BMP', bmp: true },
-  { key: 'APROVACAO_BMP_2', label: '2ª aprovação BMP', bmp: true },
-  { key: 'ENCARTEIRAR', label: 'Encarteirar', bmp: false },
+  { key: 'SUBIR_ITAU', label: 'Subir no Itaú' },
+  { key: 'APROVACAO_ITAU_1', label: '1ª aprovação Itaú' },
+  { key: 'APROVACAO_ITAU_2', label: '2ª aprovação Itaú' },
+  { key: 'SUBIR_BMP', label: 'Subir BMP', grupo: 'BMP' },
+  { key: 'APROVACAO_BMP_1', label: '1ª aprovação BMP', grupo: 'BMP' },
+  { key: 'APROVACAO_BMP_2', label: '2ª aprovação BMP', grupo: 'BMP' },
+  { key: 'ENCARTEIRAR', label: 'Encarteirar' },
+  { key: 'FINANCEIRO', label: 'Financeiro', grupo: 'FINANCEIRO' },
 ];
 
-/** Remove as três etapas BMP quando o pedido não passa por esse banco. */
-export function etapasPara(possuiBmp: boolean): EtapaDesembolso[] {
-  return ETAPAS_DESEMBOLSO.filter((etapa) => possuiBmp || !etapa.bmp);
+/** Remove as etapas BMP e/ou Financeiro quando o pedido não passa por elas. */
+export function etapasPara(possuiBmp: boolean, possuiFinanceiro = false): EtapaDesembolso[] {
+  return ETAPAS_DESEMBOLSO.filter((etapa) => {
+    if (etapa.grupo === 'BMP') return possuiBmp;
+    if (etapa.grupo === 'FINANCEIRO') return possuiFinanceiro;
+    return true;
+  });
 }
 
 export function possuiEtapaBmp(s: Solicitacao): boolean {
   return s.possuiBmp !== false;
+}
+
+export function possuiEtapaFinanceiro(s: Solicitacao): boolean {
+  return s.possuiFinanceiro === true;
+}
+
+export function etapasDe(s: Solicitacao): EtapaDesembolso[] {
+  return etapasPara(possuiEtapaBmp(s), possuiEtapaFinanceiro(s));
 }
 
 /** Pessoas notificadas quando o card entra em Desembolso do Cliente. */
@@ -53,6 +67,7 @@ export const DESTINATARIOS_ETAPA: Record<EtapaDesembolsoKey, string[]> = {
   APROVACAO_BMP_1: ['credito@ceres.com', 'mesa.bmp@ceres.com'],
   APROVACAO_BMP_2: ['diretoria@ceres.com', 'tesouraria@ceres.com'],
   ENCARTEIRAR: ['controladoria@ceres.com', 'tesouraria@ceres.com', 'operacoes@ceres.com'],
+  FINANCEIRO: ['financeiro@ceres.com', 'controladoria@ceres.com'],
 };
 
 export function etiquetaEtapa(key: EtapaDesembolsoKey): string {
@@ -65,6 +80,16 @@ export interface AtividadeDesembolso {
   autor: string;
   titulo: string;
   detalhe: string;
+}
+
+/** Comentário deixado ao voltar uma etapa. */
+export interface ComentarioDesembolso {
+  id: string;
+  quando: string;
+  autor: string;
+  /** Etapa que foi desfeita (a que voltou para pendente). */
+  etapa: EtapaDesembolsoKey;
+  texto: string;
 }
 
 export interface DocumentoDesembolso {
@@ -84,21 +109,61 @@ export interface CardDesembolso {
   solicitacao: Solicitacao;
   concluidas: EtapaDesembolsoKey[];
   atividade: AtividadeDesembolso[];
+  comentarios: ComentarioDesembolso[];
+  /** Preenchido ao encarteirar; zera se a etapa Encarteirar for desfeita. */
+  desembolso: EncarteirarPayload | null;
 }
 
 /** Pedidos que já chegaram com alguma etapa marcada (somente demonstração). */
 const PROGRESSO_INICIAL: Record<string, EtapaDesembolsoKey[]> = {
-  '#1403': ['SUBIR_ITAU', 'APROVACAO_ITAU_1'],
+  '#1403': [
+    'SUBIR_ITAU',
+    'APROVACAO_ITAU_1',
+    'APROVACAO_ITAU_2',
+    'SUBIR_BMP',
+    'APROVACAO_BMP_1',
+    'APROVACAO_BMP_2',
+    'ENCARTEIRAR',
+  ],
 };
 
 const QUANDO_INICIAL: Record<string, Partial<Record<EtapaDesembolsoKey, string>>> = {
   '#1403': {
     SUBIR_ITAU: '20/05/2026 às 11:02:14',
     APROVACAO_ITAU_1: '20/05/2026 às 16:40:33',
+    APROVACAO_ITAU_2: '21/05/2026 às 10:12:48',
+    SUBIR_BMP: '21/05/2026 às 14:25:03',
+    APROVACAO_BMP_1: '22/05/2026 às 09:48:20',
+    APROVACAO_BMP_2: '22/05/2026 às 17:05:11',
+    ENCARTEIRAR: '25/05/2026 às 15:30:42',
   },
 };
 
+const DESEMBOLSO_INICIAL: Record<string, EncarteirarPayload> = {
+  '#1403': {
+    comprovante: 'comprovante-pagamento-1403.pdf',
+    dataDesembolso: '2026-05-25',
+    valorDesembolsado: 3_100_000,
+  },
+};
+
+const COMENTARIOS_INICIAIS: Record<string, Omit<ComentarioDesembolso, 'id'>[]> = {
+  '#1403': [
+    {
+      quando: '22/05/2026 às 11:20:05',
+      autor: 'Marcos Vinícius',
+      etapa: 'APROVACAO_BMP_1',
+      texto: 'Voltei porque o extrato anexado estava com o valor desatualizado. Subi o novo e refiz a aprovação.',
+    },
+  ],
+};
+
 let seq = 0;
+
+function nextId(prefix: string): string {
+  seq += 1;
+  return `${prefix}-${seq}`;
+}
 
 export function agoraLabel(date = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -123,8 +188,7 @@ function novaAtividade(
   titulo: string,
   detalhe: string,
 ): AtividadeDesembolso {
-  seq += 1;
-  return { id: `at-${seq}`, quando, autor, titulo, detalhe };
+  return { id: nextId('at'), quando, autor, titulo, detalhe };
 }
 
 export function atividadeEmail(
@@ -149,13 +213,27 @@ export function atividadeEmail(
   );
 }
 
-export function atividadeDesfeita(key: EtapaDesembolsoKey, quando = agoraLabel()): AtividadeDesembolso {
+export function atividadeDesfeita(
+  key: EtapaDesembolsoKey,
+  motivo = '',
+  quando = agoraLabel(),
+): AtividadeDesembolso {
+  const base = 'A etapa voltou para pendente. Nenhum e-mail foi reenviado.';
   return novaAtividade(
     quando,
     CURRENT_USER.fullName,
     `Etapa desfeita · ${etiquetaEtapa(key)}`,
-    'A etapa voltou para pendente. Nenhum e-mail foi reenviado.',
+    motivo ? `${base} Motivo: ${motivo}` : base,
   );
+}
+
+export function novoComentario(
+  etapa: EtapaDesembolsoKey,
+  texto: string,
+  quando = agoraLabel(),
+  autor: string = CURRENT_USER.fullName,
+): ComentarioDesembolso {
+  return { id: nextId('cm'), quando, autor, etapa, texto };
 }
 
 export function documentosDe(s: Solicitacao): DocumentoDesembolso[] {
@@ -183,11 +261,18 @@ export function cardsIniciais(lista: Solicitacao[]): CardDesembolso[] {
       solicitacao: { ...s },
       concluidas: [...(PROGRESSO_INICIAL[s.id] ?? [])],
       atividade: atividadeInicial(s),
+      comentarios: (COMENTARIOS_INICIAIS[s.id] ?? []).map((c) => ({ ...c, id: nextId('cm') })),
+      desembolso: DESEMBOLSO_INICIAL[s.id] ? { ...DESEMBOLSO_INICIAL[s.id] } : null,
     }));
 }
 
 /** Próxima etapa liberada, ou null se a esteira interna já acabou. */
 export function proximaEtapa(card: CardDesembolso): EtapaDesembolso | null {
-  const etapas = etapasPara(possuiEtapaBmp(card.solicitacao));
-  return etapas[card.concluidas.length] ?? null;
+  return etapasDe(card.solicitacao)[card.concluidas.length] ?? null;
+}
+
+/** A última etapa da esteira do pedido encerra o desembolso (vai para Solucionada). */
+export function ehUltimaEtapa(card: CardDesembolso, key: EtapaDesembolsoKey): boolean {
+  const etapas = etapasDe(card.solicitacao);
+  return etapas[etapas.length - 1]?.key === key;
 }

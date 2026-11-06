@@ -18,8 +18,8 @@ function estado(index: number): 'done' | 'current' | 'locked' {
   return 'locked';
 }
 
-function podeDesfazer(index: number, key: EtapaDesembolsoKey): boolean {
-  return estado(index) === 'done' && index === props.concluidas.length - 1 && key !== 'ENCARTEIRAR';
+function podeDesfazer(index: number, _key: EtapaDesembolsoKey): boolean {
+  return estado(index) === 'done' && index === props.concluidas.length - 1;
 }
 
 function rotulo(etapa: EtapaDesembolso, index: number): string {

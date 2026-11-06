@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Clock,
   FileText,
+  MessageSquare,
   ReceiptText,
   RefreshCw,
   XCircle,
@@ -15,9 +16,12 @@ import AdminButton from '@/components/ui/AdminButton.vue';
 import { brl, fmtDuracao, slaRatio, type Solicitacao } from '../../data/operacaoData';
 import {
   documentosDe,
-  etapasPara,
+  etapasDe,
+  formatDataBr,
   possuiEtapaBmp,
   type AtividadeDesembolso,
+  type ComentarioDesembolso,
+  type EncarteirarPayload,
   type EtapaDesembolsoKey,
 } from '../../data/desembolsoClienteData';
 import DesembolsoStepper from './DesembolsoStepper.vue';
@@ -26,6 +30,9 @@ const props = defineProps<{
   solicitacao: Solicitacao;
   concluidas: EtapaDesembolsoKey[];
   atividade: AtividadeDesembolso[];
+  comentarios: ComentarioDesembolso[];
+  /** Dados informados no modal de Encarteirar. Nulo até a etapa ser concluída. */
+  desembolso: EncarteirarPayload | null;
   /** Mostra vínculo, informações básicas, documentos e atividade. Recolhido, ficam só o resumo e o stepper. */
   expandido?: boolean;
 }>();
@@ -35,6 +42,7 @@ const emit = defineEmits<{
   concluir: [key: EtapaDesembolsoKey];
   desfazer: [key: EtapaDesembolsoKey];
   baixar: [arquivo: string];
+  comentarios: [];
 }>();
 
 const atividadeAberta = ref(false);
@@ -48,7 +56,7 @@ function contratoTone(tipo: string): { bg: string; fg: string } {
 }
 
 const s = computed(() => props.solicitacao);
-const etapas = computed(() => etapasPara(possuiEtapaBmp(s.value)));
+const etapas = computed(() => etapasDe(s.value));
 const documentos = computed(() => documentosDe(s.value));
 const valido = computed(() => s.value.validacao === 'VALIDO');
 const atrasado = computed(() => slaRatio(s.value) > 1);
@@ -66,6 +74,12 @@ const timeCols = computed(() => [
 
 const meta = computed(() => [
   { label: 'Veículo', value: s.value.veiculo },
+  ...(props.desembolso
+    ? [
+        { label: 'Data de desembolso', value: formatDataBr(props.desembolso.dataDesembolso) },
+        { label: 'Comprovante', value: props.desembolso.comprovante },
+      ]
+    : []),
   { label: 'Taxa', value: `${s.value.taxa.toFixed(2).replace('.', ',')}%` },
   { label: 'Grupo', value: s.value.grupoEmpresarial || '—' },
   { label: 'Gerente', value: s.value.gerente },
@@ -113,7 +127,18 @@ const meta = computed(() => [
         <div class="id">{{ s.id }}</div>
       </div>
       <div class="flex items-center" style="gap: 12px; flex-shrink: 0">
-        <div class="valor">{{ brl(s.valor) }}</div>
+        <div class="valores">
+          <div class="valor-bloco">
+            <div class="eyebrow">Valor</div>
+            <div class="valor">{{ brl(s.valor) }}</div>
+          </div>
+          <div class="valor-bloco" data-testid="valor-desembolsado">
+            <div class="eyebrow">Valor desembolsado</div>
+            <div class="valor" :class="{ 'valor--vazio': !desembolso }">
+              {{ desembolso ? brl(desembolso.valorDesembolsado) : '—' }}
+            </div>
+          </div>
+        </div>
         <button
           type="button"
           class="toggle"
@@ -134,7 +159,19 @@ const meta = computed(() => [
     <div class="stepper-panel">
       <div class="flex items-center justify-between" style="margin-bottom: 14px">
         <span class="eyebrow" style="margin: 0">Esteira de desembolso</span>
-        <span class="progress">{{ progresso }} concluídas</span>
+        <div class="flex items-center" style="gap: 12px">
+          <button
+            type="button"
+            class="comentarios-btn"
+            :aria-label="`Ver comentários (${comentarios.length})`"
+            @click="emit('comentarios')"
+          >
+            <MessageSquare :size="13" :stroke-width="2" />
+            Comentários
+            <span class="comentarios-count" :data-vazio="comentarios.length === 0">{{ comentarios.length }}</span>
+          </button>
+          <span class="progress">{{ progresso }} concluídas</span>
+        </div>
       </div>
       <div class="stepper-scroll">
         <DesembolsoStepper
@@ -292,6 +329,57 @@ const meta = computed(() => [
 }
 .toggle:focus-visible {
   box-shadow: var(--focus-ring);
+}
+.valores {
+  display: flex;
+  gap: 24px;
+}
+.valor-bloco {
+  text-align: right;
+}
+.valor-bloco .eyebrow {
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+.valor--vazio {
+  color: var(--text-muted);
+  font-weight: var(--weight-regular);
+}
+.comentarios-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 9999px;
+  background: var(--surface-card);
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-default);
+  cursor: pointer;
+  outline: none;
+  transition: background var(--duration-base) var(--ease-standard);
+}
+.comentarios-btn:hover {
+  background: var(--action-secondary-bg-hover);
+}
+.comentarios-btn:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+.comentarios-count {
+  min-width: 16px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  background: var(--status-active-bg);
+  color: var(--status-active-text);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.comentarios-count[data-vazio='true'] {
+  background: var(--status-neutral-bg);
+  color: var(--status-neutral-text);
 }
 .valor {
   flex-shrink: 0;

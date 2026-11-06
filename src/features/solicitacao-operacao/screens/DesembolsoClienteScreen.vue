@@ -8,8 +8,10 @@ import {
   atividadeEmail,
   cardsIniciais,
   DESTINATARIOS_ETAPA,
+  ehUltimaEtapa,
   etiquetaEtapa,
   formatDataBr,
+  novoComentario,
   possuiEtapaBmp,
   proximaEtapa,
   type CardDesembolso,
@@ -18,6 +20,8 @@ import {
 } from '../data/desembolsoClienteData';
 import DesembolsoClienteCard from '../components/desembolso-cliente/DesembolsoClienteCard.vue';
 import EncarteirarModal from '../components/desembolso-cliente/EncarteirarModal.vue';
+import VoltarEtapaModal from '../components/desembolso-cliente/VoltarEtapaModal.vue';
+import ComentariosModal from '../components/desembolso-cliente/ComentariosModal.vue';
 
 const toast = useToast();
 const cards = reactive<CardDesembolso[]>(cardsIniciais(solicitacoes));
@@ -25,6 +29,9 @@ const buscaId = ref('');
 const buscaCedente = ref('');
 const buscaVeiculo = ref('');
 const encarteirando = ref<CardDesembolso | null>(null);
+const voltando = ref<{ card: CardDesembolso; key: EtapaDesembolsoKey } | null>(null);
+const comentandoId = ref<string | null>(null);
+const cardComentarios = computed(() => cards.find((c) => c.solicitacao.id === comentandoId.value) ?? null);
 
 type Filtro = 'TODOS' | 'COM_BMP' | 'SEM_BMP' | 'ATRASADOS';
 
@@ -89,6 +96,13 @@ function alternarTodos() {
   expandidos.value = next;
 }
 
+/** A última etapa da esteira do pedido encerra o desembolso: o card sai da lista. */
+function encerrarSeUltima(card: CardDesembolso, key: EtapaDesembolsoKey): boolean {
+  if (!ehUltimaEtapa(card, key)) return false;
+  card.solicitacao.etapa = 'SOLUCIONADA';
+  return true;
+}
+
 function onConcluir(card: CardDesembolso, key: EtapaDesembolsoKey) {
   const proxima = proximaEtapa(card);
   if (!proxima || proxima.key !== key) return;
@@ -98,15 +112,34 @@ function onConcluir(card: CardDesembolso, key: EtapaDesembolsoKey) {
   }
   card.concluidas.push(key);
   card.atividade.unshift(atividadeEmail(key));
-  toast.info(`E-mail enviado · ${etiquetaEtapa(key)} para ${DESTINATARIOS_ETAPA[key].join(', ')}.`);
+  const destinatarios = DESTINATARIOS_ETAPA[key].join(', ');
+  if (encerrarSeUltima(card, key)) {
+    toast.success(`${card.solicitacao.id} concluída. E-mail enviado · ${etiquetaEtapa(key)} para ${destinatarios}.`);
+    return;
+  }
+  toast.info(`E-mail enviado · ${etiquetaEtapa(key)} para ${destinatarios}.`);
 }
 
 function onDesfazer(card: CardDesembolso, key: EtapaDesembolsoKey) {
-  const ultima = card.concluidas[card.concluidas.length - 1];
-  if (ultima !== key || key === 'ENCARTEIRAR') return;
+  if (card.concluidas[card.concluidas.length - 1] !== key) return;
+  voltando.value = { card, key };
+}
+
+function confirmarVoltar(motivo: string) {
+  if (!voltando.value) return;
+  const { card, key } = voltando.value;
+  if (card.concluidas[card.concluidas.length - 1] !== key) {
+    voltando.value = null;
+    return;
+  }
   card.concluidas.pop();
-  card.atividade.unshift(atividadeDesfeita(key));
-  toast.info(`Etapa desfeita: ${etiquetaEtapa(key)}.`);
+  if (key === 'ENCARTEIRAR') card.desembolso = null;
+  card.atividade.unshift(atividadeDesfeita(key, motivo));
+  if (motivo) card.comentarios.unshift(novoComentario(key, motivo));
+  voltando.value = null;
+  toast.info(
+    `Etapa desfeita: ${etiquetaEtapa(key)}.${motivo ? ' Comentário registrado.' : ''}`,
+  );
 }
 
 function onBaixar(arquivo: string) {
@@ -117,12 +150,13 @@ function onEncarteirar(payload: EncarteirarPayload) {
   const card = encarteirando.value;
   if (!card) return;
   const id = card.solicitacao.id;
-  card.solicitacao.etapa = 'SOLUCIONADA';
   card.concluidas.push('ENCARTEIRAR');
+  card.desembolso = payload;
+  card.atividade.unshift(atividadeEmail('ENCARTEIRAR'));
   encarteirando.value = null;
-  toast.success(
-    `${id} encarteirada em ${formatDataBr(payload.dataDesembolso)} (${brl(payload.valorDesembolsado)}). E-mail enviado para ${DESTINATARIOS_ETAPA.ENCARTEIRAR.join(', ')}.`,
-  );
+  const resumo = `${id} encarteirada em ${formatDataBr(payload.dataDesembolso)} (${brl(payload.valorDesembolsado)}). E-mail enviado para ${DESTINATARIOS_ETAPA.ENCARTEIRAR.join(', ')}.`;
+  if (encerrarSeUltima(card, 'ENCARTEIRAR')) toast.success(resumo);
+  else toast.info(`${resumo} Falta a etapa Financeiro.`);
 }
 </script>
 
@@ -234,11 +268,14 @@ function onEncarteirar(payload: EncarteirarPayload) {
         :solicitacao="card.solicitacao"
         :concluidas="card.concluidas"
         :atividade="card.atividade"
+        :comentarios="card.comentarios"
+        :desembolso="card.desembolso"
         :expandido="expandidos.has(card.solicitacao.id)"
         @update:expandido="setExpandido(card.solicitacao.id, $event)"
         @concluir="onConcluir(card, $event)"
         @desfazer="onDesfazer(card, $event)"
         @baixar="onBaixar"
+        @comentarios="comentandoId = card.solicitacao.id"
       />
     </div>
 
@@ -249,6 +286,23 @@ function onEncarteirar(payload: EncarteirarPayload) {
       :valor-operacao="encarteirando.solicitacao.valor"
       @close="encarteirando = null"
       @confirm="onEncarteirar"
+    />
+
+    <VoltarEtapaModal
+      v-if="voltando"
+      :solicitacao-id="voltando.card.solicitacao.id"
+      :cedente="voltando.card.solicitacao.cedente"
+      :etapa="voltando.key"
+      @close="voltando = null"
+      @confirm="confirmarVoltar"
+    />
+
+    <ComentariosModal
+      v-if="cardComentarios"
+      :solicitacao-id="cardComentarios.solicitacao.id"
+      :cedente="cardComentarios.solicitacao.cedente"
+      :comentarios="cardComentarios.comentarios"
+      @close="comentandoId = null"
     />
   </div>
 </template>

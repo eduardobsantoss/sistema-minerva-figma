@@ -66,6 +66,11 @@ export interface Solicitacao {
    * não existem neste pedido. Ausente = passa pelo BMP.
    */
   possuiBmp?: boolean;
+  /**
+   * Desembolso do Cliente: quando true, existe a etapa final Financeiro depois de Encarteirar.
+   * Ausente = não passa pelo Financeiro.
+   */
+  possuiFinanceiro?: boolean;
 }
 
 /* ─── Tipos auxiliares da tela de detalhe (somente exibição) ──────── */
@@ -889,6 +894,7 @@ export const solicitacoes: Solicitacao[] = [
     esteira: 'CLIENTE', tipoOperacao: 'Aquisição', grupoEmpresarial: 'Grupo Ceres',
     abertura: '2026-05-20', tempoTotalHoras: 880, tempoEtapaHoras: 18, slaEtapaHoras: 48,
     taxa: 1.96, gerente: 'Ana Martins', atendente: 'Juliana Prado',
+    possuiFinanceiro: true,
   },
   {
     id: '#1404', cedente: 'Fazendas União LTDA', tipoContrato: 'CCB', validacao: 'VALIDO',
