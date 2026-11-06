@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { Plus, Star, Trash2, X } from 'lucide-vue-next';
+import { Plus, Star, Trash2 } from 'lucide-vue-next';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import ToggleRow from '@/features/risco/screens/detail-tabs/shared/ToggleRow.vue';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
@@ -12,6 +12,8 @@ import {
   type ParteNotificacao,
 } from '../composables/usePartesNotificacao';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -126,33 +128,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 </script>
 
 <template>
-  <div
-    class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 500; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 24px"
-  >
-    <div
-      role="dialog"
-      aria-modal="true"
-      :aria-label="ehCedente ? 'Notificações do cedente' : 'Notificações e contatos do sacado'"
-      class="pn-shell"
-      @click.stop
-    >
-      <div class="flex items-start justify-between" style="padding: 24px 28px 18px; gap: 16px">
-        <div style="min-width: 0">
-          <div class="pn-eyebrow">{{ ehCedente ? 'Cedente' : 'Sacado' }}</div>
-          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong); margin-top: 4px">
-            {{ nome }}
-          </h2>
-          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums">
-            {{ documento }}
-          </p>
-        </div>
-        <button type="button" class="pn-close" aria-label="Fechar" @click="emit('close')">
-          <X :size="18" />
-        </button>
-      </div>
-
-      <div v-if="!ehCedente" style="padding: 0 28px 16px">
+  <AdminModal size="md" eyebrow="Cobrança" :title="nome" :subtitle="documento" footer-align="end" @close="emit('close')">
+    <template v-if="!ehCedente" #subheader>
+      <div style="padding: 16px 28px; border-bottom: 1px solid var(--border-default)">
         <SegmentedToggle
           style="width: fit-content"
           :options="tabOptions"
@@ -161,130 +139,129 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
           @update:model-value="tab = $event as 'notificacoes' | 'contatos'"
         />
       </div>
+    </template>
+    <div class="pn-body">
+      <!-- Notificações -->
+      <template v-if="tab === 'notificacoes'">
+        <p class="pn-help">
+          Defina, por operação, quais notificações {{ ehCedente ? 'o cedente' : 'o sacado' }} recebe. Cada alteração é
+          salva automaticamente.
+        </p>
 
-      <div class="pn-body">
-        <!-- Notificações -->
-        <template v-if="tab === 'notificacoes'">
-          <p class="pn-help">
-            Defina, por operação, quais notificações {{ ehCedente ? 'o cedente' : 'o sacado' }} recebe. Cada alteração é
-            salva automaticamente.
-          </p>
+        <div class="pn-section-title">Todas as operações</div>
+        <div class="pn-toggles">
+          <ToggleRow
+            v-for="col in COLUNAS"
+            :key="col.campo"
+            :label="col.label"
+            :hint="`${operacoes.filter((o) => o[col.campo]).length} de ${operacoes.length} operações ativas`"
+            :on="todasAtivas(col.campo)"
+            @toggle="alternarTodas(col.campo, col.label)"
+          />
+        </div>
 
-          <div class="pn-section-title">Todas as operações</div>
-          <div class="pn-toggles">
-            <ToggleRow
-              v-for="col in COLUNAS"
-              :key="col.campo"
-              :label="col.label"
-              :hint="`${operacoes.filter((o) => o[col.campo]).length} de ${operacoes.length} operações ativas`"
-              :on="todasAtivas(col.campo)"
-              @toggle="alternarTodas(col.campo, col.label)"
-            />
-          </div>
+        <div class="pn-section-title" style="margin-top: 22px">Por operação</div>
+        <ul class="pn-ops" :aria-label="`Notificações por operação de ${nome}`">
+          <li v-for="op in operacoes" :key="op.id" class="pn-op">
+            <div class="flex items-center" style="gap: 10px; flex-wrap: wrap">
+              <span class="pn-op-name">{{ op.nome }}</span>
+              <span v-if="op.id === operacaoId" class="pn-op-tag">Operação desta cessão</span>
+            </div>
+            <div class="pn-toggles">
+              <ToggleRow
+                v-for="col in COLUNAS"
+                :key="col.campo"
+                :label="col.label"
+                :on="op[col.campo]"
+                @toggle="alterar(op.id, col.campo, col.label, !op[col.campo])"
+              />
+            </div>
+          </li>
+          <li v-if="!operacoes.length" class="pn-empty">Nenhuma operação vinculada.</li>
+        </ul>
+      </template>
 
-          <div class="pn-section-title" style="margin-top: 22px">Por operação</div>
-          <ul class="pn-ops" :aria-label="`Notificações por operação de ${nome}`">
-            <li v-for="op in operacoes" :key="op.id" class="pn-op">
-              <div class="flex items-center" style="gap: 10px; flex-wrap: wrap">
-                <span class="pn-op-name">{{ op.nome }}</span>
-                <span v-if="op.id === operacaoId" class="pn-op-tag">Operação desta cessão</span>
-              </div>
-              <div class="pn-toggles">
-                <ToggleRow
-                  v-for="col in COLUNAS"
-                  :key="col.campo"
-                  :label="col.label"
-                  :on="op[col.campo]"
-                  @toggle="alterar(op.id, col.campo, col.label, !op[col.campo])"
-                />
-              </div>
-            </li>
-            <li v-if="!operacoes.length" class="pn-empty">Nenhuma operação vinculada.</li>
-          </ul>
-        </template>
+      <!-- Contatos -->
+      <template v-else>
+        <p class="pn-help">
+          O contato principal recebe as notificações do sacado. Cada alteração é salva automaticamente.
+        </p>
 
-        <!-- Contatos -->
-        <template v-else>
-          <p class="pn-help">
-            O contato principal recebe as notificações do sacado. Cada alteração é salva automaticamente.
-          </p>
-
-          <ul class="pn-contatos" aria-label="Contatos cadastrados">
-            <li v-for="c in contatos" :key="c.id" class="pn-contato">
-              <div style="min-width: 0; flex: 1 1 220px">
-                <div class="flex items-center" style="gap: 8px; flex-wrap: wrap">
-                  <span class="pn-op-name">{{ c.nome }}</span>
-                  <span v-if="c.principal" class="pn-badge">
-                    <Star :size="11" :stroke-width="2.5" aria-hidden="true" /> Contato principal
-                  </span>
-                </div>
-                <div class="pn-contato-info">
-                  <span>{{ c.email || 'Sem e-mail' }}</span>
-                  <span aria-hidden="true">·</span>
-                  <span>{{ telefoneCompleto(c) || 'Sem telefone' }}</span>
-                </div>
-              </div>
+        <ul class="pn-contatos" aria-label="Contatos cadastrados">
+          <li v-for="c in contatos" :key="c.id" class="pn-contato">
+            <div style="min-width: 0; flex: 1 1 220px">
               <div class="flex items-center" style="gap: 8px; flex-wrap: wrap">
-                <button v-if="!c.principal" type="button" class="pn-btn" @click="definirPrincipal(c)">
-                  <Star :size="14" aria-hidden="true" /> Definir como principal
-                </button>
-                <button type="button" class="pn-btn pn-btn-danger" @click="removendo = c">
-                  <Trash2 :size="14" aria-hidden="true" /> Remover
-                </button>
+                <span class="pn-op-name">{{ c.nome }}</span>
+                <span v-if="c.principal" class="pn-badge">
+                  <Star :size="11" :stroke-width="2.5" aria-hidden="true" /> Contato principal
+                </span>
               </div>
-            </li>
-            <li v-if="!contatos.length" class="pn-empty">
-              Nenhum contato cadastrado. Adicione o primeiro abaixo e ele será o contato principal.
-            </li>
-          </ul>
-
-          <form class="pn-form" novalidate @submit.prevent="adicionar">
-            <h3 class="pn-form-title">Novo contato</h3>
-            <div class="pn-form-grid">
-              <label class="pn-field">
-                <span class="pn-label">Nome</span>
-                <input v-model="form.nome" class="pn-input" type="text" placeholder="Ex.: Financeiro" autocomplete="off" />
-                <span v-if="tentouAdicionar && erros.nome" class="pn-error">{{ erros.nome }}</span>
-              </label>
-              <label class="pn-field">
-                <span class="pn-label">E-mail</span>
-                <input v-model="form.email" class="pn-input" type="email" placeholder="contato@empresa.com.br" autocomplete="off" />
-                <span v-if="(tentouAdicionar || form.email) && erros.email" class="pn-error">{{ erros.email }}</span>
-              </label>
-              <label class="pn-field">
-                <span class="pn-label">País (DDI)</span>
-                <AdminSelect v-model="form.ddi" :options="[...DDI_OPTS.map((d) => ({ value: d.value, label: d.label }))]" />
-              </label>
-              <label class="pn-field">
-                <span class="pn-label">Telefone</span>
-                <input v-model="form.telefone" class="pn-input" type="tel" placeholder="(11) 99999-0000" autocomplete="off" />
-              </label>
+              <div class="pn-contato-info">
+                <span>{{ c.email || 'Sem e-mail' }}</span>
+                <span aria-hidden="true">·</span>
+                <span>{{ telefoneCompleto(c) || 'Sem telefone' }}</span>
+              </div>
             </div>
-            <div v-if="tentouAdicionar && erros.contato" class="pn-error" style="margin-top: 8px">{{ erros.contato }}</div>
-            <div class="flex justify-end" style="margin-top: 14px">
-              <button type="submit" class="pn-primary"><Plus :size="16" aria-hidden="true" /> Adicionar contato</button>
+            <div class="flex items-center" style="gap: 8px; flex-wrap: wrap">
+              <button v-if="!c.principal" type="button" class="pn-btn" @click="definirPrincipal(c)">
+                <Star :size="14" aria-hidden="true" /> Definir como principal
+              </button>
+              <button type="button" class="pn-btn pn-btn-danger" @click="removendo = c">
+                <Trash2 :size="14" aria-hidden="true" /> Remover
+              </button>
             </div>
-          </form>
-        </template>
-      </div>
+          </li>
+          <li v-if="!contatos.length" class="pn-empty">
+            Nenhum contato cadastrado. Adicione o primeiro abaixo e ele será o contato principal.
+          </li>
+        </ul>
 
-      <div class="pn-footer">
-        <button type="button" class="pn-secondary" @click="emit('close')">Fechar</button>
-      </div>
+        <form class="pn-form" novalidate @submit.prevent="adicionar">
+          <h3 class="pn-form-title">Novo contato</h3>
+          <div class="pn-form-grid">
+            <label class="pn-field">
+              <span class="pn-label">Nome</span>
+              <input v-model="form.nome" class="pn-input" type="text" placeholder="Ex.: Financeiro" autocomplete="off" />
+              <span v-if="tentouAdicionar && erros.nome" class="pn-error">{{ erros.nome }}</span>
+            </label>
+            <label class="pn-field">
+              <span class="pn-label">E-mail</span>
+              <input v-model="form.email" class="pn-input" type="email" placeholder="contato@empresa.com.br" autocomplete="off" />
+              <span v-if="(tentouAdicionar || form.email) && erros.email" class="pn-error">{{ erros.email }}</span>
+            </label>
+            <label class="pn-field">
+              <span class="pn-label">País (DDI)</span>
+              <AdminSelect v-model="form.ddi" :options="[...DDI_OPTS.map((d) => ({ value: d.value, label: d.label }))]" />
+            </label>
+            <label class="pn-field">
+              <span class="pn-label">Telefone</span>
+              <input v-model="form.telefone" class="pn-input" type="tel" placeholder="(11) 99999-0000" autocomplete="off" />
+            </label>
+          </div>
+          <div v-if="tentouAdicionar && erros.contato" class="pn-error" style="margin-top: 8px">{{ erros.contato }}</div>
+          <div class="flex justify-end" style="margin-top: 14px">
+            <button type="submit" class="pn-primary"><Plus :size="16" aria-hidden="true" /> Adicionar contato</button>
+          </div>
+        </form>
+      </template>
     </div>
 
-    <ConfirmDeleteModal
-      v-if="removendo"
-      :title="`Remover ${removendo.nome}?`"
-      :description="
-        removendo.principal && contatos.length > 1
-          ? 'Este é o contato principal. O próximo contato da lista passa a ser o principal.'
-          : 'O contato deixa de receber notificações do sacado.'
-      "
-      @close="removendo = null"
-      @confirm="confirmarRemocao"
-    />
-  </div>
+    <template #footer>
+      <AdminButton variant="secondary" size="large" @click="emit('close')" type="button">Fechar</AdminButton>
+
+    </template>
+  </AdminModal>
+  <ConfirmDeleteModal
+    v-if="removendo"
+    :title="`Remover ${removendo.nome}?`"
+    :description="
+      removendo.principal && contatos.length > 1
+        ? 'Este é o contato principal. O próximo contato da lista passa a ser o principal.'
+        : 'O contato deixa de receber notificações do sacado.'
+    "
+    @close="removendo = null"
+    @confirm="confirmarRemocao"
+  />
 </template>
 
 <style scoped>
@@ -302,7 +279,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 .pn-eyebrow {
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -319,14 +296,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
   color: var(--text-muted);
   cursor: pointer;
 }
-.pn-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 4px 28px 20px;
-  border-top: 1px solid var(--border-default);
-  padding-top: 18px;
-}
 .pn-help {
   margin: 0 0 14px;
   font-size: var(--text-sm);
@@ -337,7 +306,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
   margin-bottom: 10px;
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -472,7 +441,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 .pn-label {
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   color: var(--text-muted);
   text-transform: uppercase;
 }

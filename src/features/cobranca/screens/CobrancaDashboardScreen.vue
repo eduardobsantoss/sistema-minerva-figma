@@ -337,6 +337,82 @@ const CONF_GRID = 'minmax(110px, 1.2fr) minmax(150px, 1.6fr) minmax(100px, 1fr) 
       </div>
     </div>
 
+    <!-- Atalhos -->
+    <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 12px">
+      <button
+        class="flex items-center dash-shortcut"
+        style="
+          gap: 12px;
+          padding: 16px 18px;
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-xl);
+          background: var(--surface-card);
+          cursor: pointer;
+          text-align: left;
+        "
+        @click="emit('navigate', 'cobranca-titulos')"
+      >
+        <FileText :size="18" style="color: var(--gci-base); flex-shrink: 0" />
+        <div style="flex: 1">
+          <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Listagem de títulos
+          </div>
+          <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">
+            Atuar sobre a carteira completa
+          </div>
+        </div>
+        <ChevronRight :size="16" style="color: var(--text-muted)" />
+      </button>
+      <button
+        class="flex items-center dash-shortcut"
+        style="
+          gap: 12px;
+          padding: 16px 18px;
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-xl);
+          background: var(--surface-card);
+          cursor: pointer;
+          text-align: left;
+        "
+        @click="emit('navigate', 'cobranca-notif-cessao')"
+      >
+        <BellRing :size="18" style="color: var(--warning-base); flex-shrink: 0" />
+        <div style="flex: 1">
+          <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Notificações de cessão
+          </div>
+          <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">
+            Acompanhar envios e falhas
+          </div>
+        </div>
+        <ChevronRight :size="16" style="color: var(--text-muted)" />
+      </button>
+      <button
+        class="flex items-center dash-shortcut"
+        style="
+          gap: 12px;
+          padding: 16px 18px;
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-xl);
+          background: var(--surface-card);
+          cursor: pointer;
+          text-align: left;
+        "
+        @click="emit('navigate', 'cobranca-notif')"
+      >
+        <Receipt :size="18" style="color: var(--agro-base); flex-shrink: 0" />
+        <div style="flex: 1">
+          <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
+            Réguas de cobrança
+          </div>
+          <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">
+            Configurar disparos automáticos
+          </div>
+        </div>
+        <ChevronRight :size="16" style="color: var(--text-muted)" />
+      </button>
+    </div>
+
     <!-- KPI cards com valor em destaque -->
     <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px">
       <div
@@ -657,82 +733,6 @@ const CONF_GRID = 'minmax(110px, 1.2fr) minmax(150px, 1.6fr) minmax(100px, 1fr) 
           @update:page-size="setConfPageSize"
         />
       </template>
-    </div>
-
-    <!-- Atalhos -->
-    <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 12px">
-      <button
-        class="flex items-center dash-shortcut"
-        style="
-          gap: 12px;
-          padding: 16px 18px;
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-xl);
-          background: var(--surface-card);
-          cursor: pointer;
-          text-align: left;
-        "
-        @click="emit('navigate', 'cobranca-titulos')"
-      >
-        <FileText :size="18" style="color: var(--gci-base); flex-shrink: 0" />
-        <div style="flex: 1">
-          <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-            Listagem de títulos
-          </div>
-          <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">
-            Atuar sobre a carteira completa
-          </div>
-        </div>
-        <ChevronRight :size="16" style="color: var(--text-muted)" />
-      </button>
-      <button
-        class="flex items-center dash-shortcut"
-        style="
-          gap: 12px;
-          padding: 16px 18px;
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-xl);
-          background: var(--surface-card);
-          cursor: pointer;
-          text-align: left;
-        "
-        @click="emit('navigate', 'cobranca-notif-cessao')"
-      >
-        <BellRing :size="18" style="color: var(--warning-base); flex-shrink: 0" />
-        <div style="flex: 1">
-          <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-            Notificações de cessão
-          </div>
-          <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">
-            Acompanhar envios e falhas
-          </div>
-        </div>
-        <ChevronRight :size="16" style="color: var(--text-muted)" />
-      </button>
-      <button
-        class="flex items-center dash-shortcut"
-        style="
-          gap: 12px;
-          padding: 16px 18px;
-          border: 1px solid var(--border-default);
-          border-radius: var(--radius-xl);
-          background: var(--surface-card);
-          cursor: pointer;
-          text-align: left;
-        "
-        @click="emit('navigate', 'cobranca-notif')"
-      >
-        <Receipt :size="18" style="color: var(--agro-base); flex-shrink: 0" />
-        <div style="flex: 1">
-          <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">
-            Réguas de notificação
-          </div>
-          <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">
-            Configurar disparos automáticos
-          </div>
-        </div>
-        <ChevronRight :size="16" style="color: var(--text-muted)" />
-      </button>
     </div>
   </div>
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Plus, Upload, X } from 'lucide-vue-next';
+import { Plus, Upload } from 'lucide-vue-next';
 import {
   CANAL_CONTATO_OPTS,
   STATUS_PREVENTIVO,
@@ -11,6 +11,8 @@ import {
 } from '../../data/cobrancaPreventivaData';
 import AdminDateField from '@/components/ui/AdminDateField.vue';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 
 const props = defineProps<{ quantidadeTitulos: number }>();
 const emit = defineEmits<{
@@ -70,80 +72,57 @@ function salvar() {
 </script>
 
 <template>
-  <div
-    class="flex items-center justify-center"
-    style="position: fixed; inset: 0; z-index: 600; background: rgba(8, 60, 74, 0.55); backdrop-filter: blur(8px); padding: 32px"
-    @click.self="emit('close')"
-  >
-    <div
-      class="flex flex-col"
-      style="width: 100%; max-width: 760px; max-height: 85vh; background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden"
-      @click.stop
-    >
-      <div class="flex items-start justify-between" style="padding: 24px 28px; border-bottom: 1px solid var(--border-default)">
-        <div>
-          <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong)">
-            Registrar tentativa
-          </h2>
-          <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-            {{ props.quantidadeTitulos === 1 ? '1 título selecionado' : `${props.quantidadeTitulos} títulos selecionados` }}
-          </p>
-        </div>
-        <button type="button" aria-label="Fechar" class="icon-btn" @click="emit('close')">
-          <X :size="18" />
-        </button>
-      </div>
-
-      <div style="padding: 20px 28px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px">
-        <div
-          v-for="(linha, index) in linhas"
-          :key="index"
-          class="grid"
-          style="grid-template-columns: 1fr 1fr; gap: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border-default)"
-        >
-          <label class="field">
-            <span class="label">Status</span>
-            <AdminSelect v-model="linha.status" placeholder="Selecione" :options="[...STATUS_PREVENTIVO.map((s) => ({ value: s.key, label: s.label }))]" />
-          </label>
-          <label class="field">
-            <span class="label">Data do contato</span>
-            <AdminDateField v-model="linha.dataContato" />
-          </label>
-          <label class="field">
-            <span class="label">Canal de contato</span>
-            <AdminSelect v-model="linha.canal" placeholder="Selecione" :options="[...CANAL_CONTATO_OPTS.map((c) => ({ value: c, label: canalLabel(c) }))]" />
-          </label>
-          <label class="field">
-            <span class="label">Quantidade de tentativas</span>
-            <input v-model.number="linha.quantidade" type="number" min="1" class="input" />
-          </label>
-          <label class="field" style="grid-column: 1 / -1">
-            <span class="label">Anexo (opcional)</span>
-            <span class="file">
-              <Upload :size="16" />
-              <input type="file" @change="onFile(index, $event)" />
-              {{ linha.anexoNome || 'Selecionar arquivo' }}
-            </span>
-          </label>
-        </div>
-
-        <button type="button" class="add" @click="adicionar">
-          <Plus :size="14" /> Adicionar tentativa
-        </button>
-
+  <AdminModal size="md" eyebrow="Cobrança" title="Registrar tentativa" :subtitle="props.quantidadeTitulos === 1 ? '1 título selecionado' : `${props.quantidadeTitulos} títulos selecionados`" @close="emit('close')">
+    <div style="display: flex; flex-direction: column; gap: 16px">
+      <div
+        v-for="(linha, index) in linhas"
+        :key="index"
+        class="grid"
+        style="grid-template-columns: 1fr 1fr; gap: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border-default)"
+      >
         <label class="field">
-          <span class="label">Observações</span>
-          <textarea v-model="observacoes" rows="3" class="input" style="height: auto; padding: 12px 14px; resize: vertical; font-family: inherit" />
+          <span class="label">Status</span>
+          <AdminSelect v-model="linha.status" placeholder="Selecione" :options="[...STATUS_PREVENTIVO.map((s) => ({ value: s.key, label: s.label }))]" />
         </label>
-        <p v-if="erro" style="font-size: var(--text-xs); color: var(--danger-base)">{{ erro }}</p>
+        <label class="field">
+          <span class="label">Data do contato</span>
+          <AdminDateField v-model="linha.dataContato" />
+        </label>
+        <label class="field">
+          <span class="label">Canal de contato</span>
+          <AdminSelect v-model="linha.canal" placeholder="Selecione" :options="[...CANAL_CONTATO_OPTS.map((c) => ({ value: c, label: canalLabel(c) }))]" />
+        </label>
+        <label class="field">
+          <span class="label">Quantidade de tentativas</span>
+          <input v-model.number="linha.quantidade" type="number" min="1" class="input" />
+        </label>
+        <label class="field" style="grid-column: 1 / -1">
+          <span class="label">Anexo (opcional)</span>
+          <span class="file">
+            <Upload :size="16" />
+            <input type="file" @change="onFile(index, $event)" />
+            {{ linha.anexoNome || 'Selecionar arquivo' }}
+          </span>
+        </label>
       </div>
 
-      <div class="flex items-center justify-end" style="gap: 10px; padding: 16px 28px; border-top: 1px solid var(--border-default)">
-        <button type="button" class="secondary" @click="emit('close')">Cancelar</button>
-        <button type="button" class="primary" @click="salvar">Salvar</button>
-      </div>
+      <button type="button" class="add" @click="adicionar">
+        <Plus :size="14" /> Adicionar tentativa
+      </button>
+
+      <label class="field">
+        <span class="label">Observações</span>
+        <textarea v-model="observacoes" rows="3" class="input" style="height: auto; padding: 12px 14px; resize: vertical; font-family: inherit" />
+      </label>
+      <p v-if="erro" style="font-size: var(--text-xs); color: var(--danger-base)">{{ erro }}</p>
     </div>
-  </div>
+
+    <template #footer>
+      <AdminButton variant="ghost" size="large" @click="emit('close')" type="button">Cancelar</AdminButton>
+      <AdminButton variant="primary" size="large" @click="salvar" type="button">Salvar</AdminButton>
+
+    </template>
+  </AdminModal>
 </template>
 
 <style scoped>
@@ -169,7 +148,7 @@ function salvar() {
 .label {
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   color: var(--text-muted);
   text-transform: uppercase;
 }
@@ -217,30 +196,6 @@ function salvar() {
   color: var(--gci-base);
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.secondary,
-.primary {
-  height: 40px;
-  padding: 0 18px;
-  border-radius: var(--radius-lg);
-  font-weight: var(--weight-bold);
-  font-size: var(--text-sm);
-  cursor: pointer;
-}
-.secondary {
-  background: var(--surface-card);
-  color: var(--text-strong);
-  border: 1px solid var(--border-default);
-}
-.primary {
-  background: var(--action-primary-bg);
-  color: var(--action-primary-text);
-  border: none;
-}
-.primary:hover {
-  background: var(--action-primary-bg-hover);
 }
 button:focus-visible,
 input:focus-visible,
