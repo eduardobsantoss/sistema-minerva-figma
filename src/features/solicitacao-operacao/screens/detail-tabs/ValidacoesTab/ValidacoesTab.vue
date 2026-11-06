@@ -39,7 +39,7 @@ const aprovadas = computed(() =>
           class="flex items-center"
           style="
             gap: 6px;
-            height: 38px;
+            height: 40px;
             padding: 0 14px;
             background: none;
             border: 1px solid var(--border-default);

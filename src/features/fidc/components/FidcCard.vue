@@ -90,7 +90,7 @@ const catColor = computed(() =>
         color: var(--text-strong);
         line-height: 1.3;
         letter-spacing: -0.01em;
-        min-height: 42px;
+        min-height: 40px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;

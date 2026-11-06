@@ -294,7 +294,7 @@ function handleSearchSelect(id: string) {
         <input
           v-model="query"
           placeholder="Buscar grupo por nome ou documento"
-          style="width: 100%; height: 42px; padding: 0 14px 0 38px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
+          style="width: 100%; height: 40px; padding: 0 14px 0 38px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
         />
         <div
           v-if="searchResults.length > 0"

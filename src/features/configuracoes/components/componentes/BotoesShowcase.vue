@@ -2,7 +2,7 @@
 import ShowcaseSection from './ShowcaseSection.vue';
 
 const baseBtn = {
-  height: '38px',
+  height: '40px',
   padding: '0 16px',
   borderRadius: 'var(--radius-lg)',
   fontSize: 'var(--text-sm)',

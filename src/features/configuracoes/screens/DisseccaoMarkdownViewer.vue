@@ -119,7 +119,7 @@ async function copySelected() {
         :disabled="!selected"
         :style="{
           gap: '8px',
-          height: '38px',
+          height: '40px',
           padding: '0 16px',
           borderRadius: 'var(--radius-lg)',
           border: 'none',
@@ -256,7 +256,7 @@ async function copySelected() {
             class="btn-animated flex items-center"
             :style="{
               gap: '6px',
-              height: '34px',
+              height: '32px',
               padding: '0 12px',
               borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--border-default)',

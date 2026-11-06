@@ -373,7 +373,7 @@ function finalizarBoletos(ids: string[]) {
               <button
                 type="button"
                 style="
-                  height: 38px;
+                  height: 40px;
                   padding: 0 16px;
                   background: none;
                   border: 1px solid var(--border-default);
@@ -392,7 +392,7 @@ function finalizarBoletos(ids: string[]) {
                 class="flex items-center"
                 style="
                   gap: 6px;
-                  height: 38px;
+                  height: 40px;
                   padding: 0 18px;
                   background: var(--action-primary-bg);
                   color: #fff;
@@ -614,7 +614,7 @@ function finalizarBoletos(ids: string[]) {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 38px;
+  height: 40px;
   padding: 0 16px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);
@@ -634,7 +634,7 @@ function finalizarBoletos(ids: string[]) {
 }
 .filter-input {
   width: 100%;
-  height: 38px;
+  height: 40px;
   padding: 0 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);

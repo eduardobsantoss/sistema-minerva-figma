@@ -187,7 +187,7 @@ function consultar() {
           type="button"
           class="sn-focus btn-animated btn-primary"
           :disabled="prontos.length === 0"
-          style="height: 38px; padding: 0 16px; background: var(--action-primary-bg); color: var(--action-primary-text); border: none; border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-bold)"
+          style="height: 40px; padding: 0 16px; background: var(--action-primary-bg); color: var(--action-primary-text); border: none; border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-bold)"
           @click="consultar"
         >
           Consultar
@@ -208,7 +208,7 @@ function consultar() {
             @input="onCnpjInput"
             @keydown.enter.prevent="adicionarCnpj"
           />
-          <button type="button" class="sn-focus" style="height: 38px; padding: 0 14px; background: var(--action-secondary-bg); color: var(--action-secondary-text); border: 1px solid var(--action-secondary-border); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold)" @click="adicionarCnpj">
+          <button type="button" class="sn-focus" style="height: 40px; padding: 0 14px; background: var(--action-secondary-bg); color: var(--action-secondary-text); border: 1px solid var(--action-secondary-border); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold)" @click="adicionarCnpj">
             Adicionar
           </button>
         </div>
@@ -338,7 +338,7 @@ button:disabled {
 
 .filter-input {
   width: 100%;
-  height: 38px;
+  height: 40px;
   padding: 0 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);

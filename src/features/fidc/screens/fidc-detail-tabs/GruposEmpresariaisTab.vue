@@ -41,7 +41,7 @@ const COLS = '1.2fr 1fr 0.75fr 0.85fr 0.55fr 0.55fr 0.55fr 0.45fr';
 
 const filterInputStyle = {
   width: '100%',
-  height: '38px',
+  height: '40px',
   padding: '0 12px',
   background: 'var(--surface-card)',
   border: '1px solid var(--border-default)',

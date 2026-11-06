@@ -375,7 +375,7 @@ function pillStyle(color: string) {
           :key="qf.key"
           type="button"
           :style="{
-            height: '38px',
+            height: '40px',
             padding: '0 14px',
             borderRadius: 'var(--radius-lg)',
             cursor: 'pointer',
@@ -499,7 +499,7 @@ function pillStyle(color: string) {
                 <button
                   type="button"
                   style="
-                    height: 38px;
+                    height: 40px;
                     padding: 0 16px;
                     background: none;
                     border: 1px solid var(--border-default);
@@ -518,7 +518,7 @@ function pillStyle(color: string) {
                   class="flex items-center"
                   style="
                     gap: 6px;
-                    height: 38px;
+                    height: 40px;
                     padding: 0 18px;
                     background: var(--action-primary-bg);
                     color: #fff;
@@ -911,7 +911,7 @@ function pillStyle(color: string) {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 38px;
+  height: 40px;
   padding: 0 16px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);
@@ -931,7 +931,7 @@ function pillStyle(color: string) {
 }
 .filter-input {
   width: 100%;
-  height: 38px;
+  height: 40px;
   padding: 0 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);
@@ -1064,7 +1064,7 @@ function pillStyle(color: string) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 34px;
+  height: 32px;
   padding: 0 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);

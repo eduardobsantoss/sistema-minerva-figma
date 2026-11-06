@@ -232,7 +232,7 @@ const selected = computed(() => (selectedId.value ? lista.find((s) => s.id === s
           <input
             v-model="q"
             placeholder="Buscar por ID, cedente ou veículo..."
-            style="width: 100%; height: 42px; padding-left: 40px; padding-right: 14px; background: transparent; border: none; outline: none; font-size: var(--text-sm); color: var(--text-strong); border-radius: var(--radius-lg)"
+            style="width: 100%; height: 40px; padding-left: 40px; padding-right: 14px; background: transparent; border: none; outline: none; font-size: var(--text-sm); color: var(--text-strong); border-radius: var(--radius-lg)"
           />
         </div>
 
@@ -243,7 +243,7 @@ const selected = computed(() => (selectedId.value ? lista.find((s) => s.id === s
             class="flex items-center"
             :style="{
               gap: '8px',
-              height: '42px',
+              height: '40px',
               padding: '0 16px',
               cursor: 'pointer',
               background: showFilters || activeFilterCount > 0 ? 'var(--gci-light)' : 'var(--surface-card)',

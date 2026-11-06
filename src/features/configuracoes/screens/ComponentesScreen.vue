@@ -142,8 +142,8 @@ function goBack() {
         <div
           class="flex items-center justify-center"
           style="
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
             border-radius: var(--radius-lg);
             background: var(--accent-bg);
             color: var(--accent);

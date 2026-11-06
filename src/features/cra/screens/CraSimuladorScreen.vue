@@ -122,7 +122,7 @@ function handleCreated() {
         <button
           type="button"
           class="flex items-center btn-animated btn-agro"
-          style="gap: 8px; height: 42px; padding: 0 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; flex-shrink: 0; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
+          style="gap: 8px; height: 40px; padding: 0 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; flex-shrink: 0; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
           @click="modalOpen = true"
         >
           <Plus :size="15" /> GERAR TÍTULO

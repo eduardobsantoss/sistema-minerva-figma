@@ -12,8 +12,8 @@ const emit = defineEmits<{ click: [] }>();
     :title="label"
     class="flex items-center justify-center"
     :style="{
-      width: '34px',
-      height: '34px',
+      width: '32px',
+      height: '32px',
       borderRadius: 'var(--radius-md)',
       cursor: 'pointer',
       border: '1px solid var(--border-default)',

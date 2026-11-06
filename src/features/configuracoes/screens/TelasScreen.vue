@@ -124,7 +124,7 @@ async function copyTokensOnly() {
         class="btn-animated flex items-center"
         :style="{
           gap: '8px',
-          height: '38px',
+          height: '40px',
           padding: '0 16px',
           borderRadius: 'var(--radius-lg)',
           border: '1px solid var(--border-strong)',
@@ -168,8 +168,8 @@ async function copyTokensOnly() {
         <div
           class="flex items-center justify-center"
           style="
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
             border-radius: var(--radius-lg);
             background: var(--accent-bg);
             color: var(--accent);

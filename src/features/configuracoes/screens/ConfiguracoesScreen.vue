@@ -161,8 +161,8 @@ function goHub() {
           <div
             class="flex items-center justify-center"
             style="
-              width: 42px;
-              height: 42px;
+              width: 40px;
+              height: 40px;
               border-radius: var(--radius-lg);
               background: var(--accent-bg);
               color: var(--accent);
@@ -193,7 +193,7 @@ function goHub() {
             class="btn-animated flex items-center"
             :style="{
               gap: '6px',
-              height: '34px',
+              height: '32px',
               padding: '0 12px',
               borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--border-default)',
@@ -231,7 +231,7 @@ function goHub() {
             class="btn-animated flex items-center"
             style="
               gap: 4px;
-              height: 34px;
+              height: 32px;
               padding: 0 10px;
               border: none;
               background: transparent;

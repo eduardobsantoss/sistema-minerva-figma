@@ -184,7 +184,7 @@ onUnmounted(() => document.removeEventListener('mousedown', handleDocClick));
           class="flex items-center"
           style="
             gap: 8px;
-            height: 38px;
+            height: 40px;
             padding: 0 14px;
             background: var(--surface-card);
             color: var(--text-strong);

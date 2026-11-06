@@ -281,8 +281,8 @@ function handleItemClick(it: NavItem) {
         :src="gciLogoMark"
         alt="GCI"
         :style="{
-          width: '42px',
-          height: '42px',
+          width: '40px',
+          height: '40px',
           objectFit: 'contain',
           flexShrink: 0,
         }"

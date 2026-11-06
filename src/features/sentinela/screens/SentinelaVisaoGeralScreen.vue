@@ -128,7 +128,7 @@ const modulos = computed(() => [
           v-model="busca"
           class="sn-focus"
           placeholder="Buscar entidade nas filas"
-          style="width: 100%; height: 42px; padding: 0 14px 0 38px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
+          style="width: 100%; height: 40px; padding: 0 14px 0 38px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
         />
       </div>
     </div>
@@ -249,7 +249,7 @@ const modulos = computed(() => [
           <button
             type="button"
             class="sn-focus btn-animated flex items-center"
-            style="gap: 6px; height: 38px; padding: 0 14px; background: var(--action-secondary-bg); color: var(--action-secondary-text); border: 1px solid var(--action-secondary-border); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold)"
+            style="gap: 6px; height: 40px; padding: 0 14px; background: var(--action-secondary-bg); color: var(--action-secondary-text); border: 1px solid var(--action-secondary-border); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold)"
             @click="emit('navigate', card.key)"
           >
             Abrir

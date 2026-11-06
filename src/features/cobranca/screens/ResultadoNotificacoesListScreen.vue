@@ -173,7 +173,7 @@ function menuActions(d: DisparoNotificacao) {
           placeholder="Buscar por lote, campanha ou veículo"
           style="
             width: 100%;
-            height: 38px;
+            height: 40px;
             padding: 0 12px 0 36px;
             background: var(--surface-card);
             border: 1px solid var(--border-default);
@@ -192,7 +192,7 @@ function menuActions(d: DisparoNotificacao) {
             v-for="qf in QUICK_FILTERS"
             :key="qf.key"
             :style="{
-              height: '38px',
+              height: '40px',
               padding: '0 14px',
               borderRadius: 'var(--radius-lg)',
               cursor: 'pointer',
@@ -220,7 +220,7 @@ function menuActions(d: DisparoNotificacao) {
             class="flex items-center"
             style="
               gap: 8px;
-              height: 38px;
+              height: 40px;
               padding: 0 16px;
               background: var(--surface-card);
               border: 1px solid var(--border-default);
@@ -288,14 +288,14 @@ function menuActions(d: DisparoNotificacao) {
               </div>
               <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
                 <button
-                  style="height: 38px; padding: 0 16px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
+                  style="height: 40px; padding: 0 16px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
                   @click="handleClear"
                 >
                   Limpar
                 </button>
                 <button
                   class="flex items-center"
-                  style="gap: 6px; height: 38px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.06em"
+                  style="gap: 6px; height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.06em"
                   @click="handleFilter"
                 >
                   <Filter :size="13" /> FILTRAR

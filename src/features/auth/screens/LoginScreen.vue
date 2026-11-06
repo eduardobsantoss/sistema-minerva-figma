@@ -23,7 +23,7 @@ const inputBase: CSSProperties = {
   borderStyle: 'solid',
   borderColor: 'var(--border-default)',
   borderRadius: 'var(--radius-xl)',
-  height: '50px',
+  height: '48px',
   color: 'var(--text-strong)',
 };
 

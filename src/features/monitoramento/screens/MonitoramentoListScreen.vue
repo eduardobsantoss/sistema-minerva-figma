@@ -138,7 +138,7 @@ function classesBtnStyle() {
   const on = classesOpen.value || selectedClasses.value.length > 0;
   return {
     gap: '8px',
-    height: '38px',
+    height: '40px',
     padding: '0 16px',
     cursor: 'pointer',
     background: on ? 'var(--gci-light)' : 'var(--surface-card)',
@@ -154,7 +154,7 @@ function filtersBtnStyle() {
   const on = filterOpen.value || activeFilterCount.value > 0;
   return {
     gap: '8px',
-    height: '38px',
+    height: '40px',
     padding: '0 16px',
     cursor: 'pointer',
     background: on ? 'var(--gci-light)' : 'var(--surface-card)',
@@ -187,7 +187,7 @@ function filtersBtnStyle() {
         <input
           v-model="searchQuery"
           placeholder="Buscar por nome do cliente"
-          style="width: 100%; height: 38px; padding: 0 12px 0 36px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
+          style="width: 100%; height: 40px; padding: 0 12px 0 36px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
         />
       </div>
 
@@ -287,7 +287,7 @@ function filtersBtnStyle() {
               <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
                 <button
                   type="button"
-                  style="height: 38px; padding: 0 16px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
+                  style="height: 40px; padding: 0 16px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)"
                   @click="handleClear"
                 >
                   Limpar
@@ -295,7 +295,7 @@ function filtersBtnStyle() {
                 <button
                   type="button"
                   class="flex items-center"
-                  style="gap: 6px; height: 38px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.06em"
+                  style="gap: 6px; height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.06em"
                   @click="handleFilter"
                 >
                   <Filter :size="13" /> FILTRAR
@@ -308,7 +308,7 @@ function filtersBtnStyle() {
         <button
           type="button"
           class="btn-animated btn-primary flex items-center"
-          style="gap: 8px; height: 38px; padding: 0 16px; background: var(--action-primary-bg); color: var(--action-primary-text); border: 1px solid transparent; border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-bold)"
+          style="gap: 8px; height: 40px; padding: 0 16px; background: var(--action-primary-bg); color: var(--action-primary-text); border: 1px solid transparent; border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-bold)"
           @click="exportRelatorio"
         >
           <Download :size="15" />
@@ -490,7 +490,7 @@ function filtersBtnStyle() {
 
 .filter-input {
   width: 100%;
-  height: 38px;
+  height: 40px;
   padding: 0 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);

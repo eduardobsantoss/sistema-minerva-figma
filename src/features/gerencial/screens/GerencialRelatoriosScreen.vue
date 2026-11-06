@@ -170,7 +170,7 @@ const gridPos = 'minmax(180px, 1.5fr) 120px 140px 120px 130px 130px minmax(180px
         @mouseenter="hoveredKey = item.key"
         @mouseleave="hoveredKey = null"
       >
-        <div class="flex items-center justify-center" style="width: 42px; height: 42px; border-radius: var(--radius-lg); background: var(--accent-bg); color: var(--accent)">
+        <div class="flex items-center justify-center" style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--accent-bg); color: var(--accent)">
           <component :is="item.icon" :size="20" />
         </div>
         <div>

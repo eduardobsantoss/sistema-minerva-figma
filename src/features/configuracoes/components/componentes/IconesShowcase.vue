@@ -113,8 +113,8 @@ const SIZES = [14, 16, 20] as const;
         <div
           class="flex items-center justify-center"
           style="
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
             border-radius: var(--radius-lg);
             background: var(--accent-bg);
             color: var(--accent);
@@ -125,8 +125,8 @@ const SIZES = [14, 16, 20] as const;
         <div
           class="flex items-center justify-center"
           style="
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
             border-radius: var(--radius-lg);
             background: var(--gci-light);
             color: var(--gci-base);
@@ -137,8 +137,8 @@ const SIZES = [14, 16, 20] as const;
         <div
           class="flex items-center justify-center"
           style="
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
             border-radius: var(--radius-lg);
             background: var(--gci-base);
             color: var(--text-on-brand);
@@ -149,8 +149,8 @@ const SIZES = [14, 16, 20] as const;
         <div
           class="flex items-center justify-center"
           style="
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
             border-radius: var(--radius-lg);
             background: var(--danger-light);
             color: var(--danger-base);

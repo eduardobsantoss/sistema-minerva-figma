@@ -291,7 +291,7 @@ const mutedBadge = { background: 'transparent', color: 'var(--text-muted)', bord
 <style scoped>
 .toolbar-btn {
   gap: 8px;
-  height: 38px;
+  height: 40px;
   padding: 0 16px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);

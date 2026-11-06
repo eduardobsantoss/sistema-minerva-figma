@@ -568,7 +568,7 @@ function tituloCell(t: TituloAtivoGlobal, key: TituloColKey): string {
           class="flex items-center"
           :style="{
             gap: '8px',
-            height: '42px',
+            height: '40px',
             padding: '0 16px',
             cursor: 'pointer',
             background: showFilters || activeFilterCount > 0 ? 'var(--gci-light)' : 'var(--surface-card)',
@@ -875,7 +875,7 @@ function tituloCell(t: TituloAtivoGlobal, key: TituloColKey): string {
 }
 .search-field input {
   width: 100%;
-  height: 42px;
+  height: 40px;
   padding: 0 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);

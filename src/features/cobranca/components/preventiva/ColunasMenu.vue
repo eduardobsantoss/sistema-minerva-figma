@@ -35,7 +35,7 @@ const open = ref(false);
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 38px;
+  height: 40px;
   padding: 0 14px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);

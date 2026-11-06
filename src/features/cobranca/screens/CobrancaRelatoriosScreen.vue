@@ -360,8 +360,8 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
         <div
           class="flex items-center justify-center"
           style="
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
             border-radius: var(--radius-lg);
             background: var(--accent-bg);
             color: var(--accent);
@@ -560,7 +560,7 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
           class="flex items-center"
           style="
             gap: 8px;
-            height: 42px;
+            height: 40px;
             padding: 0 20px;
             background: var(--action-primary-bg);
             color: #fff;
@@ -600,7 +600,7 @@ const CAMPANHAS = Array.from(new Set(DISPAROS_SEED.map((d) => d.campanha)));
 :disabled="totalResultados === 0"
           :style="{
             gap: '6px',
-            height: '34px',
+            height: '32px',
             padding: '0 14px',
             background: 'none',
             border: '1px solid var(--border-default)',

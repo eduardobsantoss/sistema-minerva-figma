@@ -101,7 +101,7 @@ const labelStyle = {
 
 const inputStyle = {
   width: '100%',
-  height: '38px',
+  height: '40px',
   padding: '0 12px',
   background: 'var(--surface-card)',
   border: '1px solid var(--border-default)',
@@ -383,8 +383,8 @@ function escapeCsvCell(value: string): string {
         <div
           class="flex items-center justify-center"
           style="
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
             border-radius: var(--radius-lg);
             background: var(--accent-bg);
             color: var(--accent);
@@ -591,7 +591,7 @@ function escapeCsvCell(value: string): string {
           class="flex items-center"
           style="
             gap: 8px;
-            height: 42px;
+            height: 40px;
             padding: 0 20px;
             background: var(--action-primary-bg);
             color: #fff;
@@ -632,7 +632,7 @@ function escapeCsvCell(value: string): string {
           class="flex items-center"
           :style="{
             gap: '6px',
-            height: '34px',
+            height: '32px',
             padding: '0 14px',
             background: 'none',
             border: '1px solid var(--border-default)',
@@ -652,7 +652,7 @@ function escapeCsvCell(value: string): string {
           class="flex items-center"
           :style="{
             gap: '6px',
-            height: '34px',
+            height: '32px',
             padding: '0 14px',
             background: 'none',
             border: '1px solid var(--border-default)',

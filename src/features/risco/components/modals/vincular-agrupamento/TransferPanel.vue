@@ -35,7 +35,7 @@ const emit = defineEmits<{
         <input
           :value="search"
           placeholder="Buscar CRA ou FIDC pelo nome"
-          style="width: 100%; height: 34px; padding-left: 32px; padding-right: 10px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); outline: none; font-size: var(--text-xs); color: var(--text-strong)"
+          style="width: 100%; height: 32px; padding-left: 32px; padding-right: 10px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); outline: none; font-size: var(--text-xs); color: var(--text-strong)"
           @input="emit('update:search', ($event.target as HTMLInputElement).value)"
         />
       </div>

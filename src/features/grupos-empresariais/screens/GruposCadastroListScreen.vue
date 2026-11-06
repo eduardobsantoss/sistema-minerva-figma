@@ -206,7 +206,7 @@ function confirmImport(linhas: GrupoCsvLinha[]) {
         placeholder="Buscar por nome, documento ou gerente"
         style="
           width: 100%;
-          height: 38px;
+          height: 40px;
           padding: 0 12px 0 36px;
           background: var(--surface-card);
           border: 1px solid var(--border-default);

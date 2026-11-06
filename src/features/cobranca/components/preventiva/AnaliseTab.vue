@@ -699,7 +699,7 @@ function abrirOperador(row: RankingRow) {
   color: var(--text-muted);
 }
 .field-input {
-  height: 38px;
+  height: 40px;
   padding: 0 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);

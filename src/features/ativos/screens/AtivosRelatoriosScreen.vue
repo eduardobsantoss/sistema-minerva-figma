@@ -223,7 +223,7 @@ const labelStyle = {
 
 const inputStyle = {
   width: '100%',
-  height: '38px',
+  height: '40px',
   padding: '0 12px',
   background: 'var(--surface-card)',
   border: '1px solid var(--border-default)',
@@ -273,7 +273,7 @@ const inputStyle = {
       >
         <div
           class="flex items-center justify-center"
-          style="width: 42px; height: 42px; border-radius: var(--radius-lg); background: var(--accent-bg); color: var(--accent)"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--accent-bg); color: var(--accent)"
         >
           <component :is="REPORT_ICONS[r.key]" :size="20" />
         </div>
@@ -380,7 +380,7 @@ const inputStyle = {
           :disabled="selectedIds.length === 0"
           :style="{
             gap: '8px',
-            height: '42px',
+            height: '40px',
             padding: '0 20px',
             background: 'var(--action-primary-bg)',
             color: '#fff',
@@ -410,7 +410,7 @@ const inputStyle = {
           class="flex items-center"
           :style="{
             gap: '6px',
-            height: '34px',
+            height: '32px',
             padding: '0 14px',
             background: 'none',
             border: '1px solid var(--border-default)',

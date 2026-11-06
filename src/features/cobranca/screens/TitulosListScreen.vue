@@ -341,7 +341,7 @@ function menuActions(t: Titulo) {
           placeholder="Buscar por nº, lastro, cedente, sacado ou veículo"
           style="
             width: 100%;
-            height: 38px;
+            height: 40px;
             padding: 0 12px 0 36px;
             background: var(--surface-card);
             border: 1px solid var(--border-default);
@@ -360,7 +360,7 @@ function menuActions(t: Titulo) {
             v-for="qf in QUICK_FILTERS"
             :key="qf.key"
             :style="{
-              height: '38px',
+              height: '40px',
               padding: '0 14px',
               borderRadius: 'var(--radius-lg)',
               cursor: 'pointer',
@@ -388,7 +388,7 @@ function menuActions(t: Titulo) {
             class="flex items-center"
             style="
               gap: 8px;
-              height: 38px;
+              height: 40px;
               padding: 0 16px;
               background: var(--surface-card);
               border: 1px solid var(--border-default);
@@ -467,7 +467,7 @@ function menuActions(t: Titulo) {
               <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
                 <button
                   style="
-                    height: 38px;
+                    height: 40px;
                     padding: 0 16px;
                     background: none;
                     border: 1px solid var(--border-default);
@@ -485,7 +485,7 @@ function menuActions(t: Titulo) {
                   class="flex items-center"
                   style="
                     gap: 6px;
-                    height: 38px;
+                    height: 40px;
                     padding: 0 18px;
                     background: var(--action-primary-bg);
                     color: #fff;
@@ -510,7 +510,7 @@ function menuActions(t: Titulo) {
             class="flex items-center"
             style="
               gap: 6px;
-              height: 38px;
+              height: 40px;
               padding: 0 14px;
               background: var(--surface-card);
               border: 1px solid var(--border-default);
@@ -800,7 +800,7 @@ function menuActions(t: Titulo) {
 }
 .filter-input {
   width: 100%;
-  height: 38px;
+  height: 40px;
   padding: 0 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);

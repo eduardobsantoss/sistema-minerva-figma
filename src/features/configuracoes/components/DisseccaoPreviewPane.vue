@@ -181,7 +181,7 @@ const showLivePreview = computed(
               type="button"
               class="btn-animated"
               style="
-                height: 38px;
+                height: 40px;
                 padding: 0 16px;
                 border-radius: var(--radius-lg);
                 border: 1px solid var(--border-default);

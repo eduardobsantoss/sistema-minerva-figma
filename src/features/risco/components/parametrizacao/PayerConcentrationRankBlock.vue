@@ -264,7 +264,7 @@ defineExpose({
 }
 
 .rank-block__btn--icon {
-  width: 34px;
+  width: 32px;
   padding: 0;
   display: flex;
   align-items: center;

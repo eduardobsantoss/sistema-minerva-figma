@@ -407,7 +407,7 @@ function abrir(grupoId: string) {
 <style scoped>
 .toolbar-btn {
   gap: 8px;
-  height: 38px;
+  height: 40px;
   padding: 0 16px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);
@@ -435,7 +435,7 @@ function abrir(grupoId: string) {
 }
 .filter-input {
   width: 100%;
-  height: 38px;
+  height: 40px;
   padding: 0 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);
@@ -448,7 +448,7 @@ function abrir(grupoId: string) {
   padding-left: 36px;
 }
 .fp-clear {
-  height: 38px;
+  height: 40px;
   padding: 0 16px;
   background: none;
   border: 1px solid var(--border-default);
@@ -460,7 +460,7 @@ function abrir(grupoId: string) {
 }
 .fp-apply {
   gap: 6px;
-  height: 38px;
+  height: 40px;
   padding: 0 18px;
   background: var(--action-primary-bg);
   color: #fff;

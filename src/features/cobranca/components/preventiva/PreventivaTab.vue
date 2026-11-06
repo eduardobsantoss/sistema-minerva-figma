@@ -464,7 +464,7 @@ function toggleStatus(status: StatusPreventivo) {
 }
 .filter-input {
   width: 100%;
-  height: 38px;
+  height: 40px;
   padding: 0 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);
@@ -493,7 +493,7 @@ function toggleStatus(status: StatusPreventivo) {
   align-items: center;
   gap: 6px;
   margin-top: 14px;
-  height: 34px;
+  height: 32px;
   padding: 0 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);

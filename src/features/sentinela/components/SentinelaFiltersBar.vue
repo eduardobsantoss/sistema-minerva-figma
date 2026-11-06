@@ -147,7 +147,7 @@ function removeChip(key: string) {
 function filterBtnStyle(on: boolean) {
   return {
     gap: '8px',
-    height: '38px',
+    height: '40px',
     padding: '0 16px',
     cursor: 'pointer',
     background: on ? 'var(--surface-selected)' : 'var(--surface-card)',
@@ -217,10 +217,10 @@ function filterBtnStyle(on: boolean) {
               </div>
             </div>
             <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
-              <button type="button" class="sn-focus" style="height: 38px; padding: 0 16px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)" @click="clearAll">
+              <button type="button" class="sn-focus" style="height: 40px; padding: 0 16px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)" @click="clearAll">
                 Limpar
               </button>
-              <button type="button" class="sn-focus btn-animated btn-primary flex items-center" style="gap: 6px; height: 38px; padding: 0 18px; background: var(--action-primary-bg); color: var(--action-primary-text); border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.06em" @click="apply">
+              <button type="button" class="sn-focus btn-animated btn-primary flex items-center" style="gap: 6px; height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: var(--action-primary-text); border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.06em" @click="apply">
                 <Filter :size="13" /> FILTRAR
               </button>
             </div>
@@ -265,7 +265,7 @@ function filterBtnStyle(on: boolean) {
 
 .filter-input {
   width: 100%;
-  height: 38px;
+  height: 40px;
   padding: 0 12px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);

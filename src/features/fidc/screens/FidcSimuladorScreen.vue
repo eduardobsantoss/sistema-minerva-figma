@@ -247,7 +247,7 @@ function handleConfinaCreated() {
       <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
         <button
           type="button"
-          style="height: 42px; padding: 0 18px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; color: var(--text-default)"
+          style="height: 40px; padding: 0 18px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; color: var(--text-default)"
           @click="handleCprfSimulate"
         >
           SIMULAR
@@ -255,7 +255,7 @@ function handleConfinaCreated() {
         <button
           type="button"
           class="flex items-center"
-          style="height: 42px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em"
+          style="height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em"
           @click="handleCprfSave"
         >
           SALVAR SIMULAÇÃO
@@ -291,14 +291,14 @@ function handleConfinaCreated() {
       <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
         <button
           type="button"
-          style="height: 42px; padding: 0 18px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; color: var(--text-default)"
+          style="height: 40px; padding: 0 18px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; color: var(--text-default)"
           @click="handleLoanSimulate"
         >
           SIMULAR
         </button>
         <button
           type="button"
-          style="height: 42px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em"
+          style="height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em"
           @click="handleLoanSave"
         >
           SALVAR SIMULAÇÃO
@@ -320,7 +320,7 @@ function handleConfinaCreated() {
         <button
           type="button"
           class="flex items-center btn-animated btn-agro"
-          style="gap: 8px; height: 42px; padding: 0 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; flex-shrink: 0; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
+          style="gap: 8px; height: 40px; padding: 0 18px; background: var(--agro-base); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em; flex-shrink: 0; box-shadow: 0 10px 24px -10px rgba(242,125,38,0.40)"
           @click="modalOpen = true"
         >
           <Plus :size="15" /> GERAR TÍTULO

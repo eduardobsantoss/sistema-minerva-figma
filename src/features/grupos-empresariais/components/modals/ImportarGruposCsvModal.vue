@@ -78,7 +78,7 @@ function baixarModelo() {
         <button
           type="button"
           class="flex items-center"
-          style="gap: 6px; height: 34px; padding: 0 12px; background: var(--surface-card); color: var(--text-default); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold)"
+          style="gap: 6px; height: 32px; padding: 0 12px; background: var(--surface-card); color: var(--text-default); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semibold)"
           @click="baixarModelo"
         >
           <Download :size="14" />

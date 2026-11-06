@@ -122,7 +122,7 @@ function adicionar() {
             class="btn-animated btn-primary"
             :disabled="!novoVeiculo"
             :style="{
-              height: '38px',
+              height: '40px',
               padding: '0 16px',
               background: novoVeiculo ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
               color: novoVeiculo ? 'var(--action-primary-text)' : 'var(--text-disabled)',

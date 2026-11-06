@@ -52,7 +52,7 @@ function handleConfirm() {
 
       <div class="flex items-center justify-end" style="gap: 10px">
         <button
-          style="height: 42px; padding: 0 18px; background: var(--surface-card); color: var(--text-strong); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
+          style="height: 40px; padding: 0 18px; background: var(--surface-card); color: var(--text-strong); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-sm)"
           @click="emit('close')"
         >
           Cancelar
@@ -60,7 +60,7 @@ function handleConfirm() {
         <button
           :disabled="!canConfirm"
           :style="{
-            height: '42px',
+            height: '40px',
             padding: '0 18px',
             border: 'none',
             borderRadius: 'var(--radius-lg)',

@@ -139,7 +139,7 @@ const current = computed(() => SLICES.find((s) => s.key === selected.value) ?? n
       >
         <div
           class="flex items-center justify-center"
-          style="width: 42px; height: 42px; border-radius: var(--radius-lg); background: var(--accent-bg); color: var(--accent)"
+          style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--accent-bg); color: var(--accent)"
         >
           <component :is="slice.icon" :size="20" />
         </div>

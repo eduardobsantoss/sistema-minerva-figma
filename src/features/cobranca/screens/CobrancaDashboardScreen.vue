@@ -285,7 +285,7 @@ const CONF_GRID = 'minmax(110px, 1.2fr) minmax(150px, 1.6fr) minmax(100px, 1fr) 
           placeholder="Buscar título por nº, cedente ou sacado"
           style="
             width: 100%;
-            height: 42px;
+            height: 40px;
             padding: 0 14px 0 38px;
             background: var(--surface-card);
             border: 1px solid var(--border-default);

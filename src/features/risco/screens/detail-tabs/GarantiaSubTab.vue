@@ -126,11 +126,11 @@ onUnmounted(() => document.removeEventListener('mousedown', handleClickOutside))
           </div>
           <div>
             <FieldLabel>Percentual exigido</FieldLabel>
-            <input v-model="garPct" placeholder="0%" style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)" />
+            <input v-model="garPct" placeholder="0%" style="width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)" />
           </div>
           <div>
             <FieldLabel>Prazo laudos (dias)</FieldLabel>
-            <input v-model="garPrazo" type="number" placeholder="15" style="width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)" />
+            <input v-model="garPrazo" type="number" placeholder="15" style="width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm)" />
           </div>
           <div>
             <SelectField label="Frequência laudos" :options="FREQUENCIA_LAUDO_OPTS" :value="garFreq" @change="garFreq = ($event.target as HTMLSelectElement).value as FrequenciaLaudo" />

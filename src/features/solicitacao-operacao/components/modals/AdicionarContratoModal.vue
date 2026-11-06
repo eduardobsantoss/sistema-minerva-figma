@@ -287,7 +287,7 @@ function toggleGerarMinuta() {
                 class="flex items-center"
                 style="
                   gap: 8px;
-                  height: 42px;
+                  height: 40px;
                   padding: 0 14px;
                   background: var(--surface-card);
                   border: 1px dashed var(--border-default);

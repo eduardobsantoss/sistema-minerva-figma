@@ -24,7 +24,7 @@ const labelStyle = {
 
 const inputStyle = {
   width: '100%',
-  height: '38px',
+  height: '40px',
   padding: '0 12px',
   background: 'var(--surface-card)',
   border: '1px solid var(--border-default)',

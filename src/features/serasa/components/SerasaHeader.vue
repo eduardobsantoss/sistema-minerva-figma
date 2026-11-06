@@ -104,7 +104,7 @@ const statusTone = computed(() =>
         </p>
         <button
           class="flex items-center"
-          style="gap: 6px; height: 34px; padding: 0 14px; border: none; border-radius: var(--radius-md); background: var(--warning-base); color: #fff; cursor: pointer; font-size: var(--text-xs); font-weight: var(--weight-bold); flex-shrink: 0"
+          style="gap: 6px; height: 32px; padding: 0 14px; border: none; border-radius: var(--radius-md); background: var(--warning-base); color: #fff; cursor: pointer; font-size: var(--text-xs); font-weight: var(--weight-bold); flex-shrink: 0"
           @click="emit('refresh')"
         >
           <RefreshCw :size="14" />

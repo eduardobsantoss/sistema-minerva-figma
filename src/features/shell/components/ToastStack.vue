@@ -58,7 +58,7 @@ function dismissAll() {
 }
 
 const btnStyle = {
-  height: '34px',
+  height: '32px',
   padding: '0 12px',
   borderRadius: 'var(--radius-lg)',
   border: '1px solid var(--border-default)',

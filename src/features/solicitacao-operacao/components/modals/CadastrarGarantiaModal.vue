@@ -138,7 +138,7 @@ function salvar() {
             type="button"
             :disabled="!dadosOk"
             :style="{
-              height: '42px',
+              height: '40px',
               padding: '0 20px',
               background: dadosOk ? 'var(--action-primary-bg)' : 'var(--neutral-200)',
               color: dadosOk ? '#fff' : 'var(--text-disabled)',

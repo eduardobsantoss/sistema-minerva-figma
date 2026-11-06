@@ -134,7 +134,7 @@ function handleGerar() {
         @mouseenter="hoveredKey = r.key"
         @mouseleave="hoveredKey = null"
       >
-        <div class="flex items-center justify-center" style="width: 42px; height: 42px; border-radius: var(--radius-lg); background: var(--accent-bg); color: var(--accent)">
+        <div class="flex items-center justify-center" style="width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--accent-bg); color: var(--accent)">
           <ClipboardCheck :size="20" />
         </div>
         <div>
@@ -181,7 +181,7 @@ function handleGerar() {
           <input
             v-model="draft.nomeGrupo"
             placeholder="Buscar por nome"
-            style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
+            style="width: 100%; height: 40px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
           />
         </div>
         <div>
@@ -200,7 +200,7 @@ function handleGerar() {
       <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
         <button
           class="flex items-center"
-          style="gap: 8px; height: 42px; padding: 0 20px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em"
+          style="gap: 8px; height: 40px; padding: 0 20px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.08em"
           @click="handleGerar"
         >
           <FileSpreadsheet :size="15" /> VER RESULTADOS
@@ -217,7 +217,7 @@ function handleGerar() {
         <button
           :disabled="results.length === 0"
           class="flex items-center"
-          :style="{ gap: '6px', height: '34px', padding: '0 14px', background: 'none', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', cursor: results.length === 0 ? 'not-allowed' : 'pointer', color: results.length === 0 ? 'var(--text-disabled)' : 'var(--text-default)', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)' }"
+          :style="{ gap: '6px', height: '32px', padding: '0 14px', background: 'none', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', cursor: results.length === 0 ? 'not-allowed' : 'pointer', color: results.length === 0 ? 'var(--text-disabled)' : 'var(--text-default)', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)' }"
           @click="handleExportCsv"
         >
           <Download :size="13" /> EXPORTAR CSV

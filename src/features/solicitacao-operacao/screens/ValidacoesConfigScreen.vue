@@ -98,7 +98,7 @@ const labelStyle = {
 
 const inputStyle = {
   width: '100%',
-  height: '38px',
+  height: '40px',
   padding: '0 12px',
   background: 'var(--surface-card)',
   border: '1px solid var(--border-default)',
@@ -211,7 +211,7 @@ function closeDetails() {
           class="flex items-center"
           :style="{
             gap: '8px',
-            height: '42px',
+            height: '40px',
             padding: '0 16px',
             cursor: 'pointer',
             background: showFilters || activeFilterCount > 0 ? 'var(--gci-light)' : 'var(--surface-card)',
@@ -324,7 +324,7 @@ function closeDetails() {
               <button
                 type="button"
                 style="
-                  height: 38px;
+                  height: 40px;
                   padding: 0 16px;
                   background: none;
                   border: 1px solid var(--border-default);
@@ -343,7 +343,7 @@ function closeDetails() {
                 class="flex items-center"
                 style="
                   gap: 6px;
-                  height: 38px;
+                  height: 40px;
                   padding: 0 18px;
                   background: var(--action-primary-bg);
                   color: #fff;

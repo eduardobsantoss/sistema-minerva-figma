@@ -48,7 +48,7 @@ const { page, pageSize, total, pageItems, setPage, setPageSize } = useTablePagin
 
 const filterInputStyle = {
   width: '100%',
-  height: '38px',
+  height: '40px',
   padding: '0 12px',
   background: 'var(--surface-card)',
   border: '1px solid var(--border-default)',
@@ -225,7 +225,7 @@ function onLinkBlur(c: Cessao) {
             <input
               :value="linkValue(r)"
               placeholder="https://..."
-              style="width: 100%; height: 34px; padding: 0 8px; border: 1px solid var(--border-default); border-radius: var(--radius-md); font-size: var(--text-xs)"
+              style="width: 100%; height: 32px; padding: 0 8px; border: 1px solid var(--border-default); border-radius: var(--radius-md); font-size: var(--text-xs)"
               @input="onLinkInput(r.id, ($event.target as HTMLInputElement).value)"
               @blur="onLinkBlur(r)"
             />

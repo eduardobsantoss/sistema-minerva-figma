@@ -20,7 +20,7 @@ defineProps<{ det: ReturnType<typeof detalheSolicitacao> }>();
           gap: 8px;
           flex: 1;
           min-width: 220px;
-          height: 42px;
+          height: 40px;
           padding: 0 14px;
           background: var(--surface-sunken);
           border: 1px dashed var(--border-default);
@@ -34,7 +34,7 @@ defineProps<{ det: ReturnType<typeof detalheSolicitacao> }>();
       <div
         style="
           min-width: 180px;
-          height: 42px;
+          height: 40px;
           padding: 0 14px;
           display: flex;
           align-items: center;
@@ -51,7 +51,7 @@ defineProps<{ det: ReturnType<typeof detalheSolicitacao> }>();
         class="flex items-center"
         style="
           gap: 8px;
-          height: 42px;
+          height: 40px;
           padding: 0 18px;
           background: var(--action-primary-bg);
           color: var(--action-primary-text);

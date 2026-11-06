@@ -206,8 +206,8 @@ function onSave(g: GarantiaOperacao) {
         <div
           class="flex items-center justify-center"
           style="
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
             border-radius: var(--radius-lg);
             background: var(--accent-bg);
             color: var(--accent);
@@ -272,7 +272,7 @@ function onSave(g: GarantiaOperacao) {
             class="flex items-center"
             style="
               gap: 6px;
-              height: 34px;
+              height: 32px;
               padding: 0 12px;
               border-radius: var(--radius-md);
               border: 1px solid var(--border-default);
@@ -290,7 +290,7 @@ function onSave(g: GarantiaOperacao) {
             class="flex items-center"
             style="
               gap: 6px;
-              height: 34px;
+              height: 32px;
               padding: 0 12px;
               border-radius: var(--radius-md);
               border: 1px solid var(--border-default);

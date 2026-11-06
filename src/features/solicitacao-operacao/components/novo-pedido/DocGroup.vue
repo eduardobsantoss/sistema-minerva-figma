@@ -64,8 +64,8 @@ function validadeOf(id: string) {
         <div
           class="flex items-center justify-center"
           :style="{
-            width: '38px',
-            height: '38px',
+            width: '40px',
+            height: '40px',
             flexShrink: 0,
             borderRadius: 'var(--radius-md)',
             background: docFiles[doc.id] ? 'var(--success-light)' : 'var(--surface-sunken)',

@@ -82,7 +82,7 @@ function clear() {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 38px;
+  height: 40px;
   padding: 0 16px;
   background: var(--surface-card);
   border: 1px solid var(--border-default);
@@ -93,7 +93,7 @@ function clear() {
   font-weight: var(--weight-semibold);
 }
 .fp-clear {
-  height: 38px;
+  height: 40px;
   padding: 0 16px;
   background: none;
   border: 1px solid var(--border-default);
@@ -105,7 +105,7 @@ function clear() {
 }
 .fp-apply {
   gap: 6px;
-  height: 38px;
+  height: 40px;
   padding: 0 18px;
   background: var(--action-primary-bg);
   color: #fff;

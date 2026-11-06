@@ -229,7 +229,7 @@ function menuActions(g: GrupoEmpresarial) {
         <input
           v-model="searchQuery"
           placeholder="Buscar por nome"
-          style="width: 100%; height: 38px; padding: 0 12px 0 36px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
+          style="width: 100%; height: 40px; padding: 0 12px 0 36px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)"
         />
       </div>
 
@@ -239,7 +239,7 @@ function menuActions(g: GrupoEmpresarial) {
             v-for="qf in QUICK_FILTERS"
             :key="qf.status"
             :style="{
-              height: '38px', padding: '0 14px', borderRadius: 'var(--radius-lg)', cursor: 'pointer',
+              height: '40px', padding: '0 14px', borderRadius: 'var(--radius-lg)', cursor: 'pointer',
               fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-bold)',
               border: quickParecerFilter === qf.status ? `1px solid ${parecerColor(qf.status)}` : '1px solid var(--border-default)',
               background: quickParecerFilter === qf.status ? `color-mix(in srgb, ${parecerColor(qf.status)} 12%, transparent)` : 'var(--surface-card)',
@@ -255,7 +255,7 @@ function menuActions(g: GrupoEmpresarial) {
           <button
             ref="filterBtnRef"
             class="flex items-center"
-            style="gap: 8px; height: 38px; padding: 0 16px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--weight-semibold)"
+            style="gap: 8px; height: 40px; padding: 0 16px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--weight-semibold)"
             @click="openFilters"
           >
             <Filter :size="15" style="color: var(--text-muted)" />
@@ -286,7 +286,7 @@ function menuActions(g: GrupoEmpresarial) {
               <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 14px">
                 <div>
                   <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Nome</div>
-                  <input v-model="draft.nome" placeholder="Buscar por nome" style="width: 100%; height: 38px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)" />
+                  <input v-model="draft.nome" placeholder="Buscar por nome" style="width: 100%; height: 40px; padding: 0 12px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); outline: none; font-size: var(--text-sm); color: var(--text-strong)" />
                 </div>
                 <div>
                   <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.10em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px">Gerente</div>
@@ -314,10 +314,10 @@ function menuActions(g: GrupoEmpresarial) {
                 </div>
               </div>
               <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
-                <button style="height: 38px; padding: 0 16px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)" @click="handleClear">
+                <button style="height: 40px; padding: 0 16px; background: none; border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-weight: var(--weight-semibold); font-size: var(--text-sm)" @click="handleClear">
                   Limpar
                 </button>
-                <button class="flex items-center" style="gap: 6px; height: 38px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.06em" @click="handleFilter">
+                <button class="flex items-center" style="gap: 6px; height: 40px; padding: 0 18px; background: var(--action-primary-bg); color: #fff; border: none; border-radius: var(--radius-lg); cursor: pointer; font-weight: var(--weight-bold); font-size: var(--text-xs); letter-spacing: 0.06em" @click="handleFilter">
                   <Filter :size="13" /> FILTRAR
                 </button>
               </div>
@@ -326,7 +326,7 @@ function menuActions(g: GrupoEmpresarial) {
         </div>
 
         <div style="position: relative">
-          <button class="flex items-center" style="gap: 6px; height: 38px; padding: 0 14px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--weight-semibold)" @click="colsMenuOpen = !colsMenuOpen">
+          <button class="flex items-center" style="gap: 6px; height: 40px; padding: 0 14px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); cursor: pointer; color: var(--text-muted); font-size: var(--text-sm); font-weight: var(--weight-semibold)" @click="colsMenuOpen = !colsMenuOpen">
             <SlidersHorizontal :size="14" /> Colunas
           </button>
           <template v-if="colsMenuOpen">

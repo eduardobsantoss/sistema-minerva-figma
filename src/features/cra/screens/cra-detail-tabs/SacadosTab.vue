@@ -41,7 +41,7 @@ const COLS = '1.05fr 1.35fr 0.55fr 0.75fr 0.95fr 0.7fr 0.75fr 1.1fr';
 
 const filterInputStyle = {
   width: '100%',
-  height: '38px',
+  height: '40px',
   padding: '0 12px',
   background: 'var(--surface-card)',
   border: '1px solid var(--border-default)',
@@ -152,7 +152,7 @@ function onEspecialChange(s: Sacado) {
             :style="{
               width: '100%',
               maxWidth: '120px',
-              height: '34px',
+              height: '32px',
               padding: '0 8px',
               border: '1px solid var(--border-default)',
               borderRadius: 'var(--radius-md)',
