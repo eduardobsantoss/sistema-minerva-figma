@@ -136,7 +136,7 @@ function confirmImport(linhas: GrupoCsvLinha[]) {
       <div class="flex items-center" style="gap: 10px; flex-wrap: wrap">
         <AdminButton variant="secondary" size="xl" :icon="Upload" type="button" @click="importOpen = true">Importar CSV</AdminButton>
 
-        <AdminButton variant="agro" size="xl" :icon="Plus" type="button" @click="emit('create')">Novo grupo</AdminButton>
+        <AdminButton variant="agro" size="xl" :icon="Plus" icon-badge type="button" @click="emit('create')">Novo grupo</AdminButton>
       </div>
     </div>
 

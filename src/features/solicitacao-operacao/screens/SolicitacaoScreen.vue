@@ -175,7 +175,7 @@ const selected = computed(() => (selectedId.value ? lista.find((s) => s.id === s
           Solicitação de Operação
         </h1>
       </div>
-      <AdminButton variant="agro" size="xl" :icon="Plus" @click="creating = true">Nova solicitação</AdminButton>
+      <AdminButton variant="agro" size="xl" :icon="Plus" icon-badge @click="creating = true">Nova solicitação</AdminButton>
     </div>
 
     <!-- Tabs de esteira -->

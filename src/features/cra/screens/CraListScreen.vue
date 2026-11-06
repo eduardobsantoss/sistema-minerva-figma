@@ -112,7 +112,7 @@ const kpis = computed(() => [
           Pesquisar
         </button>
       </div>
-      <AdminButton variant="agro" size="xl" :icon="Plus" @click="emit('new')">Novo CRA</AdminButton>
+      <AdminButton variant="agro" size="hero" :icon="Plus" icon-badge @click="emit('new')">Novo CRA</AdminButton>
     </div>
 
     <!-- KPIs -->

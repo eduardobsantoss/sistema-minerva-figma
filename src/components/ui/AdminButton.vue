@@ -5,7 +5,10 @@ import { Loader2 } from 'lucide-vue-next';
 /**
  * Botão do Design System (Figma → Actions → Button/*).
  *
- * Tamanhos: compact 32 · default 40 · large 44 · xl 48 (xl só no agro).
+ * Tamanhos: compact 32 · default 40 · large 44 · xl 48 · hero 56.
+ * hero = CTA do Page Header de listagem quando ao lado da busca de 56px
+ * (CRA, FIDC, Semiestruturadas, Cobrança). Nos demais, o CTA é xl 48.
+ * iconBadge: ícone dentro de um círculo de 22px (CTA "Novo …" do Page Header).
  * Variantes: primary, secondary, danger, danger-text, agro, ghost
  * (ghost = "Cancelar" de rodapé de modal: texto discreto, sem fundo).
  * Desabilitado usa --opacity-disabled; nunca troque a cor à mão.
@@ -13,7 +16,7 @@ import { Loader2 } from 'lucide-vue-next';
 const props = withDefaults(
   defineProps<{
     variant?: 'primary' | 'secondary' | 'danger' | 'danger-text' | 'agro' | 'ghost';
-    size?: 'compact' | 'default' | 'large' | 'xl';
+    size?: 'compact' | 'default' | 'large' | 'xl' | 'hero';
     type?: 'button' | 'submit' | 'reset';
     /** Ícone à esquerda (componente do lucide-vue-next). */
     icon?: Component;
@@ -24,6 +27,8 @@ const props = withDefaults(
     loading?: boolean;
     /** Ocupa 100% da largura. */
     block?: boolean;
+    /** Ícone dentro de um círculo (CTA "Novo …" do Page Header). */
+    iconBadge?: boolean;
   }>(),
   {
     variant: 'primary',
@@ -34,6 +39,7 @@ const props = withDefaults(
     disabled: false,
     loading: false,
     block: false,
+    iconBadge: false,
   },
 );
 
@@ -53,6 +59,9 @@ const isDisabled = computed(() => props.disabled || props.loading);
     @click="$emit('click', $event)"
   >
     <Loader2 v-if="loading" :size="iconSize" class="admin-btn__spin" aria-hidden="true" />
+    <span v-else-if="icon && iconBadge" class="admin-btn__badge" aria-hidden="true">
+      <component :is="icon" :size="14" :stroke-width="2.5" />
+    </span>
     <component :is="icon" v-else-if="icon" :size="iconSize" aria-hidden="true" />
     <slot />
     <component :is="trailingIcon" v-if="trailingIcon" :size="iconSize" aria-hidden="true" />
@@ -101,6 +110,20 @@ const isDisabled = computed(() => props.disabled || props.loading);
 .admin-btn--default { height: 40px; padding: 0 var(--space-4); font-size: var(--text-sm); }
 .admin-btn--large   { height: 44px; padding: 0 var(--space-5); font-size: var(--text-sm); }
 .admin-btn--xl      { height: 48px; padding: 0 var(--space-5); font-size: var(--text-sm); }
+.admin-btn--hero    { height: 56px; padding: 0 var(--space-6); font-size: var(--text-sm); border-radius: var(--radius-xl); }
+
+/* Ícone em círculo (CTA do Page Header) */
+.admin-btn__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--admin-btn-badge-bg, var(--on-accent-surface));
+  flex-shrink: 0;
+}
+.admin-btn--primary { --admin-btn-badge-bg: var(--gci-hover); }
 
 /* ===== Variantes ===== */
 .admin-btn--primary {

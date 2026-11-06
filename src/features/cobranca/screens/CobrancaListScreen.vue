@@ -207,7 +207,7 @@ function handleDelete(id: string) {
         @update:model-value="viewMode = $event as ViewMode"
       />
 
-      <AdminButton variant="agro" size="xl" :icon="Plus" @click="emit('new')">Nova notificação</AdminButton>
+      <AdminButton variant="agro" size="hero" :icon="Plus" icon-badge @click="emit('new')">Nova notificação</AdminButton>
     </div>
 
     <!-- KPIs -->

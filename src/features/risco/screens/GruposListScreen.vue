@@ -189,7 +189,7 @@ function menuActions(g: GrupoEmpresarial) {
           {{ filtered.length }} {{ filtered.length === 1 ? 'grupo encontrado' : 'grupos encontrados' }}
         </p>
       </div>
-      <AdminButton variant="agro" size="xl" :icon="Plus" type="button" @click="emit('create')">Novo grupo</AdminButton>
+      <AdminButton variant="agro" size="xl" :icon="Plus" icon-badge type="button" @click="emit('create')">Novo grupo</AdminButton>
     </div>
 
     <!-- Toolbar -->

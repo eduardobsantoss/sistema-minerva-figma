@@ -92,7 +92,7 @@ const kpis: KpiDef[] = [
           Pesquisar
         </button>
       </div>
-      <AdminButton variant="agro" size="xl" :icon="Plus" @click="emit('new')">Novo FIDC</AdminButton>
+      <AdminButton variant="agro" size="hero" :icon="Plus" icon-badge @click="emit('new')">Novo FIDC</AdminButton>
     </div>
 
     <!-- KPIs -->

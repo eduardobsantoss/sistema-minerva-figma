@@ -111,7 +111,7 @@ const kpis = computed(() => [
           Pesquisar
         </button>
       </div>
-      <AdminButton variant="agro" size="xl" :icon="Plus" @click="emit('new')">Nova semiestruturada</AdminButton>
+      <AdminButton variant="agro" size="hero" :icon="Plus" icon-badge @click="emit('new')">Nova semiestruturada</AdminButton>
     </div>
 
     <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap: 16px">

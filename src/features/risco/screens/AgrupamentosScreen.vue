@@ -62,7 +62,7 @@ function handleDelete() {
           {{ agrupamentos.length }} {{ agrupamentos.length === 1 ? 'agrupamento cadastrado' : 'agrupamentos cadastrados' }}
         </p>
       </div>
-      <AdminButton variant="agro" size="xl" :icon="Plus" @click="creating = true">Novo agrupamento</AdminButton>
+      <AdminButton variant="agro" size="xl" :icon="Plus" icon-badge @click="creating = true">Novo agrupamento</AdminButton>
     </div>
 
     <!-- Tabela -->

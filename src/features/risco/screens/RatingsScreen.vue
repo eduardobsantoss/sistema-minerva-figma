@@ -48,7 +48,7 @@ function handleEdit(data: { nome: string; taxa: number }) {
           {{ ratings.length }} {{ ratings.length === 1 ? 'rating cadastrado' : 'ratings cadastrados' }}
         </p>
       </div>
-      <AdminButton variant="agro" size="xl" :icon="Plus" @click="creating = true">Novo rating</AdminButton>
+      <AdminButton variant="agro" size="xl" :icon="Plus" icon-badge @click="creating = true">Novo rating</AdminButton>
     </div>
 
     <!-- Tabela -->

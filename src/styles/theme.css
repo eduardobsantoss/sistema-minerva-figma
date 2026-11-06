@@ -73,6 +73,7 @@
   --action-agro-bg-hover:  var(--agro-hover);
   --action-agro-bg-active: var(--agro-active);
   --action-agro-text:      var(--text-on-brand);
+  --on-accent-surface:     #F59751; /* círculo do ícone sobre --agro-base (= branco 20%, sólido) */
 
   --accent:              var(--agro-base);
   --accent-bg:           var(--agro-light);
