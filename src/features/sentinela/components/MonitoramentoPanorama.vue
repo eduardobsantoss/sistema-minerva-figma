@@ -50,12 +50,13 @@ import AdminButton from '@/components/ui/AdminButton.vue';
 const props = defineProps<{ modulo: ModuloSentinela }>();
 const emit = defineEmits<{ back: [] }>();
 
+// Cor de cada escopo vem da paleta de gráficos (não usa cores de status). Decisão 4B, review 16/11.
 const ESCOPO_COR: Record<EscopoSentinela, string> = {
-  total: 'var(--gci-base)',
-  fundo: 'var(--success-base)',
-  cra: 'var(--warning-base)',
-  cedente: 'var(--danger-base)',
-  sacado: 'var(--accent)',
+  total: 'var(--chart-gci-1)',
+  fundo: 'var(--chart-gci-3)',
+  cra: 'var(--chart-gci-5)',
+  cedente: 'var(--chart-agro-1)',
+  sacado: 'var(--chart-agro-3)',
 };
 
 const { success, info } = useToast();
@@ -199,9 +200,12 @@ function scopeBtnStyle(key: EscopoSentinela, on: boolean) {
     cursor: 'pointer',
     fontSize: 'var(--text-xs)',
     fontWeight: 'var(--weight-bold)',
-    border: on ? `1px solid ${color}` : '1px solid var(--border-default)',
-    background: on ? `color-mix(in srgb, ${color} 14%, transparent)` : 'var(--surface-card)',
-    color: on ? color : 'var(--text-muted)',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    border: on ? `1.5px solid ${color}` : '1px solid var(--border-default)',
+    background: 'var(--surface-card)',
+    color: on ? 'var(--text-strong)' : 'var(--text-muted)',
   };
 }
 
@@ -304,6 +308,11 @@ function encaminhar() {
           :style="scopeBtnStyle(opt.key, filtro.escopo === opt.key)"
           @click="setEscopo(opt.key)"
         >
+          <span
+            v-if="filtro.escopo === opt.key"
+            aria-hidden="true"
+            :style="{ width: '8px', height: '8px', borderRadius: 'var(--radius-full)', background: ESCOPO_COR[opt.key] }"
+          />
           {{ opt.label }}
         </button>
       </div>
@@ -620,10 +629,11 @@ function encaminhar() {
 .sn-chip {
   display: inline-flex;
   width: fit-content;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.03em;
-  padding: 3px 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 8px;
   border-radius: var(--radius-full);
   white-space: nowrap;
 }

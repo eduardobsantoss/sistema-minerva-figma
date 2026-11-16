@@ -217,7 +217,7 @@ function filterBtnStyle(on: boolean) {
                 <AdminDateField v-model="draft.periodoFim" />
               </div>
             </div>
-            <div class="flex items-center justify-end" style="gap: 10px; margin-top: 18px">
+            <div class="flex items-center justify-between" style="gap: 10px; margin-top: 18px">
               <AdminButton variant="secondary" type="button" @click="clearAll">Limpar</AdminButton>
               <AdminButton :icon="Filter" type="button" @click="apply">Filtrar</AdminButton>
             </div>
