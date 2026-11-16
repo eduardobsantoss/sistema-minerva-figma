@@ -318,7 +318,7 @@ button:disabled {
 .filter-label {
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   color: var(--text-muted);
   text-transform: uppercase;
   margin-bottom: 6px;

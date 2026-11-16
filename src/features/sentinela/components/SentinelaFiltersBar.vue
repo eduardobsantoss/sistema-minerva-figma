@@ -178,9 +178,9 @@ function filterBtnStyle(on: boolean) {
           <ChevronDown :size="14" :style="{ transform: open ? 'rotate(180deg)' : 'none' }" />
         </button>
         <template v-if="open">
-          <div style="position: fixed; inset: 0; z-index: 30" @click="open = false" />
+          <div style="position: fixed; inset: 0; z-index: calc(var(--z-popover) - 1)" @click="open = false" />
           <div
-            style="position: absolute; top: calc(100% + 8px); right: 0; z-index: 31; width: 460px; max-width: calc(100vw - 48px); background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); padding: 20px"
+            style="position: absolute; top: calc(100% + 8px); right: 0; z-index: var(--z-popover); width: 460px; max-width: calc(100vw - 48px); background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); padding: 20px"
           >
             <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 14px">
               <div style="grid-column: 1 / -1">
@@ -254,7 +254,7 @@ function filterBtnStyle(on: boolean) {
 .filter-label {
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   color: var(--text-muted);
   text-transform: uppercase;
   margin-bottom: 6px;
