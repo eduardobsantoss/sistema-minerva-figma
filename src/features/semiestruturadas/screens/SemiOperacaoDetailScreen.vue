@@ -13,7 +13,8 @@ import {
   Filter,
   Split,
 } from 'lucide-vue-next';
-import { brl, pct, type SemiCota, type SemiOperacao } from '../data/semiestruturadasData';
+import { brl, pct, type SemiCota, type SemiGarantia, type SemiOperacao } from '../data/semiestruturadasData';
+import { ImovelFormModal, listVeiculos, useEstoque, type NovoImovelInput } from '@/features/estoque';
 import { useToast } from '@/composables/useToast';
 import DistribuirCotaModal from '../components/DistribuirCotaModal.vue';
 import DistribuirCotasModal from '../components/DistribuirCotasModal.vue';
@@ -33,6 +34,21 @@ const emit = defineEmits<{
 }>();
 
 const { success } = useToast();
+const estoque = useEstoque();
+
+const garantiaParaExecutar = ref<SemiGarantia | null>(null);
+
+/** Veículo de uma cota da operação, quando existir no cadastro de CRA/FIDC. */
+const veiculoSugerido = computed(() => {
+  const nomes = props.operacao.cotas.map((c) => c.veiculoAdquirente.toLowerCase());
+  return listVeiculos().find((v) => nomes.includes(v.nome.toLowerCase()));
+});
+
+function confirmarExecucao(input: NovoImovelInput) {
+  const novo = estoque.add(input);
+  garantiaParaExecutar.value = null;
+  success(`Garantia executada. “${novo.nome}” entrou no estoque de ${novo.veiculoNome}.`);
+}
 
 type ViewTab = 'cotas' | 'lastros' | 'garantias';
 const tab = ref<ViewTab>('cotas');
@@ -299,7 +315,7 @@ const filteredGarantias = computed(() => {
         @distribuir="cotaParaDistribuir = $event"
       />
       <LastrosTab v-else-if="tab === 'lastros'" v-model:selected-ids="selectedIds" :rows="filteredLastros" />
-      <GarantiasTab v-else :rows="filteredGarantias" />
+      <GarantiasTab v-else :rows="filteredGarantias" @executar="garantiaParaExecutar = $event" />
 
       <div class="flex items-center justify-end" style="padding: 16px 20px; border-top: 1px solid var(--border-default)">
         <div class="flex items-center" style="gap: 12px">
@@ -327,6 +343,28 @@ const filteredGarantias = computed(() => {
       :operacao="operacao"
       @close="distribuindoTodas = false"
       @save="salvarDistribuicao"
+    />
+    <ImovelFormModal
+      v-if="garantiaParaExecutar"
+      eyebrow="Semiestruturadas · Executar garantia"
+      title="Executar garantia"
+      subtitle="A garantia executada passa a pertencer a um único veículo e entra no estoque dele."
+      submit-label="Executar garantia"
+      :veiculo-sugerido="veiculoSugerido"
+      :garantia-origem="{
+        operacaoId: operacao.id,
+        operacaoNome: operacao.nome,
+        garantiaId: garantiaParaExecutar.id,
+        garantiaNumero: garantiaParaExecutar.numero,
+        tipoGarantia: garantiaParaExecutar.tipoGarantia,
+      }"
+      :prefill="{
+        origem: 'GARANTIA_EXECUTADA',
+        cedenteOriginal: garantiaParaExecutar.cedente,
+        valorMercado: garantiaParaExecutar.vrNominal,
+      }"
+      @close="garantiaParaExecutar = null"
+      @save="confirmarExecucao"
     />
   </div>
 </template>

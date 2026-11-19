@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, type Component } from 'vue';
-import { ArrowLeft, BarChart3, ChevronRight, Download, Radar } from 'lucide-vue-next';
+import { ArrowLeft, BarChart3, ChevronRight, Download, Radar, Warehouse } from 'lucide-vue-next';
+import { EstoqueTab } from '@/features/estoque';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
 import { useBackgroundReport } from '@/composables/useBackgroundReport';
@@ -36,7 +37,7 @@ import {
 import AdminDateField from '@/components/ui/AdminDateField.vue';
 import AdminSelect from '@/components/ui/AdminSelect.vue';
 
-type ReportKey = 'gerencial' | 'pos';
+type ReportKey = 'gerencial' | 'pos' | 'estoque';
 
 const REPORTS: { key: ReportKey; title: string; description: string; icon: Component }[] = [
   {
@@ -50,6 +51,12 @@ const REPORTS: { key: ReportKey; title: string; description: string; icon: Compo
     title: 'Relatório pós desembolso',
     description: 'Clientes do monitoramento: confirmação, registro dos títulos e alertas de garantia.',
     icon: Radar,
+  },
+  {
+    key: 'estoque',
+    title: 'Imóveis em estoque',
+    description: 'Todos os imóveis dos veículos (CRA e FIDC): valores, status e parcelas de venda, locação e arrendamento.',
+    icon: Warehouse,
   },
 ];
 
@@ -197,6 +204,36 @@ const gridPos = 'minmax(180px, 1.5fr) 120px 140px 120px 130px 130px minmax(180px
           Configurar e exportar <ChevronRight :size="14" />
         </div>
       </button>
+    </div>
+  </div>
+
+  <div v-else-if="selected === 'estoque'" class="flex flex-col" style="gap: 24px">
+    <div class="flex items-center" style="gap: 16px">
+      <button
+        type="button"
+        aria-label="Voltar"
+        class="flex items-center justify-center"
+        style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: var(--surface-card); border: 1px solid var(--border-default); cursor: pointer; color: var(--text-strong); flex-shrink: 0"
+        @click="selected = null"
+      >
+        <ArrowLeft :size="20" />
+      </button>
+      <div style="flex: 1">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--accent); font-weight: var(--weight-bold); margin-bottom: 4px">
+          Relatórios · Gerencial
+        </div>
+        <h2 style="font-size: var(--text-xl); font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.01em">
+          {{ report?.title }}
+        </h2>
+      </div>
+      <button type="button" class="ger-btn-primary" @click="baixar">
+        <Download :size="15" />
+        Baixar CSV
+      </button>
+    </div>
+
+    <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); overflow: hidden">
+      <EstoqueTab />
     </div>
   </div>
 

@@ -2,9 +2,20 @@
 import { ref } from 'vue';
 import { brl, type SemiGarantia, type SemiLastroStatus } from '../../data/semiestruturadasData';
 import TablePagination from '@/components/ui/TablePagination.vue';
+import AdminButton from '@/components/ui/AdminButton.vue';
 import { useTablePagination } from '@/composables/useTablePagination';
+import { useEstoque } from '@/features/estoque';
+import EstoqueChip from '@/features/estoque/components/EstoqueChip.vue';
 
 const props = defineProps<{ rows: SemiGarantia[] }>();
+const emit = defineEmits<{ executar: [SemiGarantia] }>();
+
+const estoque = useEstoque();
+
+/** Só imóveis (casas, fazendas) viram estoque do fundo ao serem executados. */
+function ehImovel(g: SemiGarantia): boolean {
+  return /im[óo]vel/i.test(g.tipoGarantia);
+}
 
 const statusTone: Record<SemiLastroStatus, { bg: string; fg: string }> = {
   CONFIRMADO: { bg: 'var(--success-light)', fg: 'var(--success-dark)' },
@@ -21,7 +32,7 @@ const {
   setPageSize,
 } = useTablePagination(() => props.rows, { defaultPageSize: 10 });
 
-const cols = 'minmax(120px, 0.9fr) minmax(110px, 0.9fr) minmax(80px, 0.7fr) minmax(150px, 1.4fr) minmax(150px, 1.4fr) minmax(110px, 0.9fr) minmax(130px, 1fr) minmax(110px, 0.9fr)';
+const cols = 'minmax(120px, 0.9fr) minmax(110px, 0.9fr) minmax(80px, 0.7fr) minmax(150px, 1.4fr) minmax(150px, 1.4fr) minmax(110px, 0.9fr) minmax(130px, 1fr) minmax(110px, 0.9fr) minmax(150px, 1fr)';
 const rowHover = ref<string | null>(null);
 </script>
 
@@ -57,6 +68,7 @@ const rowHover = ref<string | null>(null);
         <div>Vencimento</div>
         <div style="text-align: right">VR. Nominal</div>
         <div style="text-align: center">Status</div>
+        <div style="text-align: right">Ação</div>
       </div>
 
       <div
@@ -130,7 +142,13 @@ const rowHover = ref<string | null>(null);
           {{ brl(t.vrNominal) }}
         </div>
         <div style="text-align: center">
+          <EstoqueChip
+            v-if="estoque.foiExecutada(t.id)"
+            label="Executada"
+            :tone="{ bg: 'var(--status-neutral-bg)', fg: 'var(--status-neutral-text)' }"
+          />
           <span
+            v-else
             :style="{
               fontSize: '10px',
               fontWeight: 'var(--weight-bold)',
@@ -143,6 +161,19 @@ const rowHover = ref<string | null>(null);
           >
             {{ t.status }}
           </span>
+        </div>
+        <div style="text-align: right">
+          <div
+            v-if="estoque.foiExecutada(t.id)"
+            :title="estoque.foiExecutada(t.id)!.veiculoNome"
+            style="font-size: var(--text-xs); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
+          >
+            No estoque de
+            <span style="font-weight: var(--weight-bold); color: var(--text-strong)">{{ estoque.foiExecutada(t.id)!.veiculoNome }}</span>
+          </div>
+          <AdminButton v-else-if="ehImovel(t)" size="compact" variant="secondary" type="button" @click="emit('executar', t)">
+            Executar garantia
+          </AdminButton>
         </div>
       </div>
 

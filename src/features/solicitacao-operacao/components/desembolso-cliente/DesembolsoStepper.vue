@@ -1,6 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Check } from 'lucide-vue-next';
-import type { EtapaDesembolso, EtapaDesembolsoKey } from '../../data/desembolsoClienteData';
+import {
+  etapasLiberadas,
+  type EtapaDesembolso,
+  type EtapaDesembolsoKey,
+} from '../../data/desembolsoClienteData';
 
 const props = defineProps<{
   etapas: EtapaDesembolso[];
@@ -9,57 +14,77 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   concluir: [key: EtapaDesembolsoKey];
-  desfazer: [key: EtapaDesembolsoKey];
 }>();
 
-function estado(index: number): 'done' | 'current' | 'locked' {
-  if (index < props.concluidas.length) return 'done';
-  if (index === props.concluidas.length) return 'current';
+const liberadas = computed(() => etapasLiberadas(props.etapas, props.concluidas).map((e) => e.key));
+
+/** Cada coluna é uma posição na linha. Etapas do grupo final (Financeiro e Cobrança) dividem a mesma posição. */
+const colunas = computed(() => {
+  const result: { key: string; itens: { etapa: EtapaDesembolso; numero: number }[] }[] = [];
+  props.etapas.forEach((etapa, index) => {
+    const item = { etapa, numero: index + 1 };
+    const ultima = result[result.length - 1];
+    if (etapa.grupo === 'FINAL' && ultima && ultima.itens[0].etapa.grupo === 'FINAL') {
+      ultima.itens.push(item);
+    } else {
+      result.push({ key: etapa.key, itens: [item] });
+    }
+  });
+  return result;
+});
+
+function estado(key: EtapaDesembolsoKey): 'done' | 'current' | 'locked' {
+  if (props.concluidas.includes(key)) return 'done';
+  if (liberadas.value.includes(key)) return 'current';
   return 'locked';
 }
 
-function podeDesfazer(index: number, _key: EtapaDesembolsoKey): boolean {
-  return estado(index) === 'done' && index === props.concluidas.length - 1;
-}
-
-function rotulo(etapa: EtapaDesembolso, index: number): string {
-  if (estado(index) === 'current') {
+function rotulo(etapa: EtapaDesembolso): string {
+  const s = estado(etapa.key);
+  if (s === 'current') {
     return etapa.key === 'ENCARTEIRAR' ? 'Encarteirar pedido' : `Concluir ${etapa.label}`;
   }
-  if (podeDesfazer(index, etapa.key)) return `Desfazer ${etapa.label}`;
-  if (estado(index) === 'done') return `${etapa.label} concluída`;
+  if (s === 'done') return `${etapa.label} concluída`;
   return `${etapa.label} bloqueada até a etapa anterior`;
 }
 
-function aoClicar(etapa: EtapaDesembolso, index: number) {
-  if (estado(index) === 'current') {
-    emit('concluir', etapa.key);
-    return;
-  }
-  if (podeDesfazer(index, etapa.key)) emit('desfazer', etapa.key);
+function aoClicar(etapa: EtapaDesembolso) {
+  if (estado(etapa.key) === 'current') emit('concluir', etapa.key);
+}
+
+/** Posição concluída quando todas as etapas dela estão feitas. */
+function estadoColuna(itens: { etapa: EtapaDesembolso }[]): 'done' | 'current' | 'locked' {
+  if (itens.every((i) => estado(i.etapa.key) === 'done')) return 'done';
+  if (itens.some((i) => estado(i.etapa.key) !== 'locked')) return 'current';
+  return 'locked';
 }
 </script>
 
 <template>
   <ol class="steps">
     <li
-      v-for="(etapa, index) in etapas"
-      :key="etapa.key"
+      v-for="coluna in colunas"
+      :key="coluna.key"
       class="step"
-      :data-state="estado(index)"
+      :data-state="estadoColuna(coluna.itens)"
+      :style="{ flexGrow: coluna.itens.length }"
     >
-      <button
-        type="button"
-        class="dot"
-        :disabled="estado(index) === 'locked' || (estado(index) === 'done' && !podeDesfazer(index, etapa.key))"
-        :aria-label="rotulo(etapa, index)"
-        :title="rotulo(etapa, index)"
-        @click="aoClicar(etapa, index)"
-      >
-        <Check v-if="estado(index) === 'done'" :size="16" :stroke-width="2.5" />
-        <span v-else class="dot-index">{{ index + 1 }}</span>
-      </button>
-      <span class="label">{{ etapa.label }}</span>
+      <div class="cols">
+        <div v-for="item in coluna.itens" :key="item.etapa.key" class="col" :data-state="estado(item.etapa.key)">
+          <button
+            type="button"
+            class="dot"
+            :disabled="estado(item.etapa.key) !== 'current'"
+            :aria-label="rotulo(item.etapa)"
+            :title="rotulo(item.etapa)"
+            @click="aoClicar(item.etapa)"
+          >
+            <Check v-if="estado(item.etapa.key) === 'done'" :size="16" :stroke-width="2.5" />
+            <span v-else class="dot-index">{{ item.numero }}</span>
+          </button>
+          <span class="label">{{ item.etapa.label }}</span>
+        </div>
+      </div>
     </li>
   </ol>
 </template>
@@ -75,6 +100,14 @@ function aoClicar(etapa: EtapaDesembolso, index: number) {
 }
 .step {
   position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.cols {
+  display: flex;
+  width: 100%;
+}
+.col {
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
@@ -115,24 +148,24 @@ function aoClicar(etapa: EtapaDesembolso, index: number) {
 .dot:focus-visible {
   box-shadow: var(--focus-ring);
 }
-.step[data-state='done'] .dot {
+.col[data-state='done'] .dot {
   border-color: var(--stepper-done);
   background: var(--stepper-done);
   color: var(--text-on-brand);
 }
-.step[data-state='done'] .dot:disabled {
+.col[data-state='done'] .dot:disabled {
   cursor: default;
 }
-.step[data-state='current'] .dot {
+.col[data-state='current'] .dot {
   border-color: var(--stepper-current);
   color: var(--stepper-current);
   box-shadow: 0 0 0 4px var(--gci-light);
 }
-.step[data-state='current'] .dot:hover {
+.col[data-state='current'] .dot:hover {
   background: var(--stepper-current);
   color: var(--text-on-brand);
 }
-.step[data-state='locked'] .dot {
+.col[data-state='locked'] .dot {
   cursor: not-allowed;
 }
 .dot-index {
@@ -149,11 +182,11 @@ function aoClicar(etapa: EtapaDesembolso, index: number) {
   text-align: center;
   color: var(--text-muted);
 }
-.step[data-state='done'] .label,
-.step[data-state='current'] .label {
+.col[data-state='done'] .label,
+.col[data-state='current'] .label {
   color: var(--text-strong);
 }
-.step[data-state='current'] .label {
+.col[data-state='current'] .label {
   font-weight: var(--weight-bold);
 }
 </style>

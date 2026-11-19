@@ -38,7 +38,7 @@ import {
   RiscoDashboardScreen,
 } from '@/features/risco';
 import { SerasaScreen } from '@/features/serasa';
-import { MonitoramentoScreen } from '@/features/monitoramento';
+import { MonitoramentoScreen, MonitoramentoEstoqueScreen } from '@/features/monitoramento';
 import { GruposCadastroScreen } from '@/features/grupos-empresariais';
 import {
   SentinelaVisaoGeralScreen,
@@ -89,6 +89,7 @@ type View =
   | 'risco-serasa'
   | 'grupos-cadastro'
   | 'monitoramento'
+  | 'monitoramento-estoque'
   | 'sentinela'
   | 'sentinela-credito'
   | 'sentinela-contraparte'
@@ -144,6 +145,7 @@ const titleMap: Record<View, string> = {
   'risco-serasa': 'Consultas',
   'grupos-cadastro': 'Grupos Empresariais',
   monitoramento: 'Monitoramento Pós Desembolso',
+  'monitoramento-estoque': 'Monitoramento de Estoque',
   sentinela: 'Sentinela',
   'sentinela-credito': 'Monitoramento de Crédito',
   'sentinela-contraparte': 'Cedente/Sacado',
@@ -169,7 +171,7 @@ const VALID_VIEWS = new Set<View>([
   'cobranca', 'cobranca-titulos', 'cobranca-notif-cessao', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-resultado-notif', 'cobranca-historico-notif', 'cobranca-preventiva', 'cobranca-rel',
   'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-taxa-operacao', 'risco-agrupamentos', 'risco-serasa', 'risco-rel',
   'grupos-cadastro',
-  'monitoramento',
+  'monitoramento', 'monitoramento-estoque',
   'sentinela', 'sentinela-credito', 'sentinela-contraparte', 'sentinela-lote',
   'gerencial', 'gerencial-pos', 'gerencial-veiculos', 'gerencial-relatorios',
   'passivo', 'passivo-novo', 'colab', 'rel', 'conf',
@@ -201,6 +203,7 @@ const openMenu = ref<string | null>((() => {
   if (v.startsWith('semiestruturadas')) return 'semiestruturadas';
   if (v.startsWith('ativos')) return 'ativos';
   if (v.startsWith('sentinela')) return 'sentinela';
+  if (v.startsWith('monitoramento')) return 'monitoramento';
   if (v.startsWith('gerencial')) return 'gerencial';
   return null;
 })());
@@ -339,6 +342,7 @@ function handleModuleClick(title: string) {
           <RiscoDashboardScreen v-else-if="view === 'risco-dashboard'" @navigate="handleNavigate" />
           <SerasaScreen v-else-if="view === 'risco-serasa'" />
           <MonitoramentoScreen v-else-if="view === 'monitoramento'" />
+          <MonitoramentoEstoqueScreen v-else-if="view === 'monitoramento-estoque'" />
           <SentinelaVisaoGeralScreen v-else-if="view === 'sentinela'" @navigate="handleNavigate" />
           <SentinelaCreditoScreen v-else-if="view === 'sentinela-credito'" @navigate="handleNavigate" />
           <SentinelaContraparteScreen v-else-if="view === 'sentinela-contraparte'" @navigate="handleNavigate" />

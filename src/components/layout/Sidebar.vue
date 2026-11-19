@@ -36,6 +36,7 @@ import {
   MapPin,
   Megaphone,
   Star,
+  Warehouse,
 } from "lucide-vue-next";
 import gciLogoMark from "@/assets/gci-logo-mark.png";
 import gciLogoFull from "@/assets/gci-logo-full.png";
@@ -206,7 +207,15 @@ const items: NavItem[] = [
       // { key: "sentinela-lote", label: "Consulta em lote", icon: Search },
     ],
   },
-  { key: "monitoramento", label: "Monitoramento", icon: Radar },
+  {
+    key: "monitoramento",
+    label: "Monitoramento",
+    icon: Radar,
+    children: [
+      { key: "monitoramento", label: "Pós Desembolso", icon: Radar },
+      { key: "monitoramento-estoque", label: "Estoque", icon: Warehouse },
+    ],
+  },
   { key: "colab", label: "Colaboradores", icon: Users },
   { key: "rel", label: "Relatórios", icon: FileText },
   { key: "conf", label: "Configurações", icon: Settings },

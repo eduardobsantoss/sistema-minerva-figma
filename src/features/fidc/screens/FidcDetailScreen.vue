@@ -17,6 +17,7 @@ import {
   ArrowLeftRight,
   Users,
   Building2,
+  Warehouse,
 } from 'lucide-vue-next';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import {
@@ -39,6 +40,7 @@ import CessoesTab from './fidc-detail-tabs/CessoesTab.vue';
 import SacadosTab from './fidc-detail-tabs/SacadosTab.vue';
 import GruposEmpresariaisTab from './fidc-detail-tabs/GruposEmpresariaisTab.vue';
 import SetupTab from './fidc-detail-tabs/SetupTab.vue';
+import { EstoqueTab } from '@/features/estoque';
 import CessaoFormModal from '../components/modals/CessaoFormModal.vue';
 import SubirContratoMaeModal from '../components/modals/SubirContratoMaeModal.vue';
 import EditarParametrosGrupoModal from '../components/modals/EditarParametrosGrupoModal.vue';
@@ -60,7 +62,7 @@ const emit = defineEmits<{
   updateSetup: [setup: FidcSetup];
 }>();
 
-type Section = 'classes' | 'cessoes' | 'sacados' | 'grupos' | 'setup';
+type Section = 'classes' | 'cessoes' | 'sacados' | 'grupos' | 'estoque' | 'setup';
 type ViewTab = 'classes' | 'titulos';
 
 const SECTION_TABS: { key: Section; label: string; icon: Component }[] = [
@@ -68,6 +70,7 @@ const SECTION_TABS: { key: Section; label: string; icon: Component }[] = [
   { key: 'cessoes', label: 'Cessões', icon: ArrowLeftRight },
   { key: 'sacados', label: 'Sacados', icon: Users },
   { key: 'grupos', label: 'Grupos Empresariais', icon: Building2 },
+  { key: 'estoque', label: 'Estoque', icon: Warehouse },
   { key: 'setup', label: 'Setup', icon: Settings2 },
 ];
 
@@ -424,6 +427,13 @@ function handleSetupUpdate(setup: FidcSetup) {
         @edit-params="openEditParamsModal"
         @update="(g) => updateGruposList(fidc.grupos.map((x) => (x.id === g.id ? g : x)))"
       />
+    </div>
+
+    <div
+      v-else-if="section === 'estoque'"
+      style="background: var(--surface-card); border-width: 1px; border-style: solid; border-color: var(--border-default); border-radius: var(--radius-xl); overflow: hidden"
+    >
+      <EstoqueTab :veiculo="{ tipo: 'FIDC', id: fidc.id, nome: fidc.name }" />
     </div>
 
     <div

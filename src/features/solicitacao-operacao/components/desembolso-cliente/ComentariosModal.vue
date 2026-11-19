@@ -28,7 +28,7 @@ const emit = defineEmits<{ close: [] }>();
     <ul v-else class="lista">
       <li v-for="item in comentarios" :key="item.id" class="item">
         <div class="item-topo">
-          <span class="chip">Voltou · {{ etiquetaEtapa(item.etapa) }}</span>
+          <span class="chip">Voltou da {{ item.ordem }}ª · {{ etiquetaEtapa(item.etapa) }}</span>
           <span class="quando">{{ item.quando }}</span>
         </div>
         <p class="texto">{{ item.texto }}</p>

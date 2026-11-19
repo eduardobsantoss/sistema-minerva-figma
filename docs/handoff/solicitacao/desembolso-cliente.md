@@ -10,33 +10,59 @@ ModulesScreen.vue  (view === 'solicitacoes-desembolso-cliente')
 └─ DesembolsoClienteScreen.vue
 ```
 
+## KPIs
+
+Faixa no topo, no mesmo padrão visual dos KPIs de Ativos. Os totais acompanham as pílulas e as buscas da tela.
+
+- **Pedidos em aberto**: quantidade de cards visíveis.
+- **Valor de aquisição**: soma dos valores de aquisição. O chevron no canto do card abre a tabela **por veículo** (pedidos, aquisição, a desembolsar, participação).
+- **Valor a desembolsar**: soma de aquisição menos vencidos.
+
+Não existe KpiCard em `src/components/ui/`; há variantes em várias features. A faixa usa a markup de Ativos dentro da tela e é candidata a subir para o DS na próxima revisão.
+
+## Valores do card
+
+Faixa de 4 colunas, sempre visível (mesmo recolhido):
+
+| Valor | Origem |
+|---|---|
+| Valor nominal | `solicitacao.valor` |
+| Valor de aquisição | `solicitacao.valorAquisicao` (se ausente, igual ao nominal) |
+| Valor a desembolsar | aquisição menos vencidos a abater. Vencidos = valor informado na Cobrança ou, antes disso, `solicitacao.valorVencido`. A nota "Vencidos a abater" aparece abaixo quando há vencidos |
+| Valor desembolsado | informado no modal de Encarteirar. "—" até lá |
+
+Os valores de aquisição e de vencidos dos seeds são fictícios (a confirmar com o negócio).
+
 ## Fluxo
 
-1. Entram na lista os pedidos com etapa `DESEMBOLSO_CLIENTE`. Ao aparecer, o log já registra o e-mail de entrada (tesouraria, operações e backoffice).
-2. Cada card mostra os dados básicos, os documentos (termo de cessão assinado e extrato para desembolso) e o stepper das etapas.
-3. As etapas são sequenciais: só a próxima fica clicável. Só a última concluída pode ser desfeita (inclusive Encarteirar, enquanto o card ainda estiver na lista).
-4. Concluir uma etapa dispara o e-mail daquela etapa e registra a atividade.
-5. Pedidos com `possuiBmp: false` não exibem Subir BMP, 1ª aprovação BMP e 2ª aprovação BMP.
-6. Pedidos com `possuiFinanceiro: true` ganham a 8ª etapa, **Financeiro**, depois de Encarteirar. É opcional e, no protótipo, só o `#1403` a possui.
-7. Encarteirar abre um modal com comprovante de pagamento, data de desembolso e valor desembolsado (pré-preenchido com o valor da operação). Os três campos são obrigatórios.
-8. A **última etapa da esteira do pedido** encerra o desembolso: a etapa local vira `SOLUCIONADA` e o card sai da lista. Sem Financeiro, isso acontece ao encarteirar. Com Financeiro, o card continua na lista até concluir o Financeiro.
+1. Entram na lista os pedidos com etapa `DESEMBOLSO_CLIENTE`. O log já registra o e-mail de entrada (tesouraria, operações e backoffice).
+2. As etapas da sequência são estritas: só a próxima fica clicável.
+3. Concluir uma etapa dispara o e-mail daquela etapa e registra a atividade.
+4. Pedidos com `possuiBmp: false` não exibem Subir BMP, 1ª aprovação BMP e 2ª aprovação BMP.
+5. **Encarteirar** abre um modal com comprovante, data e valor desembolsado (pré-preenchido com o valor da operação). Os três campos são obrigatórios.
+6. Pedidos com `possuiFinanceiro: true` (no protótipo, só o `#1403`) ganham o grupo final: **Financeiro** e **Cobrança** correm **em paralelo**, em qualquer ordem, depois de Encarteirar. No stepper dividem a última posição (pontos 8 e 9).
+   - **Financeiro**: conclusão direta, com e-mail (`financeiro@`, `controladoria@`).
+   - **Cobrança**: abre o modal "Cobrança" com os vencidos a abater (pré-preenchidos com `valorVencido`; não pode passar do valor de aquisição) e o resumo aquisição − vencidos = a desembolsar. Ao confirmar, envia e-mail (`cobranca@`, `financeiro@`) e atualiza o valor a desembolsar.
+7. O desembolso termina quando **todas as etapas do pedido** estão concluídas: a etapa local vira `SOLUCIONADA` e o card sai da lista. Sem Financeiro isso acontece ao encarteirar; com Financeiro, só depois de Financeiro e Cobrança.
 
-## Valor desembolsado
+## Filtros
 
-O cabeçalho do card mostra **Valor** (da operação) e **Valor desembolsado** lado a lado. Este último é "—" até Encarteirar ser concluída. Depois, aparece o valor informado no modal; a data de desembolso e o comprovante entram na grade de informações do card expandido. Desfazer Encarteirar limpa esses dados.
+Pílulas com contador: Todos, Com BMP, Sem BMP, **Não aprovados**, SLA estourado.
 
-## Voltar etapa e comentários
+**Não aprovados** = validação `INVALIDO` **ou** alguma aprovação (1ª/2ª Itaú, 1ª/2ª BMP) ainda não concluída. Na prática só sai do filtro quem é válido e já passou por todas as aprovações.
 
-1. Clicar numa etapa concluída (a última) abre o modal **Voltar etapa**, com um comentário opcional (até 500 caracteres).
-2. Ao confirmar, a etapa volta para pendente, o log registra "Etapa desfeita" com o motivo e nenhum e-mail é reenviado.
-3. Se houve comentário, ele é salvo no card (autor, data, etapa que voltou).
-4. O botão **Comentários (n)**, no cabeçalho da esteira, abre o modal com a lista, do mais recente ao mais antigo. Fica visível com o card recolhido.
+Buscas por ID, Cedente e Veículo combinam (E) com a pílula.
+
+## Voltar etapa
+
+1. O botão **Voltar etapa**, no cabeçalho da esteira, fica ativo quando há etapas concluídas. Clicar nos pontos já não desfaz nada.
+2. Abre o modal com um comentário opcional (até 500 caracteres) e avisa que **todas as etapas voltam para a 1ª**. Nenhum e-mail é reenviado.
+3. Ao confirmar: zera as etapas, apaga o valor desembolsado e a Cobrança, registra "Esteira reiniciada · voltou da Nª etapa" na Atividade e, se houve texto, salva o comentário.
+4. O botão **Comentários (n)** abre a lista (mais recente primeiro), com a posição de onde voltou, o autor e a data. Fica visível com o card recolhido.
 
 ## Etapas
 
-Subir no Itaú → 1ª aprovação Itaú → 2ª aprovação Itaú → Subir BMP → 1ª aprovação BMP → 2ª aprovação BMP → Encarteirar → Financeiro
-
-Financeiro notifica `financeiro@ceres.com` e `controladoria@ceres.com`.
+Subir no Itaú → 1ª aprovação Itaú → 2ª aprovação Itaú → Subir BMP → 1ª aprovação BMP → 2ª aprovação BMP → Encarteirar → (Financeiro ‖ Cobrança)
 
 ## Árvore
 
@@ -47,9 +73,15 @@ src/features/solicitacao-operacao/
 │   ├── DesembolsoClienteCard.vue
 │   ├── DesembolsoStepper.vue
 │   ├── EncarteirarModal.vue
+│   ├── CobrancaModal.vue
 │   ├── VoltarEtapaModal.vue
 │   └── ComentariosModal.vue
 └── data/desembolsoClienteData.ts
 ```
 
-Seeds em `operacaoData.ts`: `#1400`, `#1403` (`possuiFinanceiro: true`; chega com 7 etapas concluídas, valor desembolsado e um comentário), `#1404` (`possuiBmp: false`) e `#1405`.
+Seeds em `operacaoData.ts`: `#1400`, `#1403` (`possuiFinanceiro: true`, vencidos de R$ 120.000; chega com 7 etapas concluídas, valor desembolsado e um comentário), `#1404` (`possuiBmp: false`) e `#1405` (inválido).
+
+## Pendências para a próxima revisão do DS
+
+- Process Stepper com etapas em paralelo (dois pontos na mesma posição): composição proposta sem referência de Figma.
+- KPI card compartilhado em `src/components/ui/`.

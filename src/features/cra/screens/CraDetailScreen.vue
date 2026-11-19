@@ -3,7 +3,7 @@ import { ref, computed, watch, type Component } from 'vue';
 import {
   ArrowLeft, Wallet, FileText, Search, Filter,
   ChevronUp, ChevronDown, Plus, Settings2, Clock,
-  CheckCircle2, XCircle, ScanLine, Briefcase, ArrowLeftRight, Users, Building2,
+  CheckCircle2, XCircle, ScanLine, Briefcase, ArrowLeftRight, Users, Building2, Warehouse,
 } from 'lucide-vue-next';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import { brl, num, type Cra, type CraTitulo, type Cessao, type Sacado, type CraSetup, type GrupoEmpresarialVinculo } from '../data/craData';
@@ -17,6 +17,7 @@ import CessoesTab from './cra-detail-tabs/CessoesTab.vue';
 import SacadosTab from './cra-detail-tabs/SacadosTab.vue';
 import GruposEmpresariaisTab from './cra-detail-tabs/GruposEmpresariaisTab.vue';
 import SetupTab from './cra-detail-tabs/SetupTab.vue';
+import { EstoqueTab } from '@/features/estoque';
 import CessaoFormModal from '../components/modals/CessaoFormModal.vue';
 import SubirContratoMaeModal from '../components/modals/SubirContratoMaeModal.vue';
 import TituloAcoesLote from '@/components/titulos/TituloAcoesLote.vue';
@@ -37,7 +38,7 @@ const emit = defineEmits<{
   updateSetup: [setup: CraSetup];
 }>();
 
-type Section = 'operacoes' | 'cessoes' | 'sacados' | 'grupos' | 'setup';
+type Section = 'operacoes' | 'cessoes' | 'sacados' | 'grupos' | 'estoque' | 'setup';
 type ViewTab = 'operacoes' | 'titulos';
 
 const SECTION_TABS: { key: Section; label: string; icon: Component }[] = [
@@ -45,6 +46,7 @@ const SECTION_TABS: { key: Section; label: string; icon: Component }[] = [
   { key: 'cessoes', label: 'Cessões', icon: ArrowLeftRight },
   { key: 'sacados', label: 'Sacados', icon: Users },
   { key: 'grupos', label: 'Grupos Empresariais', icon: Building2 },
+  { key: 'estoque', label: 'Estoque', icon: Warehouse },
   { key: 'setup', label: 'Setup', icon: Settings2 },
 ];
 
@@ -391,6 +393,13 @@ function handleSetupUpdate(setup: CraSetup) {
         @upload="openUploadContrato"
         @toggle-apto="handleToggleApto"
       />
+    </div>
+
+    <div
+      v-else-if="section === 'estoque'"
+      style="background: var(--surface-card); border-width: 1px; border-style: solid; border-color: var(--border-default); border-radius: var(--radius-xl); overflow: hidden"
+    >
+      <EstoqueTab :veiculo="{ tipo: 'CRA', id: cra.id, nome: cra.nome }" />
     </div>
 
     <div

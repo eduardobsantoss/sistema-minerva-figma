@@ -7,7 +7,10 @@ import { etiquetaEtapa, type EtapaDesembolsoKey } from '../../data/desembolsoCli
 defineProps<{
   solicitacaoId: string;
   cedente: string;
-  etapa: EtapaDesembolsoKey;
+  /** Última etapa concluída no momento. */
+  ultima: EtapaDesembolsoKey;
+  /** Quantas etapas estão concluídas. */
+  ordem: number;
 }>();
 
 const emit = defineEmits<{ close: []; confirm: [motivo: string] }>();
@@ -26,7 +29,9 @@ const motivo = ref('');
   >
     <div class="flex flex-col" style="gap: 16px">
       <p style="font-size: var(--text-sm); color: var(--text-muted); line-height: 1.5; margin: 0">
-        A etapa <strong style="color: var(--text-strong)">{{ etiquetaEtapa(etapa) }}</strong> volta para pendente.
+        A esteira está na {{ ordem }}ª etapa concluída
+        (<strong style="color: var(--text-strong)">{{ etiquetaEtapa(ultima) }}</strong>).
+        Ao voltar, <strong style="color: var(--text-strong)">todas as etapas voltam para a 1ª</strong>.
         Nenhum e-mail é reenviado.
       </p>
 
@@ -37,7 +42,7 @@ const motivo = ref('');
           class="motivo"
           rows="4"
           :maxlength="MAX"
-          placeholder="Explique por que a etapa voltou. O comentário fica visível no card."
+          placeholder="Explique por que a esteira voltou. O comentário fica visível no card."
         />
         <div class="counter">{{ motivo.length }}/{{ MAX }}</div>
       </div>
@@ -45,7 +50,7 @@ const motivo = ref('');
 
     <template #footer>
       <AdminButton variant="ghost" size="large" @click="emit('close')">Cancelar</AdminButton>
-      <AdminButton size="large" @click="emit('confirm', motivo.trim())">Voltar etapa</AdminButton>
+      <AdminButton size="large" @click="emit('confirm', motivo.trim())">Voltar para a 1ª etapa</AdminButton>
     </template>
   </AdminModal>
 </template>

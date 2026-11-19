@@ -1,5 +1,5 @@
 import { CURRENT_USER } from '@/lib/userDisplay';
-import type { Solicitacao } from './operacaoData';
+import { brl, type Solicitacao } from './operacaoData';
 
 /** Etapas internas do Desembolso do Cliente, na ordem em que devem ser concluídas. */
 export type EtapaDesembolsoKey =
@@ -10,13 +10,18 @@ export type EtapaDesembolsoKey =
   | 'APROVACAO_BMP_1'
   | 'APROVACAO_BMP_2'
   | 'ENCARTEIRAR'
-  | 'FINANCEIRO';
+  | 'FINANCEIRO'
+  | 'COBRANCA';
 
 export interface EtapaDesembolso {
   key: EtapaDesembolsoKey;
   label: string;
-  /** Etapas opcionais: BMP some quando o pedido não passa pelo banco; Financeiro só existe em alguns casos. */
-  grupo?: 'BMP' | 'FINANCEIRO';
+  /**
+   * Etapas opcionais. BMP some quando o pedido não passa pelo banco.
+   * FINAL (Financeiro + Cobrança) só existe em alguns casos e as duas correm em paralelo,
+   * em qualquer ordem, depois de Encarteirar.
+   */
+  grupo?: 'BMP' | 'FINAL';
 }
 
 export const ETAPAS_DESEMBOLSO: EtapaDesembolso[] = [
@@ -27,14 +32,15 @@ export const ETAPAS_DESEMBOLSO: EtapaDesembolso[] = [
   { key: 'APROVACAO_BMP_1', label: '1ª aprovação BMP', grupo: 'BMP' },
   { key: 'APROVACAO_BMP_2', label: '2ª aprovação BMP', grupo: 'BMP' },
   { key: 'ENCARTEIRAR', label: 'Encarteirar' },
-  { key: 'FINANCEIRO', label: 'Financeiro', grupo: 'FINANCEIRO' },
+  { key: 'FINANCEIRO', label: 'Financeiro', grupo: 'FINAL' },
+  { key: 'COBRANCA', label: 'Cobrança', grupo: 'FINAL' },
 ];
 
 /** Remove as etapas BMP e/ou Financeiro quando o pedido não passa por elas. */
 export function etapasPara(possuiBmp: boolean, possuiFinanceiro = false): EtapaDesembolso[] {
   return ETAPAS_DESEMBOLSO.filter((etapa) => {
     if (etapa.grupo === 'BMP') return possuiBmp;
-    if (etapa.grupo === 'FINANCEIRO') return possuiFinanceiro;
+    if (etapa.grupo === 'FINAL') return possuiFinanceiro;
     return true;
   });
 }
@@ -49,6 +55,44 @@ export function possuiEtapaFinanceiro(s: Solicitacao): boolean {
 
 export function etapasDe(s: Solicitacao): EtapaDesembolso[] {
   return etapasPara(possuiEtapaBmp(s), possuiEtapaFinanceiro(s));
+}
+
+/**
+ * Etapas liberadas agora: a próxima da sequência ou, depois de Encarteirar,
+ * as do grupo final (Financeiro e Cobrança) que ainda faltam.
+ */
+export function etapasLiberadas(
+  etapas: EtapaDesembolso[],
+  concluidas: EtapaDesembolsoKey[],
+): EtapaDesembolso[] {
+  const sequenciais = etapas.filter((e) => e.grupo !== 'FINAL');
+  const proximaSequencial = sequenciais.find((e) => !concluidas.includes(e.key));
+  if (proximaSequencial) return [proximaSequencial];
+  return etapas.filter((e) => e.grupo === 'FINAL' && !concluidas.includes(e.key));
+}
+
+export function ehConcluido(s: Solicitacao, concluidas: EtapaDesembolsoKey[]): boolean {
+  return etapasDe(s).every((e) => concluidas.includes(e.key));
+}
+
+/** Etapas de aprovação (Itaú e BMP) ainda não concluídas. */
+export function aprovacoesPendentes(s: Solicitacao, concluidas: EtapaDesembolsoKey[]): boolean {
+  return etapasDe(s).some((e) => e.key.startsWith('APROVACAO_') && !concluidas.includes(e.key));
+}
+
+export interface ValoresDesembolso {
+  nominal: number;
+  aquisicao: number;
+  vencidos: number;
+  aDesembolsar: number;
+}
+
+/** Valor a desembolsar = aquisição menos vencidos a abater (o informado na Cobrança, ou o previsto no pedido). */
+export function valoresDe(s: Solicitacao, cobranca: CobrancaPayload | null): ValoresDesembolso {
+  const nominal = s.valor;
+  const aquisicao = s.valorAquisicao ?? s.valor;
+  const vencidos = cobranca?.valor ?? s.valorVencido ?? 0;
+  return { nominal, aquisicao, vencidos, aDesembolsar: Math.max(aquisicao - vencidos, 0) };
 }
 
 /** Pessoas notificadas quando o card entra em Desembolso do Cliente. */
@@ -68,6 +112,7 @@ export const DESTINATARIOS_ETAPA: Record<EtapaDesembolsoKey, string[]> = {
   APROVACAO_BMP_2: ['diretoria@ceres.com', 'tesouraria@ceres.com'],
   ENCARTEIRAR: ['controladoria@ceres.com', 'tesouraria@ceres.com', 'operacoes@ceres.com'],
   FINANCEIRO: ['financeiro@ceres.com', 'controladoria@ceres.com'],
+  COBRANCA: ['cobranca@ceres.com', 'financeiro@ceres.com'],
 };
 
 export function etiquetaEtapa(key: EtapaDesembolsoKey): string {
@@ -87,8 +132,10 @@ export interface ComentarioDesembolso {
   id: string;
   quando: string;
   autor: string;
-  /** Etapa que foi desfeita (a que voltou para pendente). */
+  /** Última etapa concluída no momento em que a esteira voltou para a 1ª. */
   etapa: EtapaDesembolsoKey;
+  /** Quantas etapas estavam concluídas (posição de onde voltou). */
+  ordem: number;
   texto: string;
 }
 
@@ -105,6 +152,11 @@ export interface EncarteirarPayload {
   valorDesembolsado: number;
 }
 
+/** Vencidos enviados para abater, informados ao concluir a Cobrança. */
+export interface CobrancaPayload {
+  valor: number;
+}
+
 export interface CardDesembolso {
   solicitacao: Solicitacao;
   concluidas: EtapaDesembolsoKey[];
@@ -112,6 +164,8 @@ export interface CardDesembolso {
   comentarios: ComentarioDesembolso[];
   /** Preenchido ao encarteirar; zera se a etapa Encarteirar for desfeita. */
   desembolso: EncarteirarPayload | null;
+  /** Preenchido ao concluir a Cobrança; zera quando a esteira volta para a 1ª etapa. */
+  cobranca: CobrancaPayload | null;
 }
 
 /** Pedidos que já chegaram com alguma etapa marcada (somente demonstração). */
@@ -143,7 +197,7 @@ const DESEMBOLSO_INICIAL: Record<string, EncarteirarPayload> = {
   '#1403': {
     comprovante: 'comprovante-pagamento-1403.pdf',
     dataDesembolso: '2026-05-25',
-    valorDesembolsado: 3_100_000,
+    valorDesembolsado: 2_930_000,
   },
 };
 
@@ -153,7 +207,8 @@ const COMENTARIOS_INICIAIS: Record<string, Omit<ComentarioDesembolso, 'id'>[]> =
       quando: '22/05/2026 às 11:20:05',
       autor: 'Marcos Vinícius',
       etapa: 'APROVACAO_BMP_1',
-      texto: 'Voltei porque o extrato anexado estava com o valor desatualizado. Subi o novo e refiz a aprovação.',
+      ordem: 5,
+      texto: 'Voltei a esteira para o início porque o extrato anexado estava com o valor desatualizado. Subi o novo e refiz todas as etapas.',
     },
   ],
 };
@@ -213,27 +268,39 @@ export function atividadeEmail(
   );
 }
 
-export function atividadeDesfeita(
-  key: EtapaDesembolsoKey,
-  motivo = '',
-  quando = agoraLabel(),
-): AtividadeDesembolso {
-  const base = 'A etapa voltou para pendente. Nenhum e-mail foi reenviado.';
+export function atividadeCobranca(valor: number, quando = agoraLabel()): AtividadeDesembolso {
   return novaAtividade(
     quando,
     CURRENT_USER.fullName,
-    `Etapa desfeita · ${etiquetaEtapa(key)}`,
+    'E-mail enviado · Cobrança',
+    `Vencidos enviados para abater: ${brl(valor)}. Destinatários: ${DESTINATARIOS_ETAPA.COBRANCA.join(', ')}.`,
+  );
+}
+
+/** Registro de quando a esteira volta para a 1ª etapa. */
+export function atividadeReiniciada(
+  ultima: EtapaDesembolsoKey,
+  ordem: number,
+  motivo = '',
+  quando = agoraLabel(),
+): AtividadeDesembolso {
+  const base = 'Todas as etapas voltaram para a 1ª. Nenhum e-mail foi reenviado.';
+  return novaAtividade(
+    quando,
+    CURRENT_USER.fullName,
+    `Esteira reiniciada · voltou da ${ordem}ª etapa (${etiquetaEtapa(ultima)})`,
     motivo ? `${base} Motivo: ${motivo}` : base,
   );
 }
 
 export function novoComentario(
   etapa: EtapaDesembolsoKey,
+  ordem: number,
   texto: string,
   quando = agoraLabel(),
   autor: string = CURRENT_USER.fullName,
 ): ComentarioDesembolso {
-  return { id: nextId('cm'), quando, autor, etapa, texto };
+  return { id: nextId('cm'), quando, autor, etapa, ordem, texto };
 }
 
 export function documentosDe(s: Solicitacao): DocumentoDesembolso[] {
@@ -263,16 +330,6 @@ export function cardsIniciais(lista: Solicitacao[]): CardDesembolso[] {
       atividade: atividadeInicial(s),
       comentarios: (COMENTARIOS_INICIAIS[s.id] ?? []).map((c) => ({ ...c, id: nextId('cm') })),
       desembolso: DESEMBOLSO_INICIAL[s.id] ? { ...DESEMBOLSO_INICIAL[s.id] } : null,
+      cobranca: null,
     }));
-}
-
-/** Próxima etapa liberada, ou null se a esteira interna já acabou. */
-export function proximaEtapa(card: CardDesembolso): EtapaDesembolso | null {
-  return etapasDe(card.solicitacao)[card.concluidas.length] ?? null;
-}
-
-/** A última etapa da esteira do pedido encerra o desembolso (vai para Solucionada). */
-export function ehUltimaEtapa(card: CardDesembolso, key: EtapaDesembolsoKey): boolean {
-  const etapas = etapasDe(card.solicitacao);
-  return etapas[etapas.length - 1]?.key === key;
 }

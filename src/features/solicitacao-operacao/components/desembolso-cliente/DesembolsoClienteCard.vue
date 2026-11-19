@@ -7,6 +7,7 @@ import {
   Clock,
   FileText,
   MessageSquare,
+  RotateCcw,
   ReceiptText,
   RefreshCw,
   XCircle,
@@ -17,9 +18,12 @@ import { brl, fmtDuracao, slaRatio, type Solicitacao } from '../../data/operacao
 import {
   documentosDe,
   etapasDe,
+  etapasLiberadas,
   formatDataBr,
+  valoresDe,
   possuiEtapaBmp,
   type AtividadeDesembolso,
+  type CobrancaPayload,
   type ComentarioDesembolso,
   type EncarteirarPayload,
   type EtapaDesembolsoKey,
@@ -33,6 +37,8 @@ const props = defineProps<{
   comentarios: ComentarioDesembolso[];
   /** Dados informados no modal de Encarteirar. Nulo até a etapa ser concluída. */
   desembolso: EncarteirarPayload | null;
+  /** Vencidos enviados para abater (Cobrança). Nulo até a etapa ser concluída. */
+  cobranca: CobrancaPayload | null;
   /** Mostra vínculo, informações básicas, documentos e atividade. Recolhido, ficam só o resumo e o stepper. */
   expandido?: boolean;
 }>();
@@ -40,7 +46,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:expandido': [value: boolean];
   concluir: [key: EtapaDesembolsoKey];
-  desfazer: [key: EtapaDesembolsoKey];
+  voltar: [];
   baixar: [arquivo: string];
   comentarios: [];
 }>();
@@ -64,7 +70,9 @@ const barColor = computed(() => (atrasado.value ? 'var(--danger-base)' : 'var(--
 const ct = computed(() => contratoTone(s.value.tipoContrato));
 const ultima = computed(() => props.atividade[0] ?? null);
 
-const proxima = computed(() => etapas.value[props.concluidas.length] ?? null);
+const liberadas = computed(() => etapasLiberadas(etapas.value, props.concluidas));
+const aguardando = computed(() => liberadas.value.map((e) => e.label).join(' e '));
+const valores = computed(() => valoresDe(s.value, props.cobranca));
 const progresso = computed(() => `${props.concluidas.length} de ${etapas.value.length}`);
 
 const timeCols = computed(() => [
@@ -111,12 +119,12 @@ const meta = computed(() => [
       <span
         class="chip chip--lg"
         :style="{
-          background: proxima ? 'var(--status-active-bg)' : 'var(--status-success-bg)',
-          color: proxima ? 'var(--status-active-text)' : 'var(--status-success-text)',
+          background: liberadas.length > 0 ? 'var(--status-active-bg)' : 'var(--status-success-bg)',
+          color: liberadas.length > 0 ? 'var(--status-active-text)' : 'var(--status-success-text)',
         }"
       >
         <span class="chip-dot" />
-        {{ proxima ? `Aguardando · ${proxima.label}` : 'Etapas concluídas' }}
+        {{ liberadas.length > 0 ? `Aguardando · ${aguardando}` : 'Etapas concluídas' }}
       </span>
     </div>
 
@@ -127,18 +135,6 @@ const meta = computed(() => [
         <div class="id">{{ s.id }}</div>
       </div>
       <div class="flex items-center" style="gap: 12px; flex-shrink: 0">
-        <div class="valores">
-          <div class="valor-bloco">
-            <div class="eyebrow">Valor</div>
-            <div class="valor">{{ brl(s.valor) }}</div>
-          </div>
-          <div class="valor-bloco" data-testid="valor-desembolsado">
-            <div class="eyebrow">Valor desembolsado</div>
-            <div class="valor" :class="{ 'valor--vazio': !desembolso }">
-              {{ desembolso ? brl(desembolso.valorDesembolsado) : '—' }}
-            </div>
-          </div>
-        </div>
         <button
           type="button"
           class="toggle"
@@ -152,6 +148,29 @@ const meta = computed(() => [
             :style="{ transform: expandido ? 'rotate(180deg)' : 'none', transition: 'transform var(--duration-base)' }"
           />
         </button>
+      </div>
+    </div>
+
+    <!-- Valores (sempre visíveis) -->
+    <div class="valores" data-testid="valores">
+      <div class="valor-bloco">
+        <div class="eyebrow">Valor nominal</div>
+        <div class="valor">{{ brl(valores.nominal) }}</div>
+      </div>
+      <div class="valor-bloco">
+        <div class="eyebrow">Valor de aquisição</div>
+        <div class="valor">{{ brl(valores.aquisicao) }}</div>
+      </div>
+      <div class="valor-bloco" data-testid="valor-a-desembolsar">
+        <div class="eyebrow">Valor a desembolsar</div>
+        <div class="valor">{{ brl(valores.aDesembolsar) }}</div>
+        <div v-if="valores.vencidos > 0" class="valor-nota">Vencidos a abater: {{ brl(valores.vencidos) }}</div>
+      </div>
+      <div class="valor-bloco" data-testid="valor-desembolsado">
+        <div class="eyebrow">Valor desembolsado</div>
+        <div class="valor" :class="{ 'valor--vazio': !desembolso }">
+          {{ desembolso ? brl(desembolso.valorDesembolsado) : '—' }}
+        </div>
       </div>
     </div>
 
@@ -170,6 +189,15 @@ const meta = computed(() => [
             Comentários
             <span class="comentarios-count" :data-vazio="comentarios.length === 0">{{ comentarios.length }}</span>
           </button>
+          <AdminButton
+            variant="ghost"
+            size="compact"
+            :icon="RotateCcw"
+            :disabled="concluidas.length === 0"
+            @click="emit('voltar')"
+          >
+            Voltar etapa
+          </AdminButton>
           <span class="progress">{{ progresso }} concluídas</span>
         </div>
       </div>
@@ -178,7 +206,6 @@ const meta = computed(() => [
           :etapas="etapas"
           :concluidas="concluidas"
           @concluir="emit('concluir', $event)"
-          @desfazer="emit('desfazer', $event)"
         />
       </div>
     </div>
@@ -331,15 +358,21 @@ const meta = computed(() => [
   box-shadow: var(--focus-ring);
 }
 .valores {
-  display: flex;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px 24px;
 }
 .valor-bloco {
-  text-align: right;
+  min-width: 0;
 }
 .valor-bloco .eyebrow {
   margin-bottom: 2px;
   white-space: nowrap;
+}
+.valor-nota {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-muted);
 }
 .valor--vazio {
   color: var(--text-muted);
@@ -507,6 +540,9 @@ const meta = computed(() => [
 @media (max-width: 900px) {
   .info-grid {
     grid-template-columns: 1fr;
+  }
+  .valores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>
