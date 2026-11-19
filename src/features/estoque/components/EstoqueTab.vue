@@ -34,7 +34,12 @@ import ImovelFormModal from './ImovelFormModal.vue';
  * Estoque de imóveis. Com `veiculo`, é a aba do fundo (CRA/FIDC).
  * Sem `veiculo`, é a visão consolidada entre veículos (relatório).
  */
-const props = defineProps<{ veiculo?: VeiculoRef }>();
+const props = defineProps<{
+  veiculo?: VeiculoRef;
+  /** A tela pai abre o Details do imóvel (página própria); a aba só emite `open`. */
+  externalDetail?: boolean;
+}>();
+const emit = defineEmits<{ open: [imovelId: string] }>();
 
 const { success } = useToast();
 const estoque = useEstoque();
@@ -94,11 +99,16 @@ const selecionadoId = ref<string | null>(null);
 const selecionado = computed(() => (selecionadoId.value ? estoque.get(selecionadoId.value) : undefined));
 const criando = ref(false);
 
+function abrir(id: string) {
+  if (props.externalDetail) emit('open', id);
+  else selecionadoId.value = id;
+}
+
 function salvarNovo(input: NovoImovelInput) {
   const novo = estoque.add(input);
   criando.value = false;
   success(`Imóvel “${novo.nome}” cadastrado no estoque.`);
-  selecionadoId.value = novo.id;
+  abrir(novo.id);
 }
 
 const COLS = computed(() =>
@@ -110,7 +120,7 @@ const rowHover = ref<string | null>(null);
 </script>
 
 <template>
-  <ImovelDetalhe v-if="selecionado" :imovel-id="selecionado.id" @back="selecionadoId = null" />
+  <ImovelDetalhe v-if="selecionado" embedded :imovel-id="selecionado.id" @back="selecionadoId = null" />
 
   <div v-else>
     <div class="flex items-center flex-wrap" style="gap: 16px; padding: 20px; border-bottom: 1px solid var(--border-default)">
@@ -243,8 +253,8 @@ const rowHover = ref<string | null>(null);
             background: rowHover === i.id ? 'var(--surface-sunken)' : 'var(--surface-card)',
             transition: 'background var(--duration-fast)',
           }"
-          @click="selecionadoId = i.id"
-          @keydown.enter="selecionadoId = i.id"
+          @click="abrir(i.id)"
+          @keydown.enter="abrir(i.id)"
           @mouseenter="rowHover = i.id"
           @mouseleave="rowHover = null"
         >

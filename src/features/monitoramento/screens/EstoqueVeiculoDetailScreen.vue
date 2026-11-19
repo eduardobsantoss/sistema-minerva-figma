@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { ArrowLeft } from 'lucide-vue-next';
-import { EstoqueTab, brl, imovelResumo, useEstoque, valorAtual, type VeiculoRef } from '@/features/estoque';
+import { EstoqueTab, ImovelDetalhe, brl, imovelResumo, useEstoque, valorAtual, type VeiculoRef } from '@/features/estoque';
 import EstoqueChip from '@/features/estoque/components/EstoqueChip.vue';
 
 const props = defineProps<{ veiculo: VeiculoRef }>();
 const emit = defineEmits<{ back: [] }>();
 
 const estoque = useEstoque();
+const imovelId = ref<string | null>(null);
 
 const imoveis = computed(() => estoque.doVeiculo(props.veiculo));
 const resumo = computed(() => {
@@ -22,7 +23,9 @@ const resumo = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col" style="gap: 24px">
+  <ImovelDetalhe v-if="imovelId" :imovel-id="imovelId" @back="imovelId = null" />
+
+  <div v-else class="flex flex-col" style="gap: 24px">
     <div class="flex items-center" style="gap: 16px">
       <button
         type="button"
@@ -53,7 +56,7 @@ const resumo = computed(() => {
     </div>
 
     <div style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); overflow: hidden">
-      <EstoqueTab :veiculo="veiculo" />
+      <EstoqueTab :veiculo="veiculo" external-detail @open="imovelId = $event" />
     </div>
   </div>
 </template>

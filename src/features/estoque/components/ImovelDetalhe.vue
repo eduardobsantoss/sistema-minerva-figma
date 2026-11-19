@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, type Component } from 'vue';
 import {
   ArrowLeft,
   ClipboardCheck,
@@ -16,6 +16,8 @@ import {
 } from 'lucide-vue-next';
 import AdminButton from '@/components/ui/AdminButton.vue';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue';
+import OverflowMenu, { type OverflowMenuItem } from '@/components/ui/OverflowMenu.vue';
+import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
 import TablePagination from '@/components/ui/TablePagination.vue';
 import { Alert } from '@/components/feedback';
 import { useTablePagination } from '@/composables/useTablePagination';
@@ -45,8 +47,37 @@ import EstoqueKpi from './EstoqueKpi.vue';
 import ImovelFormModal from './ImovelFormModal.vue';
 import MonitoramentoModal from './MonitoramentoModal.vue';
 
-const props = defineProps<{ imovelId: string }>();
+/**
+ * Details do imóvel, no padrão do Details de Solicitação: header, ação primária,
+ * menu ⋮ com as ações críticas e abas. `embedded` só acrescenta respiro quando
+ * a tela é aberta dentro de um card (aba Estoque do CRA/FIDC, relatório).
+ */
+const props = withDefaults(defineProps<{ imovelId: string; embedded?: boolean }>(), { embedded: false });
 const emit = defineEmits<{ back: [] }>();
+
+type Tab = 'gerais' | 'contrato' | 'monitoramento';
+const TABS: { key: Tab; label: string; icon: Component }[] = [
+  { key: 'gerais', label: 'Dados Gerais', icon: FileText },
+  { key: 'contrato', label: 'Contrato e parcelas', icon: ReceiptText },
+  { key: 'monitoramento', label: 'Monitoramento', icon: ClipboardCheck },
+];
+const tab = ref<Tab>('gerais');
+
+const menuItems = computed<OverflowMenuItem[]>(() => [
+  { key: 'editar', label: 'Editar imóvel', icon: Pencil },
+  {
+    key: 'contrato',
+    label: imovel.value?.contrato ? 'Editar contrato e parcelas' : 'Lançar contrato',
+    icon: ReceiptText,
+  },
+  { key: 'excluir', label: 'Excluir imóvel', icon: Trash2, danger: true },
+]);
+
+function onMenu(key: string) {
+  if (key === 'editar') editando.value = true;
+  else if (key === 'contrato') contratoAberto.value = true;
+  else if (key === 'excluir') excluindo.value = true;
+}
 
 const { success } = useToast();
 const estoque = useEstoque();
@@ -125,7 +156,8 @@ const thStyle = {
 </script>
 
 <template>
-  <div v-if="imovel && resumo" class="flex flex-col" style="gap: 20px; padding: 20px">
+  <div v-if="imovel && resumo" class="flex flex-col" :style="{ gap: '24px', padding: embedded ? '20px' : undefined }">
+    <!-- Header + barra de ações -->
     <div class="flex items-center" style="gap: 16px">
       <button
         type="button"
@@ -148,13 +180,18 @@ const thStyle = {
           {{ imovel.localizacao || '—' }} · Matrícula {{ imovel.matricula || '—' }}
         </p>
       </div>
-      <div class="flex items-center flex-wrap" style="gap: 8px; justify-content: flex-end">
-        <AdminButton variant="secondary" :icon="ClipboardCheck" type="button" @click="monitorando = true">Registrar monitoramento</AdminButton>
-        <AdminButton variant="secondary" :icon="Pencil" type="button" @click="editando = true">Editar</AdminButton>
-        <AdminButton variant="danger-text" :icon="Trash2" type="button" @click="excluindo = true">Excluir</AdminButton>
+
+      <!-- Ação primária + menu overflow (ações críticas ficam no menu) -->
+      <div class="flex items-center" style="gap: 10px; flex-shrink: 0">
+        <AdminButton size="large" :icon="ClipboardCheck" type="button" @click="monitorando = true">Registrar monitoramento</AdminButton>
+        <OverflowMenu :items="menuItems" @select="onMenu" />
       </div>
     </div>
 
+    <SegmentedToggle :model-value="tab" :options="TABS" variant="brand" @update:model-value="tab = $event as Tab" />
+
+    <div style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 24px">
+    <div v-if="tab === 'gerais'" class="flex flex-col" style="gap: 24px">
     <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
       <EstoqueKpi
         :icon="Home"
@@ -244,8 +281,9 @@ const thStyle = {
         </div>
       </div>
     </div>
+    </div>
 
-    <div :style="cardStyle">
+    <div v-else-if="tab === 'contrato'" :style="cardStyle">
       <div class="flex items-center flex-wrap" style="gap: 16px; padding: 16px 20px; border-bottom: 1px solid var(--border-default)">
         <div style="flex: 1; min-width: 200px">
           <div style="font-size: var(--text-base); font-weight: var(--weight-bold); color: var(--text-strong)">Contrato e parcelas</div>
@@ -321,7 +359,7 @@ const thStyle = {
       </div>
     </div>
 
-    <div :style="cardStyle">
+    <div v-else :style="cardStyle">
       <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-default)">
         <div style="font-size: var(--text-base); font-weight: var(--weight-bold); color: var(--text-strong)">Monitoramento</div>
         <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px">
@@ -385,6 +423,7 @@ const thStyle = {
           />
         </div>
       </div>
+    </div>
     </div>
 
     <ImovelFormModal v-if="editando" :imovel="imovel" @close="editando = false" @save="salvarEdicao" />
