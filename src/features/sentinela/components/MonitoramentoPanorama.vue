@@ -50,12 +50,13 @@ import AdminButton from '@/components/ui/AdminButton.vue';
 const props = defineProps<{ modulo: ModuloSentinela }>();
 const emit = defineEmits<{ back: [] }>();
 
+// Cor de cada escopo vem da paleta de gráficos (não usa cores de status). Decisão 4B, review 16/11.
 const ESCOPO_COR: Record<EscopoSentinela, string> = {
-  total: 'var(--gci-base)',
-  fundo: 'var(--success-base)',
-  cra: 'var(--warning-base)',
-  cedente: 'var(--danger-base)',
-  sacado: 'var(--accent)',
+  total: 'var(--chart-gci-1)',
+  fundo: 'var(--chart-gci-3)',
+  cra: 'var(--chart-gci-5)',
+  cedente: 'var(--chart-agro-1)',
+  sacado: 'var(--chart-agro-3)',
 };
 
 const { success, info } = useToast();
@@ -98,6 +99,7 @@ const kpis = computed(() => [
     icon: Radar,
     title: 'Monitorados',
     tone: 'var(--text-strong)',
+    toneBg: 'var(--surface-sunken)',
     primaryLabel: 'Entidades',
     primaryValue: String(painel.value.total.quantidade),
     secondaryLabel: 'Exposição',
@@ -107,6 +109,7 @@ const kpis = computed(() => [
     icon: AlertTriangle,
     title: 'Crítico',
     tone: 'var(--status-danger-text)',
+    toneBg: 'var(--status-danger-bg)',
     primaryLabel: 'Entidades',
     primaryValue: String(painel.value.critico.quantidade),
     secondaryLabel: 'Exposição',
@@ -116,6 +119,7 @@ const kpis = computed(() => [
     icon: Clock,
     title: 'Atenção',
     tone: 'var(--status-warning-text)',
+    toneBg: 'var(--status-warning-bg)',
     primaryLabel: 'Entidades',
     primaryValue: String(painel.value.atencao.quantidade),
     secondaryLabel: 'Exposição',
@@ -125,6 +129,7 @@ const kpis = computed(() => [
     icon: CircleCheck,
     title: 'Ok',
     tone: 'var(--status-success-text)',
+    toneBg: 'var(--status-success-bg)',
     primaryLabel: 'Entidades',
     primaryValue: String(painel.value.ok.quantidade),
     secondaryLabel: 'Exposição',
@@ -195,9 +200,12 @@ function scopeBtnStyle(key: EscopoSentinela, on: boolean) {
     cursor: 'pointer',
     fontSize: 'var(--text-xs)',
     fontWeight: 'var(--weight-bold)',
-    border: on ? `1px solid ${color}` : '1px solid var(--border-default)',
-    background: on ? `color-mix(in srgb, ${color} 14%, transparent)` : 'var(--surface-card)',
-    color: on ? color : 'var(--text-muted)',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    border: on ? `1.5px solid ${color}` : '1px solid var(--border-default)',
+    background: 'var(--surface-card)',
+    color: on ? 'var(--text-strong)' : 'var(--text-muted)',
   };
 }
 
@@ -300,6 +308,11 @@ function encaminhar() {
           :style="scopeBtnStyle(opt.key, filtro.escopo === opt.key)"
           @click="setEscopo(opt.key)"
         >
+          <span
+            v-if="filtro.escopo === opt.key"
+            aria-hidden="true"
+            :style="{ width: '8px', height: '8px', borderRadius: 'var(--radius-full)', background: ESCOPO_COR[opt.key] }"
+          />
           {{ opt.label }}
         </button>
       </div>
@@ -318,7 +331,7 @@ function encaminhar() {
               width: '40px',
               height: '40px',
               borderRadius: 'var(--radius-lg)',
-              background: `color-mix(in srgb, ${kpi.tone} 14%, transparent)`,
+              background: kpi.toneBg,
               color: kpi.tone,
               flexShrink: 0,
             }"
@@ -327,7 +340,7 @@ function encaminhar() {
           </div>
           <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">{{ kpi.title }}</div>
         </div>
-        <div style="font-size: 11px; font-weight: var(--weight-bold); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px">
+        <div style="font-size: 11px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px">
           {{ kpi.primaryLabel }}
         </div>
         <div
@@ -569,7 +582,7 @@ function encaminhar() {
 .filter-label {
   font-size: 10px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   color: var(--text-muted);
   text-transform: uppercase;
   margin-bottom: 6px;
@@ -616,10 +629,11 @@ function encaminhar() {
 .sn-chip {
   display: inline-flex;
   width: fit-content;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: var(--weight-bold);
-  letter-spacing: 0.03em;
-  padding: 3px 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 8px;
   border-radius: var(--radius-full);
   white-space: nowrap;
 }

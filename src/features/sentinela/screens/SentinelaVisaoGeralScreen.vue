@@ -40,6 +40,7 @@ const kpis = computed(() => [
     icon: Radar,
     title: 'Monitorados',
     tone: 'var(--text-strong)',
+    toneBg: 'var(--surface-sunken)',
     primaryLabel: 'Entidades',
     primaryValue: String(macro.value.total.quantidade),
     secondaryLabel: 'Exposição',
@@ -49,6 +50,7 @@ const kpis = computed(() => [
     icon: AlertTriangle,
     title: 'Crítico',
     tone: 'var(--status-danger-text)',
+    toneBg: 'var(--status-danger-bg)',
     primaryLabel: 'Entidades',
     primaryValue: String(macro.value.critico.quantidade),
     secondaryLabel: 'Exposição',
@@ -58,6 +60,7 @@ const kpis = computed(() => [
     icon: Clock,
     title: 'Atenção',
     tone: 'var(--status-warning-text)',
+    toneBg: 'var(--status-warning-bg)',
     primaryLabel: 'Entidades',
     primaryValue: String(macro.value.atencao.quantidade),
     secondaryLabel: 'Exposição',
@@ -67,6 +70,7 @@ const kpis = computed(() => [
     icon: CircleCheck,
     title: 'Ok',
     tone: 'var(--status-success-text)',
+    toneBg: 'var(--status-success-bg)',
     primaryLabel: 'Entidades',
     primaryValue: String(macro.value.ok.quantidade),
     secondaryLabel: 'Exposição',
@@ -147,7 +151,7 @@ const modulos = computed(() => [
               width: '40px',
               height: '40px',
               borderRadius: 'var(--radius-lg)',
-              background: `color-mix(in srgb, ${kpi.tone} 14%, transparent)`,
+              background: kpi.toneBg,
               color: kpi.tone,
               flexShrink: 0,
             }"
@@ -156,7 +160,7 @@ const modulos = computed(() => [
           </div>
           <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">{{ kpi.title }}</div>
         </div>
-        <div style="font-size: 11px; font-weight: var(--weight-bold); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px">
+        <div style="font-size: 11px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px">
           {{ kpi.primaryLabel }}
         </div>
         <div
