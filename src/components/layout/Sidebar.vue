@@ -220,8 +220,6 @@ const items: NavItem[] = [
       { key: "monitoramento-estoque", label: "Estoque", icon: Warehouse },
     ],
   },
-  { key: "colab", label: "Colaboradores", icon: Users },
-  { key: "rel", label: "Relatórios", icon: FileText },
   { key: "conf", label: "Configurações", icon: Settings },
 ];
 
