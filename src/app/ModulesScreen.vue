@@ -43,7 +43,10 @@ import { GruposCadastroScreen } from '@/features/grupos-empresariais';
 import {
   SentinelaVisaoGeralScreen,
   SentinelaCreditoScreen,
-  SentinelaContraparteScreen,
+  SentinelaCedenteScreen,
+  SentinelaSacadoScreen,
+  SentinelaRelatoriosScreen,
+  // SentinelaContraparteScreen,
   // SentinelaLoteScreen,
 } from '@/features/sentinela';
 import { GerencialScreen, PosDesembolsoScreen, ParametrizacaoScreen, GerencialRelatoriosScreen } from '@/features/gerencial';
@@ -92,6 +95,9 @@ type View =
   | 'monitoramento-estoque'
   | 'sentinela'
   | 'sentinela-credito'
+  | 'sentinela-cedente'
+  | 'sentinela-sacado'
+  | 'sentinela-relatorios'
   | 'sentinela-contraparte'
   | 'sentinela-lote'
   | 'gerencial'
@@ -148,6 +154,9 @@ const titleMap: Record<View, string> = {
   'monitoramento-estoque': 'Monitoramento de Estoque',
   sentinela: 'Sentinela',
   'sentinela-credito': 'Monitoramento de Crédito',
+  'sentinela-cedente': 'Cedente',
+  'sentinela-sacado': 'Sacado',
+  'sentinela-relatorios': 'Relatórios',
   'sentinela-contraparte': 'Cedente/Sacado',
   'sentinela-lote': 'Consulta em lote',
   gerencial: 'Gerencial',
@@ -172,7 +181,7 @@ const VALID_VIEWS = new Set<View>([
   'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-taxa-operacao', 'risco-agrupamentos', 'risco-serasa', 'risco-rel',
   'grupos-cadastro',
   'monitoramento', 'monitoramento-estoque',
-  'sentinela', 'sentinela-credito', 'sentinela-contraparte', 'sentinela-lote',
+  'sentinela', 'sentinela-credito', 'sentinela-cedente', 'sentinela-sacado', 'sentinela-relatorios', 'sentinela-contraparte', 'sentinela-lote',
   'gerencial', 'gerencial-pos', 'gerencial-veiculos', 'gerencial-relatorios',
   'passivo', 'passivo-novo', 'colab', 'rel', 'conf',
 ]);
@@ -345,7 +354,12 @@ function handleModuleClick(title: string) {
           <MonitoramentoEstoqueScreen v-else-if="view === 'monitoramento-estoque'" />
           <SentinelaVisaoGeralScreen v-else-if="view === 'sentinela'" @navigate="handleNavigate" />
           <SentinelaCreditoScreen v-else-if="view === 'sentinela-credito'" @navigate="handleNavigate" />
+          <SentinelaCedenteScreen v-else-if="view === 'sentinela-cedente'" @navigate="handleNavigate" />
+          <SentinelaSacadoScreen v-else-if="view === 'sentinela-sacado'" @navigate="handleNavigate" />
+          <SentinelaRelatoriosScreen v-else-if="view === 'sentinela-relatorios'" />
+          <!-- Cedente/Sacado unificado comentado: separado em Cedente e Sacado.
           <SentinelaContraparteScreen v-else-if="view === 'sentinela-contraparte'" @navigate="handleNavigate" />
+          -->
           <!-- Consulta em lote comentada: a subida de lista ficou em Risco > Consultas.
           <SentinelaLoteScreen v-else-if="view === 'sentinela-lote'" @navigate="handleNavigate" />
           -->

@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   ArrowUpRight,
   BarChart3,
+  Building2,
   CircleCheck,
   Clock,
   Radar,
@@ -33,7 +34,8 @@ const emit = defineEmits<{ navigate: [view: string] }>();
 const busca = ref('');
 const meses = labelsEvolucao();
 const macro = computed(() => montarPainel('credito', FILTRO_VAZIO));
-const contraparte = computed(() => montarPainel('contraparte', FILTRO_VAZIO));
+const cedente = computed(() => montarPainel('contraparte', { ...FILTRO_VAZIO, escopo: 'cedente' }));
+const sacado = computed(() => montarPainel('contraparte', { ...FILTRO_VAZIO, escopo: 'sacado' }));
 
 const kpis = computed(() => [
   {
@@ -103,12 +105,20 @@ const modulos = computed(() => [
     variacao: variacaoDoPainel(macro.value),
   },
   {
-    key: 'sentinela-contraparte',
-    title: 'Cedente/Sacado',
-    hint: 'Serasa e protesto das contrapartes.',
+    key: 'sentinela-cedente',
+    title: 'Cedente',
+    hint: 'Serasa e protesto dos cedentes.',
+    icon: Building2,
+    painel: cedente.value,
+    variacao: variacaoDoPainel(cedente.value),
+  },
+  {
+    key: 'sentinela-sacado',
+    title: 'Sacado',
+    hint: 'Serasa e protesto dos sacados.',
     icon: Users,
-    painel: contraparte.value,
-    variacao: variacaoDoPainel(contraparte.value),
+    painel: sacado.value,
+    variacao: variacaoDoPainel(sacado.value),
   },
 ]);
 </script>
@@ -124,7 +134,7 @@ const modulos = computed(() => [
           Visão geral
         </h1>
         <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
-          Carteira e contrapartes no mesmo recorte.
+          Carteira, cedentes e sacados no mesmo recorte.
         </p>
       </div>
       <div style="position: relative; width: 320px; max-width: 100%">
@@ -260,7 +270,7 @@ const modulos = computed(() => [
       -->
     </div>
 
-    <div class="grid vg-split" style="gap: 16px; align-items: start">
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: start">
       <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); overflow: hidden">
         <div class="flex items-center" style="gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border-default)">
           <AlertTriangle :size="16" style="color: var(--status-danger-text)" />
@@ -295,10 +305,10 @@ const modulos = computed(() => [
 
       <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); overflow: hidden">
         <div class="flex items-center" style="gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border-default)">
-          <Users :size="16" style="color: var(--status-warning-text)" />
-          <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Cedente/Sacado pedindo tratativa</h3>
+          <Building2 :size="16" style="color: var(--status-warning-text)" />
+          <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Cedente pedindo tratativa</h3>
         </div>
-        <div v-if="fila(contraparte).length === 0" style="padding: 24px 20px; font-size: var(--text-sm); color: var(--text-muted); text-align: center">
+        <div v-if="fila(cedente).length === 0" style="padding: 24px 20px; font-size: var(--text-sm); color: var(--text-muted); text-align: center">
           Nenhuma entidade neste recorte.
         </div>
         <template v-else>
@@ -308,10 +318,42 @@ const modulos = computed(() => [
             <div>Prazo</div>
           </div>
           <button
-            v-for="linha in fila(contraparte)"
+            v-for="linha in fila(cedente)"
             :key="linha.entidade.id"
             class="grid items-center vg-row vg-table"
-            @click="emit('navigate', 'sentinela-contraparte')"
+            @click="emit('navigate', 'sentinela-cedente')"
+          >
+            <div style="min-width: 0">
+              <div class="vg-name">{{ linha.entidade.nome }}</div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted)">{{ linha.acaoSugerida }}</div>
+            </div>
+            <div class="vg-num" :style="{ color: linha.severidade === 'critico' ? 'var(--status-danger-text)' : 'var(--status-warning-text)', fontWeight: 'var(--weight-bold)' }">
+              {{ brl(linha.entidade.exposicao) }}
+            </div>
+            <div class="vg-date">{{ formatDateBR(linha.prazo) }}</div>
+          </button>
+        </template>
+      </div>
+
+      <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); overflow: hidden">
+        <div class="flex items-center" style="gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border-default)">
+          <Users :size="16" style="color: var(--status-warning-text)" />
+          <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Sacado pedindo tratativa</h3>
+        </div>
+        <div v-if="fila(sacado).length === 0" style="padding: 24px 20px; font-size: var(--text-sm); color: var(--text-muted); text-align: center">
+          Nenhuma entidade neste recorte.
+        </div>
+        <template v-else>
+          <div class="grid vg-table vg-head">
+            <div>Entidade</div>
+            <div class="vg-num">Exposição</div>
+            <div>Prazo</div>
+          </div>
+          <button
+            v-for="linha in fila(sacado)"
+            :key="linha.entidade.id"
+            class="grid items-center vg-row vg-table"
+            @click="emit('navigate', 'sentinela-sacado')"
           >
             <div style="min-width: 0">
               <div class="vg-name">{{ linha.entidade.nome }}</div>

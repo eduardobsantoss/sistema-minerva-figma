@@ -47,7 +47,14 @@ import {
 } from '../data/sentinelaData';
 import AdminButton from '@/components/ui/AdminButton.vue';
 
-const props = defineProps<{ modulo: ModuloSentinela }>();
+const props = withDefaults(
+  defineProps<{
+    modulo: ModuloSentinela;
+    titulo?: string;
+    escopoInicial?: EscopoSentinela;
+  }>(),
+  {},
+);
 const emit = defineEmits<{ back: [] }>();
 
 // Cor de cada escopo vem da paleta de gráficos (não usa cores de status). Decisão 4B, review 16/11.
@@ -63,7 +70,11 @@ const { success, info } = useToast();
 const modo = ref<ModoSentinela>('operacional');
 const buscaDocumento = ref('');
 const buscaNome = ref('');
-const filtro = ref<FiltroSentinela>({ ...FILTRO_VAZIO, tiposAlerta: [] });
+const filtro = ref<FiltroSentinela>({
+  ...FILTRO_VAZIO,
+  tiposAlerta: [],
+  escopo: props.escopoInicial ?? FILTRO_VAZIO.escopo,
+});
 const modoTabs = [
   { key: 'operacional', label: 'Operacional', icon: ClipboardList },
   { key: 'gerencial', label: 'Gerencial', icon: BarChart3 },
@@ -160,7 +171,9 @@ const pageIds = computed(() => pageItems.value.map((linha) => linha.entidade.id)
 const allPage = computed(() => pageIds.value.length > 0 && pageIds.value.every((id) => selected.value.includes(id)));
 const somePage = computed(() => pageIds.value.some((id) => selected.value.includes(id)) && !allPage.value);
 
-const titulo = computed(() => (props.modulo === 'credito' ? 'Monitoramento de Crédito' : 'Cedente/Sacado'));
+const titulo = computed(
+  () => props.titulo ?? (props.modulo === 'credito' ? 'Monitoramento de Crédito' : 'Cedente/Sacado'),
+);
 const hintVazio = computed(() =>
   props.modulo === 'credito'
     ? 'Serasa, protesto e concentração sem apontamentos neste recorte.'

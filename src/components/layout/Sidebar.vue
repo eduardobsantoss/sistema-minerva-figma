@@ -202,9 +202,13 @@ const items: NavItem[] = [
     children: [
       { key: "sentinela", label: "Visão geral", icon: Gauge },
       { key: "sentinela-credito", label: "Crédito", icon: AlertCircle },
-      { key: "sentinela-contraparte", label: "Cedente/Sacado", icon: Users },
+      { key: "sentinela-cedente", label: "Cedente", icon: Building2 },
+      { key: "sentinela-sacado", label: "Sacado", icon: Users },
+      { key: "sentinela-relatorios", label: "Relatórios", icon: FileText },
       // Consulta em lote foi para Risco > Consultas (subida de lista).
       // { key: "sentinela-lote", label: "Consulta em lote", icon: Search },
+      // Cedente/Sacado unificado — substituído por Cedente e Sacado separados.
+      // { key: "sentinela-contraparte", label: "Cedente/Sacado", icon: Users },
     ],
   },
   {
