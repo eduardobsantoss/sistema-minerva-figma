@@ -1,32 +1,33 @@
 <script setup lang="ts">
-import { FileSpreadsheet, FileText } from 'lucide-vue-next';
+import { ref, type Component } from 'vue';
+import { ChevronRight, FileSpreadsheet, FileText } from 'lucide-vue-next';
 
-const REPORTS = [
+type ReportKey = 'csv' | 'pdf';
+
+const REPORTS: {
+  key: ReportKey;
+  title: string;
+  description: string;
+  icon: Component;
+  tone: { iconBg: string; iconFg: string };
+}[] = [
   {
     key: 'csv',
     title: 'Exportação CSV',
     description: 'Base tabular do monitoramento de crédito e contrapartes para análise em planilha.',
     icon: FileSpreadsheet,
-    tone: {
-      iconBg: 'var(--accent-bg)',
-      iconFg: 'var(--accent)',
-      label: 'var(--accent)',
-    },
-    badge: 'CSV',
+    tone: { iconBg: 'var(--accent-bg)', iconFg: 'var(--accent)' },
   },
   {
     key: 'pdf',
     title: 'Exportação PDF',
     description: 'Resumo executivo do Sentinela para compartilhar com o time e a diretoria.',
     icon: FileText,
-    tone: {
-      iconBg: 'var(--danger-light)',
-      iconFg: 'var(--danger-base)',
-      label: 'var(--danger-base)',
-    },
-    badge: 'PDF',
+    tone: { iconBg: 'var(--danger-light)', iconFg: 'var(--danger-base)' },
   },
-] as const;
+];
+
+const hoveredKey = ref<ReportKey | null>(null);
 </script>
 
 <template>
@@ -44,38 +45,37 @@ const REPORTS = [
     </div>
 
     <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px">
-      <article
+      <button
         v-for="item in REPORTS"
         :key="item.key"
         class="flex flex-col"
-        style="gap: 14px; padding: 22px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl)"
+        type="button"
+        :style="{
+          gap: '14px',
+          textAlign: 'left',
+          padding: '22px',
+          background: 'var(--surface-card)',
+          border: `1px solid ${hoveredKey === item.key ? item.tone.iconFg : 'var(--border-default)'}`,
+          borderRadius: 'var(--radius-xl)',
+          cursor: 'pointer',
+          boxShadow: hoveredKey === item.key ? 'var(--shadow-md)' : 'none',
+          transform: hoveredKey === item.key ? 'translateY(-4px)' : 'translateY(0)',
+          transition: 'transform var(--duration-base) var(--ease-standard), box-shadow var(--duration-base), border-color var(--duration-base)',
+        }"
+        @mouseenter="hoveredKey = item.key"
+        @mouseleave="hoveredKey = null"
       >
-        <div class="flex items-center justify-between" style="gap: 12px">
-          <div
-            class="flex items-center justify-center"
-            :style="{
-              width: '40px',
-              height: '40px',
-              borderRadius: 'var(--radius-lg)',
-              background: item.tone.iconBg,
-              color: item.tone.iconFg,
-            }"
-          >
-            <component :is="item.icon" :size="20" />
-          </div>
-          <span
-            :style="{
-              fontSize: '10px',
-              fontWeight: 'var(--weight-bold)',
-              letterSpacing: '0.1em',
-              padding: '5px 11px',
-              borderRadius: 'var(--radius-full)',
-              background: item.tone.iconBg,
-              color: item.tone.label,
-            }"
-          >
-            {{ item.badge }}
-          </span>
+        <div
+          class="flex items-center justify-center"
+          :style="{
+            width: '40px',
+            height: '40px',
+            borderRadius: 'var(--radius-lg)',
+            background: item.tone.iconBg,
+            color: item.tone.iconFg,
+          }"
+        >
+          <component :is="item.icon" :size="20" />
         </div>
         <div>
           <div style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); margin-bottom: 6px">
@@ -85,7 +85,22 @@ const REPORTS = [
             {{ item.description }}
           </div>
         </div>
-      </article>
+        <div style="flex: 1" />
+        <div
+          class="flex items-center"
+          :style="{
+            gap: '4px',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 'var(--weight-bold)',
+            color: item.tone.iconFg,
+            opacity: hoveredKey === item.key ? 1 : 0,
+            transform: hoveredKey === item.key ? 'translateY(0)' : 'translateY(4px)',
+            transition: 'opacity var(--duration-base) var(--ease-standard), transform var(--duration-base) var(--ease-standard)',
+          }"
+        >
+          Configurar e exportar <ChevronRight :size="14" />
+        </div>
+      </button>
     </div>
   </div>
 </template>
