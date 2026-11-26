@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onUnmounted, ref, type Component } from 'vue';
+import { computed, onUnmounted, ref, type Component } from 'vue';
 import {
   User, AlertTriangle, Scale, History, Search, XCircle, RefreshCw,
   Users, Trees,
@@ -35,6 +35,8 @@ import { EmptyState } from '@/features/risco/screens/detail-tabs/shared';
 import ConsultaLotePanel from '../components/ConsultaLotePanel.vue';
 import AdminButton from '@/components/ui/AdminButton.vue';
 
+withDefaults(defineProps<{ title?: string }>(), { title: 'Consultas' });
+
 type Tab = 'cadastro' | 'restricoes' | 'processos' | 'trabalho-escravo' | 'ibama' | 'historico';
 
 const TABS: { key: Tab; label: string; icon: Component }[] = [
@@ -57,6 +59,13 @@ const phase = ref<ScreenPhase>('idle');
 const loading = ref(false);
 const latest = ref<CreditQueryLatest | null>(null);
 const history = ref<HistoryItem[]>([]);
+const previousScore = computed(() => {
+  const currentId = latest.value?.queryId;
+  const older = history.value
+    .filter((item) => item.queryId !== currentId && item.snapshot?.agroScore != null)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return older[0]?.snapshot?.agroScore ?? null;
+});
 const tab = ref<Tab>('cadastro');
 const showRefreshModal = ref(false);
 const pollDatasets = ref<DatasetProgress[]>([]);
@@ -212,6 +221,7 @@ async function loadDemoScenario(scenario: MockScenario) {
   <div class="flex flex-col" style="gap: 24px; padding-bottom: 48px">
     <SerasaHeader
       v-model:document-input="documentInput"
+      :title="title"
       :loading="loading"
       :lote="modo === 'lote'"
       :latest="modo === 'unitaria' && phase === 'completed' ? latest : null"
@@ -274,7 +284,7 @@ async function loadDemoScenario(scenario: MockScenario) {
         </span>
       </div>
 
-      <SerasaSummaryCards :latest="latest" />
+      <SerasaSummaryCards :latest="latest" :previous-score="previousScore" />
 
       <SegmentedToggle
         :model-value="tab"

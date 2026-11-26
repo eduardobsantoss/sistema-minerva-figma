@@ -7,12 +7,15 @@ import { formatDocument, formatDateTimeUtc, maskDocumentInput, onlyDigits } from
 import { CopyButton } from '@/features/risco/screens/detail-tabs/shared';
 import AdminButton from '@/components/ui/AdminButton.vue';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   documentInput: string;
   loading?: boolean;
   latest?: CreditQueryLatest | null;
   lote?: boolean;
-}>();
+  title?: string;
+}>(), {
+  title: 'Consultas',
+});
 
 const emit = defineEmits<{
   'update:documentInput': [value: string];
@@ -39,10 +42,10 @@ const statusTone = computed(() =>
   <div class="flex flex-col" style="gap: 20px">
     <div>
       <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--accent); font-weight: var(--weight-bold); margin-bottom: 6px">
-        Risco · Due Diligence
+        Carteira
       </div>
       <h1 style="font-size: 26px; font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.02em; line-height: 1.15">
-        Consultas
+        {{ title }}
       </h1>
       <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
         {{ lote ? 'Suba uma lista de CPF ou CNPJ e consulte o lote de uma vez.' : 'Consulte crédito, restrições oficiais e processos por CPF ou CNPJ.' }}

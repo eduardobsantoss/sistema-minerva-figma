@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import { computed, type Component } from 'vue';
-import { Gauge, AlertTriangle, FileWarning, Banknote, Scale, Users, Trees } from 'lucide-vue-next';
+import { ArrowDown, ArrowUp, Gauge, AlertTriangle, FileWarning, Banknote, Scale, Users, Trees } from 'lucide-vue-next';
 import type { CreditQueryLatest } from '../data/serasaTypes';
 import { CHEQUE_CATEGORIES, PROTEST_CATEGORY } from '../data/serasaConstants';
 import { brl } from '@/features/passivo/data/passivoData';
 import { formatPercent } from '../utils/serasaFormatters';
 
-const props = defineProps<{ latest: CreditQueryLatest }>();
+const props = defineProps<{
+  latest: CreditQueryLatest;
+  previousScore?: number | null;
+}>();
+
+interface ScoreDelta {
+  direction: 'up' | 'down';
+  value: number;
+}
 
 interface KpiCard {
   icon: Component;
@@ -14,7 +22,7 @@ interface KpiCard {
   primary: string;
   secondary: string;
   tone: string;
-  hidden?: boolean;
+  delta?: ScoreDelta | null;
 }
 
 const cards = computed<KpiCard[]>(() => {
@@ -39,6 +47,11 @@ const cards = computed<KpiCard[]>(() => {
   const procVal = processes.reduce((s, p) => s + (p.valueOfOccurrences ?? 0), 0);
 
   const slaveActive = slaveLabor.filter((i) => !i.registryInclusionEndDate).length;
+  const currentScore = latest.agroScore?.score ?? null;
+  const previous = props.previousScore ?? null;
+  const delta: ScoreDelta | null = currentScore != null && previous != null && currentScore !== previous
+    ? { direction: currentScore > previous ? 'up' : 'down', value: Math.abs(currentScore - previous) }
+    : null;
 
   return [
     {
@@ -49,7 +62,7 @@ const cards = computed<KpiCard[]>(() => {
         ? `Prob. evento: ${formatPercent(latest.agroScore.eventProbability)}`
         : 'Indisponível',
       tone: 'var(--gci-base)',
-      hidden: false,
+      delta,
     },
     {
       icon: AlertTriangle,
@@ -110,8 +123,25 @@ const cards = computed<KpiCard[]>(() => {
           {{ card.title }}
         </span>
       </div>
-      <div style="font-size: 28px; font-weight: var(--weight-bold); color: var(--text-strong); line-height: 1; font-variant-numeric: tabular-nums">
-        {{ card.primary }}
+      <div class="flex items-center" style="gap: 8px">
+        <div style="font-size: 28px; font-weight: var(--weight-bold); color: var(--text-strong); line-height: 1; font-variant-numeric: tabular-nums">
+          {{ card.primary }}
+        </div>
+        <span
+          v-if="card.delta"
+          class="flex items-center"
+          :style="{
+            gap: '2px',
+            fontSize: 'var(--text-sm)',
+            fontWeight: 'var(--weight-bold)',
+            fontVariantNumeric: 'tabular-nums',
+            color: card.delta.direction === 'up' ? 'var(--success-base)' : 'var(--danger-base)',
+          }"
+        >
+          <ArrowUp v-if="card.delta.direction === 'up'" :size="16" />
+          <ArrowDown v-else :size="16" />
+          {{ card.delta.value }}
+        </span>
       </div>
       <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 6px">
         {{ card.secondary }}

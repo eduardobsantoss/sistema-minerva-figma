@@ -179,6 +179,15 @@ export interface CreditQueryLatest {
   ibamaRestrictions: IbamaRestriction[];
 }
 
+export interface HistorySnapshot {
+  agroScore: number | null;
+  restricoes: number;
+  protestos: number;
+  processos: number;
+  trabalhoEscravo: number;
+  ibama: number;
+}
+
 export interface HistoryItem {
   queryId: number;
   externalId: string;
@@ -186,6 +195,7 @@ export interface HistoryItem {
   createdAt: string;
   updatedAt?: string | null;
   errorMessage?: string | null;
+  snapshot?: HistorySnapshot | null;
 }
 
 export interface PaginatedHistory {

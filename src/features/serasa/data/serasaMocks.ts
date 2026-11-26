@@ -3,26 +3,83 @@ import type {
   CreditQueryByDocumentResponse,
   CreditReport,
   HistoryItem,
+  HistorySnapshot,
   IbamaRestriction,
   MockScenario,
   SerasaProcess,
   SlaveLaborRestriction,
 } from './serasaTypes';
-import { DEMO_DOCUMENTS } from './serasaConstants';
+import { DEMO_DOCUMENTS, PROTEST_CATEGORY } from './serasaConstants';
 
 const NOW = '2026-08-03T12:04:00Z';
 const CREATED = '2026-08-03T12:00:00Z';
 const VALID_UNTIL = '2026-08-08T12:00:00Z';
 const EXPIRED_VALID_UNTIL = '2026-07-20T12:00:00Z';
 
-function baseHistory(queryId: number, externalId: string, extra: HistoryItem[] = []): HistoryItem[] {
-  const current: HistoryItem = {
+export function snapshotOf(latest: CreditQueryLatest): HistorySnapshot {
+  const reports = latest.creditReports ?? [];
+  const processes = latest.processes ?? [];
+  return {
+    agroScore: latest.agroScore?.score ?? null,
+    restricoes: reports.reduce((sum, report) => sum + report.occurrences, 0),
+    protestos: reports
+      .filter((report) => report.category === PROTEST_CATEGORY)
+      .reduce((sum, report) => sum + report.occurrences, 0),
+    processos: processes.reduce((sum, process) => sum + process.occurrences, 0),
+    trabalhoEscravo: (latest.slaveLaborRestrictions ?? []).length,
+    ibama: (latest.ibamaRestrictions ?? []).length,
+  };
+}
+
+function priorItem(
+  latest: CreditQueryLatest,
+  queryId: number,
+  createdAt: string,
+  snapshot: HistorySnapshot,
+): HistoryItem {
+  return {
     queryId,
-    externalId,
+    externalId: `${latest.externalId}-ant`,
     status: 'Completed',
-    createdAt: CREATED,
-    updatedAt: NOW,
+    createdAt,
+    updatedAt: createdAt,
     errorMessage: null,
+    snapshot,
+  };
+}
+
+function previousConsultations(latest: CreditQueryLatest): HistoryItem[] {
+  const current = snapshotOf(latest);
+  const score = current.agroScore ?? 700;
+  const down = latest.basicInfo?.personType === 'PJ';
+  const previousScore = down ? score + 40 : score - 40;
+  const olderScore = down ? score + 10 : score - 15;
+  return [
+    priorItem(latest, latest.queryId - 1, '2026-05-18T11:00:00Z', {
+      ...current,
+      agroScore: previousScore,
+      restricoes: Math.max(0, current.restricoes + (down ? -1 : 1)),
+      protestos: Math.max(0, current.protestos + (down ? 0 : 1)),
+    }),
+    priorItem(latest, latest.queryId - 2, '2026-02-10T11:00:00Z', {
+      ...current,
+      agroScore: olderScore,
+      restricoes: Math.max(0, current.restricoes + 2),
+      protestos: Math.max(0, current.protestos + 1),
+      processos: Math.max(0, current.processos - 1),
+    }),
+  ];
+}
+
+function baseHistory(latest: CreditQueryLatest, extra: HistoryItem[] = []): HistoryItem[] {
+  const current: HistoryItem = {
+    queryId: latest.queryId,
+    externalId: latest.externalId,
+    status: 'Completed',
+    createdAt: latest.createdAt,
+    updatedAt: latest.updatedAt,
+    errorMessage: null,
+    snapshot: snapshotOf(latest),
   };
   return [current, ...extra];
 }
@@ -524,7 +581,7 @@ export function buildByDocumentResponse(
   historyItems?: HistoryItem[],
 ): CreditQueryByDocumentResponse {
   const items = latest
-    ? baseHistory(latest.queryId, latest.externalId, historyItems ?? [])
+    ? baseHistory(latest, historyItems ?? previousConsultations(latest))
     : (historyItems ?? []);
 
   return {

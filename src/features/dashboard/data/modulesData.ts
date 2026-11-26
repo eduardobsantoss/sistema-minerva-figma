@@ -5,6 +5,7 @@ import {
   Package,
   Briefcase,
   Landmark,
+  Wallet,
   Database,
   Trees,
   AlertCircle,
@@ -86,6 +87,12 @@ export const modules: ModuleItem[] = [
     description: 'Monitoramento de exposição, alertas e métricas de risco operacional.',
     icon: AlertCircle,
     tone: 'red',
+  },
+  {
+    title: 'Carteira',
+    description: 'Aquisição de carteira: consulta de crédito, restrições e processos por CPF ou CNPJ.',
+    icon: Wallet,
+    tone: 'teal',
   },
   {
     title: 'Cobrança',

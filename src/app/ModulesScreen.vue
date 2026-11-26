@@ -90,6 +90,7 @@ type View =
   | 'risco-agrupamentos'
   | 'risco-rel'
   | 'risco-serasa'
+  | 'carteira'
   | 'grupos-cadastro'
   | 'monitoramento'
   | 'monitoramento-estoque'
@@ -149,6 +150,7 @@ const titleMap: Record<View, string> = {
   'risco-agrupamentos': 'Agrupamentos de Limite',
   'risco-rel': 'Relatórios de Risco',
   'risco-serasa': 'Consultas',
+  carteira: 'Aquisição de Carteira',
   'grupos-cadastro': 'Grupos Empresariais',
   monitoramento: 'Monitoramento Pós Desembolso',
   'monitoramento-estoque': 'Monitoramento de Estoque',
@@ -179,6 +181,7 @@ const VALID_VIEWS = new Set<View>([
   'semiestruturadas',
   'cobranca', 'cobranca-titulos', 'cobranca-notif-cessao', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-resultado-notif', 'cobranca-historico-notif', 'cobranca-preventiva', 'cobranca-rel',
   'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-taxa-operacao', 'risco-agrupamentos', 'risco-serasa', 'risco-rel',
+  'carteira',
   'grupos-cadastro',
   'monitoramento', 'monitoramento-estoque',
   'sentinela', 'sentinela-credito', 'sentinela-cedente', 'sentinela-sacado', 'sentinela-relatorios', 'sentinela-contraparte', 'sentinela-lote',
@@ -279,6 +282,9 @@ function handleModuleClick(title: string) {
   } else if (title === 'Risco') {
     view.value = 'risco-dashboard';
     openMenu.value = 'risco';
+  } else if (title === 'Carteira') {
+    view.value = 'carteira';
+    openMenu.value = null;
   } else if (title === 'Grupos Empresariais') {
     view.value = 'grupos-cadastro';
   } else if (title === 'Passivo') {
@@ -350,6 +356,7 @@ function handleModuleClick(title: string) {
           <RelatoriosScreen v-else-if="view === 'risco-rel'" />
           <RiscoDashboardScreen v-else-if="view === 'risco-dashboard'" @navigate="handleNavigate" />
           <SerasaScreen v-else-if="view === 'risco-serasa'" />
+          <SerasaScreen v-else-if="view === 'carteira'" title="Aquisição de Carteira" />
           <MonitoramentoScreen v-else-if="view === 'monitoramento'" />
           <MonitoramentoEstoqueScreen v-else-if="view === 'monitoramento-estoque'" />
           <SentinelaVisaoGeralScreen v-else-if="view === 'sentinela'" @navigate="handleNavigate" />
