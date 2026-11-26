@@ -1,16 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { CheckCircle2 } from 'lucide-vue-next';
 import type { CreditReport } from '../../data/serasaTypes';
 import { categoryLabel } from '../../data/serasaConstants';
 import { brl } from '@/features/passivo/data/passivoData';
 import { formatDateOnly } from '../../utils/serasaFormatters';
 import { TabCard, EmptyState } from '@/features/risco/screens/detail-tabs/shared';
-import RawDetailsModal from '../../components/RawDetailsModal.vue';
 
 defineProps<{ creditReports: CreditReport[] }>();
-
-const rawPanel = ref<{ title: string; data: Record<string, unknown> } | null>(null);
 
 function periodLabel(report: CreditReport): string {
   if (!report.oldestOccurrence && !report.newestOccurrence) return '—';
@@ -70,7 +66,6 @@ function periodLabel(report: CreditReport): string {
               <th style="padding: 10px 12px; font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted)">NATUREZA</th>
               <th style="padding: 10px 12px; font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted)">CONTRATO</th>
               <th style="padding: 10px 12px; font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted)">UF/CIDADE</th>
-              <th style="padding: 10px 12px; font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted)"></th>
             </tr>
           </thead>
           <tbody>
@@ -104,25 +99,10 @@ function periodLabel(report: CreditReport): string {
               <td style="padding: 10px 12px; color: var(--text-muted)">
                 {{ [occ.state, occ.city].filter(Boolean).join(' / ') || '—' }}
               </td>
-              <td style="padding: 10px 12px">
-                <button
-                  style="font-size: var(--text-xs); color: var(--accent); background: none; border: none; cursor: pointer; font-weight: var(--weight-semibold); white-space: nowrap"
-                  @click="rawPanel = { title: occ.creditorName ?? 'Ocorrência', data: occ.rawDetails }"
-                >
-                  Ver dados brutos
-                </button>
-              </td>
             </tr>
           </tbody>
         </table>
       </div>
     </TabCard>
   </div>
-
-  <RawDetailsModal
-    v-if="rawPanel"
-    :title="rawPanel.title"
-    :data="rawPanel.data"
-    @close="rawPanel = null"
-  />
 </template>

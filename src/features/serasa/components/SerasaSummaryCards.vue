@@ -111,22 +111,18 @@ const cards = computed<KpiCard[]>(() => {
 </script>
 
 <template>
-  <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px">
+  <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px">
     <div
       v-for="card in cards"
       :key="card.title"
-      style="padding: 18px 20px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl)"
+      style="border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 14px 16px; background: var(--surface-sunken)"
     >
-      <div class="flex items-center" style="gap: 8px; margin-bottom: 12px">
-        <component :is="card.icon" :size="16" :style="{ color: card.tone }" />
-        <span style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted)">
-          {{ card.title }}
-        </span>
-      </div>
-      <div class="flex items-center" style="gap: 8px">
-        <div style="font-size: 28px; font-weight: var(--weight-bold); color: var(--text-strong); line-height: 1; font-variant-numeric: tabular-nums">
+      <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: 8px">{{ card.title }}</div>
+      <div class="flex items-center" style="gap: 7px">
+        <component :is="card.icon" :size="15" style="color: var(--text-muted)" />
+        <span style="font-size: var(--text-md); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums">
           {{ card.primary }}
-        </div>
+        </span>
         <span
           v-if="card.delta"
           class="flex items-center"

@@ -18,6 +18,21 @@ export function categoryLabel(category: string, message?: string): string {
   return CATEGORY_LABELS[category] ?? message ?? 'Outras ocorrências';
 }
 
+export function queryStatusLabel(status: CreditQueryStatus): string {
+  switch (status) {
+    case 'Completed':
+      return 'Concluída';
+    case 'Processing':
+      return 'Em andamento';
+    case 'Failed':
+      return 'Falhou';
+    case 'Expired':
+      return 'Expirada';
+    default:
+      return status;
+  }
+}
+
 export function queryStatusTone(status: CreditQueryStatus): { bg: string; fg: string } {
   switch (status) {
     case 'Completed':

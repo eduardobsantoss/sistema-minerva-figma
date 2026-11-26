@@ -1,12 +1,8 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, type Component } from 'vue';
-import {
-  User, AlertTriangle, Scale, History, Search, XCircle, RefreshCw,
-  Users, Trees,
-} from 'lucide-vue-next';
+import { computed, onUnmounted, ref } from 'vue';
+import { Search, XCircle, RefreshCw } from 'lucide-vue-next';
 import type {
   CreditQueryLatest,
-  DatasetProgress,
   HistoryItem,
   MockScenario,
   ScreenPhase,
@@ -19,11 +15,9 @@ import {
   seedProcessingForDemo,
   NotFoundError,
 } from '../services/serasaService';
-import { onlyDigits } from '../utils/serasaFormatters';
+import { maskDocumentInput, onlyDigits } from '../utils/serasaFormatters';
 import SerasaHeader from '../components/SerasaHeader.vue';
 import SerasaSummaryCards from '../components/SerasaSummaryCards.vue';
-import SerasaProcessingPanel from '../components/SerasaProcessingPanel.vue';
-import ConfirmRefreshModal from '../components/ConfirmRefreshModal.vue';
 import BasicInfoTab from './tabs/BasicInfoTab.vue';
 import CreditReportsTab from './tabs/CreditReportsTab.vue';
 import ProcessesTab from './tabs/ProcessesTab.vue';
@@ -31,21 +25,22 @@ import SlaveLaborTab from './tabs/SlaveLaborTab.vue';
 import IbamaTab from './tabs/IbamaTab.vue';
 import HistoryTab from './tabs/HistoryTab.vue';
 import SegmentedToggle from '@/components/ui/SegmentedToggle.vue';
+import UnderlineSubTabs from '@/features/passivo-novo/components/UnderlineSubTabs.vue';
+import Alert from '@/components/feedback/Alert.vue';
+import AdminModal from '@/components/ui/AdminModal.vue';
 import { EmptyState } from '@/features/risco/screens/detail-tabs/shared';
 import ConsultaLotePanel from '../components/ConsultaLotePanel.vue';
 import AdminButton from '@/components/ui/AdminButton.vue';
 
 withDefaults(defineProps<{ title?: string }>(), { title: 'Consultas' });
 
-type Tab = 'cadastro' | 'restricoes' | 'processos' | 'trabalho-escravo' | 'ibama' | 'historico';
-
-const TABS: { key: Tab; label: string; icon: Component }[] = [
-  { key: 'cadastro', label: 'Dados cadastrais', icon: User },
-  { key: 'restricoes', label: 'Restrições financeiras', icon: AlertTriangle },
-  { key: 'processos', label: 'Processos judiciais', icon: Scale },
-  { key: 'trabalho-escravo', label: 'Trabalho Escravo', icon: Users },
-  { key: 'ibama', label: 'IBAMA', icon: Trees },
-  { key: 'historico', label: 'Histórico', icon: History },
+const TABS = [
+  'Dados cadastrais',
+  'Restrições financeiras',
+  'Processos judiciais',
+  'Trabalho escravo',
+  'IBAMA',
+  'Histórico',
 ];
 
 const modo = ref<'unitaria' | 'lote'>('unitaria');
@@ -66,11 +61,8 @@ const previousScore = computed(() => {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   return older[0]?.snapshot?.agroScore ?? null;
 });
-const tab = ref<Tab>('cadastro');
+const tab = ref(TABS[0]);
 const showRefreshModal = ref(false);
-const pollDatasets = ref<DatasetProgress[]>([]);
-const pollAttempts = ref(0);
-const activeQueryId = ref<number | null>(null);
 
 let stopPoll: (() => void) | null = null;
 
@@ -103,18 +95,12 @@ async function runConsult(forceRefresh = false) {
       return;
     }
 
-    activeQueryId.value = response.queryId;
     phase.value = 'processing';
-    pollDatasets.value = [];
-    pollAttempts.value = 0;
 
     stopPoll = startProcessingPoll(
       response.queryId,
       digits,
-      (poll) => {
-        pollDatasets.value = poll.datasets;
-        pollAttempts.value = poll.attempts;
-      },
+      () => {},
       (result) => {
         latest.value = result.latest;
         history.value = result.history.items;
@@ -160,15 +146,15 @@ function handleRetry() {
 
 async function loadDemoScenario(scenario: MockScenario) {
   stopPoll?.();
-  const demo = DEMO_SCENARIOS.find((s) => s.key === scenario);
+  const demo = DEMO_SCENARIOS.find((item) => item.key === scenario);
   if (!demo) return;
 
   if (demo.document) {
-    documentInput.value = demo.document;
+    documentInput.value = maskDocumentInput(demo.document);
   }
 
   if (scenario === 'nunca-consultado') {
-    documentInput.value = '00000000000';
+    documentInput.value = maskDocumentInput('00000000000');
     phase.value = 'not-found';
     latest.value = null;
     history.value = [];
@@ -177,25 +163,18 @@ async function loadDemoScenario(scenario: MockScenario) {
 
   if (scenario === 'processing') {
     const digits = onlyDigits(documentInput.value) || '12345678901';
-    documentInput.value = digits;
+    documentInput.value = maskDocumentInput(digits);
     const queryId = seedProcessingForDemo(digits);
-    activeQueryId.value = queryId;
     phase.value = 'processing';
-    pollDatasets.value = [];
-    pollAttempts.value = 0;
     loading.value = true;
-
     stopPoll = startProcessingPoll(
       queryId,
       digits,
-      (poll) => {
-        pollDatasets.value = poll.datasets;
-        pollAttempts.value = poll.attempts;
-      },
+      () => {},
       (result) => {
         latest.value = result.latest;
         history.value = result.history.items;
-        phase.value = 'completed';
+        phase.value = result.latest ? 'completed' : 'not-found';
         loading.value = false;
       },
       () => {
@@ -207,7 +186,7 @@ async function loadDemoScenario(scenario: MockScenario) {
   }
 
   if (scenario === 'failed') {
-    documentInput.value = demo.document ?? '11111111111';
+    documentInput.value = maskDocumentInput(demo.document ?? '11111111111');
     phase.value = 'failed';
     latest.value = null;
     return;
@@ -234,6 +213,25 @@ async function loadDemoScenario(scenario: MockScenario) {
         variant="brand"
         @update:model-value="modo = $event as 'unitaria' | 'lote'"
       />
+      <template #atalhos>
+        <div class="flex flex-col" style="gap: 8px">
+          <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted)">
+            Consulta rápida
+          </div>
+          <div class="flex flex-wrap" style="gap: 8px">
+            <AdminButton
+              v-for="demo in DEMO_SCENARIOS"
+              :key="demo.key"
+              variant="secondary"
+              size="compact"
+              type="button"
+              @click="loadDemoScenario(demo.key)"
+            >
+              {{ demo.label }}
+            </AdminButton>
+          </div>
+        </div>
+      </template>
     </SerasaHeader>
 
     <ConsultaLotePanel v-if="modo === 'lote'" />
@@ -247,91 +245,66 @@ async function loadDemoScenario(scenario: MockScenario) {
       hint="Não há consultas anteriores para este CPF/CNPJ no Minerva. Clique em Consultar para iniciar a primeira consulta."
     />
 
-    <div
-      v-else-if="phase === 'failed'"
-      class="flex flex-col items-center"
-      style="gap: 16px; padding: 40px 24px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); text-align: center"
-    >
-      <div class="flex items-center justify-center" style="width: 56px; height: 56px; border-radius: 9999px; background: var(--status-danger-bg); color: var(--danger-base)">
-        <XCircle :size="28" />
-      </div>
-      <div>
-        <h3 style="font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-strong)">
-          Não foi possível concluir a consulta
-        </h3>
-        <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 6px; max-width: 400px">
-          Ocorreu um erro ao processar a consulta no Serasa. Tente novamente em alguns instantes.
-        </p>
-      </div>
+    <div v-else-if="phase === 'failed'" class="flex flex-col items-center" style="gap: 16px">
+      <EmptyState
+        :icon="XCircle"
+        title="Não foi possível concluir a consulta"
+        hint="Ocorreu um erro ao processar a consulta. Tente novamente em alguns instantes."
+      />
       <AdminButton :icon="RefreshCw" @click="handleRetry">Tentar novamente</AdminButton>
     </div>
 
-    <SerasaProcessingPanel
+    <EmptyState
       v-else-if="phase === 'processing'"
-      :datasets="pollDatasets"
-      :attempts="pollAttempts"
+      :icon="Search"
+      title="Consulta em andamento"
+      hint="Os dados aparecem aqui assim que a consulta termina."
     />
 
     <template v-else-if="phase === 'completed' && latest">
-      <div
+      <Alert
         v-if="!latest.agroScore"
-        class="flex items-center"
-        style="gap: 10px; padding: 12px 16px; border-radius: var(--radius-lg); background: var(--status-warning-bg); border: 1px solid color-mix(in srgb, var(--warning-base) 25%, transparent)"
-      >
-        <AlertTriangle :size="16" style="color: var(--warning-base); flex-shrink: 0" />
-        <span style="font-size: var(--text-sm); color: var(--status-warning-text)">
-          O bloco de Score Agro não está disponível para este documento.
-        </span>
-      </div>
+        type="warning"
+        :dismissible="false"
+        title="Score Agro indisponível"
+        message="O bloco de Score Agro não está disponível para este documento."
+      />
 
       <SerasaSummaryCards :latest="latest" :previous-score="previousScore" />
 
-      <SegmentedToggle
-        :model-value="tab"
-        :options="TABS"
-        variant="brand"
-        @update:model-value="tab = $event as Tab"
+      <UnderlineSubTabs v-model="tab" :tabs="TABS" />
+
+      <BasicInfoTab v-if="tab === 'Dados cadastrais' && latest.basicInfo" :basic-info="latest.basicInfo" />
+      <EmptyState
+        v-else-if="tab === 'Dados cadastrais'"
+        :icon="Search"
+        title="Dados cadastrais indisponíveis"
+        hint="Esta consulta não trouxe o cadastro do documento."
       />
 
-      <BasicInfoTab v-if="tab === 'cadastro' && latest.basicInfo" :basic-info="latest.basicInfo" />
-      <div
-        v-else-if="tab === 'cadastro'"
-        style="padding: 20px; border: 1px dashed var(--border-default); border-radius: var(--radius-lg); text-align: center; color: var(--text-muted); font-size: var(--text-sm)"
-      >
-        Dados cadastrais indisponíveis para esta consulta.
-      </div>
-
-      <CreditReportsTab v-if="tab === 'restricoes'" :credit-reports="latest.creditReports" />
-      <ProcessesTab v-if="tab === 'processos'" :processes="latest.processes" />
-      <SlaveLaborTab v-if="tab === 'trabalho-escravo'" :items="latest.slaveLaborRestrictions ?? []" />
-      <IbamaTab v-if="tab === 'ibama'" :items="latest.ibamaRestrictions ?? []" />
-      <HistoryTab v-if="tab === 'historico'" :items="history" />
+      <CreditReportsTab v-if="tab === 'Restrições financeiras'" :credit-reports="latest.creditReports" />
+      <ProcessesTab v-if="tab === 'Processos judiciais'" :processes="latest.processes" />
+      <SlaveLaborTab v-if="tab === 'Trabalho escravo'" :items="latest.slaveLaborRestrictions ?? []" />
+      <IbamaTab v-if="tab === 'IBAMA'" :items="latest.ibamaRestrictions ?? []" />
+      <HistoryTab v-if="tab === 'Histórico'" :items="history" />
     </template>
 
-    <ConfirmRefreshModal
+    <AdminModal
       v-if="showRefreshModal"
-      @confirm="handleRefreshConfirm"
-      @cancel="showRefreshModal = false"
-    />
-
-    <div
-      v-if="modo === 'unitaria'"
-      style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed var(--border-default)"
+      eyebrow="Carteira"
+      title="Atualizar consulta"
+      subtitle="A consulta atual será substituída por uma nova busca deste documento."
+      size="sm"
+      @close="showRefreshModal = false"
     >
-      <div style="font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px">
-        Demo — cenários de protótipo
-      </div>
-      <div class="flex flex-wrap" style="gap: 6px">
-        <button
-          v-for="demo in DEMO_SCENARIOS"
-          :key="demo.key"
-          style="height: 28px; padding: 0 10px; border-radius: var(--radius-md); border: 1px solid var(--border-default); background: var(--surface-sunken); cursor: pointer; font-size: 11px; color: var(--text-muted)"
-          @click="loadDemoScenario(demo.key)"
-        >
-          {{ demo.label }}
-        </button>
-      </div>
-    </div>
+      <p style="font-size: var(--text-sm); color: var(--text-default); margin: 0">
+        Os dados exibidos passam a ser os da nova consulta.
+      </p>
+      <template #footer>
+        <AdminButton variant="secondary" @click="showRefreshModal = false">Cancelar</AdminButton>
+        <AdminButton @click="handleRefreshConfirm">Atualizar</AdminButton>
+      </template>
+    </AdminModal>
     </template>
   </div>
 </template>

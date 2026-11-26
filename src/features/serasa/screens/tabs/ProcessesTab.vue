@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { CheckCircle2 } from 'lucide-vue-next';
 import type { SerasaProcess, SerasaProcessStatus } from '../../data/serasaTypes';
 import { processStatusTone } from '../../data/serasaConstants';
 import { brl } from '@/features/passivo/data/passivoData';
 import { formatDateOnly } from '../../utils/serasaFormatters';
 import { EmptyState } from '@/features/risco/screens/detail-tabs/shared';
-import RawDetailsModal from '../../components/RawDetailsModal.vue';
 
 const props = defineProps<{ processes: SerasaProcess[] }>();
-
-const rawPanel = ref<{ title: string; data: Record<string, unknown> } | null>(null);
 
 interface StatusGroup {
   status: SerasaProcessStatus;
@@ -93,7 +90,6 @@ const grouped = computed<StatusGroup[]>(() => {
               <th style="padding: 10px 16px; font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted)">PARTE</th>
               <th style="padding: 10px 16px; font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted)">VALOR</th>
               <th style="padding: 10px 16px; font-size: 9px; font-weight: var(--weight-bold); letter-spacing: 0.1em; color: var(--text-muted)">PUBLICAÇÃO</th>
-              <th style="padding: 10px 16px"></th>
             </tr>
           </thead>
           <tbody>
@@ -111,25 +107,10 @@ const grouped = computed<StatusGroup[]>(() => {
               <td style="padding: 10px 16px">{{ occ.partyName ?? '—' }}</td>
               <td style="padding: 10px 16px; font-variant-numeric: tabular-nums">{{ occ.value != null ? brl(occ.value) : '—' }}</td>
               <td style="padding: 10px 16px">{{ formatDateOnly(occ.publicationDate) }}</td>
-              <td style="padding: 10px 16px">
-                <button
-                  style="font-size: var(--text-xs); color: var(--accent); background: none; border: none; cursor: pointer; font-weight: var(--weight-semibold); white-space: nowrap"
-                  @click="rawPanel = { title: occ.processNumber, data: occ.rawDetails }"
-                >
-                  Ver dados brutos
-                </button>
-              </td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
   </div>
-
-  <RawDetailsModal
-    v-if="rawPanel"
-    :title="rawPanel.title"
-    :data="rawPanel.data"
-    @close="rawPanel = null"
-  />
 </template>

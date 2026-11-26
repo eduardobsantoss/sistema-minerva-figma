@@ -1,11 +1,31 @@
 <script setup lang="ts">
 import type { BasicInfo } from '../../data/serasaTypes';
 import { formatDateOnly } from '../../utils/serasaFormatters';
-import JsonListBlock from '../../components/JsonListBlock.vue';
 import { TabCard } from '@/features/risco/screens/detail-tabs/shared';
 import { User, Building2 } from 'lucide-vue-next';
 
 defineProps<{ basicInfo: BasicInfo }>();
+
+function linha(item: unknown, keys: string[]) {
+  if (!item || typeof item !== 'object') return '';
+  const row = item as Record<string, unknown>;
+  return keys
+    .map((key) => row[key])
+    .filter((value) => value != null && String(value).trim())
+    .map(String)
+    .join(' · ');
+}
+
+function blocos(info: BasicInfo) {
+  return [
+    { title: 'Endereços', linhas: (info.addresses ?? []).map((item) => linha(item, ['tipo', 'logradouro', 'numero', 'km', 'bairro', 'cidade', 'uf', 'cep'])) },
+    { title: 'Telefones', linhas: (info.phones ?? []).map((item) => linha(item, ['tipo', 'ddd', 'numero'])) },
+    { title: 'E-mails', linhas: (info.emails ?? []).map((item) => linha(item, ['email'])) },
+    { title: 'Atividades', linhas: (info.activities ?? []).map((item) => linha(item, ['codigo', 'descricao'])) },
+    { title: info.personType === 'PF' ? 'Pessoas relacionadas' : 'Sócios', linhas: (info.relatedPeople ?? []).map((item) => linha(item, ['nome', 'vinculo', 'participacao'])) },
+    { title: 'Vínculos', linhas: (info.businessRelationships ?? []).map((item) => linha(item, ['empresa', 'vinculo'])) },
+  ].filter((bloco) => bloco.linhas.some((texto) => texto));
+}
 
 function field(label: string, value: string | null | undefined) {
   return { label, value: value?.trim() ? value : null };
@@ -52,13 +72,15 @@ function field(label: string, value: string | null | undefined) {
       </div>
     </div>
 
-    <div class="flex flex-col" style="gap: 10px">
-      <JsonListBlock title="Endereços" :data="basicInfo.addresses ?? []" />
-      <JsonListBlock title="Telefones" :data="basicInfo.phones ?? []" />
-      <JsonListBlock title="E-mails" :data="basicInfo.emails ?? []" />
-      <JsonListBlock title="Atividades / CNAEs" :data="basicInfo.activities ?? []" />
-      <JsonListBlock :title="basicInfo.personType === 'PF' ? 'Pessoas relacionadas' : 'Sócios / relacionados'" :data="basicInfo.relatedPeople ?? []" />
-      <JsonListBlock title="Vínculos societários" :data="basicInfo.businessRelationships ?? []" />
+    <div class="flex flex-col" style="gap: 16px">
+      <div v-for="bloco in blocos(basicInfo)" :key="bloco.title">
+        <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.18em; color: var(--accent); text-transform: uppercase; margin-bottom: 8px">
+          {{ bloco.title }}
+        </div>
+        <div v-for="(texto, index) in bloco.linhas" :key="index" style="font-size: var(--text-sm); color: var(--text-strong); padding: 6px 0">
+          {{ texto }}
+        </div>
+      </div>
     </div>
   </TabCard>
 </template>
