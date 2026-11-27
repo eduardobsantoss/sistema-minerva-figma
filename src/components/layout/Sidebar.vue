@@ -22,6 +22,7 @@ import {
   ScrollText,
   Layers,
   Wallet,
+  Search,
   Percent,
   ShieldCheck,
   Package,
@@ -154,10 +155,10 @@ const items: NavItem[] = [
         icon: ScrollText,
       },
       { key: "risco-taxa-operacao", label: "Taxa de Operação", icon: Percent },
+      { key: "risco-serasa", label: "Consultas", icon: Search },
       { key: "risco-rel", label: "Relatórios", icon: BarChart3 },
     ],
   },
-  { key: "carteira", label: "Carteira", icon: Wallet },
   {
     key: "cobranca",
     label: "Cobrança",
@@ -203,8 +204,8 @@ const items: NavItem[] = [
       { key: "sentinela-credito", label: "Crédito", icon: AlertCircle },
       { key: "sentinela-cedente", label: "Cedente", icon: Building2 },
       { key: "sentinela-sacado", label: "Sacado", icon: Users },
+      { key: "sentinela-carteira", label: "Aquisição de Carteira", icon: Wallet },
       { key: "sentinela-relatorios", label: "Relatórios", icon: FileText },
-      // Consulta em lote foi para Risco > Consultas (subida de lista).
       // { key: "sentinela-lote", label: "Consulta em lote", icon: Search },
       // Cedente/Sacado unificado — substituído por Cedente e Sacado separados.
       // { key: "sentinela-contraparte", label: "Cedente/Sacado", icon: Users },

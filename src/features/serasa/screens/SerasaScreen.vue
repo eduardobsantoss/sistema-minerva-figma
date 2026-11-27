@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref } from 'vue';
+import { computed, nextTick, onUnmounted, ref } from 'vue';
 import { Search, XCircle, RefreshCw } from 'lucide-vue-next';
 import type {
   CreditQueryLatest,
@@ -32,7 +32,15 @@ import { EmptyState } from '@/features/risco/screens/detail-tabs/shared';
 import ConsultaLotePanel from '../components/ConsultaLotePanel.vue';
 import AdminButton from '@/components/ui/AdminButton.vue';
 
-withDefaults(defineProps<{ title?: string }>(), { title: 'Consultas' });
+withDefaults(defineProps<{
+  title?: string;
+  eyebrow?: string;
+  permiteLote?: boolean;
+}>(), {
+  title: 'Consultas',
+  eyebrow: 'Risco',
+  permiteLote: false,
+});
 
 const TABS = [
   'Dados cadastrais',
@@ -44,6 +52,10 @@ const TABS = [
 ];
 
 const modo = ref<'unitaria' | 'lote'>('unitaria');
+const loteAberto = ref(false);
+const veioDoLote = ref(false);
+const loteRetornoId = ref<string | null>(null);
+const lotePanelRef = ref<{ reopen: (id: string) => void; currentId: () => string | null } | null>(null);
 const modoOpcoes = [
   { key: 'unitaria', label: 'Uma consulta' },
   { key: 'lote', label: 'Subir lista' },
@@ -144,6 +156,23 @@ function handleRetry() {
   runConsult(false);
 }
 
+async function abrirConsultaDoLote(documento: string) {
+  loteRetornoId.value = lotePanelRef.value?.currentId() ?? null;
+  veioDoLote.value = true;
+  modo.value = 'unitaria';
+  documentInput.value = maskDocumentInput(documento);
+  tab.value = TABS[0];
+  await runConsult(false);
+}
+
+async function voltarAoLote() {
+  const id = loteRetornoId.value;
+  veioDoLote.value = false;
+  modo.value = 'lote';
+  await nextTick();
+  if (id) lotePanelRef.value?.reopen(id);
+}
+
 async function loadDemoScenario(scenario: MockScenario) {
   stopPoll?.();
   const demo = DEMO_SCENARIOS.find((item) => item.key === scenario);
@@ -199,21 +228,26 @@ async function loadDemoScenario(scenario: MockScenario) {
 <template>
   <div class="flex flex-col" style="gap: 24px; padding-bottom: 48px">
     <SerasaHeader
+      v-if="!(permiteLote && modo === 'lote' && loteAberto)"
       v-model:document-input="documentInput"
       :title="title"
+      :eyebrow="eyebrow"
       :loading="loading"
-      :lote="modo === 'lote'"
+      :lote="permiteLote && modo === 'lote'"
+      :show-back="veioDoLote"
       :latest="modo === 'unitaria' && phase === 'completed' ? latest : null"
       @consult="handleConsult"
       @refresh="handleRefreshRequest"
+      @back="voltarAoLote"
     >
       <SegmentedToggle
+        v-if="permiteLote && !veioDoLote"
         :model-value="modo"
         :options="modoOpcoes"
         variant="brand"
         @update:model-value="modo = $event as 'unitaria' | 'lote'"
       />
-      <template #atalhos>
+      <template v-if="!veioDoLote" #atalhos>
         <div class="flex flex-col" style="gap: 8px">
           <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted)">
             Consulta rápida
@@ -234,7 +268,13 @@ async function loadDemoScenario(scenario: MockScenario) {
       </template>
     </SerasaHeader>
 
-    <ConsultaLotePanel v-if="modo === 'lote'" />
+    <ConsultaLotePanel
+      v-show="permiteLote && modo === 'lote'"
+      v-if="permiteLote"
+      ref="lotePanelRef"
+      @update:aberto="loteAberto = $event"
+      @abrir-consulta="abrirConsultaDoLote"
+    />
 
     <template v-if="modo === 'unitaria'">
 

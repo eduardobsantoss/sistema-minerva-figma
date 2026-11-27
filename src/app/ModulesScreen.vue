@@ -90,7 +90,7 @@ type View =
   | 'risco-agrupamentos'
   | 'risco-rel'
   | 'risco-serasa'
-  | 'carteira'
+  | 'sentinela-carteira'
   | 'grupos-cadastro'
   | 'monitoramento'
   | 'monitoramento-estoque'
@@ -150,7 +150,7 @@ const titleMap: Record<View, string> = {
   'risco-agrupamentos': 'Agrupamentos de Limite',
   'risco-rel': 'Relatórios de Risco',
   'risco-serasa': 'Consultas',
-  carteira: 'Aquisição de Carteira',
+  'sentinela-carteira': 'Aquisição de Carteira',
   'grupos-cadastro': 'Grupos Empresariais',
   monitoramento: 'Monitoramento Pós Desembolso',
   'monitoramento-estoque': 'Monitoramento de Estoque',
@@ -181,16 +181,16 @@ const VALID_VIEWS = new Set<View>([
   'semiestruturadas',
   'cobranca', 'cobranca-titulos', 'cobranca-notif-cessao', 'cobranca-dashboard', 'cobranca-notif', 'cobranca-resultado-notif', 'cobranca-historico-notif', 'cobranca-preventiva', 'cobranca-rel',
   'risco-dashboard', 'risco-grupos', 'risco-ratings', 'risco-taxa-operacao', 'risco-agrupamentos', 'risco-serasa', 'risco-rel',
-  'carteira',
   'grupos-cadastro',
   'monitoramento', 'monitoramento-estoque',
-  'sentinela', 'sentinela-credito', 'sentinela-cedente', 'sentinela-sacado', 'sentinela-relatorios', 'sentinela-contraparte', 'sentinela-lote',
+  'sentinela', 'sentinela-credito', 'sentinela-cedente', 'sentinela-sacado', 'sentinela-carteira', 'sentinela-relatorios', 'sentinela-contraparte', 'sentinela-lote',
   'gerencial', 'gerencial-pos', 'gerencial-veiculos', 'gerencial-relatorios',
   'passivo', 'passivo-novo', 'colab', 'rel', 'conf',
 ]);
 
 function normalizeView(key: string | null): View {
   if (key === 'passivo-novo') return 'passivo';
+  if (key === 'carteira') return 'sentinela-carteira';
   return VALID_VIEWS.has(key as View) ? (key as View) : 'dashboard';
 }
 
@@ -282,9 +282,6 @@ function handleModuleClick(title: string) {
   } else if (title === 'Risco') {
     view.value = 'risco-dashboard';
     openMenu.value = 'risco';
-  } else if (title === 'Carteira') {
-    view.value = 'carteira';
-    openMenu.value = null;
   } else if (title === 'Grupos Empresariais') {
     view.value = 'grupos-cadastro';
   } else if (title === 'Passivo') {
@@ -355,8 +352,8 @@ function handleModuleClick(title: string) {
           <GruposCadastroScreen v-else-if="view === 'grupos-cadastro'" />
           <RelatoriosScreen v-else-if="view === 'risco-rel'" />
           <RiscoDashboardScreen v-else-if="view === 'risco-dashboard'" @navigate="handleNavigate" />
-          <SerasaScreen v-else-if="view === 'risco-serasa'" />
-          <SerasaScreen v-else-if="view === 'carteira'" title="Aquisição de Carteira" />
+          <SerasaScreen v-else-if="view === 'risco-serasa'" eyebrow="Risco" title="Consultas" />
+          <SerasaScreen v-else-if="view === 'sentinela-carteira'" eyebrow="Sentinela" title="Aquisição de Carteira" permite-lote />
           <MonitoramentoScreen v-else-if="view === 'monitoramento'" />
           <MonitoramentoEstoqueScreen v-else-if="view === 'monitoramento-estoque'" />
           <SentinelaVisaoGeralScreen v-else-if="view === 'sentinela'" @navigate="handleNavigate" />

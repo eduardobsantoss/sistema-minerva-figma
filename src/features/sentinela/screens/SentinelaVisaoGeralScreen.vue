@@ -13,6 +13,7 @@ import {
   TrendingDown,
   TrendingUp,
   Users,
+  Wallet,
 } from 'lucide-vue-next';
 import { brl, fmtPct } from '@/features/risco/data/riscoData';
 import SeveridadeChart from '../components/charts/SeveridadeChart.vue';
@@ -28,6 +29,7 @@ import {
   type PainelSentinela,
 } from '../data/sentinelaData';
 import AdminButton from '@/components/ui/AdminButton.vue';
+import { APONTAMENTO_LABEL, DECISAO_LABEL, lotesCarteira, resumoLote, type TipoApontamento } from '@/features/serasa/data/loteData';
 
 const emit = defineEmits<{ navigate: [view: string] }>();
 
@@ -94,6 +96,19 @@ function fila(painel: PainelSentinela): LinhaMonitorada[] {
     .filter((linha) => !q || linha.entidade.nome.toLowerCase().includes(q))
     .slice(0, 5);
 }
+
+const TIPOS_AQUISICAO: TipoApontamento[] = ['pefin', 'refin', 'protesto', 'cheque', 'processo', 'trabalhoEscravo', 'ibama'];
+
+const aquisicao = computed(() => resumoLote(lotesCarteira.value.flatMap((lote) => lote.itens)));
+
+const filaAquisicao = computed(() => {
+  const q = busca.value.trim().toLowerCase();
+  return lotesCarteira.value
+    .flatMap((lote) => lote.itens)
+    .filter((item) => item.valido && item.decisao !== 'apto')
+    .filter((item) => !q || item.nome.toLowerCase().includes(q))
+    .slice(0, 5);
+});
 
 const modulos = computed(() => [
   {
@@ -265,9 +280,53 @@ const modulos = computed(() => [
         </div>
       </article>
 
-      <!-- Consulta em lote saiu da visão geral. A subida de lista ficou em Risco > Consultas.
-      <article>Consulta em lote</article>
-      -->
+      <article
+        class="flex flex-col"
+        style="gap: 14px; border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); padding: 20px"
+      >
+        <div class="flex items-start justify-between" style="gap: 12px">
+          <div class="flex items-center" style="gap: 10px">
+            <Wallet :size="16" style="color: var(--text-muted)" />
+            <div>
+              <h2 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Aquisição de Carteira</h2>
+              <p style="margin-top: 2px; font-size: var(--text-xs); color: var(--text-muted)">Decisão e apontamentos dos lotes consultados.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+          <div style="background: var(--status-danger-bg); color: var(--status-danger-text); border-radius: var(--radius-lg); padding: 10px 12px">
+            <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; text-transform: uppercase">Recusado</div>
+            <div style="font-size: var(--text-xl); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums">{{ aquisicao.recusado }}</div>
+          </div>
+          <div style="background: var(--status-warning-bg); color: var(--status-warning-text); border-radius: var(--radius-lg); padding: 10px 12px">
+            <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; text-transform: uppercase">Ressalva</div>
+            <div style="font-size: var(--text-xl); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums">{{ aquisicao.comRessalva }}</div>
+          </div>
+          <div style="background: var(--status-success-bg); color: var(--status-success-text); border-radius: var(--radius-lg); padding: 10px 12px">
+            <div style="font-size: 10px; font-weight: var(--weight-bold); letter-spacing: 0.08em; text-transform: uppercase">Apto</div>
+            <div style="font-size: var(--text-xl); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums">{{ aquisicao.apto }}</div>
+          </div>
+        </div>
+
+        <div>
+          <div
+            v-for="tipo in TIPOS_AQUISICAO.filter((tipo) => aquisicao[tipo].documentos > 0)"
+            :key="tipo"
+            class="flex items-center justify-between"
+            style="gap: 12px; padding: 8px 0; border-top: 1px solid var(--border-default)"
+          >
+            <span style="font-size: var(--text-sm); color: var(--text-default)">{{ APONTAMENTO_LABEL[tipo] }}</span>
+            <span style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong); font-variant-numeric: tabular-nums; white-space: nowrap">
+              {{ aquisicao[tipo].documentos }}<template v-if="aquisicao[tipo].valor > 0"> · {{ brl(aquisicao[tipo].valor) }}</template>
+            </span>
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <AdminButton variant="secondary" :trailing-icon="ArrowUpRight" type="button" @click="emit('navigate', 'sentinela-carteira')">Abrir</AdminButton>
+        </div>
+      </article>
     </div>
 
     <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: start">
@@ -363,6 +422,38 @@ const modulos = computed(() => [
               {{ brl(linha.entidade.exposicao) }}
             </div>
             <div class="vg-date">{{ formatDateBR(linha.prazo) }}</div>
+          </button>
+        </template>
+      </div>
+
+      <div style="border: 1px solid var(--border-default); border-radius: var(--radius-xl); background: var(--surface-card); overflow: hidden">
+        <div class="flex items-center" style="gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border-default)">
+          <Wallet :size="16" style="color: var(--status-danger-text)" />
+          <h3 style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-strong)">Aquisição pedindo tratativa</h3>
+        </div>
+        <div v-if="filaAquisicao.length === 0" style="padding: 24px 20px; font-size: var(--text-sm); color: var(--text-muted); text-align: center">
+          Nenhum documento neste recorte.
+        </div>
+        <template v-else>
+          <div class="grid vg-table vg-head">
+            <div>Documento</div>
+            <div class="vg-num">Valor</div>
+            <div>Decisão</div>
+          </div>
+          <button
+            v-for="item in filaAquisicao"
+            :key="item.id"
+            class="grid items-center vg-row vg-table"
+            @click="emit('navigate', 'sentinela-carteira')"
+          >
+            <div style="min-width: 0">
+              <div class="vg-name">{{ item.nome }}</div>
+              <div style="font-size: var(--text-xs); color: var(--text-muted)">{{ item.temApontamento ? 'Com apontamento' : 'Sem apontamento' }}</div>
+            </div>
+            <div class="vg-num" :style="{ color: item.decisao === 'recusado' ? 'var(--status-danger-text)' : 'var(--status-warning-text)', fontWeight: 'var(--weight-bold)' }">
+              {{ brl(item.valorTotal) }}
+            </div>
+            <div class="vg-date">{{ item.decisao ? DECISAO_LABEL[item.decisao] : '—' }}</div>
           </button>
         </template>
       </div>

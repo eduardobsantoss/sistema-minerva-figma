@@ -48,7 +48,7 @@ function priorItem(
   };
 }
 
-function previousConsultations(latest: CreditQueryLatest): HistoryItem[] {
+export function previousConsultations(latest: CreditQueryLatest): HistoryItem[] {
   const current = snapshotOf(latest);
   const score = current.agroScore ?? 700;
   const down = latest.basicInfo?.personType === 'PJ';

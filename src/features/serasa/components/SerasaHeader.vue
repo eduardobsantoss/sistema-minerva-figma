@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { RefreshCw, Search } from 'lucide-vue-next';
+import { ArrowLeft, RefreshCw, Search } from 'lucide-vue-next';
 import type { CreditQueryLatest } from '../data/serasaTypes';
 import { queryStatusLabel, queryStatusTone } from '../data/serasaConstants';
 import { formatDocument, formatDateTimeUtc, maskDocumentInput, onlyDigits } from '../utils/serasaFormatters';
@@ -14,14 +14,19 @@ const props = withDefaults(defineProps<{
   latest?: CreditQueryLatest | null;
   lote?: boolean;
   title?: string;
+  eyebrow?: string;
+  showBack?: boolean;
 }>(), {
   title: 'Consultas',
+  eyebrow: 'Risco',
+  showBack: false,
 });
 
 const emit = defineEmits<{
   'update:documentInput': [value: string];
   consult: [];
   refresh: [];
+  back: [];
 }>();
 
 const localInput = computed({
@@ -41,9 +46,20 @@ const statusTone = computed(() =>
 
 <template>
   <div class="flex flex-col" style="gap: 20px">
-    <div>
+    <div class="flex items-start" style="gap: 16px">
+      <button
+        v-if="showBack"
+        type="button"
+        aria-label="Voltar"
+        class="flex items-center justify-center"
+        style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: var(--surface-card); border: 1px solid var(--border-default); cursor: pointer; color: var(--text-strong); flex-shrink: 0"
+        @click="emit('back')"
+      >
+        <ArrowLeft :size="20" />
+      </button>
+      <div style="flex: 1; min-width: 0">
       <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--accent); font-weight: var(--weight-bold); margin-bottom: 6px">
-        Carteira
+        {{ eyebrow }}
       </div>
       <h1 style="font-size: 26px; font-weight: var(--weight-bold); color: var(--text-strong); letter-spacing: -0.02em; line-height: 1.15">
         {{ title }}
@@ -51,8 +67,9 @@ const statusTone = computed(() =>
       <p style="font-size: var(--text-sm); color: var(--text-muted); margin-top: 4px">
         {{ lote ? 'Suba uma lista de CPF ou CNPJ e consulte o lote de uma vez.' : 'Consulte crédito, restrições oficiais e processos por CPF ou CNPJ.' }}
       </p>
-      <div style="margin-top: 16px">
+      <div v-if="$slots.default" style="margin-top: 16px">
         <slot />
+      </div>
       </div>
     </div>
 
